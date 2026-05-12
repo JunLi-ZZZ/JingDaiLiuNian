@@ -1,0 +1,429 @@
+<%_
+;(async () => {
+const __dnf_map_loader_data = _.cloneDeep(getMessageVar('stat_data', { defaults: {} }));
+const __dnf_map_loader_hide = _.get(__dnf_map_loader_data, '战斗.是否战斗中', false) === true;
+if (!__dnf_map_loader_hide) {
+const data = __dnf_map_loader_data;
+const 位置 = _.get(data, '世界信息.位置', {});
+const 当前大陆 = 位置.大陆 || '';
+const 当前区域 = 位置.区域 || '';
+
+// ═══ 地图加载资料（外置） ═══
+const __map_data = await (async () => {
+  const log = (msg) => { try { console.log(`[地图加载] ${msg}`); } catch (_) {} };
+  const raw = String(await getWorldInfo('地图加载资料') || '');
+  if (!raw.trim()) {
+    log('世界书条目 地图加载资料 不存在或为空');
+    return {};
+  }
+  try {
+    const factory = new Function(`${raw}
+; return { 层级映射, 表层界副本, 表层界常驻, 中层界副本, 中层界常驻, 深层界副本, 深层界常驻, 图层键, 层级标题, 路网 };`);
+    return factory() || {};
+  } catch (e) {
+    log('解析地图加载资料失败: ' + (e && e.message ? e.message : e));
+    return {};
+  }
+})();
+
+const 层级映射 = __map_data.层级映射 || {};
+const 表层界副本 = __map_data.表层界副本 || [];
+const 表层界常驻 = __map_data.表层界常驻 || '';
+const 中层界副本 = __map_data.中层界副本 || [];
+const 中层界常驻 = __map_data.中层界常驻 || '';
+const 深层界副本 = __map_data.深层界副本 || [];
+const 深层界常驻 = __map_data.深层界常驻 || '';
+const 图层键 = __map_data.图层键 || { '第一层': 'L1', '第二层': 'L2', '第三层': 'L3' };
+const 层级标题 = __map_data.层级标题 || { '第一层': '第一层·表层界', '第二层': '第二层·中层界·天界', '第三层': '第三层·深层界·魔界' };
+const 路网 = __map_data.路网 || { L1: { n: [], e: [] }, L2: { n: [], e: [] }, L3: { n: [], e: [] } };
+
+// ═══ 大陆→层级映射 ═══
+
+if (!Object.prototype.hasOwnProperty.call(层级映射, 当前大陆)) {
+  return;
+}
+const 当前层级 = 层级映射[当前大陆] || '第一层';
+
+// ═══ 匹配工具 ═══
+const match = (keywords) => 当前区域 && keywords.some(k => 当前区域.includes(k));
+
+// ══════════════════════════════════════════
+// 第一层·表层界 — 副本区域
+// ══════════════════════════════════════════
+
+
+
+// ══════════════════════════════════════════
+// 第一层·表层界 — 非副本区域（常驻）
+// ══════════════════════════════════════════
+
+
+
+// ══════════════════════════════════════════
+// 第二层·中层界 — 副本区域
+// ══════════════════════════════════════════
+
+
+
+// ══════════════════════════════════════════
+// 第二层·中层界 — 非副本区域（常驻）
+// ══════════════════════════════════════════
+
+
+
+// ══════════════════════════════════════════
+// 第三层·深层界 — 副本区域
+// ══════════════════════════════════════════
+
+
+
+// ══════════════════════════════════════════
+// 第三层·深层界 — 非副本区域（常驻）
+// ══════════════════════════════════════════
+
+
+
+// ══════════════════════════════════════════
+// 路网输出逻辑
+// ══════════════════════════════════════════
+
+
+const 偏好图层 = 图层键[当前层级] || 'L1';
+
+
+function 归一化(text) {return String(text || '').replace(/[\s_]+/g, '').replace(/[.．・‧]/g, '·').replace(/[()（）【】\[\]「」『』]/g, '').toLowerCase();}
+
+function 拆分别名(name) {return _.uniq(String(name || '').split(/[·・‧_()（）【】\[\]「」『』]/).map(s => s.trim()).filter(s => s.length >= 2));}
+
+function 图层名(layerKey) {return { L1: '第一层', L2: '第二层', L3: '第三层' }[layerKey] || '第一层';}
+
+function 建图(layerKey) {const raw = 路网[layerKey] || { n: [], e: [] };const nodes = raw.n.map((name, index) => ({ index, name, aliases: [name, ...拆分别名(name)] }));const links = nodes.map(() => []);raw.e.forEach((edge, edgeIndex) => {const [a, b, label, distance] = edge;if (!nodes[a] || !nodes[b]) return;links[a].push({ edgeIndex, to: b, label: label || '无名通路', distance: distance || 0 });links[b].push({ edgeIndex, to: a, label: label || '无名通路', distance: distance || 0 });});return { nodes, links };}
+const 图缓存 = { L1: 建图('L1'), L2: 建图('L2'), L3: 建图('L3') };
+
+function 找节点(layerKey, texts) {
+  const graph = 图缓存[layerKey];
+  const arr = texts.filter(Boolean);
+  if (!arr.length) return null;
+
+  for (const raw of arr) {
+    const norm = 归一化(raw);
+    for (const node of graph.nodes) {
+      if (node.aliases.some(alias => 归一化(alias) === norm)) return node;
+    }
+  }
+
+  for (const raw of arr) {
+    const norm = 归一化(raw);
+    if (!norm || norm.length < 2) continue;
+    for (const node of graph.nodes) {
+      if (node.aliases.some(alias => {
+        const n = 归一化(alias);
+        return n.includes(norm) || norm.includes(n);
+      })) return node;
+    }
+  }
+
+  return null;
+}
+
+function 跨层找节点(texts) {
+  const first = 找节点(偏好图层, texts);
+  if (first) return { layerKey: 偏好图层, node: first };
+  for (const layerKey of ['L1', 'L2', 'L3']) {
+    if (layerKey === 偏好图层) continue;
+    const found = 找节点(layerKey, texts);
+    if (found) return { layerKey, node: found };
+  }
+  return null;
+}
+
+function 交通参数(layerKey, label, rawDistance) {
+  const text = String(label || '');
+  if (/法阵|传送/.test(text)) return { mode: '法阵', speed: Infinity, scale: 1 };
+  if (/轨道|列车/.test(text)) return { mode: /海上/.test(text) ? '海列' : '列车', speed: 320, scale: layerKey === 'L2' ? 14 : 12 };
+  if (/飞索/.test(text)) return { mode: '吊厢索道', speed: 90, scale: 5 };
+  if (/空艇|飞空艇|摩伽陀/.test(text)) return { mode: '空艇', speed: 220, scale: 12 };
+  if (/航线|航路|海上|渡船|巡航/.test(text)) return { mode: '船运', speed: 180, scale: layerKey === 'L1' ? 10 : 12 };
+  if (/电梯|升降平台|升降梯/.test(text)) return { mode: '升降机', speed: 120, scale: 8 };
+  if (/隧网/.test(text)) return { mode: '隧网', speed: 90, scale: 10 };
+  if (/岩桥/.test(text)) return { mode: '岩桥', speed: 35, scale: 9 };
+  if (/甬道|矿道|峡谷|裂隙|黑雾|星核|攀登|下行|上行|荒道|冰道|兽径|密径|荒原|边缘/.test(text)) return { mode: '徒步', speed: layerKey === 'L3' ? 22 : 26, scale: layerKey === 'L3' ? 9 : 8 };
+  if (/大道|主街|中心广场|正门|回廊|栈桥|街巷|辖区|平台|关卡|站台|走廊/.test(text)) return { mode: rawDistance <= 6 ? '步行' : '骑乘', speed: rawDistance <= 6 ? 28 : 60, scale: rawDistance <= 6 ? 2 : 3 };
+  if (layerKey === 'L3') return { mode: '徒步', speed: 24, scale: 8 };
+  if (layerKey === 'L2') return { mode: '商队', speed: 55, scale: 6 };
+  return { mode: rawDistance <= 8 ? '步行' : '骑乘', speed: rawDistance <= 8 ? 30 : 65, scale: rawDistance <= 8 ? 3 : 7 };
+}
+
+function 换算距离(layerKey, distance, label) {
+  if (!Number.isFinite(distance) || distance <= 0) return 0;
+  const { scale } = 交通参数(layerKey, label, distance);
+  return Math.max(3, Math.round(distance * scale));
+}
+
+function 单段耗时(layerKey, distance, label) {
+  if (!Number.isFinite(distance) || distance <= 0) return 0;
+  const km = 换算距离(layerKey, distance, label);
+  const { speed } = 交通参数(layerKey, label, distance);
+  if (speed === Infinity) return 0;
+  return km / speed;
+}
+
+function 格式耗时(days, label, layerKey, rawDistance) {
+  const text = String(label || '');
+  const { mode } = 交通参数(layerKey, text, rawDistance || 0);
+  if (!Number.isFinite(days) || days <= 0) return /法阵|传送/.test(text) ? `${mode}瞬时` : `${mode}耗时未知`;
+  const hours = days * 24;
+  if (hours <= 2.5) return `${mode}约2小时`;
+  if (hours <= 5.5) return `${mode}约半日`;
+  if (hours <= 10) return `${mode}约1日内`;
+  if (days <= 1.25) return `${mode}约1日`;
+  const lo = Math.max(1, Math.floor(days));
+  const hi = Math.max(lo, Math.ceil(days));
+  return lo === hi ? `${mode}约${lo}日` : `${mode}约${lo}~${hi}日`;
+}
+
+function 行程(layerKey, distance, label) {
+  return 格式耗时(单段耗时(layerKey, distance, label), label, layerKey, distance);
+}
+
+function 图层交通方式(layerKey) {
+  if (layerKey === 'L1') return '步行/骑乘/商队，吊厢索道，渡船，货运飞空艇，摩伽陀';
+  if (layerKey === 'L2') return '步行，军轨/海上列车，港口电梯，补给航线，寂静城升降平台';
+  if (layerKey === 'L3') return '步行，岩桥，热风甬道，血晶隧网，使者航路（少见）';
+  return '步行/骑乘';
+}
+
+function 显示路线名(label) {
+  return String(label || '').replace(/飞索/g, '吊厢索道');
+}
+
+function 相邻路线(layerKey, node) {
+  if (!node) return [];
+  const graph = 图缓存[layerKey];
+  return (graph.links[node.index] || [])
+    .map(link => ({
+      to: graph.nodes[link.to].name,
+      label: 显示路线名(link.label),
+      distance: 换算距离(layerKey, link.distance, link.label),
+      note: 行程(layerKey, link.distance, link.label)
+    }))
+    .sort((a, b) => a.distance - b.distance || a.to.localeCompare(b.to, 'zh-Hans-CN'));
+}
+
+function 最短路(layerKey, node) {
+  const graph = 图缓存[layerKey];
+  const dist = new Array(graph.nodes.length).fill(Infinity);
+  const prev = new Array(graph.nodes.length).fill(-1);
+  const done = new Array(graph.nodes.length).fill(false);
+  if (!node) return { graph, dist, prev };
+
+  dist[node.index] = 0;
+  for (let step = 0; step < graph.nodes.length; step++) {
+    let pick = -1;
+    let best = Infinity;
+    for (let i = 0; i < dist.length; i++) {
+      if (!done[i] && dist[i] < best) {
+        best = dist[i];
+        pick = i;
+      }
+    }
+    if (pick < 0) break;
+    done[pick] = true;
+    for (const link of graph.links[pick] || []) {
+      const next = dist[pick] + 换算距离(layerKey, link.distance, link.label);
+      if (next < dist[link.to]) {
+        dist[link.to] = next;
+        prev[link.to] = pick;
+      }
+    }
+  }
+  return { graph, dist, prev };
+}
+
+function 复原路径(prev, startIndex, endIndex) {
+  const path = [];
+  for (let cur = endIndex; cur >= 0; cur = prev[cur]) {
+    path.push(cur);
+    if (cur === startIndex) break;
+  }
+  if (path[path.length - 1] !== startIndex) return null;
+  return path.reverse();
+}
+
+function 是参考节点(graph, node) {
+  const degree = (graph.links[node.index] || []).length;
+  return degree >= 3 || /(城|港|市|站|营地|要塞|王都|王城|公会|广场|租界|停机坪|候车室|工人城|海港|前哨|腹地|战区|工业区|据点|台地|领|海域|航道|高岛|荒墟|峡谷|巡游带|深域|巨塔|海洋)$/u.test(node.name);
+}
+
+function 路线耗时(layerKey, graph, path) {
+  let days = 0;
+  for (let i = 0; i < path.length - 1; i++) {
+    const from = path[i];
+    const to = path[i + 1];
+    const link = (graph.links[from] || []).find(item => item.to === to);
+    if (!link) continue;
+    days += 单段耗时(layerKey, link.distance, link.label);
+  }
+  return days;
+}
+
+function 路线经由(graph, path) {
+  const names = path.slice(1, -1).map(i => graph.nodes[i].name);
+  if (!names.length) return '直达';
+  if (names.length <= 2) return names.join(' → ');
+  return names.slice(0, 2).join(' → ') + ' 等';
+}
+
+function 五入(value, step) {
+  return Math.max(step, Math.round(value / step) * step);
+}
+
+function 路程分档(candidates, layerKey) {
+  const values = candidates.map(route => route.distance).sort((a, b) => a - b);
+  if (!values.length) return null;
+  const pick = (ratio) => values[Math.max(0, Math.min(values.length - 1, Math.floor((values.length - 1) * ratio)))];
+  const fallback = layerKey === 'L2'
+    ? { near: 260, cross: 700 }
+    : layerKey === 'L3'
+      ? { near: 180, cross: 520 }
+      : { near: 180, cross: 480 };
+  const near = Math.max(fallback.near, 五入(pick(0.3) || fallback.near, 10));
+  const cross = Math.max(fallback.cross, near + 50, 五入(pick(0.65) || fallback.cross, 20));
+  return { near, cross };
+}
+
+function 路线性质(distance, bands) {
+  if (!bands) return distance <= 200 ? '近距转场' : distance <= 500 ? '跨区移动' : '长途旅行';
+  if (distance <= bands.near) return '近距转场';
+  if (distance <= bands.cross) return '跨区移动';
+  return '长途旅行';
+}
+
+function 非相邻参考(layerKey, node, limit = 4) {
+  if (!node) return { bands: null, routes: [] };
+  const graph = 图缓存[layerKey];
+  const { dist, prev } = 最短路(layerKey, node);
+  const candidates = [];
+  graph.nodes.forEach(target => {
+    if (target.index === node.index) return;
+    if (!Number.isFinite(dist[target.index]) || dist[target.index] < 15) return;
+    if (!是参考节点(graph, target)) return;
+    const path = 复原路径(prev, node.index, target.index);
+    if (!path || path.length < 3) return;
+    candidates.push({
+      name: target.name,
+      distance: dist[target.index],
+      via: 路线经由(graph, path),
+      time: 格式耗时(路线耗时(layerKey, graph, path), '', layerKey, dist[target.index]),
+      path
+    });
+  });
+
+  const sorted = candidates
+    .sort((a, b) => a.distance - b.distance || a.name.localeCompare(b.name, 'zh-Hans-CN'))
+  const bands = 路程分档(sorted, layerKey);
+  const picked = [];
+  const used = new Set();
+  for (const kind of ['近距转场', '跨区移动', '长途旅行']) {
+    const found = sorted.find((route, idx) => !used.has(idx) && 路线性质(route.distance, bands) === kind);
+    if (!found) continue;
+    const idx = sorted.indexOf(found);
+    used.add(idx);
+    picked.push({ ...found, kind });
+  }
+  for (let i = 0; i < sorted.length && picked.length < limit; i++) {
+    if (used.has(i)) continue;
+    picked.push({ ...sorted[i], kind: 路线性质(sorted[i].distance, bands) });
+    used.add(i);
+  }
+  return { bands, routes: picked.slice(0, limit) };
+}
+
+const 全部副本 = { '第一层': 表层界副本, '第二层': 中层界副本, '第三层': 深层界副本 };
+const 全部常驻 = { '第一层': 表层界常驻, '第二层': 中层界常驻, '第三层': 深层界常驻 };
+const 当前层副本 = 全部副本[当前层级] || 表层界副本;
+const 当前大区域 = 当前层副本.find(a => match(a.match));
+const 层序 = ['第一层', '第二层', '第三层'];
+const idx = 层序.indexOf(当前层级);
+const 相邻 = [层序[idx - 1], 层序[idx + 1]].filter(Boolean);
+const 候选位置 = [位置.场所 || '', 当前区域, 当前大陆].filter(Boolean);
+const 命中 = 跨层找节点(候选位置);
+const 有效图层 = 命中 ? 命中.layerKey : 偏好图层;
+const 当前节点 = 命中 ? 命中.node : null;
+const 邻接路线 = 相邻路线(有效图层, 当前节点);
+const 远程路线 = 非相邻参考(有效图层, 当前节点, 4);
+const 当前位置文本 = [当前大陆, 当前区域, 位置.场所].filter(Boolean).join(' · ') || '未知';
+_%>
+
+<map_info>
+<map_loader>
+位置：<%= 当前大陆 %> · <%= 当前区域 %><% if (位置.场所) { %> · <%= 位置.场所 %><% } %>
+节点：<% if (当前节点) { %><%= 当前节点.name %>｜<%= 层级标题[图层名(有效图层)] %><% if (有效图层 !== 偏好图层) { %>（按节点回退）<% } %><% } else { %>未命中，按当前区域挂靠最近主节点<% } %>
+交通：<%= 图层交通方式(有效图层) %>
+<%_ if (当前节点) { _%>
+相邻（<%= 邻接路线.length %>）：
+<%_ 邻接路线.forEach(route => { _%>
+- <%= route.to %>｜<%= route.distance %>km｜<%= route.note %>｜<%= route.label %>
+<%_ }); if (!邻接路线.length) { _%>
+- 无直接连线，默认原路返回或等待剧情补路。
+<%_ } _%>
+
+<%_ if (远程路线.routes.length) { _%>
+远程：
+- 分档：近距<=<%= 远程路线.bands.near %>km；跨区=<%= 远程路线.bands.near + 1 %>~<%= 远程路线.bands.cross %>km；长途><%= 远程路线.bands.cross %>km
+<%_ 远程路线.routes.forEach(route => { _%>
+- <%= route.kind %>｜<%= route.name %>｜<%= route.distance %>km｜<%= route.time %>｜经 <%= route.via %>
+<%_ }); _%>
+<%_ } _%>
+<%_ } else { _%>
+定位回退：
+- 当前位置未命中节点；先挂靠当前区域对应的主节点、营地、港口或入口。
+- 街区、楼层、室内点通常附属于最近主节点，不直接跳远。
+<%_ } _%>
+
+通道：
+<%_ if (当前层级 === '第一层') { _%>
+- 深渊入口：环渊港·崖市
+- 第二层入口：雾瀑港·飞空艇码头；天空之海·反重力海域
+<%_ } else if (当前层级 === '第二层') { _%>
+- 第一层返回：摩伽陀停机坪
+- 第三层入口：寂静城·克洛诺斯岛
+- 异次元裂隙：折隙异域各入口
+<%_ } else { _%>
+- 第二层返回：灼岩前哨
+- 使徒领地：各使徒分据板块，翠结界为中立安全区
+<%_ } _%>
+
+副本区域：<%= 层级标题[当前层级] %>
+<%_ 当前层副本.forEach(area => {
+  const isCurrent = 当前大区域 && area.name === 当前大区域.name;
+_%>
+<%= isCurrent ? '当前' : '-' %> <%= area.name %>（<%= area.level %>）
+<%_   if (isCurrent) { _%>
+  子区：
+<%_     area.sub.forEach(s => { _%>
+    - <%= s %>
+<%_     });
+  }
+}); _%>
+
+<%= 全部常驻[当前层级] %>
+
+<%_ 相邻.forEach(adjLayer => {
+  const adjAreas = 全部副本[adjLayer] || [];
+  if (adjAreas.length === 0) return;
+  const first = adjAreas[0];
+_%>
+相邻层级：<%= 层级标题[adjLayer] %>｜<%= first.name %>（<%= first.level %>）
+<%_ }); _%>
+
+约束：
+- 只能沿相邻节点逐段移动，不能乱飞。
+- 跨层必须走正式入口：表层→中层经雾瀑港/天空之海；中层→深层经寂静城；反向同理。
+- 裂隙、法阵、特殊航线若剧情未明确开放，不默认可用。
+</map_loader>
+</map_info>
+<%_
+}
+})();
+_%>

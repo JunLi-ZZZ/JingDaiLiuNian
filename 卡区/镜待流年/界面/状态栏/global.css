@@ -1,0 +1,19 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --c-primary: #2e1a47;
+  --c-secondary: #5c3d6e;
+  --c-bg: #f5f0e8;
+  --c-card: #faf7f2;
+  --c-accent: #c9a94e;
+  --c-text: #3c3c3c;
+  --c-muted: #8d8d8d;
+  --font-main: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  --sp-xs: 4px;
+  --sp-sm: 8px;
+  --sp-md: 12px;
+}

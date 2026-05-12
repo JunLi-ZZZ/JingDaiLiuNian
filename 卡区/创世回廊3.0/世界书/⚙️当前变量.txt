@@ -1,0 +1,215 @@
+<%_
+;(() => {
+const data = _.cloneDeep(getMessageVar('stat_data', { defaults: {} }));
+if (!data || !data.人物) { _%>
+<status_current_variables>
+数据为空
+</status_current_variables>
+<%_ } else {
+
+// ========== 构建只读数据 ==========
+const readonly = {};
+const safeStringify = (obj) => {
+  if (typeof YAML !== 'undefined' && YAML && typeof YAML.stringify === 'function') {
+    return YAML.stringify(obj, { blockQuote: 'literal' }).trim();
+  }
+  return JSON.stringify(obj, null, 2);
+};
+
+// 人物只读字段
+readonly.人物 = {
+  等级: data.人物.等级,
+  升级阈值: data.人物.升级阈值
+};
+
+// 技能槽缓存（供可变区复用）
+const activeSkillSlots = _.get(data, '人物.主动技能槽', {});
+const awakenSkillSlots = _.get(data, '人物.觉醒技能槽', {});
+
+// 连携奥义槽只读部分（类型、效果、描述）
+const 连携槽 = _.get(data, '人物.连携奥义槽', {});
+if (连携槽.伙伴) {
+  readonly.人物.连携奥义槽 = _.pick(连携槽, ['类型', '效果', '描述']);
+}
+
+// 武器面板（取主手武器的最终只读数值，已含泰坦之握合并）
+const 武器面板 = _.get(data, '人物.战斗属性.武器面板');
+if (武器面板) readonly.武器面板 = 武器面板;
+
+// ========== 构建可变数据 ==========
+const current = {};
+const 简详显示配置 = _.cloneDeep(_.get(data, '系统配置.简详显示', {}));
+const normalizeBriefPath = (path) => typeof path === 'string' ? path.trim() : '';
+const 简要显示路径 = new Set(
+  (_.get(简详显示配置, '简要显示路径', []) || [])
+    .map(normalizeBriefPath)
+    .filter(Boolean)
+);
+const isBriefPath = (...paths) => paths.some(path => 简要显示路径.has(normalizeBriefPath(path)));
+const 简略显示占位 = '简略显示';
+const 仓库名称列表 = [];
+const collectWarehouseName = (name) => {
+  if (typeof name !== 'string') return;
+  const trimmed = name.trim();
+  if (trimmed) 仓库名称列表.push(trimmed);
+};
+const sanitizeSkillSlotDisplay = (slots) => _.mapValues(slots || {}, (skill, key) => {
+  if (!skill || typeof skill !== 'object') return skill;
+  const nextSkill = _.cloneDeep(skill);
+  if (!nextSkill.召唤物名称) delete nextSkill.召唤物名称;
+  delete nextSkill.伤害成长值;
+  delete nextSkill.伤害倍率版本;
+  return nextSkill;
+});
+const sanitizeStatusEffectsDisplay = (statusMap) => _.mapValues(statusMap || {}, status => {
+  if (!status || typeof status !== 'object') return status;
+  const nextStatus = _.cloneDeep(status);
+  if (nextStatus.描述 && nextStatus.描述 === nextStatus.特殊影响) {
+    nextStatus.描述 = '';
+  }
+  return nextStatus;
+});
+const sanitizeEquipEntryDisplay = (item, key) => {
+  if (!item || typeof item !== 'object') return item;
+  const nextItem = _.cloneDeep(item);
+  if (typeof nextItem.装备箱 === 'boolean') {
+    delete nextItem.穿戴状态;
+    nextItem.穿戴状态 = nextItem.装备箱 === false ? '已装备' : '未装备';
+    if (nextItem.装备箱 === false) {
+      delete nextItem.标签;
+      delete nextItem.描述;
+    }
+    return {
+      穿戴状态: nextItem.穿戴状态,
+      ...nextItem
+    };
+  }
+  return nextItem;
+};
+const sanitizeEquipDisplay = (equipMap) => _.mapValues(equipMap || {}, (item, key) => (
+  sanitizeEquipEntryDisplay(item, key)
+));
+const sanitizeBondDisplay = (person) => {
+  if (!person || typeof person !== 'object') return person;
+  const copy = _.cloneDeep(person);
+  if (!_.isEmpty(copy.装备列表)) {
+    copy.装备列表 = sanitizeEquipDisplay(copy.装备列表);
+  }
+  return copy;
+};
+
+// 世界信息（全部可变）
+current.世界信息 = data.世界信息;
+
+// 任务列表
+current.任务列表 = data.任务列表;
+
+// 人物可变字段
+current.人物 = {
+  名称: data.人物.名称,
+  种族: data.人物.种族,
+  职业: data.人物.职业,
+  背景设定: data.人物.背景设定,
+  特质: data.人物.特质,
+  当前总经验: data.人物.当前总经验,
+  生命值上限: data.人物.生命值上限,
+  当前生命值: data.人物.当前生命值,
+  临时生命值: data.人物.临时生命值,
+  AC: data.人物.AC,
+  CP: data.人物.CP,
+  属性: _.omit(data.人物.属性, ['属性点'])
+};
+
+// 战斗属性（去掉只读的暴击阈值和武器面板）
+current.人物.战斗属性 = _.omit(data.人物.战斗属性, ['暴击阈值', '武器面板']);
+
+// 技能槽全量展示（不裁剪字段）
+current['人物']['主动技能槽'] = sanitizeSkillSlotDisplay(activeSkillSlots);
+current['人物']['觉醒技能槽'] = sanitizeSkillSlotDisplay(awakenSkillSlots);
+
+// 状态效果
+current.人物.状态效果 = sanitizeStatusEffectsDisplay(data.人物.状态效果);
+
+// 资源技能
+const 资源技能 = _.get(data, '人物.资源技能', {});
+if (!_.isEmpty(资源技能)) current.人物.资源技能 = 资源技能;
+
+// 道途
+current.人物.道途 = _.get(data, '人物.道途', {});
+
+// 召唤物（有才输出）
+const 召唤物 = _.get(data, '人物.召唤物', {});
+if (!_.isEmpty(召唤物)) current.人物.召唤物 = 召唤物;
+
+// 背包（可按名称切换为简略显示）
+const 背包 = _.cloneDeep(data.人物.背包 || {});
+背包.道具 = _.transform(背包.道具 || {}, (result, item, name) => {
+  if (isBriefPath(`/人物/背包/道具/${name}`)) {
+    collectWarehouseName(name);
+    return;
+  }
+  result[name] = item;
+}, {});
+current.人物.背包 = 背包;
+
+// 装备列表（去掉只读字段和品级，保留名称和标签）
+const 装备 = _.get(data, '人物.装备列表', {});
+const equipMutable = _.mapValues(装备, item => _.omit(item, ['伤害骰', '等级系数', '固定伤害', '防御力', '品级']));
+current.人物.装备列表 = _.transform(equipMutable, (result, item, key) => {
+  if (isBriefPath(
+    `/人物/装备列表/${key}`,
+    item?.名称 ? `/人物/装备列表/${item.名称}` : ''
+  )) {
+    collectWarehouseName(item?.名称 || key);
+    return;
+  }
+  result[key] = sanitizeEquipEntryDisplay(item, key);
+}, {});
+if (仓库名称列表.length > 0) current.人物.仓库 = 仓库名称列表.join('、');
+
+// 声望
+current.人物.声望 = data.人物.声望;
+
+// 附近的人（装备只保留名称和品质）
+const simplifyNearbyEquip = (person) => {
+  if (_.isEmpty(person?.装备列表)) return person;
+  const copy = _.cloneDeep(person);
+  copy.装备列表 = sanitizeEquipDisplay(_.mapValues(copy.装备列表, eq => _.pick(eq, ['名称', '品质'])));
+  return copy;
+};
+current.附近的人 = _.mapValues(data.附近的人 || {}, simplifyNearbyEquip);
+
+// 羁绊列表：不在附近的角色精简显示
+const 羁绊 = data.羁绊列表 || {};
+const heavyBondKeys = ['装备列表', '技能', '连携奥义', '属性'];
+current.羁绊列表 = _.mapValues(羁绊, (person, name) => {
+  if (isBriefPath(`/羁绊列表/${name}`)) return 简略显示占位;
+  if (person.附近) return sanitizeBondDisplay(person);
+  return _.omit(person, heavyBondKeys);
+});
+
+// 种族棋子收藏
+current.种族棋子收藏 = data.种族棋子收藏;
+
+// 传闻
+current.传闻 = data.传闻;
+
+// 核心资产
+current.核心资产 = data.核心资产 || {};
+
+// 战斗
+current.战斗 = data.战斗;
+
+_%>
+
+# 以下为支撑世界运行的变量结构，分两部分, readonly不可修改
+<user_status_readonly>
+<%= safeStringify(readonly) %>
+</user_status_readonly>
+
+#添加和修改绝对只遵照此变量路径
+<status_current_variables>
+<%= safeStringify(current) %>
+</status_current_variables>
+<%_ }
+})(); _%>

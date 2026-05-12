@@ -1,0 +1,474 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "世界": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "当前时间": {
+          "default": "",
+          "type": "string"
+        },
+        "当前地点": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "位面": {
+              "default": "",
+              "type": "string"
+            },
+            "大陆": {
+              "default": "",
+              "type": "string"
+            },
+            "城市": {
+              "default": "",
+              "type": "string"
+            },
+            "区域": {
+              "default": "",
+              "type": "string"
+            },
+            "具体位置": {
+              "default": "",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "主角": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "姓名": {
+          "default": "",
+          "type": "string"
+        },
+        "性别": {
+          "default": "",
+          "type": "string"
+        },
+        "年龄": {
+          "default": 0,
+          "type": "number"
+        },
+        "种族": {
+          "default": "",
+          "type": "string"
+        },
+        "喜好": {
+          "default": "",
+          "type": "string"
+        },
+        "厌恶": {
+          "default": "",
+          "type": "string"
+        },
+        "外貌特征": {
+          "default": "",
+          "type": "string"
+        },
+        "基础体型": {
+          "default": "",
+          "type": "string"
+        },
+        "天赋能力": {
+          "default": "",
+          "type": "string"
+        },
+        "财富": {
+          "default": 0,
+          "type": "number"
+        },
+        "境界": {
+          "default": "凡人",
+          "type": "string"
+        },
+        "所在位置": {
+          "default": "",
+          "type": "string"
+        },
+        "服装": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "上衣": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "名称": {
+                  "default": "",
+                  "type": "string"
+                },
+                "描述": {
+                  "default": "",
+                  "type": "string"
+                },
+                "状态": {
+                  "default": "",
+                  "type": "string"
+                }
+              }
+            },
+            "内衣": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "名称": {
+                  "default": "",
+                  "type": "string"
+                },
+                "描述": {
+                  "default": "",
+                  "type": "string"
+                },
+                "状态": {
+                  "default": "",
+                  "type": "string"
+                }
+              }
+            },
+            "下装": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "名称": {
+                  "default": "",
+                  "type": "string"
+                },
+                "描述": {
+                  "default": "",
+                  "type": "string"
+                },
+                "状态": {
+                  "default": "",
+                  "type": "string"
+                }
+              }
+            },
+            "内裤": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "名称": {
+                  "default": "",
+                  "type": "string"
+                },
+                "描述": {
+                  "default": "",
+                  "type": "string"
+                },
+                "状态": {
+                  "default": "",
+                  "type": "string"
+                }
+              }
+            },
+            "袜子": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "名称": {
+                  "default": "",
+                  "type": "string"
+                },
+                "描述": {
+                  "default": "",
+                  "type": "string"
+                },
+                "状态": {
+                  "default": "",
+                  "type": "string"
+                }
+              }
+            },
+            "鞋子": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "名称": {
+                  "default": "",
+                  "type": "string"
+                },
+                "描述": {
+                  "default": "",
+                  "type": "string"
+                },
+                "状态": {
+                  "default": "",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "随身物品": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "描述": {
+                "default": "",
+                "type": "string"
+              },
+              "数量": {
+                "default": 0,
+                "type": "number"
+              }
+            }
+          }
+        },
+        "人际关系": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "角色名录": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "姓名": {
+            "default": "",
+            "type": "string"
+          },
+          "性别": {
+            "default": "",
+            "type": "string"
+          },
+          "年龄": {
+            "default": 0,
+            "type": "number"
+          },
+          "来源世界": {
+            "default": "",
+            "type": "string"
+          },
+          "种族": {
+            "default": "",
+            "type": "string"
+          },
+          "喜好": {
+            "default": "",
+            "type": "string"
+          },
+          "厌恶": {
+            "default": "",
+            "type": "string"
+          },
+          "外貌特征": {
+            "default": "",
+            "type": "string"
+          },
+          "基础体型": {
+            "default": "",
+            "type": "string"
+          },
+          "天赋能力": {
+            "default": "",
+            "type": "string"
+          },
+          "财富": {
+            "default": 0,
+            "type": "number"
+          },
+          "境界": {
+            "default": "凡人",
+            "type": "string"
+          },
+          "好感度": {
+            "default": 0,
+            "type": "number"
+          },
+          "所在位置": {
+            "default": "",
+            "type": "string"
+          },
+          "服装": {
+            "default": {},
+            "type": "object",
+            "properties": {
+              "上衣": {
+                "default": {},
+                "type": "object",
+                "properties": {
+                  "名称": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "描述": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "状态": {
+                    "default": "",
+                    "type": "string"
+                  }
+                }
+              },
+              "内衣": {
+                "default": {},
+                "type": "object",
+                "properties": {
+                  "名称": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "描述": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "状态": {
+                    "default": "",
+                    "type": "string"
+                  }
+                }
+              },
+              "下装": {
+                "default": {},
+                "type": "object",
+                "properties": {
+                  "名称": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "描述": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "状态": {
+                    "default": "",
+                    "type": "string"
+                  }
+                }
+              },
+              "内裤": {
+                "default": {},
+                "type": "object",
+                "properties": {
+                  "名称": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "描述": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "状态": {
+                    "default": "",
+                    "type": "string"
+                  }
+                }
+              },
+              "袜子": {
+                "default": {},
+                "type": "object",
+                "properties": {
+                  "名称": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "描述": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "状态": {
+                    "default": "",
+                    "type": "string"
+                  }
+                }
+              },
+              "鞋子": {
+                "default": {},
+                "type": "object",
+                "properties": {
+                  "名称": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "描述": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "状态": {
+                    "default": "",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "随身物品": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "描述": {
+                  "default": "",
+                  "type": "string"
+                },
+                "数量": {
+                  "default": 0,
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "人际关系": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "nsfw档案": {
+            "default": {},
+            "type": "object",
+            "properties": {
+              "初次存在与否": {
+                "default": true,
+                "type": "boolean"
+              },
+              "性对象": {
+                "default": "",
+                "type": "string"
+              },
+              "是否怀孕": {
+                "default": false,
+                "type": "boolean"
+              },
+              "子嗣列表": {
+                "default": "",
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+```text
+<body>
+<script>
+$('body').load('https://testingcf.jsdelivr.net/gh/tangquanghuy/dnf@main/dist/V20260426/bottom-status-bar.html')
+</script>
+</body>
+```

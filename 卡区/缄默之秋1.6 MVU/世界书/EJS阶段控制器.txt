@@ -1,0 +1,48 @@
+<%_ if (typeof _phase === 'undefined') var _phase = getvar('stat_data.世界阶段', { defaults: undefined }); _%>
+<%_ if (_phase === '秩序期') { _%>
+<%- await getwi(null, '大爆发前/大爆发前夕') %>
+<%- await getwi(null, '大爆发前/规则-异常事件应对') %>
+<%- await getwi(null, '大爆发前/规则-物资获取') %>
+<%- await getwi(null, '大爆发前/规则-医疗与健康') %>
+<%- await getwi(null, '大爆发前/规则-社会秩序') %>
+<%- await getwi(null, '大爆发前/规则-冲突与应对') %>
+<%_ } else if (_phase === '爆发期' || _phase === '末世期') { _%>
+<%- await getwi(null, '世界观-官方安全区') %>
+<%- await getwi(null, '世界观-半感染者') %>
+<%- await getwi(null, '世界观-ZCOM生化特种部队(彩蛋)') %>
+<%- await getwi(null, '世界观-流浪者') %>
+<%- await getwi(null, '世界观-无序者') %>
+<%- await getwi(null, '杂项-无序者行为强化') %>
+<%- await getwi(null, '杂项-幸存者据点动态生成') %>
+<%- await getwi(null, '机制-建造庇护所') %>
+<%- await getwi(null, '物品-灭杀疫苗') %>
+<%- await getwi(null, '物品-药物') %>
+<%- await getwi(null, '机制-COVID-30感染') %>
+<%- await getwi(null, '机制-制造') %>
+<%- await getwi(null, '机制-完整度') %>
+<%- await getwi(null, '机制-战斗') %>
+<%- await getwi(null, '机制-恐慌') %>
+<%- await getwi(null, '机制-伤病与医疗') %>
+<%- await getwi(null, '杂项-搜刮结果动态生成') %>
+<%- await getwi(null, '杂项-幸存者NPC关系推进') %>
+<%- await getwi(null, '世界观-宇航员们（彩蛋）') %>
+<%- await getwi(null, '世界观-外星人(彩蛋)') %>
+<%- await getwi(null, '机制-搜刮物资') %>
+<%- await getwi(null, '机制-半感染者生存机制') %>
+<%- await getwi(null, '机制-沉浸式体验') %>
+<%- await getwi(null, '机制-种田！我要种田！') %>
+<%_ if (_phase === '末世期') { _%>
+<%- await getwi(null, '世界观-末世期') %>
+<%- await getwi(null, '世界观-COVID-30变体感染者') %>
+<%- await getwi(null, '机制-官方安全区行为') %>
+<%- await getwi(null, '机制-痛啊好痛啊！') %>
+<%- await getwi(null, '机制-死亡') %>
+<%_ } _%>
+<%_ } else { _%>
+<%- await getwi(null, '大爆发前/大爆发前夕') %>
+<%- await getwi(null, '大爆发前/规则-异常事件应对') %>
+<%- await getwi(null, '大爆发前/规则-物资获取') %>
+<%- await getwi(null, '大爆发前/规则-医疗与健康') %>
+<%- await getwi(null, '大爆发前/规则-社会秩序') %>
+<%- await getwi(null, '大爆发前/规则-冲突与应对') %>
+<%_ } _%>

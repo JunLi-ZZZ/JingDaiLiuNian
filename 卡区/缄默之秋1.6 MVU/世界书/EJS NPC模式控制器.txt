@@ -1,0 +1,13 @@
+<%_ if (typeof _phase === 'undefined') var _phase = getvar('stat_data.世界阶段', { defaults: undefined }); _%>
+<%_ if (typeof _NPC行为模式 === 'undefined') var _NPC行为模式 = getvar('stat_data.NPC行为模式', { defaults: undefined }); _%>
+<%_ if (_NPC行为模式 === '正常型') { _%>
+<%_   if (_phase === '爆发期' || _phase === '末世期') { _%>
+<%- await getwi(null, '杂项-NPC动态生成') %>
+<%- await getwi(null, '杂项-末世社交互动法则') %>
+<%_   } _%>
+<%_ } else if (_NPC行为模式 === '全员恶人型') { _%>
+<%_   if (_phase === '爆发期' || _phase === '末世期') { _%>
+<%- await getwi(null, '恶意的NPC生成') %>
+<%- await getwi(null, '恶意社交法则') %>
+<%_   } _%>
+<%_ } _%>

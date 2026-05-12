@@ -1,0 +1,10 @@
+<%_ var _nat = getvar('stat_data.衍生状态.nationality', { defaults: undefined }); _%>
+<%_ if (_nat === '华国') { _%>
+<%- await getwi(null, '华国已定义NPC摘要') %>
+<%_ } else if (_nat === '美利坚国') { _%>
+<%- await getwi(null, '美利坚国已定义NPC摘要') %>
+<%_ } else if (_nat === '日本国') { _%>
+<%- await getwi(null, '日本国已定义NPC摘要') %>
+<%_ } else { _%>
+<%_ /* 空值/未定义时的处理 */ _%>
+<%_ } _%>

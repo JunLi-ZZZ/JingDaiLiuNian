@@ -1,0 +1,31 @@
+<%_ if (typeof _phase === 'undefined') var _phase = getvar('stat_data.世界阶段', { defaults: undefined }); _%>
+<%_ if (typeof _感染者行为模式 === 'undefined') var _感染者行为模式 = getvar('stat_data.感染者行为模式', { defaults: undefined }); _%>
+<%_ if (_感染者行为模式 === '狂病型') { _%>
+<%- await getwi(null, '世界观-COVID-30感染者行为总纲') %>
+<%- await getwi(null, '杂项-合理性审查') %>
+<%- await getwi(null, '杂项-场景强化(可选)') %>
+<%_   if (_phase === '爆发期') { _%>
+<%- await getwi(null, '世界观-爆发期') %>
+<%_   } _%>
+<%_   if (_phase === '爆发期' || _phase === '末世期') { _%>
+<%- await getwi(null, '机制-动态威胁与安逸惩罚') %>
+<%_   } _%>
+<%_   if (_phase === '末世期') { _%>
+<%- await getwi(null, '杂项-感染者遭遇动态生成') %>
+<%_   } _%>
+<%_ } else if (_感染者行为模式 === '普通型') { _%>
+<%- await getwi(null, '普通丧尸COVID-30感染者') %>
+<%- await getwi(null, '普通审查') %>
+<%- await getwi(null, '普通场景强化(可选)') %>
+<%_   if (_phase === '爆发期') { _%>
+<%- await getwi(null, '普通爆发期') %>
+<%_   } _%>
+<%_   if (_phase === '爆发期' || _phase === '末世期') { _%>
+<%- await getwi(null, '普通感染者多样性') %>
+<%- await getwi(null, '普通-机制-丧尸尸潮') %>
+<%- await getwi(null, '普通的动态威胁与安逸惩罚') %>
+<%_   } _%>
+<%_   if (_phase === '末世期') { _%>
+<%- await getwi(null, '普通感染者遭遇') %>
+<%_   } _%>
+<%_ } _%>

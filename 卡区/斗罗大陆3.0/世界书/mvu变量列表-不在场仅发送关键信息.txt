@@ -1,0 +1,107 @@
+<status_current_variable>
+<%_
+(function() {
+  var statData = getvar('stat_data');
+  if (!statData) {
+    print('{}');
+    return;
+  }
+
+  var modifiedData = JSON.parse(JSON.stringify(statData));
+
+  /* 获取当前场景类型用于判断是否精简在场NPC武魂 */
+  var sceneType = '';
+  if (modifiedData.世界状态 && modifiedData.世界状态.当前场景类型) {
+    sceneType = modifiedData.世界状态.当前场景类型;
+  }
+  var isCombatScene = (sceneType === '战斗' || sceneType === '猎魂' || sceneType === '比赛' || sceneType === '考核');
+
+  if (modifiedData.NPC列表 && typeof modifiedData.NPC列表 === 'object') {
+    var npcList = modifiedData.NPC列表;
+
+    for (var name in npcList) {
+      if (Object.hasOwnProperty.call(npcList, name)) {
+        var npc = npcList[name];
+        if (!npc || !npc.基础信息) continue;
+
+        var isPresent = npc.基础信息.是否在场 === true;
+
+        if (!isPresent) {
+          /* ===== 不在场NPC处理 ===== */
+
+          /* 1. 隐藏私密档案（保留怀孕状态） */
+          if (npc.私密档案) {
+            var isPregnant = false;
+            if (npc.私密档案.生理状态 &&
+                npc.私密档案.生理状态.怀孕状态 &&
+                npc.私密档案.生理状态.怀孕状态 !== '未怀孕') {
+              isPregnant = true;
+            }
+            if (isPregnant) {
+              var shenliState = npc.私密档案.生理状态;
+              npc.私密档案 = { 生理状态: shenliState };
+            } else {
+              delete npc.私密档案;
+            }
+          }
+
+          /* 2. 简化武魂信息（只保留武魂名称） */
+          if (npc.武魂信息 && typeof npc.武魂信息 === 'object') {
+            var simplifiedWuhun = {};
+            for (var wuhunName in npc.武魂信息) {
+              if (Object.hasOwnProperty.call(npc.武魂信息, wuhunName)) {
+                simplifiedWuhun[wuhunName] = {};
+              }
+            }
+            npc.武魂信息 = simplifiedWuhun;
+          }
+
+          /* 3. 简化神位信息（只保留神级等级） */
+          if (npc.神位信息 && typeof npc.神位信息 === 'object') {
+            npc.神位信息 = { 神级等级: npc.神位信息.神级等级 || '无' };
+          }
+
+          /* 4. 简化魂兽信息（只保留化形状态） */
+          if (npc.魂兽信息 && typeof npc.魂兽信息 === 'object') {
+            npc.魂兽信息 = { 化形状态: npc.魂兽信息.化形状态 || '不适用' };
+          }
+
+          /* 5. 清空当前动作（不在场不需要动作描述） */
+          npc.基础信息.当前动作 = '';
+
+        } else {
+          /* ===== 在场NPC处理 ===== */
+
+          /* 非战斗场景下，精简在场NPC的武魂信息（去掉年限和来源魂兽，减少token） */
+          if (!isCombatScene && npc.武魂信息 && typeof npc.武魂信息 === 'object') {
+            for (var wn in npc.武魂信息) {
+              if (!Object.hasOwnProperty.call(npc.武魂信息, wn)) continue;
+              var wd = npc.武魂信息[wn];
+              if (wd.魂环 && typeof wd.魂环 === 'object') {
+                for (var rk in wd.魂环) {
+                  if (!Object.hasOwnProperty.call(wd.魂环, rk)) continue;
+                  var rd = wd.魂环[rk];
+                  /* 保留颜色和魂技，去掉年限和来源魂兽 */
+                  delete rd.年限;
+                  delete rd.来源魂兽;
+                  /* 魂技只保留名称，去掉描述 */
+                  if (rd.魂技 && typeof rd.魂技 === 'object') {
+                    for (var sk in rd.魂技) {
+                      if (Object.hasOwnProperty.call(rd.魂技, sk)) {
+                        rd.魂技[sk] = {};
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  print(JSON.stringify(modifiedData, null, 2));
+})();
+_%>
+</status_current_variable>

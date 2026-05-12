@@ -1,0 +1,21 @@
+<骰子池>
+取骰规则:
+  - 所有检定的骰子数值必须直接取用 Pool，由左至右顺序消耗，禁止随机生成或乱序取用
+  - 每次直接从最左第一颗骰子开始取用，不要考虑前文
+  - 不同面数的骰子各自独立消耗，不可混用
+  - 骰子数值不可修改、重投或干预，失败就是失败
+  - 何时需要掷骰判定参考 DND 5E，以目标属性和事件难度合理定义，必须合理而无情地判断 DC，不得迁就玩家
+  - 日常生活不要过于频繁的检定
+
+Pool:
+  属性行动用D20（同DND规则）: 
+    D20: [{{roll:1d20}}, {{roll:1d20}}, {{roll:1d20}}, {{roll:1d20}}, {{roll:1d20}}, {{roll:1d20}}, {{roll:1d20}}, {{roll:1d20}}, {{roll:1d20}}, {{roll:1d20}}]
+  伤害骰用D4~D12:
+    D12: [{{roll:1d12}}, {{roll:1d12}}, {{roll:1d12}}, {{roll:1d12}}, {{roll:1d12}}, {{roll:1d12}}, {{roll:1d12}}, {{roll:1d12}}, {{roll:1d12}}, {{roll:1d12}}, {{roll:1d12}}, {{roll:1d12}}, {{roll:1d12}}, {{roll:1d12}}, {{roll:1d12}}, {{roll:1d12}}, {{roll:1d12}}, {{roll:1d12}}, {{roll:1d12}}, {{roll:1d12}}]
+    D10: [{{roll:1d10}}, {{roll:1d10}}, {{roll:1d10}}, {{roll:1d10}}, {{roll:1d10}}, {{roll:1d10}}, {{roll:1d10}}, {{roll:1d10}}, {{roll:1d10}}, {{roll:1d10}},{{roll:1d10}}, {{roll:1d10}}, {{roll:1d10}}, {{roll:1d10}}, {{roll:1d10}}, {{roll:1d10}}, {{roll:1d10}}, {{roll:1d10}}, {{roll:1d10}}, {{roll:1d10}}]
+    D8:  [{{roll:1d8}}, {{roll:1d8}}, {{roll:1d8}}, {{roll:1d8}}, {{roll:1d8}}, {{roll:1d8}}, {{roll:1d8}}, {{roll:1d8}}, {{roll:1d8}}, {{roll:1d8}},{{roll:1d8}}, {{roll:1d8}}, {{roll:1d8}}, {{roll:1d8}}, {{roll:1d8}}, {{roll:1d8}}, {{roll:1d8}}, {{roll:1d8}}, {{roll:1d8}}, {{roll:1d8}}]
+    D6:  [{{roll:1d6}}, {{roll:1d6}}, {{roll:1d6}}, {{roll:1d6}}, {{roll:1d6}}, {{roll:1d6}}, {{roll:1d6}}, {{roll:1d6}}, {{roll:1d6}}, {{roll:1d6}},{{roll:1d6}}, {{roll:1d6}}, {{roll:1d6}}, {{roll:1d6}}, {{roll:1d6}}, {{roll:1d6}}, {{roll:1d6}}, {{roll:1d6}}, {{roll:1d6}}, {{roll:1d6}}]
+    D4:  [{{roll:1d4}}, {{roll:1d4}}, {{roll:1d4}}, {{roll:1d4}}, {{roll:1d4}}, {{roll:1d4}}, {{roll:1d4}}, {{roll:1d4}}, {{roll:1d4}}, {{roll:1d4}}]
+    战利品用D100:
+        D100: [{{roll:1d100}}, {{roll:1d100}}, {{roll:1d100}}, {{roll:1d100}},{{roll:1d100}}]
+</骰子池>

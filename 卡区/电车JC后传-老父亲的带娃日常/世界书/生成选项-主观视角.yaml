@@ -1,0 +1,73 @@
+<%_ { _%>
+在每次回复的结尾，你需要根据当前情景，提供多个可供{{user}}选择的选项，每个选项40～50token，严格遵循以下规则和格式，
+1.选项必须清晰明确简要
+2.必须结合当下的情景,人物的性格,价值观,禁止情绪过激和强烈转折的选项
+3.给每个选项填充具体可以合理接续当前剧情的内容
+4.必须符合正常的作息条件和时间观
+5.‘非全知性’,必须局限在当前视角的第一人称
+6.‘不可预知’性,仅提供选项,选择后会发生什么完全是未知的
+7.选项的语言必须极度朴素，概括性，不带修辞
+8.选项的数量与示例的数量相同
+9.必须遵守以下格式：
+<%_
+const timeSkipOptions = [
+    "衔接剧情,合理地度过少量时间",
+    "衔接剧情,合理地度过适量时间",
+    "衔接剧情,合理地度过大量时间",
+    "衔接剧情,合理地将注意力转移到某项日常事务上",
+    "衔接剧情,合理脱离当前情景,转向一个人独处的场景",
+    "衔接剧情,合理将情景过渡到与某人的独处",
+    "衔接剧情,合理将情景过渡到与多人的共同相处"
+];
+
+const plotAdvanceOptions = [
+    "不引入新的变量,衔接上一段剧情",
+    "不引入新的变量,角色的某个行动使剧情有了新的进展",
+    "不引入新的变量,角色的某个行动使现状得以维持",
+    "不引入新的变量,剧情因为角色的某个选择出现的转折",
+    "引入新的变量,角色将面临小小的危机",
+    "引入新的变量,将打破僵持的现状",
+    "引入新的变量,使得现状得以继续维持",
+];
+
+const proactiveActionOptions = [
+    "合理衔接上一段剧情,角色做出符合价值观的行动",
+    "合理衔接上一段剧情,因为某个原因或想法,角色做出稍微不符合其价值观的行动",
+    "合理衔接上一段剧情,因为某个原因或想法,角色做出大胆的,打破现状的行动",
+    "合理衔接上一段剧情,角色做出一个灵机一动的行动",
+    "合理衔接上一段剧情,角色做出一个异想天开的行动",
+    "合理衔接上一段剧情,角色做出一个怪诞不经的行动",
+    "合理衔接上一段剧情,角色做出一个抽象搞笑的行动",
+    "合理衔接上一段剧情,角色尝试以对话解决问题",
+    "合理衔接上一段剧情,角色尝试以实际行动解决问题",
+    "合理衔接上一段剧情,角色暂时放弃解决当前问题"
+];
+
+const specialActionOptions = [
+    "（切换视角）将视角聚焦到另一位角色身上"
+];
+
+// 从每个选项池中随机选择2个选项
+const getRandomOptions = (pool, count) => {
+    const selected = [];
+    const tempPool = [...pool];
+    for(let i = 0; i < count && tempPool.length > 0; i++) {
+        const randomIndex = Math.floor(Math.random() * tempPool.length);
+        selected.push(tempPool.splice(randomIndex, 1)[0]);
+    }
+    return selected;
+};
+
+const timeSelections = getRandomOptions(timeSkipOptions, 2);
+const plotSelections = getRandomOptions(plotAdvanceOptions, 2);
+const actionSelections = getRandomOptions(proactiveActionOptions, 1);
+const specialSelections = getRandomOptions(specialActionOptions, 1);
+
+const allSelections = [...timeSelections, ...plotSelections, ...actionSelections, ...specialSelections];
+_%>
+<options>
+<%_ allSelections.forEach(option => { _%>
+<op><%= option %></op>
+<%_ }); _%>
+</options>
+<%_ } _%>

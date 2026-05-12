@@ -1,0 +1,228 @@
+<cat987 /> 
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>开场白</title>
+  <style>
+    /* 基础样式 */
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: #fff0f5;
+      color: #8e003e;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffe4f1;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(142, 0, 62, .18);
+      padding: 36px 32px;
+    }
+
+    /* 页签样式 */
+    .tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      border-bottom: 2px solid #ffc2e0;
+      padding-bottom: 8px;
+    }
+
+    .tab {
+      padding: 8px 16px;
+      background: #ffc2e0;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      transition: all .25s;
+      font-weight: 500;
+      border: 1px solid transparent;
+    }
+
+    .tab:hover {
+      background: #ffa6d0;
+      border-color: #d63384;
+    }
+
+    .tab.active {
+      background: #d63384;
+      color: white;
+      border-color: #8e003e;
+    }
+
+    /* 内容区域 */
+    .content {
+      display: none;
+    }
+
+    .content.active {
+      display: block;
+    }
+
+    /* 第一页样式 */
+    .preface-section {
+      margin-bottom: 24px;
+      padding: 16px 20px;
+      background: #ffc2e0;
+      border-radius: 10px;
+      font-size: .95em;
+      color: #8e003e;
+      border-left: 4px solid #d63384;
+    }
+
+    .swipe-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .swipe-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: #ffc2e0;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background .25s, transform .15s;
+      user-select: none;
+      border: 1px solid transparent;
+    }
+
+    .swipe-item:hover {
+      background: #ffa6d0;
+      border-color: #d63384;
+    }
+
+    .swipe-item:active {
+      transform: scale(.98);
+    }
+
+    .swipe-text {
+      font-size: 1em;
+      letter-spacing: .2px;
+      color: #6d002e;
+    }
+
+    .swipe-arrow {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: #6d002e;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: transform .25s;
+    }
+
+    .swipe-item:hover .swipe-arrow {
+      transform: translateX(6px);
+      stroke: #4a001f;
+      stroke-width: 2.5;
+    }
+
+    /* 第二页文字内容样式 */
+    .text-content {
+      line-height: 1.8;
+      color: #6d002e;
+      padding: 20px;
+      background: #ffc2e0;
+      border-radius: 10px;
+      border: 1px solid #d63384;
+    }
+
+    .text-content h2 {
+      color: #8e003e;
+      margin-top: 0;
+      border-bottom: 2px solid #d63384;
+      padding-bottom: 8px;
+    }
+
+    .text-content p {
+      margin-bottom: 16px;
+      text-indent: 2em;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- 页签导航 -->
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('page1')">开场白</div>
+      <div class="tab" onclick="switchTab('page2')">关于本卡</div>
+      <div class="tab" onclick="switchTab('page3')">关于作者</div>
+    </div>
+
+    <!-- 第一页内容 -->
+    <div id="page1" class="content active">
+      <div class="preface-section"> 感谢你游玩本卡！点击即可选择开场白 </div>
+      <div class="swipe-list" id="swipeList">
+        <div class="swipe-item" data-id="1">
+          <span class="swipe-text">（老父亲开局）和女儿们在一起的温馨日常</span>
+          <svg class="swipe-arrow" viewBox="0 0 24 24" width="20" height="20">
+            <path d="M5 12h14m-7-7l7 7-7 7"
+                  fill="none" stroke="#8e003e" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </div>
+
+        <div class="swipe-item" data-id="2">
+          <span class="swipe-text">（厨圣开局）你在让你的女儿干什么呀魂淡！</span>
+          <svg class="swipe-arrow" viewBox="0 0 24 24" width="20" height="20">
+            <path d="M5 12h14m-7-7l7 7-7 7"
+                  fill="none" stroke="#8e003e" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </div>
+      </div>
+    </div>
+    <!-- 第二页内容 -->
+    <div id="page2" class="content">
+      <div class="text-content">
+        <h2>关于该角色卡</h2>
+        <p>上一张1011卡应该是我花费精力最多的一张卡，算是了结了自己的一个小小心愿</p>
+        <p>这次心血来潮想写一个当老父亲的后续，所以就有了这张卡！</p>
+        <p>主要玩法就是带娃，以及和可爱的老婆们涩涩（对女儿们下手哒咩！）</p>
+        <p>也可以切换到小孩的视角，看看她们平时在学校里的生活</p>
+      </div>
+    </div>
+    <!-- 第三页内容 -->
+    <div id="page3" class="content">
+      <div class="text-content">
+        <h2>关于作者 - 【老父亲】cat987</h2>
+        <p>祝你玩得开心！</p>
+        <img class="image" src="https://gitgud.io/mouse789/JCwithFriendsX3/-/raw/master/SFW/白石䌷/围裙做饭7.png" alt="SFW/白石䌷/围裙做饭7.png" />
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 页签切换功能
+    function switchTab(pageId) {
+      // 移除所有活动状态
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.content').forEach(content => content.classList.remove('active'));
+      
+      // 添加新的活动状态
+      event.target.classList.add('active');
+      document.getElementById(pageId).classList.add('active');
+    }
+
+    // 保持原有的点击事件
+    document.querySelectorAll('.swipe-item').forEach(item => {
+      item.addEventListener('click', async () => {
+        const id = item.dataset.id;
+        const text = item.querySelector('.swipe-text').textContent;
+        await setChatMessages([{ message_id: 0, swipe_id: Number(id) }], { refresh: 'all' });
+      });
+    });
+  </script>
+</body>
+</html>
+```

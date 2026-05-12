@@ -1,0 +1,15 @@
+<div class="options-container">
+$1
+</div>
+<style>
+.options-container {
+  margin: 12px 0;
+  padding: 10px;
+  background: #f8f5f0;
+  border-left: 3px solid #c9a94e;
+  font-family: 'Microsoft YaHei', sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: #3c3c3c;
+}
+</style>

@@ -1,0 +1,591 @@
+---
+<%_
+const __woende_map_loader_data = _.cloneDeep(getMessageVar('stat_data', { defaults: {} }));
+const __woende_map_loader_hide = _.get(__woende_map_loader_data, '战斗.是否战斗中', false) === true;
+if (!__woende_map_loader_hide) {
+try {
+const data = __woende_map_loader_data;
+const 位置 = _.get(data, '世界信息.位置', {});
+const 当前大陆 = 位置.大陆 || '';
+const 当前区域 = 位置.区域 || '';
+const 当前场所 = 位置.场所 || '';
+
+// ═══ 地图静态资料（外置） ═══
+const __map_data = await (async () => {
+  const log = (msg) => { try { console.log(`[沃恩德地图加载] ${msg}`); } catch (_) {} };
+  const raw = String(
+    await getWorldInfo('地图静态资料 - 沃恩德')
+    || await getWorldInfo('地图静态资料 - 沃恩德.js')
+    || ''
+  );
+  if (!raw.trim()) {
+    log('世界书条目 地图静态资料 - 沃恩德 / 地图静态资料 - 沃恩德.js 不存在或为空');
+    return {};
+  }
+  try {
+    const factory = new Function(`${raw}
+; return typeof MAP_JSON_DATA !== 'undefined' ? MAP_JSON_DATA : {};`);
+    return factory() || {};
+  } catch (e) {
+    log('解析沃恩德地图静态资料失败: ' + (e && e.message ? e.message : e));
+    return {};
+  }
+})();
+
+const mapData = __map_data.mapData || { title: '沃恩德大陆地图', nodes: [], edges: [] };
+const loaderData = __map_data.loaderData || {};
+const 区域分组 = Array.isArray(loaderData.regionGroups) ? loaderData.regionGroups : [];
+const 世界概览 = Array.isArray(loaderData.worldOverview) ? loaderData.worldOverview : [];
+const 关键入口 = Array.isArray(loaderData.keyEntrances) ? loaderData.keyEntrances : [];
+const keepTypes = new Set(Array.isArray(loaderData.keepTypes) && loaderData.keepTypes.length
+  ? loaderData.keepTypes
+  : ['ocean', 'temple', 'mountain', 'forest', 'plains', 'wilderness', 'lake', 'city', 'town', 'village', 'castle', 'tower', 'dungeon', 'port', 'camp', 'desert', 'cemetery', 'ruins', 'portal']);
+const rawNodes = (mapData.nodes || []).filter(node => node && keepTypes.has(node.type) && !/^(faction_|kingdom_)/.test(String(node.id || '')));
+const idToRawNode = Object.fromEntries(rawNodes.map(node => [node.id, node]));
+
+function 归一化(text) {
+  return String(text || '')
+    .replace(/[\s_]+/g, '')
+    .replace(/[.．・‧]/g, '·')
+    .replace(/[()（）【】\[\]「」『』]/g, '')
+    .toLowerCase();
+}
+
+function 拆分别名(name) {
+  const source = String(name || '');
+  const parts = source
+    .split(/[·・‧_()（）【】\[\]「」『』\/]/)
+    .map(s => s.trim())
+    .filter(Boolean);
+  const aliases = [source, ...parts];
+  const stripped = source.replace(/\([^)]*\)/g, '').replace(/（[^）]*）/g, '').trim();
+  if (stripped && stripped !== source) aliases.push(stripped);
+  return _.uniq(aliases.filter(s => s.length >= 2));
+}
+
+function 裁剪地名尾缀(text) {
+  const source = String(text || '').trim();
+  if (!source) return [];
+
+  const patterns = [
+    /(边境|边界|地区|地带|一带|附近|周边|沿岸|近郊|郊外)$/u,
+    /(村庄|村)$/u
+  ];
+  const result = [];
+  const seen = new Set([归一化(source)]);
+  let current = source;
+
+  while (current) {
+    let changed = false;
+    for (const pattern of patterns) {
+      const next = current.replace(pattern, '').trim();
+      const norm = 归一化(next);
+      if (!next || next === current || norm.length < 2 || seen.has(norm)) continue;
+      seen.add(norm);
+      result.push(next);
+      current = next;
+      changed = true;
+      break;
+    }
+    if (!changed) break;
+  }
+
+  return result;
+}
+
+function 展开文本候选(texts) {
+  const result = [];
+  const seen = new Set();
+  const push = (value) => {
+    const text = String(value || '').trim();
+    if (!text) return;
+    const key = 归一化(text);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    result.push(text);
+  };
+
+  texts.filter(Boolean).forEach(raw => {
+    const source = String(raw || '').trim();
+    if (!source) return;
+    push(source);
+
+    const parts = source
+      .split(/[·・‧／/｜|,，、;；\-—]/)
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    if (parts.length > 1) {
+      parts.slice().reverse().forEach(part => {
+        push(part);
+        裁剪地名尾缀(part).forEach(push);
+      });
+    }
+
+    裁剪地名尾缀(source).forEach(push);
+  });
+
+  return result;
+}
+
+function 提取末级地点候选(texts) {
+  const result = [];
+  const seen = new Set();
+  const push = (value) => {
+    const text = String(value || '').trim();
+    if (!text) return;
+    const key = 归一化(text);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    result.push(text);
+  };
+
+  texts.filter(Boolean).forEach(raw => {
+    const source = String(raw || '').trim();
+    if (!source) return;
+
+    const parts = source
+      .split(/[·・‧\-—－]/)
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    if (parts.length < 2) return;
+
+    const last = parts[parts.length - 1];
+    push(last);
+    裁剪地名尾缀(last).forEach(push);
+  });
+
+  return result;
+}
+
+function 默认路线名(fromNode, toNode) {
+  if (!fromNode || !toNode) return '连通路线';
+  if (fromNode.type === 'portal' || toNode.type === 'portal') return '界门通道';
+  if (fromNode.type === 'cemetery' || toNode.type === 'cemetery') return '冥界通道';
+  if (['ocean', 'port'].includes(fromNode.type) || ['ocean', 'port'].includes(toNode.type)) return '海路';
+  if (fromNode.type === 'lake' || toNode.type === 'lake') return '水路';
+  if (['mountain', 'forest', 'wilderness', 'desert'].includes(fromNode.type) || ['mountain', 'forest', 'wilderness', 'desert'].includes(toNode.type)) return '山路';
+  if (fromNode.type === 'castle' || toNode.type === 'castle') return '要塞通道';
+  return '陆路';
+}
+
+function 原始边长(fromNode, toNode) {
+  const dx = Number(fromNode.x || 0) - Number(toNode.x || 0);
+  const dy = Number(fromNode.y || 0) - Number(toNode.y || 0);
+  return Math.hypot(dx, dy);
+}
+
+const nodes = rawNodes.map((node, index) => ({
+  ...node,
+  index,
+  aliases: _.uniq([node.name, ...拆分别名(node.name)])
+}));
+const indexById = Object.fromEntries(nodes.map(node => [node.id, node.index]));
+const graphLinks = nodes.map(() => []);
+
+(mapData.edges || []).forEach((edge, edgeIndex) => {
+  const fromNode = idToRawNode[edge.source];
+  const toNode = idToRawNode[edge.target];
+  if (!fromNode || !toNode) return;
+  const from = indexById[fromNode.id];
+  const to = indexById[toNode.id];
+  if (!Number.isInteger(from) || !Number.isInteger(to)) return;
+  const label = String(edge.label || edge.type || '').trim() || 默认路线名(fromNode, toNode);
+  const rawDistance = 原始边长(fromNode, toNode);
+  const link = { edgeIndex, from, to, label, rawDistance };
+  graphLinks[from].push(link);
+  graphLinks[to].push({ edgeIndex, from: to, to: from, label, rawDistance });
+});
+
+const 图 = { nodes, links: graphLinks };
+
+function 找节点(texts) {
+  const arr = [...提取末级地点候选(texts), ...展开文本候选(texts)];
+  if (!arr.length) return null;
+
+  for (const raw of arr) {
+    const norm = 归一化(raw);
+    for (const node of 图.nodes) {
+      if (node.aliases.some(alias => 归一化(alias) === norm)) return node;
+    }
+  }
+
+  for (const raw of arr) {
+    const norm = 归一化(raw);
+    if (!norm || norm.length < 2) continue;
+    for (const node of 图.nodes) {
+      if (node.aliases.some(alias => {
+        const n = 归一化(alias);
+        return n.includes(norm) || norm.includes(n);
+      })) return node;
+    }
+  }
+
+  return null;
+}
+
+function 找区域簇(texts) {
+  const arr = 展开文本候选(texts);
+  for (const raw of arr) {
+    const norm = 归一化(raw);
+    const exact = 区域分组.find(group => group.places.some(place => 归一化(place) === norm));
+    if (exact) return exact;
+  }
+
+  for (const raw of arr) {
+    const norm = 归一化(raw);
+    if (!norm || norm.length < 2) continue;
+    const fuzzy = 区域分组.find(group => group.places.some(place => {
+      const p = 归一化(place);
+      return p.includes(norm) || norm.includes(p);
+    }));
+    if (fuzzy) return fuzzy;
+  }
+
+  return null;
+}
+
+function 是水域节点(node) {
+  return ['ocean', 'port', 'lake'].includes(node.type);
+}
+
+function 是崎岖节点(node) {
+  return ['mountain', 'forest', 'wilderness', 'desert', 'dungeon', 'ruins', 'cemetery'].includes(node.type);
+}
+
+function 交通参数(label, fromNode, toNode, rawDistance) {
+  const text = String(label || '');
+  if (/投影|界门|终焉|虚空|入口|秘境|连通/.test(text) && (fromNode.type === 'portal' || toNode.type === 'portal' || /投影/.test(text))) {
+    return { mode: '界门', speed: Infinity, scale: 0 };
+  }
+  if (/浮空|空中|航路/.test(text)) return { mode: '浮空航行', speed: 260, scale: 1.05 };
+  if (/海|港|航道|航运|出海|海路|冰海/.test(text) || (是水域节点(fromNode) && 是水域节点(toNode) && (fromNode.type === 'ocean' || toNode.type === 'ocean'))) {
+    return { mode: '海船', speed: 180, scale: 0.9 };
+  }
+  if (/河|湖|渡口|水路|沿岸|入海口|暗河/.test(text) || (是水域节点(fromNode) && 是水域节点(toNode))) {
+    return { mode: '水路', speed: 120, scale: 0.75 };
+  }
+  if (/大道|官道|直道|走廊|高原通道|王室直道/.test(text)) return { mode: '骑乘', speed: 90, scale: 0.85 };
+  if (/防线|山道|山路|丘陵|小径|秘径|边境|巡逻|冰原|荒原|矿道|下行|上行|深入|深渊/.test(text) || 是崎岖节点(fromNode) || 是崎岖节点(toNode)) {
+    return { mode: rawDistance >= 260 ? '长途跋涉' : '徒步', speed: rawDistance >= 260 ? 50 : 60, scale: 0.7 };
+  }
+  return { mode: '陆路', speed: 80, scale: 0.8 };
+}
+
+function 换算距离(link) {
+  const fromNode = 图.nodes[link.from];
+  const toNode = 图.nodes[link.to];
+  const { scale } = 交通参数(link.label, fromNode, toNode, link.rawDistance);
+  if (scale === 0) return 0;
+  return Math.max(25, Math.round((link.rawDistance * scale) / 5) * 5);
+}
+
+function 格式耗时(km, mode, speed) {
+  if (speed === Infinity) return `${mode}瞬达`;
+  if (!Number.isFinite(km) || km <= 0) return `${mode}耗时未知`;
+  const days = km / speed;
+  if (days <= 0.25) return `${mode}约半日`;
+  if (days <= 0.75) return `${mode}约1日内`;
+  if (days <= 1.25) return `${mode}约1日`;
+  const lo = Math.max(1, Math.floor(days));
+  const hi = Math.max(lo, Math.ceil(days));
+  return lo === hi ? `${mode}约${lo}日` : `${mode}约${lo}~${hi}日`;
+}
+
+function 行程(link) {
+  const fromNode = 图.nodes[link.from];
+  const toNode = 图.nodes[link.to];
+  const km = 换算距离(link);
+  const { mode, speed } = 交通参数(link.label, fromNode, toNode, link.rawDistance);
+  return 格式耗时(km, mode, speed);
+}
+
+function 全图交通方式() {
+  return '官道/山路/水路/海航/浮空航路/地下入口/冥界通道/元素投影';
+}
+
+function 节点简述(node) {
+  if (!node) return '未知地点';
+  return String(node.brief || `${node.tier || node.type || '未知区域'}节点`);
+}
+
+function 相邻路线(node) {
+  if (!node) return [];
+  return (图.links[node.index] || [])
+    .map(link => ({
+      to: 图.nodes[link.to].name,
+      label: link.label,
+      distance: 换算距离(link),
+      note: 行程(link)
+    }))
+    .sort((a, b) => a.distance - b.distance || a.to.localeCompare(b.to, 'zh-Hans-CN'));
+}
+
+function 相邻节点简述(node, limit = 8) {
+  if (!node) return [];
+  return (图.links[node.index] || [])
+    .map(link => ({
+      node: 图.nodes[link.to],
+      via: link.label,
+      distance: 换算距离(link)
+    }))
+    .sort((a, b) => a.distance - b.distance || a.node.name.localeCompare(b.node.name, 'zh-Hans-CN'))
+    .slice(0, limit)
+    .map(item => ({
+      name: item.node.name,
+      brief: 节点简述(item.node),
+      via: item.via,
+      distance: item.distance
+    }));
+}
+
+function 次邻节点简述(node, limit = 10) {
+  if (!node) return [];
+  const firstHop = 图.links[node.index] || [];
+  const firstSet = new Set(firstHop.map(link => link.to));
+  const secondMap = new Map();
+
+  firstHop.forEach(link1 => {
+    const midNode = 图.nodes[link1.to];
+    (图.links[link1.to] || []).forEach(link2 => {
+      if (link2.to === node.index) return;
+      if (firstSet.has(link2.to)) return;
+      const total = 换算距离(link1) + 换算距离(link2);
+      const old = secondMap.get(link2.to);
+      if (!old || total < old.distance) {
+        secondMap.set(link2.to, {
+          name: 图.nodes[link2.to].name,
+          brief: 节点简述(图.nodes[link2.to]),
+          via: midNode.name,
+          distance: total
+        });
+      }
+    });
+  });
+
+  return [...secondMap.values()]
+    .sort((a, b) => a.distance - b.distance || a.name.localeCompare(b.name, 'zh-Hans-CN'))
+    .slice(0, limit);
+}
+
+function 最短路(startNode) {
+  const dist = new Array(图.nodes.length).fill(Infinity);
+  const prev = new Array(图.nodes.length).fill(-1);
+  const done = new Array(图.nodes.length).fill(false);
+  if (!startNode) return { dist, prev };
+
+  dist[startNode.index] = 0;
+  for (let step = 0; step < 图.nodes.length; step++) {
+    let pick = -1;
+    let best = Infinity;
+    for (let i = 0; i < dist.length; i++) {
+      if (!done[i] && dist[i] < best) {
+        best = dist[i];
+        pick = i;
+      }
+    }
+    if (pick < 0) break;
+    done[pick] = true;
+    for (const link of 图.links[pick] || []) {
+      const next = dist[pick] + 换算距离(link);
+      if (next < dist[link.to]) {
+        dist[link.to] = next;
+        prev[link.to] = pick;
+      }
+    }
+  }
+  return { dist, prev };
+}
+
+function 复原路径(prev, startIndex, endIndex) {
+  const path = [];
+  for (let cur = endIndex; cur >= 0; cur = prev[cur]) {
+    path.push(cur);
+    if (cur === startIndex) break;
+  }
+  if (path[path.length - 1] !== startIndex) return null;
+  return path.reverse();
+}
+
+function 是参考节点(node) {
+  const degree = (图.links[node.index] || []).length;
+  return degree >= 3 || ['city', 'castle', 'port', 'town', 'camp', 'temple', 'portal', 'cemetery'].includes(node.type) || /(城|港|要塞|王城|圣殿|王国|帝国|高原|山脉|海|冥界|世界|秘境)$/u.test(node.name);
+}
+
+function 路线经由(path) {
+  const names = path.slice(1, -1).map(index => 图.nodes[index].name);
+  if (!names.length) return '直达';
+  if (names.length <= 2) return names.join(' → ');
+  return names.slice(0, 2).join(' → ') + ' 等';
+}
+
+function 路线耗时(path) {
+  let total = 0;
+  let mode = '陆路';
+  let speed = 80;
+  for (let i = 0; i < path.length - 1; i++) {
+    const from = path[i];
+    const to = path[i + 1];
+    const link = (图.links[from] || []).find(item => item.to === to);
+    if (!link) continue;
+    total += 换算距离(link);
+    const params = 交通参数(link.label, 图.nodes[link.from], 图.nodes[link.to], link.rawDistance);
+    mode = params.mode;
+    speed = params.speed;
+  }
+  return 格式耗时(total, mode, speed);
+}
+
+function 五入(value, step) {
+  return Math.max(step, Math.round(value / step) * step);
+}
+
+function 路程分档(candidates) {
+  const values = candidates.map(route => route.distance).sort((a, b) => a - b);
+  if (!values.length) return null;
+  const pick = (ratio) => values[Math.max(0, Math.min(values.length - 1, Math.floor((values.length - 1) * ratio)))];
+  const near = Math.max(180, 五入(pick(0.3) || 180, 10));
+  const cross = Math.max(520, near + 60, 五入(pick(0.65) || 520, 20));
+  return { near, cross };
+}
+
+function 路线性质(distance, bands) {
+  if (!bands) return distance <= 200 ? '近距转场' : distance <= 520 ? '跨区移动' : '远程旅行';
+  if (distance <= bands.near) return '近距转场';
+  if (distance <= bands.cross) return '跨区移动';
+  return '远程旅行';
+}
+
+function 远程参考(node, limit = 4) {
+  if (!node) return { bands: null, routes: [] };
+  const { dist, prev } = 最短路(node);
+  const candidates = [];
+
+  图.nodes.forEach(target => {
+    if (target.index === node.index) return;
+    if (!Number.isFinite(dist[target.index]) || dist[target.index] < 60) return;
+    if (!是参考节点(target)) return;
+    const path = 复原路径(prev, node.index, target.index);
+    if (!path || path.length < 3) return;
+    candidates.push({
+      name: target.name,
+      distance: dist[target.index],
+      via: 路线经由(path),
+      time: 路线耗时(path)
+    });
+  });
+
+  const sorted = candidates.sort((a, b) => a.distance - b.distance || a.name.localeCompare(b.name, 'zh-Hans-CN'));
+  const bands = 路程分档(sorted);
+  const picked = [];
+  const used = new Set();
+
+  for (const kind of ['近距转场', '跨区移动', '远程旅行']) {
+    const idx = sorted.findIndex((route, routeIndex) => !used.has(routeIndex) && 路线性质(route.distance, bands) === kind);
+    if (idx < 0) continue;
+    used.add(idx);
+    picked.push({ ...sorted[idx], kind });
+  }
+  for (let i = 0; i < sorted.length && picked.length < limit; i++) {
+    if (used.has(i)) continue;
+    used.add(i);
+    picked.push({ ...sorted[i], kind: 路线性质(sorted[i].distance, bands) });
+  }
+
+  return { bands, routes: picked.slice(0, limit) };
+}
+
+const 文本候选 = [当前场所, 当前区域, 当前大陆].filter(Boolean);
+const 区域候选 = 展开文本候选(文本候选);
+const 当前区域簇 = 找区域簇(文本候选);
+const 节点输入 = [
+  当前场所,
+  当前区域,
+  当前大陆,
+  当前区域簇 ? 当前区域簇.anchor : '',
+  当前区域簇 ? 当前区域簇.name : ''
+].filter(Boolean);
+const 节点末级候选 = 提取末级地点候选(节点输入);
+const 节点候选 = [...节点末级候选, ...展开文本候选(节点输入)];
+const 当前节点 = 找节点(节点输入);
+const 邻接路线 = 相邻路线(当前节点);
+const 邻接简述 = 相邻节点简述(当前节点, 8);
+const 次邻简述 = 次邻节点简述(当前节点, 10);
+const 远程路线 = 远程参考(当前节点, 4);
+_%>
+
+<map_info>
+<map_loader>
+位置：<%= [当前大陆, 当前区域, 当前场所].filter(Boolean).join(' · ') || '未知' %>
+节点：<% if (当前节点) { %><%= 当前节点.name %><% if (当前区域簇) { %>｜<%= 当前区域簇.name %><% } %><% } else { %>未命中，按当前位置挂靠最近锚点失败<% } %>
+交通：<%= 全图交通方式() %>
+<%_ if (当前节点) { _%>
+相邻（<%= 邻接路线.length %>）：
+<%_ 邻接路线.forEach(route => { _%>
+- <%= route.to %>｜<%= route.distance %>km｜<%= route.note %>｜<%= route.label %>
+<%_ }); if (!邻接路线.length) { _%>
+- 当前节点没有显式连线，默认只能原路返回或等待剧情补路。
+<%_ } _%>
+
+周边概览：
+<%_ if (邻接简述.length) { _%>
+相邻简述：
+<%_ 邻接简述.forEach(item => { _%>
+- <%= item.name %> — <%= item.brief %>
+<%_ }); _%>
+<%_ } else { _%>
+相邻简述：
+- 无
+<%_ } _%>
+<%_ if (次邻简述.length) { _%>
+次邻简述：
+<%_ 次邻简述.forEach(item => { _%>
+- <%= item.name %> — <%= item.brief %>（经 <%= item.via %>）
+<%_ }); _%>
+<%_ } else { _%>
+次邻简述：
+- 无
+<%_ } _%>
+
+<%_ if (远程路线.routes.length) { _%>
+远程：
+- 分档：近距<=<%= 远程路线.bands.near %>km；跨区=<%= 远程路线.bands.near + 1 %>~<%= 远程路线.bands.cross %>km；远程><%= 远程路线.bands.cross %>km
+<%_ 远程路线.routes.forEach(route => { _%>
+- <%= route.kind %>｜<%= route.name %>｜<%= route.distance %>km｜<%= route.time %>｜经 <%= route.via %>
+<%_ }); _%>
+<%_ } _%>
+<%_ } else { _%>
+定位回退：
+- 当前位置未命中物理节点；优先补充“场所”，其次使用国家、城镇、港口、要塞、圣殿、入口等正式地名。
+- 若输入不是正式地名，通常不会命中。
+<%_ } _%>
+
+区域簇：<% if (当前区域簇) { %><%= 当前区域簇.name %>（<%= 当前区域簇.summary %>）<% } else { %>未命中，按节点信息输出<% } %>
+<%_ if (当前区域簇) { _%>
+- 默认锚点：<%= 当前区域簇.anchor %>
+- 地名：<%= 当前区域簇.places.slice(0, 8).join('｜') %><% if (当前区域簇.places.length > 8) { %> 等<% } %>
+<%_ } _%>
+
+世界概览：
+<%_ 世界概览.forEach(line => { _%>
+- <%= line %>
+<%_ }); _%>
+
+关键入口：
+<%_ 关键入口.forEach(line => { _%>
+- <%= line %>
+<%_ }); _%>
+
+约束：
+- 只能沿相邻节点逐段移动，不能乱飞。
+</map_loader>
+</map_info>
+<%_
+} catch (e) {
+  try {
+    console.log(`[沃恩德地图加载] 执行失败: ${e && e.stack ? e.stack : e}`);
+  } catch (_) {}
+}
+}
+_%>

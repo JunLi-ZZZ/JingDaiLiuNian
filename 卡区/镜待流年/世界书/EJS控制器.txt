@@ -1,0 +1,13 @@
+<%_
+if (typeof _init === 'undefined') var _init = getvar('_init_done', { defaults: false, scope: 'local' });
+if (_init) {
+_%>
+<%- await getwi('mvu_update_变量更新规则_日常') %>
+<%
+} else {
+  setvar('_init_done', true, { scope: 'local' });
+_%>
+<%- await getwi('mvu_update_变量更新规则_首次') %>
+<%
+}
+_%>

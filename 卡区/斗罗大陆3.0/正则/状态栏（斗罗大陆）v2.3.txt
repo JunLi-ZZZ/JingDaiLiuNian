@@ -1,0 +1,1272 @@
+```html
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro","PingFang SC","Microsoft YaHei",sans-serif;background:transparent;color:#0f1d35;-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.55}
+
+:root{
+  --bg:#eef2f8;--card:#ffffff;--t1:#0f1d35;--t2:#4a5978;--t3:#8896ab;
+  --acc:#1e3a8a;--acc-s:#e8effc;--acc-g:rgba(30,58,138,.1);
+  --acc-l:#2563eb;
+  --gold:#a67c00;--gold-s:#fdf6e3;--gold-g:rgba(166,124,0,.1);
+  --gold-l:#c9a227;
+  --border:#c8d3e3;--border-s:#e8eef6;--input:#edf1f7;
+  --r:16px;--r-s:12px;--r-xs:8px;
+  --neg:#dc2626;--neg-s:#fef2f2;
+  --green:#047857;--green-s:#ecfdf5;
+  --purple:#6d28d9;--purple-s:#f3f0ff;
+  --pink:#be185d;--pink-s:#fdf2f8;
+  --ease:cubic-bezier(.25,.1,.25,1);
+  --bounce:cubic-bezier(.34,1.56,.64,1);
+  --shadow:0 2px 8px rgba(15,29,53,.07),0 8px 28px rgba(15,29,53,.05);
+  --shadow-h:0 4px 16px rgba(15,29,53,.1),0 16px 40px rgba(15,29,53,.07);
+  --grad:linear-gradient(135deg,#1e3a8a 0%,#2563eb 50%,#a67c00 100%);
+  --grad-subtle:linear-gradient(135deg,rgba(30,58,138,.06),rgba(166,124,0,.06));
+}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes barGrow{from{width:0}}
+@keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes ringRotate{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+@keyframes ringBreath{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes coreBreath{0%,100%{box-shadow:0 0 6px var(--acc-g)}50%{box-shadow:0 0 16px var(--acc-g)}}
+
+.sp{max-width:660px;margin:0 auto;background:var(--card);border-radius:22px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;animation:fadeUp .5s var(--ease) both}
+
+.sp-hd{display:flex;align-items:center;gap:12px;padding:16px 20px;cursor:pointer;user-select:none;transition:background .2s;background:var(--grad-subtle)}
+.sp-hd:hover{background:linear-gradient(135deg,rgba(30,58,138,.1),rgba(166,124,0,.1))}
+.sp-hd-ico{width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:var(--grad);border-radius:var(--r-s);flex-shrink:0;box-shadow:0 2px 8px rgba(30,58,138,.25)}
+.sp-hd-ico svg{width:20px;height:20px;color:#fff}
+.sp-hd-txt{flex:1}
+.sp-hd h1{font-size:18px;font-weight:800;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.3;letter-spacing:.5px}
+.sp-hd p{font-size:10px;color:var(--t3);margin-top:2px}
+.sp-hd-btns{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.hd-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1.5px solid var(--border);background:var(--card);color:var(--t2);cursor:pointer;transition:all .2s}
+.hd-btn:hover{border-color:var(--acc);color:var(--acc);background:var(--acc-s);box-shadow:0 2px 8px var(--acc-g)}
+.hd-btn svg{width:15px;height:15px}
+.chev{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1.5px solid var(--border);background:var(--card);color:var(--t2);cursor:pointer;transition:all .2s}
+.chev:hover{border-color:var(--acc);color:var(--acc)}
+.chev svg{width:15px;height:15px}
+.chev.shut svg{transform:rotate(-90deg);transition:transform .3s var(--ease)}
+.chev:not(.shut) svg{transition:transform .3s var(--ease)}
+
+.coll{display:grid;grid-template-rows:1fr;transition:grid-template-rows .35s var(--ease)}
+.coll.shut{grid-template-rows:0fr}
+.coll-in{overflow:hidden}
+
+.tab-nav{display:flex;border-bottom:2px solid var(--border-s);overflow-x:auto;scrollbar-width:none;background:var(--card)}
+.tab-nav::-webkit-scrollbar{display:none}
+.tab-btn{flex:1;padding:12px 6px;font-size:12px;font-weight:700;color:var(--t3);background:none;border:none;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:inherit;text-align:center;min-width:0;letter-spacing:.3px}
+.tab-btn.active{color:var(--acc);border-bottom-color:var(--acc-l)}
+.tab-btn:hover{color:var(--t1)}
+
+.tab-body{width:100%;aspect-ratio:4/4.5;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.tab-body::-webkit-scrollbar{width:4px}
+.tab-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.tab-pane{display:none;padding:16px}
+.tab-pane.active{display:block;animation:fadeUp .3s var(--ease) both}
+
+.cd{background:var(--card);border-radius:var(--r);border:1px solid var(--border);padding:16px;margin-bottom:12px;position:relative;overflow:visible;transition:box-shadow .25s;animation:cardIn .4s var(--ease) both}
+.cd::before{content:'';position:absolute;top:0;left:14px;right:14px;height:3px;background:var(--grad);border-radius:0 0 2px 2px}
+.cd:hover{box-shadow:var(--shadow-h)}
+.cd-title{font-size:12px;font-weight:800;color:var(--t2);margin-bottom:10px;letter-spacing:.4px;display:flex;align-items:center;gap:6px;text-transform:uppercase}
+.cd-title svg{width:14px;height:14px;color:var(--acc)}
+
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.grid.c3{grid-template-columns:repeat(3,1fr)}
+.grid.c1{grid-template-columns:1fr}
+.chip{display:flex;align-items:flex-start;gap:6px;padding:8px 11px;background:var(--input);border:1.5px solid transparent;border-radius:var(--r-xs);min-width:0;transition:all .2s;cursor:default}
+.chip svg{width:13px;height:13px;color:var(--acc);flex-shrink:0;margin-top:2px}
+.chip-v{font-size:12px;color:var(--t1);line-height:1.45;word-break:break-word}
+.chip.ed{cursor:pointer}
+.chip.ed:hover{border-color:var(--acc);background:var(--acc-s);transform:translateY(-1px);box-shadow:0 2px 6px var(--acc-g)}
+
+.chip.coin-g{background:linear-gradient(135deg,#fef9e7,#fdf3cd);border-color:#e6d08a}
+.chip.coin-g svg{color:#8b6914}
+.chip.coin-s{background:linear-gradient(135deg,#f1f5f9,#e2e8f0);border-color:#c8d3e3}
+.chip.coin-s svg{color:#64748b}
+.chip.coin-c{background:linear-gradient(135deg,#fdf4ef,#fce8d8);border-color:#e6c9a8}
+.chip.coin-c svg{color:#92400e}
+
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.tag{display:inline-block;padding:4px 10px;border-radius:14px;font-size:11px;font-weight:600;letter-spacing:.2px;transition:all .2s}
+.tag:hover{transform:translateY(-1px)}
+.tag-acc{color:var(--acc);background:var(--acc-s)}
+.tag-gold{color:var(--gold);background:var(--gold-s)}
+.tag-green{color:var(--green);background:var(--green-s)}
+.tag-purple{color:var(--purple);background:var(--purple-s)}
+.tag-pink{color:var(--pink);background:var(--pink-s)}
+.tag.cl{cursor:pointer}
+
+.wtags{display:flex;flex-wrap:wrap;gap:6px}
+.wtag{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:var(--input);border:1.5px solid transparent;border-radius:20px;font-size:12px;color:var(--t1);font-weight:500;transition:all .2s;white-space:nowrap}
+.wtag svg{width:12px;height:12px;color:var(--acc);flex-shrink:0}
+.wtag.ed{cursor:pointer}
+.wtag.ed:hover{border-color:var(--acc);background:var(--acc-s);transform:translateY(-1px);box-shadow:0 2px 6px var(--acc-g)}
+
+.desc{font-size:12px;color:var(--t1);line-height:1.55;padding:8px 12px;background:var(--input);border-radius:var(--r-xs);border-left:3px solid var(--acc);margin-top:8px;word-break:break-word}
+.desc.beast{border-left-color:var(--green)}
+
+.bar{margin-bottom:8px}
+.bar:last-child{margin-bottom:0}
+.bar-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.bar-lb{font-size:12px;font-weight:700;color:var(--t1)}
+.bar-num{font-size:11px;color:var(--t2);font-variant-numeric:tabular-nums;font-weight:600}
+.bar-tk{width:100%;height:8px;background:var(--input);border-radius:4px;overflow:hidden;border:1px solid var(--border-s)}
+.bar-fl{height:100%;border-radius:3px;transition:width .5s var(--ease);animation:barGrow .6s var(--ease) both;position:relative;overflow:hidden}
+.bar-fl::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);background-size:200% 100%;animation:shimmer 3s linear infinite}
+.g-lv{background:linear-gradient(90deg,#f59e0b,#ef4444)}
+.g-mp{background:linear-gradient(90deg,#38bdf8,#1e3a8a)}
+.g-fav{background:linear-gradient(90deg,#fb7185,#be185d)}
+.g-trust{background:linear-gradient(90deg,#fbbf24,#a67c00)}
+.g-close{background:linear-gradient(90deg,#a78bfa,#6d28d9)}
+.g-neg{background:linear-gradient(90deg,#f87171,#dc2626)}
+.bar.ed{cursor:pointer;border-radius:var(--r-xs);padding:4px 6px;margin-left:-6px;margin-right:-6px;transition:all .2s}
+.bar.ed:hover{background:var(--acc-s)}
+
+.rel-tk{width:100%;height:8px;background:var(--input);border-radius:4px;position:relative;border:1px solid var(--border-s)}
+.rel-zero{position:absolute;left:33.33%;top:-2px;bottom:-2px;width:2px;background:var(--t3);z-index:2;opacity:.4;border-radius:1px}
+.rel-fl{position:absolute;top:0;bottom:0;border-radius:3px;transition:all .5s var(--ease);overflow:hidden}
+.rel-fl::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);background-size:200% 100%;animation:shimmer 3s linear infinite}
+
+.row{display:flex;justify-content:space-between;align-items:baseline;padding:5px 3px;border-bottom:1px solid var(--border-s)}
+.row:last-child{border-bottom:none}
+.row-k{font-size:12px;color:var(--t2);flex-shrink:0;margin-right:10px}
+.row-v{font-size:12px;color:var(--t1);text-align:right;word-break:break-word;max-width:65%;line-height:1.45;font-weight:500}
+.row.ed{cursor:pointer;border-radius:var(--r-xs);transition:all .2s}
+.row.ed:hover{background:var(--acc-s);padding-left:6px;padding-right:6px}
+
+.ring-lb{font-size:11px;font-weight:800;color:var(--t2);margin-bottom:10px;letter-spacing:.3px}
+.ring-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px 4px;justify-items:center}
+.soul-ring{width:48px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transition:transform .25s}
+.soul-ring:hover{transform:translateY(-3px)}
+.soul-ring.empty{cursor:default;opacity:.25}
+.soul-ring.empty:hover{transform:none}
+.ring-wp{position:relative;width:42px;height:42px}
+.ring-halo{position:absolute;top:-3px;left:-3px;right:-3px;bottom:-3px;border-radius:50%;opacity:0;transition:opacity .3s}
+.soul-ring:not(.empty) .ring-halo{opacity:1}
+.ring-c{width:42px;height:42px;border-radius:50%;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;transition:all .3s;position:relative;z-index:1}
+.ring-n{font-size:11px;font-weight:800;color:var(--t3)}
+.ring-lb2{font-size:9px;color:var(--t3);text-align:center}
+
+.rw .ring-c{border:2.5px solid #94a3b8;border-style:solid;animation:ringBreath 3s ease-in-out infinite}
+.rw .ring-n{color:#64748b}
+.rw .ring-halo{border:1.5px solid rgba(148,163,184,.15);border-radius:50%;animation:ringRotate 14s linear infinite}
+.ry .ring-c{border:2.5px solid #a67c00;animation:ringBreath 3s ease-in-out infinite;box-shadow:0 0 8px rgba(166,124,0,.25)}
+.ry .ring-n{color:#8b6914}
+.ry .ring-halo{border:1.5px solid rgba(166,124,0,.15);border-radius:50%;animation:ringRotate 12s linear infinite}
+.rp .ring-c{border:3px solid #6d28d9;animation:ringBreath 3s ease-in-out infinite;box-shadow:0 0 10px rgba(109,40,217,.25)}
+.rp .ring-n{color:#5b21b6}
+.rp .ring-halo{border:1.5px solid rgba(109,40,217,.15);border-radius:50%;animation:ringRotate 10s linear infinite}
+.rb .ring-c{border:3px solid #1e293b;animation:ringBreath 3s ease-in-out infinite;box-shadow:0 0 8px rgba(0,0,0,.2)}
+.rb .ring-n{color:#0f172a}
+.rb .ring-halo{border:1.5px solid rgba(0,0,0,.1);border-radius:50%;animation:ringRotate 8s linear infinite}
+.rr .ring-c{border:3.5px solid #dc2626;animation:ringBreath 2.5s ease-in-out infinite;box-shadow:0 0 14px rgba(220,38,38,.3)}
+.rr .ring-n{color:#b91c1c}
+.rr .ring-halo{border:2px solid rgba(220,38,38,.15);border-radius:50%;animation:ringRotate 5s linear infinite}
+.rg .ring-c{border:3.5px solid #a67c00;animation:ringBreath 2.5s ease-in-out infinite;box-shadow:0 0 18px rgba(166,124,0,.35)}
+.rg .ring-n{color:#8b6914}
+.rg .ring-halo{border:2px solid rgba(166,124,0,.2);border-radius:50%;animation:ringRotate 4s linear infinite}
+.rog .ring-c{border:3.5px solid #ea580c;animation:ringBreath 2.5s ease-in-out infinite;box-shadow:0 0 16px rgba(234,88,12,.3)}
+.rog .ring-n{color:#c2410c}
+.rog .ring-halo{border:2px solid rgba(234,88,12,.15);border-radius:50%;animation:ringRotate 4.5s linear infinite}
+
+.bone-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.bone-slot{display:flex;flex-direction:column;align-items:center;padding:12px 6px 10px;background:var(--input);border-radius:var(--r-s);border:2px dashed var(--border);cursor:default;transition:all .25s;min-height:64px}
+.bone-slot.got{border-style:solid;border-color:var(--acc);background:linear-gradient(135deg,var(--acc-s),var(--card));cursor:pointer;box-shadow:0 2px 8px var(--acc-g)}
+.bone-slot.got:hover{box-shadow:0 4px 16px var(--acc-g);transform:translateY(-2px)}
+.bone-slot svg{width:22px;height:22px;color:var(--t3);margin-bottom:4px}
+.bone-slot.got svg{color:var(--acc)}
+.bone-slot .bn{font-size:10px;color:var(--t2);font-weight:700;letter-spacing:.2px}
+.bone-slot .bs{font-size:9px;color:var(--acc);margin-top:2px;text-align:center;line-height:1.25;word-break:break-word;font-weight:500}
+
+.core-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.core-slot{display:flex;flex-direction:column;align-items:center;padding:12px 6px 10px;background:var(--input);border-radius:var(--r-s);border:2px dashed var(--border);cursor:default;transition:all .25s;min-height:68px}
+.core-slot.got{border-style:solid;border-color:var(--acc);background:linear-gradient(135deg,var(--acc-s),var(--card));cursor:pointer;animation:coreBreath 4s ease-in-out infinite;box-shadow:0 2px 8px var(--acc-g)}
+.core-slot.got:hover{transform:translateY(-2px)}
+.core-orb{width:32px;height:32px;border-radius:50%;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;margin-bottom:4px}
+.core-slot.got .core-orb{border-style:solid;border-color:var(--acc);background:var(--acc-s);box-shadow:0 0 8px var(--acc-g)}
+.core-orb svg{width:14px;height:14px;color:var(--t3)}
+.core-slot.got .core-orb svg{color:var(--acc)}
+.core-nm{font-size:10px;color:var(--t2);font-weight:700}
+.core-attr{font-size:9px;color:var(--acc);margin-top:2px;font-weight:600}
+.core-way{font-size:8px;color:var(--gold);margin-top:1px;font-weight:600}
+
+.npc-tags{display:flex;flex-wrap:wrap;gap:6px}
+.npc-tag{padding:6px 13px;background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-s);font-size:12px;font-weight:600;color:var(--t1);cursor:pointer;transition:all .2s;user-select:none;display:inline-flex;align-items:center;gap:5px}
+.npc-tag:hover{border-color:var(--acc);background:var(--acc-s);transform:translateY(-2px);box-shadow:var(--shadow)}
+.npc-tag .nt{font-size:11px}
+.npc-tag.female .nt{color:var(--pink)}
+.npc-tag.male .nt{color:var(--acc-l)}
+.npc-tag.beast .nt{color:var(--green)}
+.npc-tag.beast:hover{border-color:var(--green);background:var(--green-s)}
+.npc-tag.fusion-tag{border-color:var(--gold);background:var(--gold-s)}
+.npc-tag.fusion-tag:hover{border-color:var(--gold-l);background:linear-gradient(135deg,#fdf6e3,#fef3cd);box-shadow:0 2px 8px var(--gold-g)}
+.npc-tag.fusion-tag .nt{color:var(--gold)}
+.npc-empty{font-size:12px;color:var(--t3);padding:10px 6px;text-align:center}
+
+.item-group{margin-bottom:10px}
+.item-group:last-child{margin-bottom:0}
+.item-group-lb{font-size:11px;font-weight:800;color:var(--t2);margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.item-tags{display:flex;flex-wrap:wrap;gap:6px}
+.item-tag{padding:6px 12px;background:var(--input);border:1.5px solid var(--border);border-radius:var(--r-s);font-size:12px;font-weight:500;color:var(--t1);cursor:pointer;transition:all .2s;user-select:none;display:inline-flex;align-items:center;gap:5px}
+.item-tag:hover{border-color:var(--acc);background:var(--acc-s);transform:translateY(-1px)}
+.item-tag .iq{font-size:10px;color:var(--gold);font-weight:800}
+
+.divider{height:1px;background:var(--border);margin:12px 0}
+
+.md-bg{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,29,53,.4);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .25s}
+.md-bg.open{opacity:1;pointer-events:auto}
+.md-box{width:100%;max-width:520px;max-height:90%;background:var(--card);border:1px solid var(--border);border-radius:22px;box-shadow:0 16px 48px rgba(15,29,53,.2);display:flex;flex-direction:column;transform:scale(.92) translateY(10px);transition:transform .3s var(--bounce);overflow:hidden;position:relative}
+.md-box::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--grad);border-radius:22px 22px 0 0;z-index:1}
+.md-bg.open .md-box{transform:scale(1) translateY(0)}
+.md-hd{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 10px;flex-shrink:0}
+.md-nm{font-size:16px;font-weight:800;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.md-x{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--border);background:var(--input);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--t2);transition:all .2s}
+.md-x:hover{border-color:var(--neg);color:var(--neg);transform:rotate(90deg)}
+.md-x svg{width:12px;height:12px}
+.md-tabs{display:flex;gap:0;padding:0 20px;flex-shrink:0;border-bottom:2px solid var(--border-s);overflow-x:auto;scrollbar-width:none}
+.md-tabs::-webkit-scrollbar{display:none}
+.md-tabs:empty{display:none;border:none;padding:0}
+.mtab{padding:10px 14px;font-size:12px;font-weight:700;color:var(--t3);background:none;border:none;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:inherit}
+.mtab.active{color:var(--acc);border-bottom-color:var(--acc-l)}
+.md-scroll{overflow-y:auto;flex:1;min-height:0;scrollbar-width:thin;transition:opacity .15s}
+.md-scroll::-webkit-scrollbar{width:3px}
+.md-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.md-ct{padding:14px 20px 20px}
+.mpane{display:none}
+.mpane.active{display:block;animation:fadeUp .2s var(--ease) both}
+.md-divider{height:1px;background:var(--border);margin:10px 0}
+.md-field{margin-bottom:10px}
+.md-field:last-child{margin-bottom:0}
+.md-field-lb{font-size:10px;font-weight:800;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.md-field-v{font-size:13px;color:var(--t1);line-height:1.55;word-break:break-word}
+.md-quote{padding:10px 14px;background:var(--input);border-radius:var(--r-xs);border-left:3px solid var(--acc);font-size:13px;color:var(--t1);line-height:1.55;word-break:break-word;font-style:italic}
+.md-quote.ed{cursor:pointer;transition:all .2s}
+.md-quote.ed:hover{background:var(--acc-s);border-left-color:var(--gold)}
+.btn-del{display:inline-flex;align-items:center;gap:4px;padding:6px 14px;margin-top:12px;font-size:12px;font-weight:700;color:var(--neg);background:var(--neg-s);border:1.5px solid rgba(220,38,38,.2);border-radius:var(--r-xs);cursor:pointer;transition:all .2s;font-family:inherit}
+.btn-del:hover{background:rgba(220,38,38,.12);border-color:rgba(220,38,38,.4)}
+.btn-del svg{width:13px;height:13px}
+
+.ed-input{width:100%;padding:10px 14px;font-size:14px;color:var(--t1);background:var(--input);border:2px solid transparent;border-radius:var(--r-xs);outline:none;transition:all .2s;font-family:inherit}
+.ed-input:focus{border-color:var(--acc-l);background:var(--card);box-shadow:0 0 0 4px var(--acc-g)}
+.ed-save{padding:10px 22px;font-size:13px;font-weight:700;color:#fff;background:var(--grad);border:none;border-radius:var(--r-xs);cursor:pointer;transition:all .2s;font-family:inherit}
+.ed-save:hover{transform:translateY(-1px);box-shadow:0 4px 16px var(--acc-g)}
+
+.fusion-detail{padding:12px;background:var(--input);border-radius:var(--r-s);border:1.5px solid var(--border);margin-bottom:10px}
+.fusion-detail:last-child{margin-bottom:0}
+.fusion-name{font-size:14px;font-weight:800;color:var(--t1);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.fusion-name::before{content:'⚡';font-size:14px}
+.fusion-pair{font-size:11px;color:var(--acc);font-weight:700;margin-bottom:6px;padding:4px 8px;background:var(--acc-s);border-radius:var(--r-xs);display:inline-block}
+.fusion-desc{font-size:12px;color:var(--t1);line-height:1.55;padding:8px 10px;background:var(--card);border-radius:var(--r-xs);border-left:3px solid var(--gold)}
+
+.npc-wuhun-item{padding:10px;background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-s);margin-bottom:10px}
+.npc-wuhun-item:last-child{margin-bottom:0}
+.npc-wuhun-title{font-size:14px;font-weight:800;color:var(--t1);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.npc-wuhun-title svg{width:16px;height:16px;color:var(--acc)}
+.npc-skill-row{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border-s)}
+.npc-skill-item{margin-bottom:6px}
+.npc-skill-item:last-child{margin-bottom:0}
+.npc-skill-lb{font-size:11px;font-weight:700;color:var(--acc);margin-bottom:2px}
+
+/* === 时间线弹窗 === */
+.tl-chapter{margin-bottom:16px}
+.tl-chapter-title{font-size:13px;font-weight:800;color:var(--acc);padding:8px 12px;background:var(--acc-s);border-radius:var(--r-xs);margin-bottom:8px;cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between}
+.tl-chapter-title:hover{background:linear-gradient(135deg,var(--acc-s),rgba(30,58,138,.15))}
+.tl-chapter-title .tl-chev{font-size:10px;transition:transform .2s}
+.tl-chapter.collapsed .tl-events{display:none}
+.tl-chapter.collapsed .tl-chev{transform:rotate(-90deg)}
+.tl-events{padding:0 4px}
+.tl-event{font-size:11px;color:var(--t1);line-height:1.6;padding:4px 8px;border-left:2px solid var(--border);margin-left:8px;margin-bottom:2px;word-break:break-word}
+.tl-event:hover{border-left-color:var(--acc);background:var(--acc-g);border-radius:0 var(--r-xs) var(--r-xs) 0}
+
+/* === 快捷选择 === */
+.qs-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;padding:8px;background:var(--input);border-radius:var(--r-xs);border:1px solid var(--border-s)}
+.qs-btn{padding:5px 12px;font-size:11px;font-weight:600;color:var(--t2);background:var(--card);border:1.5px solid var(--border);border-radius:16px;cursor:pointer;transition:all .2s;font-family:inherit;white-space:nowrap}
+.qs-btn:hover{border-color:var(--acc);color:var(--acc);background:var(--acc-s);transform:translateY(-1px)}
+.qs-btn.current{border-color:var(--gold);color:var(--gold);background:var(--gold-s);font-weight:800}
+.qs-lb{font-size:10px;font-weight:800;color:var(--t3);margin-bottom:4px;letter-spacing:.3px}
+
+/* === 魂灵卡片 === */
+.spirit-item{padding:10px;background:var(--input);border:1.5px solid var(--border);border-radius:var(--r-s);margin-bottom:8px}
+.spirit-item:last-child{margin-bottom:0}
+.spirit-name{font-size:13px;font-weight:800;color:var(--t1);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.spirit-name::before{content:'🔮';font-size:12px}
+
+@media(max-width:480px){
+  .sp{border-radius:16px}
+  .sp-hd{padding:14px 16px}
+  .sp-hd h1{font-size:16px}
+  .sp-hd-ico{width:38px;height:38px}
+  .tab-btn{font-size:11px;padding:10px 4px}
+  .tab-body{aspect-ratio:3/5}
+  .tab-pane{padding:14px}
+  .ring-row{gap:6px 3px}
+  .ring-wp{width:38px;height:38px}
+  .ring-c{width:38px;height:38px}
+  .bone-grid{gap:6px}
+  .cd{padding:14px}
+}
+@media(min-width:481px) and (max-width:768px){
+  .tab-body{aspect-ratio:4/5}
+}
+</style>
+
+<script type="module">
+var IC={
+  zap:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+  clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+  mapPin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+  star:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+  book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+  leaf:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 0 0 8 20c5 0 9.27-3.11 11-8"/><path d="M17 8c1.33-2.18 2-4.55 2-7 0 0-3.82.82-7 3"/></svg>',
+  crown:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20L19 9l-5 5-2-7-2 7-5-5z"/></svg>',
+  sparkle:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>',
+  flag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>',
+  sword:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M16 16l4 4"/><path d="M19 21l2-2"/></svg>',
+  shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+  coin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6.5" stroke-dasharray="3 2"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/></svg>',
+  bag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>',
+  ring:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>',
+  bone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.3 5.7a2.5 2.5 0 0 1 0 3.5L7.2 20.3a2.5 2.5 0 0 1-3.5-3.5L14.8 5.7a2.5 2.5 0 0 1 3.5 0z"/><path d="M5.7 5.7a2.5 2.5 0 0 0 0 3.5l2.1 2.1"/><path d="M18.3 18.3a2.5 2.5 0 0 0 0-3.5l-2.1-2.1"/></svg>',
+  boneExt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 5 5 3-5 3-3 5-3-5-5-3 5-3z"/></svg>',
+  paw:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><ellipse cx="7" cy="5" rx="2.5" ry="3"/><ellipse cx="17" cy="5" rx="2.5" ry="3"/><ellipse cx="3.5" cy="11" rx="2" ry="2.5"/><ellipse cx="20.5" cy="11" rx="2" ry="2.5"/><path d="M7 14c0 4 5 7 5 7s5-3 5-7a5 5 0 0 0-10 0z"/></svg>',
+  user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  globe:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
+  target:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+  layers:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+  gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+  hammer:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12l-8.5 8.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0a2.12 2.12 0 0 1 0-3L12 9"/><path d="M17.64 15L22 10.64"/><path d="M20.91 11.7l-1.25-1.25c-.6-.6-.93-1.4-.93-2.25V6.5L14.5 2.09c-.6-.6-1.56-.6-2.16 0l-1.11 1.11c-1.33 1.33-2.08 3.14-2.08 5.02V9h0c0 .85-.33 1.65-.93 2.25L7 12.46"/></svg>',
+  cpu:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>'
+};
+
+var RING_NAMES=['第一魂环','第二魂环','第三魂环','第四魂环','第五魂环','第六魂环','第七魂环','第八魂环','第九魂环','第十魂环'];
+var BONE_PARTS=['头骨','躯干骨','左臂骨','右臂骨','左腿骨','右腿骨'];
+var CORE_POS=['上丹田','中丹田','下丹田'];
+var curModal=null;
+
+/* === 章节/年表数据 === */
+var CHAPTER_DATA={
+  '斗一':{
+    chapters:['序章','第一章','第二章','第三章','第四章','第五章','第六章','第七章','第八章','第九章','第十章','第十一章','第十二章','第十三章','第十四章','第十五章','第十六章','第十七章','第十八章','第十九章','第二十章','第二十一章','第二十二章','第二十三章','第二十四章','第二十五章','第二十六章','第二十七章','第二十八章','第二十九章','第三十章','第三十一章','第三十二章'],
+    periods:['前期','中期','后期'],
+    periodMap:{'序章':'前期','第一章':'前期','第二章':'前期','第三章':'前期','第四章':'前期','第五章':'前期','第六章':'前期','第七章':'前期','第八章':'前期','第九章':'前期','第十章':'前期','第十一章':'前期','第十二章':'中期','第十三章':'中期','第十四章':'中期','第十五章':'中期','第十六章':'中期','第十七章':'中期','第十八章':'中期','第十九章':'中期','第二十章':'中期','第二十一章':'中期','第二十二章':'中期','第二十三章':'后期','第二十四章':'后期','第二十五章':'后期','第二十六章':'后期','第二十七章':'后期','第二十八章':'后期','第二十九章':'后期','第三十章':'后期','第三十一章':'后期','第三十二章':'后期'}
+  },
+  '斗二':{
+    chapters:['序章','第一章','第二章','第三章','第四章','第五章','第六章','第七章','第八章','第九章','第十章','第十一章','第十二章','第十三章','第十四章','第十五章','第十六章','第十七章','第十八章','第十九章','第二十章','第二十一章','第二十二章','第二十三章','第二十四章','第二十五章','第二十六章','第二十七章','第二十八章','第二十九章','第三十章','第三十一章','第三十二章','第三十三章','第三十四章','第三十五章'],
+    periods:['前期','中期','后期'],
+    periodMap:{'序章':'前期','第一章':'前期','第二章':'前期','第三章':'前期','第四章':'前期','第五章':'前期','第六章':'前期','第七章':'前期','第八章':'前期','第九章':'前期','第十章':'前期','第十一章':'前期','第十二章':'中期','第十三章':'中期','第十四章':'中期','第十五章':'中期','第十六章':'中期','第十七章':'中期','第十八章':'中期','第十九章':'中期','第二十章':'中期','第二十一章':'中期','第二十二章':'中期','第二十三章':'中期','第二十四章':'后期','第二十五章':'后期','第二十六章':'后期','第二十七章':'后期','第二十八章':'后期','第二十九章':'后期','第三十章':'后期','第三十一章':'后期','第三十二章':'后期','第三十三章':'后期','第三十四章':'后期','第三十五章':'后期'}
+  },
+  '斗三':{
+    chapters:['序章','第一章','第二章','第三章','第四章','第五章','第六章','第七章','第八章','第九章','第十章','第十一章','第十二章','第十三章','第十四章','第十五章','第十六章','第十七章','第十八章','第十九章','第二十章','第二十一章','第二十二章','第二十三章','第二十四章','第二十五章','第二十六章','第二十七章','第二十八章','第二十九章','第三十章','第三十一章','第三十二章','第三十三章','第三十四章','第三十五章','第三十六章'],
+    periods:['前期','前中期','中期','中后期','后期','大后期'],
+    periodMap:{'序章':'前期','第一章':'前期','第二章':'前期','第三章':'前期','第四章':'前期','第五章':'前期','第六章':'前期','第七章':'前中期','第八章':'前中期','第九章':'前中期','第十章':'前中期','第十一章':'前中期','第十二章':'前中期','第十三章':'中期','第十四章':'中期','第十五章':'中期','第十六章':'中期','第十七章':'中期','第十八章':'中期','第十九章':'中后期','第二十章':'中后期','第二十一章':'中后期','第二十二章':'中后期','第二十三章':'中后期','第二十四章':'中后期','第二十五章':'后期','第二十六章':'后期','第二十七章':'后期','第二十八章':'后期','第二十九章':'后期','第三十章':'后期','第三十一章':'大后期','第三十二章':'大后期','第三十三章':'大后期','第三十四章':'大后期','第三十五章':'大后期','第三十六章':'大后期'}
+  }
+};
+
+function g(p,d){return _.get(getAllVariables(),'stat_data.'+p,d!==undefined?d:'');}
+function esc(s){var d=document.createElement('div');d.textContent=String(s);return d.innerHTML.replace(/\"/g,'&quot;');}
+function isV(v){return v&&v!=='无'&&v!=='待初始化'&&v!=='不适用'&&v!=='';}
+function rcls(c){return{'白':'rw','黄':'ry','紫':'rp','黑':'rb','红':'rr','橙金':'rog','金':'rg'}[c]||'';}
+
+function mkChip(icon,text,ep,en,et,cv){
+  et=et||'string';cv=cv!==undefined?cv:text;
+  var ec=ep?' ed':'';var ea=ep?' data-ep="'+esc(ep)+'" data-et="'+et+'" data-cv="'+esc(cv)+'" data-en="'+esc(en||'')+'"':'';
+  return '<div class="chip'+ec+'"'+ea+'>'+IC[icon]+'<span class="chip-v">'+esc(text||'N/A')+'</span></div>';
+}
+function mkBar(lb,val,max,gc,sfx,ep,en){
+  var pct=max>0?Math.min(Math.max(val/max*100,0),100):0;
+  var ec=ep?' ed':'';var ea=ep?' data-ep="'+esc(ep)+'" data-et="number" data-cv="'+val+'" data-en="'+esc(en||lb)+'"':'';
+  return '<div class="bar'+ec+'"'+ea+'><div class="bar-top"><span class="bar-lb">'+esc(lb)+'</span><span class="bar-num">'+(sfx?val+sfx:val+'%')+'</span></div><div class="bar-tk"><div class="bar-fl '+gc+'" style="width:'+pct+'%"></div></div></div>';
+}
+function mkRelBar(lb,val,gc,ep,en){
+  var pct=((val+100)/300)*100;pct=Math.max(0,Math.min(100,pct));var zz=33.33;var neg=val<0;
+  var fc=neg?'g-neg':gc;var fs=neg?'left:'+pct+'%;width:'+(zz-pct)+'%':'left:'+zz+'%;width:'+(pct-zz)+'%';
+  var ec=ep?' ed':'';var ea=ep?' data-ep="'+esc(ep)+'" data-et="number" data-cv="'+val+'" data-en="'+esc(en||lb)+'"':'';
+  return '<div class="bar'+ec+'"'+ea+'><div class="bar-top"><span class="bar-lb">'+esc(lb)+'</span><span class="bar-num">'+val+' / 200</span></div><div class="rel-tk"><div class="rel-zero"></div><div class="rel-fl '+fc+'" style="'+fs+'"></div></div></div>';
+}
+function mkRow(k,v,ep,et,cv){
+  et=et||'string';cv=cv!==undefined?cv:v;var ec=ep?' ed':'';
+  var ea=ep?' data-ep="'+esc(ep)+'" data-et="'+et+'" data-cv="'+esc(cv)+'" data-en="'+esc(k)+'"':'';
+  return '<div class="row'+ec+'"'+ea+'><span class="row-k">'+esc(k)+'</span><span class="row-v">'+esc(v||'无')+'</span></div>';
+}
+function mkTags(arr,cls){
+  if(!arr||!arr.length) return '';cls=cls||'tag-acc';
+  var h='<div class="tags">';arr.forEach(function(a){if(a&&a!=='待初始化'&&a!=='无') h+='<span class="tag '+cls+'">'+esc(a)+'</span>';});return h+'</div>';
+}
+function buildNpcTag(npc){
+  var cls=npc.type==='f'?'female':npc.type==='m'?'male':'beast';
+  var sym=npc.type==='f'?'♀':npc.type==='m'?'♂':'🐾';
+  return '<span class="npc-tag '+cls+'" data-nt="'+npc.type+'" data-nn="'+esc(npc.name)+'"><span class="nt">'+sym+'</span>'+esc(npc.name)+'</span>';
+}
+
+function renderOverview(){
+  var h='';
+  var era=g('世界状态.当前时代','N/A');
+  var chapter=g('世界状态.剧情章节','N/A');
+  var period=g('世界状态.年表时期','N/A');
+
+  /* 世界状态卡片 */
+  var wFields=[
+    {i:'crown',p:'世界状态.当前时代',n:'当前时代'},
+    {i:'clock',p:'世界状态.当前日期',n:'当前日期'},
+    {i:'mapPin',p:'世界状态.当前区域',n:'当前区域'},
+    {i:'flag',p:'世界状态.当前场景',n:'当前场景'},
+    {i:'star',p:'世界状态.当前场景类型',n:'场景类型'}
+  ];
+  h+='<div class="cd"><div class="cd-title">'+IC.globe+' 世界状态</div><div class="wtags">';
+  wFields.forEach(function(f){var v=g(f.p,'N/A');h+='<span class="wtag ed" data-ep="'+esc(f.p)+'" data-et="string" data-cv="'+esc(v)+'" data-en="'+esc(f.n)+'">'+IC[f.i]+esc(v)+'</span>';});
+
+  /* 章节 - 带快捷选择 */
+  h+='<span class="wtag" style="cursor:pointer" data-qs="chapter">'+IC.book+esc(chapter)+'</span>';
+  /* 年表时期 - 带快捷选择 */
+  h+='<span class="wtag" style="cursor:pointer" data-qs="period">'+IC.sparkle+esc(period)+'</span>';
+  h+='</div></div>';
+
+  /* 身份档案 */
+  var bi=g('玩家.基础信息',{});var hx=g('玩家.魂兽信息',{});var gf=g('玩家.功法',{});
+  var isBeast=(bi.种族==='魂兽');
+  h+='<div class="cd"><div class="cd-title">'+IC.user+' 身份档案</div>';
+  h+='<div class="grid">';
+  h+=mkChip('crown',bi.姓名||'待初始化','玩家.基础信息.姓名','姓名');
+  h+=mkChip('sparkle',(bi.性别||'未知')+' · '+(bi.年龄||0)+'岁','玩家.基础信息.年龄','年龄','number',bi.年龄||0);
+  h+=mkChip('zap','先天魂力 '+(bi.先天魂力||0)+'级','玩家.基础信息.先天魂力','先天魂力','number',bi.先天魂力||0);
+  h+=mkChip('target',bi.身份||'待初始化','玩家.基础信息.身份','身份');
+  h+='</div>';
+
+  if(isBeast){
+    var formState=hx.化形状态||'未化形';
+    h+='<div class="grid" style="margin-top:6px">';
+    h+=mkChip('paw',(hx.名字||'未知')+' · '+(bi.种族||'未知'),'玩家.魂兽信息.名字','魂兽名字');
+    h+=mkChip('zap',(hx.年限||'未知')+' · '+(hx.血脉等级||'未知')+' · '+formState,'玩家.魂兽信息.年限','年限');
+    h+='</div>';
+    if(isV(hx.种族信息)) h+='<div style="padding:3px 4px;font-size:11px;color:var(--t3);margin-top:3px">'+esc(hx.种族信息)+'</div>';
+    h+=mkTags(hx.属性,'tag-green');
+    var tf=hx.天赋魂技||{};var tfK=Object.keys(tf);
+    if(tfK.length>0){h+='<div class="tags">';tfK.forEach(function(k){h+='<span class="tag tag-green cl" data-tf="'+esc(k)+'" data-tfd="'+esc(tf[k].描述||'')+'">🐾'+esc(k)+'</span>';});h+='</div>';}
+  }
+
+  h+='<div class="grid" style="margin-top:6px">';
+  h+=mkChip('shield','称号: '+(bi.魂师称号||'待觉醒'),'玩家.基础信息.魂师称号','魂师称号');
+  h+=mkChip('layers','魂导师: '+(bi.魂导师等级||'非魂导师'),'玩家.基础信息.魂导师等级','魂导师等级');
+  h+='</div>';
+
+  var fh=bi.封号||'无';
+  if(fh&&fh!=='无'){h+='<div class="grid c1" style="margin-top:6px">'+mkChip('crown','封号: '+fh,'玩家.基础信息.封号','封号')+'</div>';}
+  if(bi.所属势力&&bi.所属势力!=='无'){
+    h+='<div class="grid c1" style="margin-top:6px">'+mkChip('flag',bi.所属势力,'玩家.基础信息.所属势力','所属势力')+'</div>';
+  }
+
+  /* 功法 */
+  var gfK=Object.keys(gf);
+  if(gfK.length>0){h+='<div class="tags" style="margin-top:6px">';gfK.forEach(function(k){h+='<span class="tag tag-purple cl" data-gf="'+esc(k)+'">'+esc(k)+'</span>';});h+='</div>';}
+  if(isV(bi.外貌)) h+='<div class="desc ed" data-ep="玩家.基础信息.外貌" data-et="string" data-cv="'+esc(bi.外貌)+'" data-en="外貌"><b>外貌 </b>'+esc(bi.外貌)+'</div>';
+  if(isBeast&&isV(hx.兽形外貌)) h+='<div class="desc beast ed" data-ep="玩家.魂兽信息.兽形外貌" data-et="string" data-cv="'+esc(hx.兽形外貌)+'" data-en="兽形外貌"><b>兽形 </b>'+esc(hx.兽形外貌)+'</div>';
+  h+='</div>';
+
+  /* 精神力 */
+  var sp=g('玩家.精神力',{});
+  if(sp.精神力境界&&sp.精神力境界!=='不适用'){
+    h+='<div class="cd"><div class="cd-title">'+IC.sparkle+' 精神力</div>';
+    h+='<div class="grid">';
+    h+=mkChip('sparkle','数值: '+(sp.精神力数值||0),'玩家.精神力.精神力数值','精神力数值','number',sp.精神力数值||0);
+    h+=mkChip('star','境界: '+(sp.精神力境界||'不适用'),'玩家.精神力.精神力境界','精神力境界');
+    h+='</div></div>';
+  }
+
+  /* 锻造信息 */
+  var forge=g('玩家.锻造信息',{});
+  if(forge.锻造境界&&forge.锻造境界!=='不适用'){
+    h+='<div class="cd"><div class="cd-title">'+IC.hammer+' 锻造</div>';
+    h+='<div class="grid">';
+    h+=mkChip('hammer','等级: '+(forge.锻造师等级||0)+'级','玩家.锻造信息.锻造师等级','锻造师等级','number',forge.锻造师等级||0);
+    h+=mkChip('star','境界: '+(forge.锻造境界||'不适用'),'玩家.锻造信息.锻造境界','锻造境界');
+    h+='</div></div>';
+  }
+
+  /* 副职业 */
+  var sub=g('玩家.副职业',{});var subK=Object.keys(sub);
+  if(subK.length>0){
+    h+='<div class="cd"><div class="cd-title">'+IC.gear+' 副职业</div><div class="grid">';
+    subK.forEach(function(k){
+      var lv=sub[k].等级||0;
+      h+=mkChip('gear',k+': '+lv+'级','玩家.副职业.'+k+'.等级',k+'等级','number',lv);
+    });
+    h+='</div></div>';
+  }
+
+  /* 斗铠信息 */
+  var dk=g('玩家.斗铠信息',{});
+  if(dk.斗铠名称&&dk.斗铠名称!=='无'){
+    h+='<div class="cd"><div class="cd-title">'+IC.shield+' 斗铠</div>';
+    h+='<div class="grid">';
+    h+=mkChip('shield','名称: '+(dk.斗铠名称||'无'),'玩家.斗铠信息.斗铠名称','斗铠名称');
+    h+=mkChip('star','等级: '+(dk.斗铠等级||'无'),'玩家.斗铠信息.斗铠等级','斗铠等级');
+    h+='</div>';
+    if(isV(dk.斗铠外观)) h+='<div class="desc ed" data-ep="玩家.斗铠信息.斗铠外观" data-et="string" data-cv="'+esc(dk.斗铠外观)+'" data-en="斗铠外观">'+esc(dk.斗铠外观)+'</div>';
+    h+='</div>';
+  }
+
+  /* 机甲信息 */
+  var mech=g('玩家.机甲信息',{});var mechK=Object.keys(mech);
+  if(mechK.length>0){
+    h+='<div class="cd"><div class="cd-title">'+IC.cpu+' 机甲</div><div class="grid">';
+    mechK.forEach(function(k){
+      h+=mkChip('cpu',k+' · '+(mech[k].等级||'无'),'玩家.机甲信息.'+k+'.等级',k+'等级');
+    });
+    h+='</div></div>';
+  }
+
+  $('#tab-overview').html(h);
+}
+
+function renderWuhunTrain(){
+  var bi=g('玩家.基础信息',{});var isBeast=(bi.种族==='魂兽');var hx=g('玩家.魂兽信息',{});
+  var fs=isBeast?(hx.化形状态||'未化形'):'不适用';
+  var wuhunLocked=isBeast&&fs!=='完全幻化人形';
+  var h='';
+
+  h+='<div class="cd"><div class="cd-title">'+IC.sword+' 武魂信息</div>';
+  if(wuhunLocked){
+    h+='<div style="font-size:12px;color:var(--t3);padding:6px 0">未化形/幻化状态，武魂不可用</div>';
+  } else {
+    var wList=g('玩家.武魂信息',{});var wKeys=Object.keys(wList);
+    if(wKeys.length>0){
+      wKeys.forEach(function(wName){
+        var wd=wList[wName];
+        var wt='✦ '+wName;
+        if(isV(wd.品质)) wt+=' · '+wd.品质;if(isV(wd.体系)) wt+=' · '+wd.体系;if(isV(wd.类别)) wt+=' · '+wd.类别;
+        h+='<div class="grid c1" style="margin-top:6px">'+mkChip('sword',wt,'玩家.武魂信息.'+esc(wName)+'.品质','品质')+'</div>';
+        h+=mkTags(wd.元素属性,'tag-acc');
+        if(wd.先天领域&&isV(wd.先天领域.名称)){
+          h+='<div class="tags"><span class="tag tag-gold cl" data-domain="'+esc(wName)+'" data-dn="'+esc(wd.先天领域.名称)+'" data-de="'+esc(wd.先天领域.效果)+'">领域: '+esc(wd.先天领域.名称)+'</span></div>';
+        }
+        var zc=wd.自创魂技||{};var zcKeys=Object.keys(zc);
+        if(zcKeys.length>0){
+          h+='<div class="tags" style="margin-top:6px">';
+          zcKeys.forEach(function(zName){h+='<span class="tag tag-gold cl" data-zc="'+esc(zName)+'" data-zcd="'+esc(zc[zName].描述||'无描述')+'">⚡'+esc(zName)+'</span>';});
+          h+='</div>';
+        }
+      });
+    } else {
+      h+='<div style="font-size:12px;color:var(--t3);padding:6px 0">暂无武魂</div>';
+    }
+  }
+  h+='</div>';
+
+  /* 魂灵信息 */
+  var spirits=g('玩家.魂灵信息',{});var spK=Object.keys(spirits);
+  if(spK.length>0){
+    h+='<div class="cd"><div class="cd-title">🔮 魂灵</div>';
+    spK.forEach(function(sName){
+      var sd=spirits[sName];
+      h+='<div class="spirit-item"><div class="spirit-name">'+esc(sName)+'<span class="tag tag-acc" style="font-size:10px">'+esc(sd.类型||'')+'</span></div>';
+      h+=mkRow('年限',sd.当前年限||'未知','玩家.魂灵信息.'+sName+'.当前年限','string',sd.当前年限||'');
+      h+=mkRow('对应武魂',sd.对应武魂||'未知');
+      h+=mkRow('来源种族',sd.来源种族||'未知');
+      if(isV(sd.外观)) h+='<div class="desc" style="margin-top:4px;font-size:11px"><b>外观 </b>'+esc(sd.外观)+'</div>';
+      if(isV(sd.能力)) h+='<div class="desc" style="margin-top:4px;font-size:11px;border-left-color:var(--gold)"><b>能力 </b>'+esc(sd.能力)+'</div>';
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+
+  var xl=g('玩家.修炼状态',{});
+  h+='<div class="cd"><div class="cd-title">'+IC.zap+' 修炼状态</div>';
+  h+=mkBar('魂力等级',xl.魂力等级||0,100,'g-lv','级','玩家.修炼状态.魂力等级','魂力等级');
+  h+=mkBar('当前魂力',xl.当前魂力百分比||0,100,'g-mp','%','玩家.修炼状态.当前魂力百分比','当前魂力');
+  var hkData=g('玩家.魂核',{});var hkKeys=Object.keys(hkData);
+  if(hkKeys.length>0){
+    h+='<div style="margin-top:12px"><div class="ring-lb">魂核</div><div class="core-grid">';
+    CORE_POS.forEach(function(pos){
+      var hd=hkData[pos];var got=hd&&hd.属性&&hd.属性!=='';
+      h+='<div class="core-slot'+(got?' got':'')+'" data-hkt="'+esc(pos)+'"><div class="core-orb">'+IC.sparkle+'</div><div class="core-nm">'+esc(pos)+'</div>';
+      if(got){h+='<div class="core-attr">'+esc(hd.属性)+'</div><div class="core-way">'+esc(hd.凝聚方式||'')+'</div>';}
+      h+='</div>';
+    });
+    h+='</div></div>';
+  }
+  h+='</div>';
+
+  /* 神位信息 */
+  var god=g('玩家.神位信息',{});
+  if(god.神级等级&&god.神级等级!=='无'){
+    h+='<div class="cd"><div class="cd-title">'+IC.crown+' 神位</div>';
+    h+=mkRow('神级等级',god.神级等级);
+    h+=mkTags(god.法则掌控,'tag-gold');
+    var godPos=god.神位||{};var gpK=Object.keys(godPos);
+    if(gpK.length>0){gpK.forEach(function(gn){h+='<div class="spirit-item" style="margin-top:6px"><div class="spirit-name">'+esc(gn)+'</div>'+mkRow('类型',godPos[gn].类型||'')+'</div>';});}
+    h+='</div>';
+  }
+
+  h+='<div class="cd"><div class="cd-title">'+IC.ring+' 魂环</div>';
+  var wList2=g('玩家.武魂信息',{});var wKeys2=Object.keys(wList2);var hasRings=false;
+  wKeys2.forEach(function(wName){
+    var rings=_.get(wList2, wName+'.魂环', {});var ringKeys=Object.keys(rings);
+    if(ringKeys.length>0){hasRings=true;h+=buildRings(wName,rings,'玩家.武魂信息.'+esc(wName)+'.魂环');}
+  });
+  if(!hasRings){h+='<div style="font-size:12px;color:var(--t3);padding:6px 0">暂无魂环</div>';}
+  h+='</div>';
+
+  var fusion=g('玩家.武魂融合技',{});var fusionKeys=Object.keys(fusion);
+  h+='<div class="cd"><div class="cd-title">'+IC.sparkle+' 武魂融合技</div>';
+  if(fusionKeys.length>0){
+    h+='<div class="npc-tags">';
+    fusionKeys.forEach(function(npcName){
+      var count=Object.keys(fusion[npcName]).length;
+      h+='<span class="npc-tag fusion-tag" data-fn="'+esc(npcName)+'"><span class="nt">⚡</span>'+esc(npcName)+' ('+count+')</span>';
+    });
+    h+='</div>';
+  } else {
+    h+='<div class="npc-empty">暂无武魂融合技</div>';
+  }
+  h+='</div>';
+
+  $('#tab-wuhun').html(h);
+}
+
+function buildRings(wn,rings,bp){
+  var ringKeys=Object.keys(rings);
+  var h='<div style="margin-bottom:10px"><div class="ring-lb">'+esc(wn)+'</div><div class="ring-row">';
+  var slots=[];var matchedKeys={};
+  for(var i=0;i<10;i++){var key=RING_NAMES[i];if(rings[key]){slots[i]={data:rings[key],key:key};matchedKeys[key]=true;}else{slots[i]=null;}}
+  var unmatched=[];for(var j=0;j<ringKeys.length;j++){if(!matchedKeys[ringKeys[j]]){unmatched.push({data:rings[ringKeys[j]],key:ringKeys[j]});}}
+  var uIdx=0;for(var i=0;i<10;i++){if(!slots[i]&&uIdx<unmatched.length){slots[i]=unmatched[uIdx];uIdx++;}}
+
+  for(var i=0;i<10;i++){
+    var s=slots[i];var rd=s?s.data:null;var actualKey=s?s.key:RING_NAMES[i];
+    var got=rd&&rd.颜色&&rd.颜色!=='待初始化'&&rd.颜色!=='';
+    var cc=got?rcls(rd.颜色):'';
+    h+='<div class="soul-ring'+(got?' '+cc:' empty')+'" data-rk="'+esc(actualKey)+'" data-bp="'+esc(bp)+'">';
+    h+='<div class="ring-wp"><div class="ring-halo"></div><div class="ring-c"><span class="ring-n">'+(i+1)+'</span></div></div>';
+    h+='<span class="ring-lb2">'+(got?esc(rd.年限||''):'—')+'</span></div>';
+  }
+  return h+'</div></div>';
+}
+
+function renderBones(){
+  var h='';var cb=g('玩家.常规魂骨',{});
+  h+='<div class="cd"><div class="cd-title">'+IC.bone+' 常规魂骨</div><div class="bone-grid">';
+  BONE_PARTS.forEach(function(part){
+    var bd=cb[part];var got=bd&&bd.来源&&bd.来源!=='待初始化'&&bd.来源!=='';
+    h+='<div class="bone-slot'+(got?' got':'')+'" data-bt="常规" data-bk="'+esc(part)+'">'+IC.bone+'<div class="bn">'+esc(part)+'</div>';
+    if(got) h+='<div class="bs">'+esc(bd.来源)+'</div>';h+='</div>';
+  });
+  h+='</div></div>';
+
+  var eb=g('玩家.外附魂骨',{});var ebK=Object.keys(eb);
+  h+='<div class="cd"><div class="cd-title">'+IC.boneExt+' 外附魂骨</div>';
+  if(ebK.length>0){
+    h+='<div class="bone-grid">';
+    ebK.forEach(function(n){
+      var bd=eb[n];var got=bd&&bd.来源&&bd.来源!=='';
+      h+='<div class="bone-slot'+(got?' got':'')+'" data-bt="外附" data-bk="'+esc(n)+'">'+IC.boneExt+'<div class="bn">'+esc(n)+'</div>';
+      if(got&&bd.来源) h+='<div class="bs">'+esc(bd.来源)+'</div>';h+='</div>';
+    });
+    h+='</div>';
+  } else {h+='<div class="npc-empty">暂无</div>';}
+  h+='</div>';
+  $('#tab-bones').html(h);
+}
+
+function renderItems(){
+  var eco=g('玩家.金钱',{});var items=g('玩家.物品栏',{});
+  var h='<div class="cd"><div class="cd-title">'+IC.coin+' 金钱</div><div class="grid c3">';
+  h+='<div class="chip coin-g ed" data-ep="玩家.金钱.金魂币" data-et="number" data-cv="'+(eco.金魂币||0)+'" data-en="金魂币">'+IC.coin+'<span class="chip-v">'+(eco.金魂币||0)+' 金</span></div>';
+  h+='<div class="chip coin-s ed" data-ep="玩家.金钱.银魂币" data-et="number" data-cv="'+(eco.银魂币||0)+'" data-en="银魂币">'+IC.coin+'<span class="chip-v">'+(eco.银魂币||0)+' 银</span></div>';
+  h+='<div class="chip coin-c ed" data-ep="玩家.金钱.铜魂币" data-et="number" data-cv="'+(eco.铜魂币||0)+'" data-en="铜魂币">'+IC.coin+'<span class="chip-v">'+(eco.铜魂币||0)+' 铜</span></div>';
+  h+='</div>';
+  var fc=eco.联邦币||0;var cp=eco.贡献点||0;
+  if(fc>0||cp>0){
+    h+='<div class="grid" style="margin-top:6px">';
+    if(fc>0) h+=mkChip('coin','联邦币: '+fc,'玩家.金钱.联邦币','联邦币','number',fc);
+    if(cp>0) h+=mkChip('coin','贡献点: '+cp,'玩家.金钱.贡献点','贡献点','number',cp);
+    h+='</div>';
+  }
+  h+='</div>';
+
+  h+='<div class="cd"><div class="cd-title">'+IC.bag+' 物品栏</div>';
+  var iK=Object.keys(items);
+  var groups={骨:[],导:[],杂:[]};
+  iK.forEach(function(n){
+    var it=items[n];if(!it||(it.数量!==undefined&&it.数量<=0)) return;
+    var tp=(it.类型||'其他').toLowerCase();
+    if(tp==='魂骨') groups.骨.push({n:n,it:it});
+    else if(tp==='魂导器') groups.导.push({n:n,it:it});
+    else groups.杂.push({n:n,it:it});
+  });
+  var hasAny=groups.骨.length+groups.导.length+groups.杂.length>0;
+  if(hasAny){
+    if(groups.骨.length>0){h+='<div class="item-group"><div class="item-group-lb">🦴 魂骨</div><div class="item-tags">';groups.骨.forEach(function(o){h+='<span class="item-tag" data-in="'+esc(o.n)+'">'+esc(o.n)+'<span class="iq">×'+(o.it.数量||1)+'</span></span>';});h+='</div></div>';}
+    if(groups.导.length>0){h+='<div class="item-group"><div class="item-group-lb">⚙️ 魂导器</div><div class="item-tags">';groups.导.forEach(function(o){h+='<span class="item-tag" data-in="'+esc(o.n)+'">'+esc(o.n)+'<span class="iq">×'+(o.it.数量||1)+'</span></span>';});h+='</div></div>';}
+    if(groups.杂.length>0){h+='<div class="item-group"><div class="item-group-lb">📦 其他</div><div class="item-tags">';groups.杂.forEach(function(o){h+='<span class="item-tag" data-in="'+esc(o.n)+'">'+esc(o.n)+'<span class="iq">×'+(o.it.数量||1)+'</span></span>';});h+='</div></div>';}
+  } else {h+='<div class="npc-empty">背包空空如也</div>';}
+  h+='</div>';
+  $('#tab-items').html(h);
+}
+
+/* === NPC简化：去掉在场/全部分类 === */
+function renderNPCs(){
+  var npcList=g('NPC列表',{});var bn=g('魂兽NPC',{});
+  var all=[];
+  Object.keys(npcList).forEach(function(n){
+    var sex=_.get(npcList[n], '基础信息.性别', '未知');
+    all.push({name:n,type:sex==='女'?'f':'m'});
+  });
+  Object.keys(bn).forEach(function(n){all.push({name:n,type:'b'});});
+
+  var h='<div class="cd"><div class="cd-title">'+IC.users+' NPC ('+all.length+')</div>';
+  if(all.length>0){
+    h+='<div class="npc-tags">';
+    all.forEach(function(npc){h+=buildNpcTag(npc);});
+    h+='</div>';
+  } else {
+    h+='<div class="npc-empty">暂无已录入NPC</div>';
+  }
+  h+='</div>';
+  $('#tab-npc').html(h);
+}
+
+function hideModal(){$('#md-bg').removeClass('open');curModal=null;}
+
+function showDetail(title,html){
+  curModal={type:'detail',name:title};
+  $('#md-tabs').empty();$('#md-name').text(title);
+  $('#md-body').html('<div class="md-ct">'+html+'</div>');
+  $('#md-bg').addClass('open');
+}
+
+function showFusionModal(npcName){
+  var fusion=g('玩家.武魂融合技.'+npcName,{});var keys=Object.keys(fusion);
+  $('#md-tabs').empty();$('#md-name').text('⚡ 武魂融合技 · '+npcName);
+  var h='';
+  if(keys.length>0){keys.forEach(function(fName){var fd=fusion[fName];h+='<div class="fusion-detail"><div class="fusion-name">'+esc(fName)+'</div><div class="fusion-pair">「'+esc(fd.玩家武魂||'未知')+'」× 「'+esc(fd.NPC武魂||'未知')+'」</div><div class="fusion-desc">'+esc(fd.描述||'无描述')+'</div></div>';});}
+  else{h+='<div class="npc-empty">暂无融合技数据</div>';}
+  curModal={type:'fusion',name:npcName};
+  $('#md-body').html('<div class="md-ct">'+h+'</div>');$('#md-bg').addClass('open');
+}
+
+function buildNPCWuhunHtml(wi, pp){
+  var h='';var wKeys=Object.keys(wi);
+  wKeys.forEach(function(wName){
+    var wData=wi[wName];
+    if(isV(wName)){
+      h+='<div class="npc-wuhun-item"><div class="npc-wuhun-title">'+IC.sword+' '+esc(wName)+'</div>';
+      var wp=[wData.品质,wData.系别].filter(isV);
+      if(wp.length>0) h+='<div style="font-size:12px;color:var(--t2);margin-bottom:8px">'+esc(wp.join(' · '))+'</div>';
+      var rings=_.get(wData, '魂环', {});var ringKeys=Object.keys(rings);
+      if(ringKeys.length>0){
+        ringKeys.forEach(function(rk){
+          var rd=rings[rk];if(!isV(rd.颜色)) return;
+          var path=pp+'.武魂信息.'+wName+'.魂环.'+rk;
+          h+='<div class="npc-skill-row"><div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><span style="font-size:12px;font-weight:700;color:var(--t1)">'+esc(rk)+' · '+esc(rd.年限||'未知')+' · '+esc(rd.来源魂兽||'未知')+'</span></div>';
+          var skKeys=Object.keys(rd.魂技||{});
+          skKeys.forEach(function(skName){
+            var skData=rd.魂技[skName];
+            if(isV(skData.描述)){
+              h+='<div class="npc-skill-item"><div class="npc-skill-lb">'+esc(skName)+'</div><div class="desc ed" data-ep="'+esc(path)+'.魂技.'+esc(skName)+'.描述" data-et="string" data-cv="'+esc(skData.描述)+'" data-en="'+esc(skName)+'" style="margin-top:2px;padding:6px 10px;font-size:12px">'+esc(skData.描述)+'</div></div>';
+            }
+          });
+          h+='</div>';
+        });
+      } else {h+='<div style="font-size:11px;color:var(--t3)">暂无魂环</div>';}
+      h+='</div>';
+    }
+  });
+  if(!h) h='<div class="npc-empty">暂无武魂信息</div>';
+  return h;
+}
+
+function showFemaleModal(name,d){
+  var tabs=[{id:'info',lb:'档案'},{id:'wuhun',lb:'武魂'},{id:'bond',lb:'羁绊'},{id:'cloth',lb:'衣·体'},{id:'secret',lb:'私密'}];
+  var th='';tabs.forEach(function(t,i){th+='<button class="mtab'+(i===0?' active':'')+'" data-tab="'+t.id+'">'+t.lb+'</button>';});
+  $('#md-tabs').html(th);$('#md-name').text(name);
+  var pp='NPC列表.'+name;var bi=_.get(d,'基础信息',{});var wi=_.get(d,'武魂信息',{});var rel=_.get(d,'关系列表',{});var secret=_.get(d,'私密档案',{});
+  var hx=_.get(d,'魂兽信息',{});var isBst=(bi.种族==='魂兽');var fss=isBst?(hx.化形状态||'不适用'):'不适用';var showW=!isBst||fss==='幼年期'||fss==='成熟期'||fss==='完全幻化人形';
+  var npcSpirits=_.get(d,'魂灵信息',{});var npcGod=_.get(d,'神位信息',{});
+  var p='';
+
+  p+='<div class="mpane active" data-tab="info">';
+  p+=mkRow('年龄',(bi.年龄||0)+'岁',pp+'.基础信息.年龄','number',bi.年龄||0);
+  p+=mkRow('身份',bi.身份||'人类',pp+'.基础信息.身份','string',bi.身份||'人类');
+  if(isV(bi.封号)&&bi.封号!=='无') p+=mkRow('封号',bi.封号,pp+'.基础信息.封号','string',bi.封号);
+  if(isBst){
+    p+=mkRow('种族信息',hx.种族信息||'未知',pp+'.魂兽信息.种族信息','string',hx.种族信息||'');
+    p+=mkRow('年限',hx.年限||'未知',pp+'.魂兽信息.年限','string',hx.年限||'');
+    p+=mkRow('血脉等级',hx.血脉等级||'未知',pp+'.魂兽信息.血脉等级','string',hx.血脉等级||'');
+    p+=mkRow('化形状态',hx.化形状态||'未知',pp+'.魂兽信息.化形状态','string',hx.化形状态||'');
+  }
+  p+=mkRow('魂力等级',(bi.魂力等级||0)+'级',pp+'.基础信息.魂力等级','number',bi.魂力等级||0);
+  p+=mkRow('魂师称号',bi.魂师称号||'无',pp+'.基础信息.魂师称号','string',bi.魂师称号||'');
+  p+=mkRow('当前动作',bi.当前动作||'',pp+'.基础信息.当前动作','string',bi.当前动作||'');
+  p+=mkRow('位置',bi.当前位置||'N/A',pp+'.基础信息.当前位置','string',bi.当前位置||'');
+  if(bi.所属势力) p+=mkRow('所属势力',bi.所属势力,pp+'.基础信息.所属势力','string',bi.所属势力||'');
+  /* 神位 */
+  if(npcGod&&npcGod.神级等级&&npcGod.神级等级!=='无'){
+    p+='<div class="md-divider"></div>';
+    p+=mkRow('神级等级',npcGod.神级等级);
+    if(npcGod.法则掌控&&npcGod.法则掌控.length>0) p+='<div style="padding:4px 0">'+mkTags(npcGod.法则掌控,'tag-gold')+'</div>';
+    if(npcGod.神技&&npcGod.神技.length>0) p+='<div style="padding:4px 0">'+mkTags(npcGod.神技,'tag-purple')+'</div>';
+  }
+  if(isV(bi.外貌)){p+='<div class="md-divider"></div><div class="desc ed" data-ep="'+esc(pp)+'.基础信息.外貌" data-et="string" data-cv="'+esc(bi.外貌)+'" data-en="外貌">'+esc(bi.外貌)+'</div>';}
+  if(isBst&&isV(hx.兽形外貌)){p+='<div class="desc beast ed" data-ep="'+esc(pp)+'.魂兽信息.兽形外貌" data-et="string" data-cv="'+esc(hx.兽形外貌)+'" data-en="兽形外貌">'+esc(hx.兽形外貌)+'</div>';}
+  p+='</div>';
+
+  p+='<div class="mpane" data-tab="wuhun">';
+  if(showW){p+=buildNPCWuhunHtml(wi, pp);} else {p+='<div class="npc-empty">无（未化形）</div>';}
+  /* NPC魂灵 */
+  var nsK=Object.keys(npcSpirits);
+  if(nsK.length>0){
+    p+='<div class="md-divider"></div><div class="ring-lb">魂灵</div>';
+    nsK.forEach(function(sn){
+      var sd=npcSpirits[sn];
+      p+='<div class="spirit-item"><div class="spirit-name">'+esc(sn)+'</div>';
+      p+=mkRow('年限',sd.当前年限||'未知',pp+'.魂灵信息.'+sn+'.当前年限','string',sd.当前年限||'');
+      if(isV(sd.外观)) p+='<div class="desc" style="margin-top:4px;font-size:11px">'+esc(sd.外观)+'</div>';
+      p+='</div>';
+    });
+  }
+  p+='</div>';
+
+  p+='<div class="mpane" data-tab="bond">';
+  p+=mkRow('关系状态',rel.与玩家关系状态||'路人',pp+'.关系列表.与玩家关系状态','string',rel.与玩家关系状态||'路人');
+  p+=mkRelBar('好感度',rel.对玩家好感度||0,'g-fav',pp+'.关系列表.对玩家好感度','好感度');
+  if(rel.与其他NPC关系&&rel.与其他NPC关系!=='无') p+=mkRow('其他关系',rel.与其他NPC关系,pp+'.关系列表.与其他NPC关系','string',rel.与其他NPC关系||'');
+  p+='</div>';
+
+  p+='<div class="mpane" data-tab="cloth">';
+  var outfit=_.get(secret,'服饰',{});var oK=Object.keys(outfit);
+  if(oK.length>0){p+='<div class="ring-lb">当前着装</div>';oK.forEach(function(k){p+=mkRow(k,outfit[k],pp+'.私密档案.服饰.'+k,'string',outfit[k]||'');});}
+  var body=_.get(secret,'身体',{});var bK=Object.keys(body);
+  if(bK.length>0){p+='<div class="md-divider"></div><div class="ring-lb">身体状态</div>';bK.forEach(function(k){p+=mkRow(k,body[k],pp+'.私密档案.身体.'+k,'string',body[k]||'');});}
+  var state=_.get(secret,'生理状态',{});
+  if(state.生理体质&&state.生理体质!=='无') p+='<div class="md-divider"></div>'+mkRow('生理体质',state.生理体质,pp+'.私密档案.生理状态.生理体质','string',state.生理体质||'');
+  p+='</div>';
+
+  p+='<div class="mpane" data-tab="secret">';
+  p+=mkRow('贞操状态',_.get(state,'贞操状态','处女'),pp+'.私密档案.生理状态.贞操状态','string',_.get(state,'贞操状态','处女'));
+  p+=mkRow('怀孕状态',_.get(state,'怀孕状态','未怀孕'),pp+'.私密档案.生理状态.怀孕状态','string',_.get(state,'怀孕状态','未怀孕'));
+  p+=mkRow('生理记录',_.get(state,'生理记录','无'),pp+'.私密档案.生理状态.生理记录','string',_.get(state,'生理记录','无'));
+  p+='<div class="md-divider"></div>';
+  var fantasy=_.get(secret,'内心.性幻想','无');
+  p+='<div class="md-field"><div class="md-field-lb">性幻想</div><div class="md-quote ed" data-ep="'+esc(pp)+'.私密档案.内心.性幻想" data-et="string" data-cv="'+esc(fantasy)+'" data-en="性幻想">'+(fantasy!=='无'?esc(fantasy):'无')+'</div></div>';
+  p+='<div class="md-divider"></div><button class="btn-del" data-del-npc="'+esc(name)+'" data-npc-type="NPC列表">'+IC.trash+' 删除此NPC</button></div>';
+
+  curModal={type:'f',name:name};
+  $('#md-body').html('<div class="md-ct">'+p+'</div>');$('#md-bg').addClass('open');bindModalTabs();
+}
+
+function showMaleModal(name,d){
+  var tabs=[{id:'info',lb:'档案'},{id:'wuhun',lb:'武魂'},{id:'bond',lb:'羁绊'}];
+  var th='';tabs.forEach(function(t,i){th+='<button class="mtab'+(i===0?' active':'')+'" data-tab="'+t.id+'">'+t.lb+'</button>';});
+  $('#md-tabs').html(th);$('#md-name').text(name);
+  var pp='NPC列表.'+name;var bi=_.get(d,'基础信息',{});var wi=_.get(d,'武魂信息',{});var rel=_.get(d,'关系列表',{});
+  var hx=_.get(d,'魂兽信息',{});var isBst=(bi.种族==='魂兽');var fss=isBst?(hx.化形状态||'不适用'):'不适用';var showW=!isBst||fss==='幼年期'||fss==='成熟期'||fss==='完全幻化人形';
+  var npcSpirits=_.get(d,'魂灵信息',{});var npcGod=_.get(d,'神位信息',{});
+
+  var p='<div class="mpane active" data-tab="info">';
+  p+=mkRow('年龄',(bi.年龄||0)+'岁',pp+'.基础信息.年龄','number',bi.年龄||0);
+  p+=mkRow('身份',bi.身份||'人类',pp+'.基础信息.身份','string',bi.身份||'人类');
+  if(isV(bi.封号)&&bi.封号!=='无') p+=mkRow('封号',bi.封号,pp+'.基础信息.封号','string',bi.封号);
+  if(isBst){
+    p+=mkRow('种族信息',hx.种族信息||'未知');p+=mkRow('年限',hx.年限||'未知');p+=mkRow('血脉等级',hx.血脉等级||'未知');p+=mkRow('化形状态',hx.化形状态||'未知');
+  }
+  p+=mkRow('魂力等级',(bi.魂力等级||0)+'级',pp+'.基础信息.魂力等级','number',bi.魂力等级||0);
+  p+=mkRow('魂师称号',bi.魂师称号||'无',pp+'.基础信息.魂师称号','string',bi.魂师称号||'');
+  p+=mkRow('当前动作',bi.当前动作||'',pp+'.基础信息.当前动作','string',bi.当前动作||'');
+  p+=mkRow('位置',bi.当前位置||'N/A',pp+'.基础信息.当前位置','string',bi.当前位置||'');
+  if(bi.所属势力) p+=mkRow('所属势力',bi.所属势力,pp+'.基础信息.所属势力','string',bi.所属势力||'');
+  if(npcGod&&npcGod.神级等级&&npcGod.神级等级!=='无'){
+    p+='<div class="md-divider"></div>';p+=mkRow('神级等级',npcGod.神级等级);
+    if(npcGod.法则掌控&&npcGod.法则掌控.length>0) p+='<div style="padding:4px 0">'+mkTags(npcGod.法则掌控,'tag-gold')+'</div>';
+    if(npcGod.神技&&npcGod.神技.length>0) p+='<div style="padding:4px 0">'+mkTags(npcGod.神技,'tag-purple')+'</div>';
+  }
+  if(isV(bi.外貌)){p+='<div class="md-divider"></div><div class="desc ed" data-ep="'+esc(pp)+'.基础信息.外貌" data-et="string" data-cv="'+esc(bi.外貌)+'" data-en="外貌">'+esc(bi.外貌)+'</div>';}
+  if(isBst&&isV(hx.兽形外貌)){p+='<div class="desc beast ed" data-ep="'+esc(pp)+'.魂兽信息.兽形外貌" data-et="string" data-cv="'+esc(hx.兽形外貌)+'" data-en="兽形外貌">'+esc(hx.兽形外貌)+'</div>';}
+  p+='<div class="md-divider"></div><button class="btn-del" data-del-npc="'+esc(name)+'" data-npc-type="NPC列表">'+IC.trash+' 删除此NPC</button></div>';
+
+  p+='<div class="mpane" data-tab="wuhun">';
+  if(showW){p+=buildNPCWuhunHtml(wi, pp);} else {p+='<div class="npc-empty">无（未化形）</div>';}
+  var nsK=Object.keys(npcSpirits);
+  if(nsK.length>0){
+    p+='<div class="md-divider"></div><div class="ring-lb">魂灵</div>';
+    nsK.forEach(function(sn){var sd=npcSpirits[sn];p+='<div class="spirit-item"><div class="spirit-name">'+esc(sn)+'</div>'+mkRow('年限',sd.当前年限||'未知')+'</div>';});
+  }
+  p+='</div>';
+
+  p+='<div class="mpane" data-tab="bond">';
+  p+=mkRow('关系状态',rel.与玩家关系状态||'路人',pp+'.关系列表.与玩家关系状态','string',rel.与玩家关系状态||'路人');
+  p+=mkRelBar('好感度',rel.对玩家好感度||0,'g-fav',pp+'.关系列表.对玩家好感度','好感度');
+  if(rel.与其他NPC关系&&rel.与其他NPC关系!=='无') p+=mkRow('其他关系',rel.与其他NPC关系,pp+'.关系列表.与其他NPC关系','string',rel.与其他NPC关系||'');
+  p+='</div>';
+
+  curModal={type:'m',name:name};
+  $('#md-body').html('<div class="md-ct">'+p+'</div>');$('#md-bg').addClass('open');bindModalTabs();
+}
+
+function showBeastModal(name,d){
+  $('#md-tabs').empty();$('#md-name').text(name);
+  var pp='魂兽NPC.'+name;var bi=_.get(d,'基础信息',{});
+  var h=mkRow('种族信息',bi.种族信息||'未知',pp+'.基础信息.种族信息','string',bi.种族信息||'');
+  h+=mkRow('年限',bi.年限||'未知',pp+'.基础信息.年限','string',bi.年限||'');
+  h+=mkRow('血脉等级',bi.血脉等级||'未知',pp+'.基础信息.血脉等级','string',bi.血脉等级||'');
+  var at=mkTags(bi.元素属性,'tag-green');if(at) h+='<div style="padding:5px 0">'+at+'</div>';
+  if(isV(d.兽形外貌)){h+='<div class="md-divider"></div><div class="desc beast ed" data-ep="'+esc(pp)+'.兽形外貌" data-et="string" data-cv="'+esc(d.兽形外貌)+'" data-en="兽形外貌"><b>兽形 </b>'+esc(d.兽形外貌)+'</div>';}
+  h+='<div class="md-divider"></div>';
+  h+=mkRow('当前动作',bi.当前动作||'',pp+'.基础信息.当前动作','string',bi.当前动作||'');
+  h+=mkRow('位置',bi.当前位置||'N/A',pp+'.基础信息.当前位置','string',bi.当前位置||'');
+  h+=mkRow('态度',d.对玩家态度||'中立',pp+'.对玩家态度','string',d.对玩家态度||'');
+  h+='<div class="md-divider"></div><button class="btn-del" data-del-npc="'+esc(name)+'" data-npc-type="魂兽NPC">'+IC.trash+' 删除此魂兽</button>';
+  curModal={type:'b',name:name};
+  $('#md-body').html('<div class="md-ct">'+h+'</div>');$('#md-bg').addClass('open');
+}
+
+function rebuildRingModal(rk,bp){
+  var rd=g(bp+'.'+rk,{});var path=bp+'.'+rk;
+  var dh=mkRow('颜色',rd.颜色||'',path+'.颜色','string',rd.颜色||'');
+  dh+=mkRow('年限',rd.年限||'',path+'.年限','string',rd.年限||'');
+  dh+=mkRow('来源魂兽',rd.来源魂兽||'未知',path+'.来源魂兽','string',rd.来源魂兽||'');
+  dh+='<div class="md-divider"></div>';
+  var skKeys=Object.keys(rd.魂技||{});
+  skKeys.forEach(function(skName){
+    var skData=rd.魂技[skName];
+    if(skData&&isV(skData.描述)){
+      dh+='<div class="md-field"><div class="md-field-lb">'+esc(skName)+'</div><div class="md-quote ed" data-ep="'+esc(path)+'.魂技.'+esc(skName)+'.描述" data-et="string" data-cv="'+esc(skData.描述)+'" data-en="'+esc(skName)+'">'+esc(skData.描述)+'</div></div>';
+    }
+  });
+  curModal={type:'ring',rk:rk,bp:bp};
+  $('#md-tabs').empty();$('#md-name').text(rk);
+  $('#md-body').html('<div class="md-ct">'+dh+'</div>');$('#md-bg').addClass('open');
+}
+
+function rebuildBoneModal(bt,bk){
+  var path=bt==='常规'?'玩家.常规魂骨.'+bk:'玩家.外附魂骨.'+bk;var bd=g(path,{});
+  var dh=mkRow('来源',bd.来源||'未知',path+'.来源','string',bd.来源||'');
+  dh+=mkRow('年限',bd.年限||'未知',path+'.年限','string',bd.年限||'');
+  dh+='<div class="md-divider"></div>';
+  var skKeys=Object.keys(bd.技能||{});
+  skKeys.forEach(function(skName){
+    var skData=bd.技能[skName];
+    if(skData&&isV(skData.描述)){
+      dh+='<div class="md-field"><div class="md-field-lb">'+esc(skName)+'</div><div class="md-quote ed" data-ep="'+esc(path)+'.技能.'+esc(skName)+'.描述" data-et="string" data-cv="'+esc(skData.描述)+'" data-en="'+esc(skName)+'">'+esc(skData.描述)+'</div></div>';
+    }
+  });
+  curModal={type:'bone',bt:bt,bk:bk};
+  $('#md-tabs').empty();$('#md-name').text(bk);
+  $('#md-body').html('<div class="md-ct">'+dh+'</div>');$('#md-bg').addClass('open');
+}
+
+function rebuildCoreModal(pos){
+  var hd=g('玩家.魂核.'+pos,{});if(!hd||!hd.属性) return;
+  var path='玩家.魂核.'+pos;
+  var dh=mkRow('丹田位置',pos);
+  dh+=mkRow('属性',hd.属性||'未知',path+'.属性','string',hd.属性||'');
+  dh+=mkRow('凝聚方式',hd.凝聚方式||'未知',path+'.凝聚方式','string',hd.凝聚方式||'');
+  curModal={type:'core',pos:pos};
+  $('#md-tabs').empty();$('#md-name').text(pos+' · 魂核');
+  $('#md-body').html('<div class="md-ct">'+dh+'</div>');$('#md-bg').addClass('open');
+}
+
+function showItemModal(name){
+  var it=g('玩家.物品栏.'+name,{});curModal={type:'item',name:name};
+  $('#md-tabs').empty();$('#md-name').text(name);
+  var h=mkRow('类型',it.类型||'其他','玩家.物品栏.'+name+'.类型','string',it.类型||'其他');
+  h+=mkRow('数量',(it.数量||1)+'','玩家.物品栏.'+name+'.数量','number',it.数量||1);
+  if(it.描述) h+='<div class="md-divider"></div><div class="md-field"><div class="md-field-lb">描述</div><div class="md-quote ed" data-ep="玩家.物品栏.'+esc(name)+'.描述" data-et="string" data-cv="'+esc(it.描述)+'" data-en="描述">'+esc(it.描述)+'</div></div>';
+  h+='<button class="btn-del" data-del-item="'+esc(name)+'">'+IC.trash+' 删除</button>';
+  $('#md-body').html('<div class="md-ct">'+h+'</div>');$('#md-bg').addClass('open');
+}
+
+/* === 时间线弹窗 === */
+function showTimelineModal(){
+  var tabs=[{id:'tl1',lb:'斗一'},{id:'tl2',lb:'斗二'},{id:'tl3',lb:'斗三'}];
+  var th='';tabs.forEach(function(t,i){th+='<button class="mtab'+(i===0?' active':'')+'" data-tab="'+t.id+'">'+t.lb+'</button>';});
+  $('#md-tabs').html(th);$('#md-name').text('📖 原著剧情时间线');
+
+  var p='';
+  var eras=['斗一','斗二','斗三'];
+  var eraIds=['tl1','tl2','tl3'];
+  var tlData=[TL_D1,TL_D2,TL_D3];
+
+  for(var ei=0;ei<3;ei++){
+    p+='<div class="mpane'+(ei===0?' active':'')+'" data-tab="'+eraIds[ei]+'">';
+    var tl=tlData[ei];var chaps=Object.keys(tl);
+    chaps.forEach(function(ch,ci){
+      p+='<div class="tl-chapter'+(ci>0?' collapsed':'')+'"><div class="tl-chapter-title" data-tl-ch="'+ci+'">'+esc(ch)+'<span class="tl-chev">▼</span></div><div class="tl-events">';
+      tl[ch].forEach(function(ev){p+='<div class="tl-event">'+esc(ev)+'</div>';});
+      p+='</div></div>';
+    });
+    p+='</div>';
+  }
+
+  curModal={type:'timeline'};
+  $('#md-body').html('<div class="md-ct">'+p+'</div>');$('#md-bg').addClass('open');bindModalTabs();
+}
+
+/* === 快捷选择弹窗 === */
+function showQuickSelect(type){
+  var era=g('世界状态.当前时代','斗一');
+  var cd=CHAPTER_DATA[era];
+  if(!cd) return;
+
+  var curVal=type==='chapter'?g('世界状态.剧情章节','序章'):g('世界状态.年表时期','前期');
+  var list=type==='chapter'?cd.chapters:cd.periods;
+  var title=type==='chapter'?'快捷选择 · 剧情章节 ('+era+')':'快捷选择 · 年表时期 ('+era+')';
+  var ep=type==='chapter'?'世界状态.剧情章节':'世界状态.年表时期';
+
+  $('#md-tabs').empty();$('#md-name').text(title);
+  var h='<div class="qs-lb">当前：'+esc(curVal)+'</div>';
+  h+='<div class="qs-lb" style="margin-top:8px">点击直接修改：</div>';
+  h+='<div class="qs-grid">';
+  list.forEach(function(item){
+    var isCur=item===curVal;
+    h+='<button class="qs-btn'+(isCur?' current':'')+'" data-qs-val="'+esc(item)+'" data-qs-ep="'+esc(ep)+'">'+esc(item)+'</button>';
+  });
+  h+='</div>';
+
+  /* 同时提供手动编辑入口 */
+  h+='<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-s)">';
+  h+='<div class="qs-lb">或手动输入：</div>';
+  h+='<div style="display:flex;gap:8px;margin-top:6px"><input type="text" id="qs-manual" class="ed-input" value="'+esc(curVal)+'" style="flex:1"><button id="qs-manual-save" class="ed-save" data-qs-ep="'+esc(ep)+'">保存</button></div>';
+  h+='</div>';
+
+  curModal={type:'qs',qsType:type};
+  $('#md-body').html('<div class="md-ct">'+h+'</div>');$('#md-bg').addClass('open');
+}
+
+function bindModalTabs(){
+  $('#md-tabs').off('click','.mtab').on('click','.mtab',function(){
+    var tid=$(this).data('tab');$('#md-tabs .mtab').removeClass('active');$(this).addClass('active');
+    $('#md-body .mpane').removeClass('active');$('#md-body .mpane[data-tab="'+tid+'"]').addClass('active');
+  });
+}
+
+function refreshModal(){
+  if(!curModal) return;
+  var at=$('#md-tabs .mtab.active').data('tab');
+  $('.md-scroll').css('opacity',0);
+  setTimeout(function(){
+    if(curModal.type==='f') showFemaleModal(curModal.name,g('NPC列表.'+curModal.name,{}));
+    else if(curModal.type==='m') showMaleModal(curModal.name,g('NPC列表.'+curModal.name,{}));
+    else if(curModal.type==='b') showBeastModal(curModal.name,g('魂兽NPC.'+curModal.name,{}));
+    else if(curModal.type==='ring') rebuildRingModal(curModal.rk,curModal.bp);
+    else if(curModal.type==='bone') rebuildBoneModal(curModal.bt,curModal.bk);
+    else if(curModal.type==='core') rebuildCoreModal(curModal.pos);
+    else if(curModal.type==='item') showItemModal(curModal.name);
+    else if(curModal.type==='fusion') showFusionModal(curModal.name);
+    if(at) setTimeout(function(){$('#md-tabs .mtab[data-tab="'+at+'"]').click();},10);
+    $('.md-scroll').css('opacity',1);
+  },20);
+}
+
+async function saveMvu(ep,val){
+  try{
+    await waitGlobalInitialized('Mvu');
+    var msgId='latest';try{if(typeof getCurrentMessageId==='function') msgId=getCurrentMessageId();}catch(e){}
+    var data=Mvu.getMvuData({type:'message',message_id:msgId});
+    _.set(data,'stat_data.'+ep,val);
+    await Mvu.replaceMvuData(data,{type:'message',message_id:msgId});
+    return true;
+  }catch(err){console.error('Mvu save failed',err);return false;}
+}
+
+async function deleteNpcMvu(type, name){
+  try{
+    await waitGlobalInitialized('Mvu');
+    var msgId='latest';try{if(typeof getCurrentMessageId==='function') msgId=getCurrentMessageId();}catch(e){}
+    var data=Mvu.getMvuData({type:'message',message_id:msgId});
+    var targetObj=_.get(data,'stat_data.'+type);
+    if(targetObj && targetObj[name]){
+      delete targetObj[name];
+      await Mvu.replaceMvuData(data,{type:'message',message_id:msgId});
+      return true;
+    }
+    return false;
+  }catch(err){console.error('Mvu delete failed',err);return false;}
+}
+
+function renderAll(){
+  renderOverview();
+  renderWuhunTrain();
+  renderBones();
+  renderItems();
+  renderNPCs();
+}
+
+/* === 时间线数据（精简版，每章保留关键事件） === */
+var TL_D1={"序章":["斗罗历2617-2637年：玉小刚接近比比东查阅密卷→被驱逐","比比东被千寻疾强留受孕→千仞雪出生","千寻疾围剿唐昊阿银→阿银献祭→唐昊突破封号斗罗","比比东吞噬千寻疾继任教皇","唐昊带唐三定居圣魂村修炼六年"],"第一章":["唐三觉醒蓝银草+先天满魂力，昊天锤被压制","唐昊传授乱披风锤法，唐三入学诺丁学院","玉小刚推断双生武魂，唐三拜师"],"第二章":["小舞成为宿舍老大，与唐三划定三八线","猎魂森林猎杀曼陀罗蛇，获第一魂环缠绕"],"第三章":["唐昊托付教皇令给玉小刚","唐三与小舞正式结拜兄妹"],"第四章":["唐三小舞从诺丁学院毕业前往索托城","与戴沐白交手平手"],"第五章":["四人参加史莱克报名考核","唐三使用暗器创伤赵无极，全员通过"],"第六章":["唐昊暴揍赵无极","马红俊邪火凤凰登场","弗兰德带五人前往斗魂场注册"],"第七章":["星斗森林猎杀凤尾鸡冠蛇，奥斯卡获第三魂环","泰坦巨猿抓走小舞"],"第八章":["唐三越级单杀人面魔蛛获外附魂骨八蛛矛","亮出教皇令获胜"],"第九章":["玉小刚正式命名史莱克七怪","魔鬼负重跑训练"],"第十章":["七人戴怪物面具注册斗魂组合","团战首胜"],"第十一章":["越级挑战皇斗战队","秦明提议转入天斗皇家学院"],"第十二章":["诸葛神弩团灭凶神战队，首次杀人","雪星亲王驱逐史莱克全员"],"第十三章":["柳二龙将蓝霸学院更名史莱克学院","唐三吞服仙草完成冰火炼金身"],"第十四章":["唐三与独孤博结为忘年交","仙草分配：马红俊火凤凰进化，宁荣荣九宝琉璃塔进化"],"第十五章":["六人突破四十级前往落日森林猎魂","天斗赛区预选赛开幕"],"第十六章":["宁风致下达暗器大额订单","唐三首次公开昊天锤"],"第十七章":["菊鬼斗罗截杀天斗车队","总决赛戴沐白版幽冥白虎反杀"],"第十八章":["七位一体融合技触发器魂真身","史莱克夺冠","小舞十万年魂兽身份暴露","唐昊砸毁教皇殿"],"第十九章":["唐三封印魂力修炼乱披风锤法两年","吸收精神凝聚智慧头骨"],"第二十章":["蓝银森林血脉觉醒→蓝银皇","杀戮之都开始百连胜"],"第二十一章":["两年完成百连胜","通过地狱路获杀神领域"],"第二十二章":["唐昊自断右臂左腿还昊天宗传承","唐三认祖归宗","五年之约重逢"],"第二十三章":["菊鬼斗罗锁死大明二明","小舞灵魂献祭注入唐三"],"第二十四章":["大明二明告知复活条件","唐三收服四大家族建立唐门"],"第二十五章":["千仞雪撕碎伪装发动宫变","唐三击落千仞雪","雪夜大帝传位"],"第二十六章":["出海遭遇深海魔鲸王","唐三收服海盗团"],"第二十七章":["登陆海神岛接受海神之光测试","唐三获海神九考"],"第二十八章":["海神之光闭关一年突破魂帝","第四考击杀虎鲸王获十万年魂环突破八十级"],"第二十九章":["逐一击败七圣柱守护斗罗","第六考联手对抗波塞西"],"第三十章":["拔出海神三叉戟","大明二明主动献祭","唐三突破九十级封号斗罗","小舞复活"],"第三十一章":["武魂帝国建立","楼高跳入熔炉铸暴雨梨花针","三叉戟技能重创比比东","千仞雪完成天使九考成神"],"第三十二章":["击杀深海魔鲸王吸收百万年魂环","波塞西献祭开启海神传承","唐三成为海神","小舞成为修罗剑鞘","双神合一斩杀比比东","武魂帝国投降大陆和平","七怪大婚飞升神界"]};
+
+var TL_D2={"序章":["霍雨浩降生于白虎公爵府","唐三将唐舞桐灵魂一分为二","霍云儿病逝","霍雨浩携白虎匕逃离"],"第一章":["融合百万年天梦冰蚕","进入史莱克学院与王冬冲突"],"第二章":["展露精神探测共享","贝贝在斗魂区击败徐三石"],"第三章":["吞服玄水丹洗筋伐髓","新生考核规则公布"],"第四章":["新生考核初赛四连胜"],"第五章":["浩冬之力觉醒","蝶神之光击溃邪幻月"],"第六章":["黄金之路夺冠","霍雨浩未列入核心弟子"],"第七章":["极北之地融合冰碧帝皇蝎武魂与躯干骨"],"第八章":["遭遇死神使者","伊莱克斯觉醒斩杀"],"第九章":["斗魂大赛初赛","拍得噬灵刻刀"],"第十章":["半决赛冰爆术击败星罗国家队","决赛夺冠","穆恩宣布预备队晋升史莱克七怪"],"第十一章":["唐雅离校失踪","魂力突破三十级"],"第十二章":["本体宗突袭史莱克","强行融合暗金恐爪右掌骨"],"第十三章":["圣灵教掳走马小桃","穆恩启动极限单兵计划","穆恩灵魂融入黄金古树"],"第十四章":["交换生前往日月皇家魂导师学院"],"第十五章":["毒不死突袭明德堂","伊莱克斯封印雪帝力量"],"第十六章":["伊莱克斯燃烧神识转化雪帝为首个魂灵"],"第十七章":["海神缘相亲确立伴侣关系","隔代继承人"],"第十八章":["遭遇圣灵教袭击","命运之龙吟击杀狼猿"],"第十九章":["冰火两仪眼饮阳泉水","王秋儿喂服相思断肠红"],"第二十章":["遭遇堕落唐雅","初赛击败地龙门"],"第二十一章":["个人战击杀暗算者","唐门对史莱克认输"],"第二十二章":["灵眸二次觉醒","紫金蝶龙变击杀圣灵宗","明都大范围坍塌"],"第二十三章":["进入乾坤问情谷","三人混战"],"第二十四章":["幻境中保护白虎公爵","承受修罗剑百次斩击"],"第二十五章":["王冬儿沉睡","王秋儿离去","向唐三光影叩首祈求"],"第二十六章":["创出思冬拳念冬剑浩冬掌","准备逆向引爆精神核心"],"第二十七章":["三眼金猊献祭","魂力跃升七十一级","击杀邪眼暴君"],"第二十八章":["兽潮围攻史莱克城","建立传灵塔","化名唐冬从军"],"第二十九章":["潜入敌营接应戴浩突围","遭遇唐舞桐"],"第三十章":["遭死神之光击中","被橘子擒获"],"第三十一章":["小白转化为魂灵获第八魂环","释放亡灵军团","解救唐雅"],"第三十二章":["海神缘与唐舞桐相认","融念冰传授神级刀法"],"第三十三章":["丽雅转化为魂灵","阴阳互补双魂核突破九十级"],"第三十四章":["击杀钟离乌","龙逍遥献祭传力","斩杀邪帝"],"第三十五章":["闭关四年达99级","挑战兽神帝天","升入神界认祖归宗"]};
+
+var TL_D3={"序章":["毁灭之神兵变","金龙王被斩杀龙核射入唐舞麟体内","神界被时空乱流卷走"],"第一章":["银龙王封印记忆融入人界","觉醒蓝银草，融合草蛇魂灵","娜儿离去，入学东海学院"],"第二章":["封印激发金色鳞片","老唐告知十八道封印","父母失踪","冲破第一道封印觉醒金龙爪"],"第三章":["零班成立","升灵台击杀千年水晶熊"],"第四章":["英雄殿考核","传授玄天功与紫极魔瞳","魂灵晋升千年"],"第五章":["许小言加入零班","天海联盟大比报名"],"第六章":["个人赛败于叶星澜","团体赛唐舞麟濒死","古月燃烧本源救回"],"第七章":["获外附魂骨","冲破第二道封印觉醒黄金龙体","争取史莱克补考"],"第八章":["零班通过连续考核","当场完成灵锻破格录取"],"第九章":["枫无羽收为亲传","制成首件一字斗铠"],"第十章":["确立一年级班长","武魂融合技触发"],"第十一章":["期末考十五天抵达明都","获云金灵锻锤"],"第十二章":["挑战日月学院神龙变获胜","第四重封印松动"],"第十三章":["冲破第四道封印","海神岛与娜儿重逢"],"第十四章":["越级挑战三年级获胜","敲定星罗交流"],"第十五章":["深海四十九天试炼","蓝银草觉醒蓝银皇突破四十级","星罗大赛个人赛连胜"],"第十六章":["强行冲破第六层封印拔出黄金龙枪","七对七夺冠"],"第十七章":["进入龙谷破碎第七第八封印","滞留龙墓三年四个月","获山龙王躯干骨"],"第十八章":["离开龙谷返校","海神缘与古月相认","完成一字斗铠龙"],"第十九章":["魔鬼岛七老魔极限试炼","乐正宇失控淘汰"],"第二十章":["生命潮汐固化魂核雏形","圣灵教袭击天斗城"],"第二十一章":["冲破第九层封印","完成魂锻踏入圣匠","弑神级炮弹毁灭史莱克城","云冥陨落","古月失忆退化"],"第二十二章":["冰火两仪眼六大植物凶兽献祭为本命魂灵"],"第二十三章":["入伍血神军团","冲破第十层封印","星斗战网双冠王"],"第二十四章":["击败原血八获第九席位","深渊六千年最大总攻","龙神变击碎圣君意念体","精神力突破灵域境"],"第二十五章":["返回史莱克旧址开启避难所","获授海神阁阁主印信与唐门门主令牌"],"第二十六章":["救出养父母","唐孜然中吞杀身亡","老唐显露海神唐三本相"],"第二十七章":["促成唐门与斗灵防御协定","五神之决三连胜"],"第二十八章":["五神之决全胜","联邦封锁星罗海域","宣布重建史莱克"],"第二十九章":["化名参加比武招亲","击退阿尔巴冲破第十四层封印晋升封号斗罗"],"第三十章":["领悟龙皇禁法晋升神匠","比武招亲落幕"],"第三十一章":["赌斗史莱克重夺大陆第一学院"],"第三十二章":["潜入战神殿获弑神级炮弹","获赠七彩莲华火焰"],"第三十三章":["完成四字斗铠金龙月语","永恒天国抹除数十万深渊军","陈新杰龙夜月陨落"],"第三十四章":["通过海神九考修为达准神巅峰","古月娜击杀灵帝接任传灵塔塔主","魔皇提出九局五胜赌约"],"第三十五章":["关月燃烧本源贯穿三名深渊王者","唐舞麟与古月娜龙神变击杀烈帝","深渊圣君真身降临","唐昊苏醒终结战争"],"第三十六章":["唐昊吞噬深渊能量复活所有牺牲者","古月娜发出灭世通牒","万米高空宿命对决","两人冻结为冰雕坠入冰海永恒沉睡"]};
+
+async function init(){
+  await waitGlobalInitialized('Mvu');
+
+  var chatMsg=[];
+  try{if(typeof getChatMessages==='function'&&typeof getCurrentMessageId==='function') chatMsg=getChatMessages(getCurrentMessageId());}catch(e){}
+  if(chatMsg&&chatMsg[0]&&chatMsg[0].message&&chatMsg[0].message.indexOf('<char_create>')!==-1){document.body.innerHTML='';return;}
+
+  renderAll();
+  eventOn(Mvu.events.VARIABLE_UPDATE_ENDED,function(){renderAll();});
+
+  $('#hd-main').on('click',function(){
+    $('#main-coll').toggleClass('shut');
+    $('#main-chev').toggleClass('shut');
+  });
+
+  $(document).on('click','.tab-btn',function(){
+    var tid=$(this).data('tab');
+    $('.tab-btn').removeClass('active');$(this).addClass('active');
+    $('.tab-pane').removeClass('active');$('#tab-'+tid).addClass('active');
+  });
+
+  $('#md-x').on('click',hideModal);
+  $('#md-bg').on('click',function(e){if(!$(e.target).closest('.md-box').length) hideModal();});
+
+  $('#ed-x').on('click',function(){$('#ed-bg').removeClass('open');});
+  $('#ed-bg').on('click',function(e){if(!$(e.target).closest('.md-box').length) $('#ed-bg').removeClass('open');});
+
+  $(document).on('click','.ed',function(e){
+    e.stopPropagation();var ep=$(this).data('ep');if(!ep) return;
+    $('#ed-title').text('修改 '+($(this).data('en')||'变量'));
+    $('#ed-input').val($(this).data('cv'));
+    $('#ed-bg').data('ep',ep).data('et',$(this).data('et')||'string').addClass('open');
+    setTimeout(function(){$('#ed-input').focus();},100);
+  });
+  $('#ed-input').on('keydown',function(e){if(e.key==='Enter') $('#ed-save').click();});
+  $('#ed-save').on('click',async function(){
+    var ep=$('#ed-bg').data('ep');var et=$('#ed-bg').data('et');var nv=$('#ed-input').val();
+    $('#ed-bg').removeClass('open');
+    var parsed=et==='number'?(Number(nv)||0):nv;
+    var ok=await saveMvu(ep,parsed);
+    if(ok){renderAll();refreshModal();}
+  });
+
+  $(document).on('click','.npc-tag[data-nn]',function(){
+    var nt=$(this).data('nt');var nn=$(this).data('nn');
+    if(nt==='f') showFemaleModal(nn,g('NPC列表.'+nn,{}));
+    else if(nt==='m') showMaleModal(nn,g('NPC列表.'+nn,{}));
+    else if(nt==='b') showBeastModal(nn,g('魂兽NPC.'+nn,{}));
+  });
+
+  $(document).on('click','.npc-tag[data-fn]',function(){showFusionModal($(this).data('fn'));});
+  $(document).on('click','.item-tag',function(){showItemModal($(this).data('in'));});
+
+  $(document).on('click','.btn-del[data-del-item]',async function(){
+    var itemName=$(this).data('del-item');
+    var ok=await saveMvu('玩家.物品栏.'+itemName+'.数量',0);
+    if(ok){hideModal();renderAll();}
+  });
+
+  $(document).on('click','.btn-del[data-del-npc]',async function(){
+    var npcName=$(this).data('del-npc');var npcType=$(this).data('npc-type');
+    if(confirm('确定要删除 '+npcName+' 吗？')){
+      var ok=await deleteNpcMvu(npcType, npcName);
+      if(ok){hideModal();renderAll();}
+    }
+  });
+
+  $(document).on('click','.tag.cl[data-gf]',function(){
+    var k=$(this).data('gf');var desc=_.get(g('玩家.功法',{}),k+'.描述','无描述');
+    showDetail(k,'<div class="md-field"><div class="md-field-lb">功法描述</div><div class="md-field-v ed" data-ep="玩家.功法.'+esc(k)+'.描述" data-et="string" data-cv="'+esc(desc)+'" data-en="描述">'+esc(desc)+'</div></div>');
+  });
+  $(document).on('click','.tag.cl[data-zc]',function(){
+    showDetail('⚡ '+$(this).data('zc'),'<div class="md-field"><div class="md-field-lb">魂技描述</div><div class="md-field-v">'+esc($(this).data('zcd')||'无描述')+'</div></div>');
+  });
+  $(document).on('click','.tag.cl[data-tf]',function(){
+    showDetail('🐾 '+$(this).data('tf'),'<div class="md-field"><div class="md-field-lb">天赋魂技</div><div class="md-field-v">'+esc($(this).data('tfd')||'无描述')+'</div></div>');
+  });
+  $(document).on('click','.tag.cl[data-domain]',function(){
+    showDetail('领域: '+$(this).data('dn'),'<div class="md-field"><div class="md-field-lb">领域效果</div><div class="md-field-v">'+esc($(this).data('de')||'无描述')+'</div></div>');
+  });
+
+  $(document).on('click','.soul-ring:not(.empty)',function(){rebuildRingModal($(this).data('rk'),$(this).data('bp'));});
+  $(document).on('click','.bone-slot.got',function(){rebuildBoneModal($(this).data('bt'),$(this).data('bk'));});
+  $(document).on('click','.core-slot.got',function(){rebuildCoreModal($(this).data('hkt'));});
+
+  /* 时间线按钮 */
+  $('#btn-timeline').on('click',function(e){e.stopPropagation();showTimelineModal();});
+
+  /* 时间线章节折叠 */
+  $(document).on('click','.tl-chapter-title',function(){$(this).closest('.tl-chapter').toggleClass('collapsed');});
+
+  /* 快捷选择入口 */
+  $(document).on('click','[data-qs]',function(e){e.stopPropagation();showQuickSelect($(this).data('qs'));});
+
+  /* 快捷选择按钮 */
+  $(document).on('click','.qs-btn',async function(){
+    var val=$(this).data('qs-val');var ep=$(this).data('qs-ep');
+    var ok=await saveMvu(ep,val);
+    if(ok){hideModal();renderAll();}
+  });
+
+  /* 快捷选择手动保存 */
+  $(document).on('click','#qs-manual-save',async function(){
+    var val=$('#qs-manual').val();var ep=$(this).data('qs-ep');
+    var ok=await saveMvu(ep,val);
+    if(ok){hideModal();renderAll();}
+  });
+}
+
+$(errorCatched(init));
+</script>
+</head>
+<body>
+
+<div class="sp">
+  <div class="sp-hd" id="hd-main">
+    <div class="sp-hd-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+    <div class="sp-hd-txt"><h1>斗罗大陆 · 观测面板</h1><p>点击折叠 · 点击标签查看详情</p></div>
+    <div class="sp-hd-btns">
+      <div class="hd-btn" id="btn-timeline" title="原著剧情时间线"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+      <div class="chev" id="main-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+    </div>
+  </div>
+
+  <div class="coll" id="main-coll"><div class="coll-in">
+    <div class="tab-nav">
+      <button class="tab-btn active" data-tab="overview">总览</button>
+      <button class="tab-btn" data-tab="wuhun">武魂·修炼</button>
+      <button class="tab-btn" data-tab="bones">魂骨</button>
+      <button class="tab-btn" data-tab="items">物品</button>
+      <button class="tab-btn" data-tab="npc">NPC</button>
+    </div>
+    <div class="tab-body">
+      <div class="tab-pane active" id="tab-overview"></div>
+      <div class="tab-pane" id="tab-wuhun"></div>
+      <div class="tab-pane" id="tab-bones"></div>
+      <div class="tab-pane" id="tab-items"></div>
+      <div class="tab-pane" id="tab-npc"></div>
+    </div>
+  </div></div>
+</div>
+
+<div class="md-bg" id="md-bg">
+  <div class="md-box">
+    <div class="md-hd"><span class="md-nm" id="md-name"></span><button class="md-x" id="md-x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="md-tabs" id="md-tabs"></div>
+    <div class="md-scroll"><div id="md-body"></div></div>
+  </div>
+</div>
+
+<div class="md-bg" id="ed-bg" style="z-index:99999">
+  <div class="md-box" style="max-width:380px;box-shadow:0 16px 48px rgba(0,0,0,.4)">
+    <div class="md-hd"><span class="md-nm" id="ed-title">修改变量</span><button class="md-x" id="ed-x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="md-ct" style="padding-top:6px">
+      <input type="text" id="ed-input" class="ed-input" placeholder="输入新的数值">
+      <div style="margin-top:16px;display:flex;justify-content:flex-end"><button id="ed-save" class="ed-save">保存修改</button></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
+```

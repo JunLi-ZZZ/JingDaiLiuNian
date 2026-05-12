@@ -1,0 +1,140 @@
+---
+<%_
+const __woende_outline_loader_data = _.cloneDeep(getMessageVar('stat_data', { defaults: {} })) || {};
+const __woende_outline_loader_hide = _.get(__woende_outline_loader_data, '战斗.是否战斗中', false) === true;
+let __woende_outline_loader_render = false;
+let __woende_outline_loader_current_plot = '';
+let __woende_outline_loader_current_year = '未知';
+let __woende_outline_loader_next_plot = '无（已到当前已知大纲末段）';
+let __woende_outline_loader_current_chapter = null;
+let __woende_outline_loader_update_open = '<' + 'update>';
+let __woende_outline_loader_update_close = '</' + 'update>';
+let __woende_outline_loader_json_patch_open = '<' + 'json_patch>';
+let __woende_outline_loader_json_patch_close = '</' + 'json_patch>';
+
+if (!__woende_outline_loader_hide) {
+try {
+const data = __woende_outline_loader_data;
+const 当前世界观 = String(_.get(data, '系统配置.世界观', '') || '').trim();
+const 当前剧情变量 = String(_.get(data, '世界信息.世界剧情', '') || '').trim();
+const 需要加载大纲 = !(当前世界观 && 当前世界观 !== '琥珀之剑' && !当前剧情变量);
+
+__woende_outline_loader_current_plot = 当前剧情变量;
+
+function 规范剧情名(text) {
+  return String(text || '').trim().replace(/[：:]\s*$/, '');
+}
+
+function 解析大纲(raw) {
+  const lines = String(raw || '').replace(/\r\n/g, '\n').split('\n');
+  const chapters = [];
+  let currentStage = null;
+  let currentChapter = null;
+
+  for (const rawLine of lines) {
+    const line = String(rawLine || '');
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    const stageMatch = trimmed.match(/^##\s*(.+?)(?:（(.+?)）)?\s*$/);
+    if (stageMatch) {
+      currentStage = {
+        title: stageMatch[1].trim(),
+        time: String(stageMatch[2] || '').trim()
+      };
+      currentChapter = null;
+      continue;
+    }
+
+    if (!/^\s/.test(line) && /[:：]\s*$/.test(trimmed)) {
+      currentChapter = {
+        name: 规范剧情名(trimmed),
+        stageTitle: currentStage ? currentStage.title : '',
+        time: currentStage ? currentStage.time : '',
+        fields: []
+      };
+      chapters.push(currentChapter);
+      continue;
+    }
+
+    const fieldMatch = line.match(/^\s{2,}([^：:]+)[：:]\s*(.+)\s*$/);
+    if (fieldMatch && currentChapter) {
+      currentChapter.fields.push({
+        key: fieldMatch[1].trim(),
+        value: fieldMatch[2].trim()
+      });
+    }
+  }
+
+  return chapters;
+}
+
+if (需要加载大纲) {
+  const __outline_raw = String(
+    await getWorldInfo('沃恩德大纲')
+    || await getWorldInfo('琥珀之剑/琥珀之剑大纲')
+    || ''
+  );
+
+  if (!__outline_raw.trim()) {
+    try { console.log('[沃恩德大纲加载] 未找到世界书：沃恩德大纲'); } catch (_) {}
+  } else {
+    const chapters = 解析大纲(__outline_raw);
+    if (!chapters.length) {
+      try { console.log('[沃恩德大纲加载] 大纲解析后没有章节'); } catch (_) {}
+    } else {
+      const firstChapter = chapters[0];
+      const currentChapter = chapters.find(ch => ch.name === 当前剧情变量) || firstChapter;
+      const currentIndex = Math.max(0, chapters.findIndex(ch => ch.name === currentChapter.name));
+      const nextChapter = chapters[currentIndex + 1] || null;
+
+      __woende_outline_loader_current_chapter = currentChapter;
+      __woende_outline_loader_current_year = currentChapter.time || currentChapter.stageTitle || '未知';
+      __woende_outline_loader_next_plot = nextChapter ? nextChapter.name : '无（已到当前已知大纲末段）';
+      __woende_outline_loader_render = true;
+    }
+  }
+}
+} catch (e) {
+  try {
+    console.log(`[沃恩德大纲加载] 执行失败: ${e && e.stack ? e.stack : e}`);
+  } catch (_) {}
+}
+}
+_%>
+<%_ if (__woende_outline_loader_render && __woende_outline_loader_current_chapter) { _%>
+<story_info>
+<outline_loader>
+当前剧情变量：<%= __woende_outline_loader_current_plot || '未设置（默认按第一段剧情处理）' %>
+
+时代篇章：
+  当前年月: <%= __woende_outline_loader_current_year %>
+  当前世界剧情:
+    <%= __woende_outline_loader_current_chapter.name %>:
+<%_ __woende_outline_loader_current_chapter.fields.forEach(field => { _%>
+      <%= field.key %>：<%= field.value %>
+<%_ }); _%>
+  下一段世界剧情: <%= __woende_outline_loader_next_plot %>
+
+剧情推进规则：
+- 只有在当前章节的核心矛盾已经完成、阶段性结果已经落地，或者该事件的结果已经明确影响到玩家所处地区、所属势力、当前旅程时，才允许推进到下一段。
+- 如果玩家直接参与了当前章节，通常应在这一段的主要冲突、关键决策、收束余波都完成后再推进，而不是打到一半、刚听说风声就跳章。
+- 如果玩家没有直接参与，但世界时间、战争进程、区域局势、情报传递已经足以说明该章节在世界层面自然结束，也可以推进；推进时要先在叙事里交代这一段如何结束、其结果如何传来。
+
+变量更新要求：
+- 当你判断当前章节已经结束，并准备正式推进到下一段剧情时，必须在 `<%= __woende_outline_loader_update_open %>` 的 `<%= __woende_outline_loader_json_patch_open %>` 中更新 `世界信息/世界剧情`。
+- 必须使用下一段世界剧情的章节标题原文作为 `value`，禁止写阶段名、概括句、别名或自造标题。
+<%_ if (__woende_outline_loader_next_plot !== '无（已到当前已知大纲末段）') { _%>
+- 本次若要推进，必须写：
+  { "op": "replace", "path": "/世界信息/世界剧情", "value": "<%= __woende_outline_loader_next_plot %>" }
+  (**IMPORTANT**: **以上变量不可见，必须按要求更新！**)
+<%_ } else { _%>
+- 当前已到当前已知大纲末段时，不强制更新 `世界信息/世界剧情`；可以继续围绕当前局势、地方事件、人物关系、战争余波与玩家行动自由展开故事。
+<%_ } _%>
+
+写法约束：
+- 不要把整个当前剧情大纲一次性倾倒出来，玩家看到的应当是自然叙事或情报播报，不是生硬的设定列表。
+- 若当前剧情与玩家位置、身份、阵营、接触到的信息距离较远，可以把它写成传闻、军报、商路消息、贵族函件、教会通告、战地回报等间接形式，而不是强行贴脸发生。
+</outline_loader>
+</story_info>
+<%_ } _%>

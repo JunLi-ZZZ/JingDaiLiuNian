@@ -1,0 +1,915 @@
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>推进选项 · 直接发送模式</title>
+    <style>
+        /* ===== 原有样式 (保留) ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: hsl(0, 0%, 96%);
+            --card-bg: hsl(0, 0%, 100%);
+            --text-1: hsl(0, 0%, 8%);
+            --text-2: hsl(0, 0%, 45%);
+            --text-3: hsl(0, 0%, 62%);
+            --accent: hsl(211, 100%, 50%);
+            --accent-hover: hsl(211, 100%, 42%);
+            --accent-glow: hsla(211, 100%, 50%, 0.18);
+            --border: hsl(0, 0%, 90%);
+            --input-bg: hsl(0, 0%, 95%);
+            --shadow-md: 0 2px 8px hsla(0, 0%, 0%, 0.06);
+            --shadow-btn: 0 4px 14px hsla(211, 100%, 50%, 0.25);
+            --radius-sm: 10px;
+            --radius-md: 14px;
+            --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+            --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+            --c-slow: hsl(195, 70%, 50%);
+            --c-slow-soft: hsl(195, 70%, 95%);
+            --c-slow-bdr: hsl(195, 50%, 82%);
+            --c-fast: hsl(25, 85%, 55%);
+            --c-fast-soft: hsl(25, 85%, 95%);
+            --c-fast-bdr: hsl(25, 60%, 82%);
+            --c-wild: hsl(270, 65%, 58%);
+            --c-wild-soft: hsl(270, 65%, 95%);
+            --c-wild-bdr: hsl(270, 45%, 82%);
+            --c-nsfw: hsl(340, 70%, 55%);
+            --c-nsfw-soft: hsl(340, 70%, 95%);
+            --c-nsfw-bdr: hsl(340, 50%, 82%);
+        }
+
+        body.dark {
+            --bg: hsl(220, 10%, 8%);
+            --card-bg: hsl(220, 8%, 14%);
+            --text-1: hsl(0, 0%, 93%);
+            --text-2: hsl(0, 0%, 55%);
+            --text-3: hsl(0, 0%, 40%);
+            --accent: hsl(211, 100%, 60%);
+            --accent-hover: hsl(211, 100%, 52%);
+            --accent-glow: hsla(211, 100%, 60%, 0.15);
+            --border: hsl(220, 6%, 22%);
+            --input-bg: hsl(220, 8%, 18%);
+            --shadow-md: 0 2px 8px hsla(0, 0%, 0%, 0.25);
+            --shadow-btn: 0 4px 14px hsla(211, 100%, 60%, 0.2);
+
+            --c-slow-soft: hsl(195, 40%, 14%);
+            --c-slow-bdr: hsl(195, 30%, 25%);
+            --c-fast-soft: hsl(25, 40%, 14%);
+            --c-fast-bdr: hsl(25, 30%, 25%);
+            --c-wild-soft: hsl(270, 30%, 14%);
+            --c-wild-bdr: hsl(270, 25%, 25%);
+            --c-nsfw-soft: hsl(340, 35%, 14%);
+            --c-nsfw-bdr: hsl(340, 25%, 25%);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: transparent;
+            color: var(--text-1);
+            padding: 8px 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .animate-in {
+            animation: fadeInUp 0.5s var(--ease) both;
+        }
+
+        .container {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 0 2px;
+        }
+
+        .main-layout {
+            display: flex;
+            gap: 14px;
+            align-items: stretch;
+        }
+
+        .options-section {
+            flex: 3;
+            min-width: 0;
+        }
+
+        .input-section {
+            flex: 2;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-header {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-3);
+            margin-bottom: 10px;
+            padding: 0 2px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* ===== 直接发送开关 (新增) ===== */
+        .toggle-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toggle-label {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-2);
+            text-transform: none;
+            letter-spacing: 0.3px;
+        }
+
+        .toggle-switch {
+            width: 38px;
+            height: 20px;
+            background: var(--border);
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            padding: 2px;
+            cursor: pointer;
+            transition: background 0.25s var(--ease);
+            border: 1px solid transparent;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch.active {
+            background: var(--accent);
+        }
+
+        .toggle-knob {
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            transition: transform 0.25s var(--ease-spring);
+            transform: translateX(0);
+        }
+
+        .toggle-switch.active .toggle-knob {
+            transform: translateX(18px);
+        }
+
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            min-height: 68px;
+            border-radius: var(--radius-sm);
+            border: 1.5px solid var(--border);
+            background: var(--card-bg);
+            cursor: pointer;
+            transition: all 0.25s var(--ease);
+            position: relative;
+        }
+
+        .option-item.animate-in:nth-child(1) { animation-delay: 0.05s; }
+        .option-item.animate-in:nth-child(2) { animation-delay: 0.11s; }
+        .option-item.animate-in:nth-child(3) { animation-delay: 0.17s; }
+        .option-item.animate-in:nth-child(4) { animation-delay: 0.23s; }
+
+        .option-item:not(.is-empty):not(.is-editing):hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+
+        .option-item:not(.is-empty):not(.is-editing):active {
+            transform: translateY(0) scale(0.985);
+            box-shadow: none;
+        }
+
+        .option-item.is-empty {
+            cursor: default;
+            opacity: 0.5;
+        }
+
+        .option-item.is-editing {
+            cursor: default;
+        }
+
+        .option-item.clicked {
+            opacity: 0.4;
+            pointer-events: none;
+            transform: scale(0.97);
+            transition: all 0.35s var(--ease);
+        }
+
+        .option-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            border-radius: 3px 0 0 3px;
+            transition: width 0.3s var(--ease);
+        }
+
+        .option-item:not(.is-empty):hover::before {
+            width: 5px;
+        }
+
+        .t-slow { border-color: var(--c-slow-bdr); background: var(--c-slow-soft); }
+        .t-slow::before { background: var(--c-slow); }
+        .t-slow:not(.is-empty):hover { border-color: var(--c-slow); }
+        .t-slow .option-icon { background: var(--c-slow); }
+        .t-slow .option-label { color: var(--c-slow); }
+
+        .t-fast { border-color: var(--c-fast-bdr); background: var(--c-fast-soft); }
+        .t-fast::before { background: var(--c-fast); }
+        .t-fast:not(.is-empty):hover { border-color: var(--c-fast); }
+        .t-fast .option-icon { background: var(--c-fast); }
+        .t-fast .option-label { color: var(--c-fast); }
+
+        .t-wild { border-color: var(--c-wild-bdr); background: var(--c-wild-soft); }
+        .t-wild::before { background: var(--c-wild); }
+        .t-wild:not(.is-empty):hover { border-color: var(--c-wild); }
+        .t-wild .option-icon { background: var(--c-wild); }
+        .t-wild .option-label { color: var(--c-wild); }
+
+        .t-nsfw { border-color: var(--c-nsfw-bdr); background: var(--c-nsfw-soft); }
+        .t-nsfw::before { background: var(--c-nsfw); }
+        .t-nsfw:not(.is-empty):hover { border-color: var(--c-nsfw); }
+        .t-nsfw .option-icon { background: var(--c-nsfw); }
+        .t-nsfw .option-label { color: var(--c-nsfw); }
+
+        .option-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: hsl(0, 0%, 100%);
+            transition: transform 0.3s var(--ease-spring);
+        }
+
+        .option-item:not(.is-empty):hover .option-icon {
+            transform: scale(1.1);
+        }
+
+        .option-icon svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .option-text {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .option-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+
+        .option-desc-text {
+            font-size: 13.5px;
+            color: var(--text-1);
+            line-height: 1.4;
+            display: block;
+        }
+
+        .option-desc-input {
+            display: none;
+            width: 100%;
+            min-height: 36px;
+            padding: 4px 8px;
+            font-size: 13px;
+            font-family: inherit;
+            color: var(--text-1);
+            background: var(--input-bg);
+            border: 1.5px solid var(--accent);
+            border-radius: 6px;
+            outline: none;
+            resize: vertical;
+            line-height: 1.4;
+            box-shadow: 0 0 0 3px var(--accent-glow);
+            animation: fadeIn 0.2s var(--ease);
+        }
+
+        .is-editing .option-desc-text { display: none; }
+        .is-editing .option-desc-input { display: block; }
+
+        .option-edit {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: none;
+            background: transparent;
+            color: var(--text-3);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.25s var(--ease);
+        }
+
+        .option-edit:hover {
+            background: var(--input-bg);
+            color: var(--text-1);
+            transform: scale(1.1);
+        }
+
+        .option-edit:active {
+            transform: scale(0.92);
+        }
+
+        .option-edit svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .option-edit .icon-check { display: none; }
+        .is-editing .option-edit .icon-pen { display: none; }
+        .is-editing .option-edit .icon-check { display: block; }
+
+        .is-editing .option-edit {
+            color: var(--accent);
+        }
+
+        .is-editing .option-edit:hover {
+            background: var(--accent-glow);
+            color: var(--accent);
+        }
+
+        .option-arrow {
+            flex-shrink: 0;
+            color: var(--text-3);
+            transition: all 0.2s var(--ease);
+        }
+
+        .option-item:not(.is-empty):hover .option-arrow {
+            transform: translateX(3px);
+            color: var(--text-2);
+        }
+
+        .option-item.is-empty .option-arrow { opacity: 0.25; }
+        .is-editing .option-arrow { display: none; }
+
+        .option-arrow svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .input-card {
+            flex: 1;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: all 0.3s var(--ease);
+        }
+
+        .input-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .custom-textarea {
+            flex: 1;
+            width: 100%;
+            min-height: 80px;
+            padding: 10px 12px;
+            font-size: 14px;
+            font-family: inherit;
+            color: var(--text-1);
+            background: var(--input-bg);
+            border: 1.5px solid transparent;
+            border-radius: var(--radius-sm);
+            outline: none;
+            resize: vertical;
+            line-height: 1.5;
+            transition: all 0.25s var(--ease);
+        }
+
+        .custom-textarea:focus {
+            border-color: var(--accent);
+            background: var(--card-bg);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .custom-textarea::placeholder {
+            color: var(--text-3);
+        }
+
+        .btn-send {
+            width: 100%;
+            padding: 11px 16px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: inherit;
+            color: hsl(0, 0%, 100%);
+            background: var(--accent);
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.25s var(--ease);
+        }
+
+        .btn-send:hover {
+            background: var(--accent-hover);
+            box-shadow: var(--shadow-btn);
+            transform: translateY(-1px);
+        }
+
+        .btn-send:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        .btn-send:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 16px;
+            font-size: 13px;
+            color: var(--text-3);
+        }
+
+        /* 响应式 */
+        @media (max-width: 599px) {
+            body { padding: 6px 0; }
+            .main-layout {
+                flex-direction: column;
+                gap: 16px;
+            }
+            .option-item {
+                padding: 9px 10px;
+                min-height: 62px;
+                gap: 8px;
+            }
+            .option-icon {
+                width: 28px;
+                height: 28px;
+                border-radius: 7px;
+            }
+            .option-icon svg { width: 14px; height: 14px; }
+            .option-desc-text { font-size: 13px; }
+            .option-desc-input { font-size: 16px; }
+            .custom-textarea {
+                font-size: 16px;
+                min-height: 72px;
+            }
+            .input-card { padding: 14px; }
+        }
+
+        @media (min-width: 600px) and (max-width: 768px) {
+            .container { max-width: 600px; }
+            .main-layout { gap: 12px; }
+            .options-section { flex: 5; }
+            .input-section { flex: 3; }
+        }
+
+        @media (min-width: 769px) {
+            .container { max-width: 680px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container" id="content">
+    <div class="loading">正在加载选项...</div>
+</div>
+
+<script>
+    (function() {
+        // ----- 全局变量 -----
+        var isDark = false;
+        var optionsData = [];
+        var editingIndex = -1;
+        var directSend = true;   // 直接发送模式开关
+
+        // ----- SVG 图标库 -----
+        var ICONS = {
+            slow: '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" fill="currentColor"/><circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5" opacity="0.55"/><circle cx="12" cy="12" r="10.5" stroke="currentColor" stroke-width="1.5" opacity="0.25"/></svg>',
+            fast: '<svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-2 8 9-12h-7l2-8z" fill="currentColor"/></svg>',
+            wild: '<svg viewBox="0 0 24 24"><path d="M12 1.5l2.4 7.1L22 12l-7.6 3.4L12 22.5l-2.4-7.1L2 12l7.6-3.4Z" fill="currentColor" opacity="0.9"/><path d="M19.5 2.5l.6 1.9L22 5l-1.9.6-.6 1.9-.6-1.9L17 5l1.9-.6Z" fill="currentColor" opacity="0.5"/></svg>',
+            nsfw: '<svg viewBox="0 0 24 24"><path d="M12 22c-4.4 0-8-3.2-8-7.5C4 10 8 5.5 10.5 2.5c.8-1.1 2.2-1.1 3 0C16 5.5 20 10 20 14.5c0 4.3-3.6 7.5-8 7.5z" fill="currentColor" opacity="0.3"/><path d="M12 22c-2.2 0-4-1.7-4-3.8 0-2.1 1.8-4.2 3-5.8.3-.4.7-.4 1 0 1.2 1.6 3 3.7 3 5.8 0 2.1-1.8 3.8-4 3.8z" fill="currentColor"/></svg>',
+            arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>',
+            pen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>',
+            check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+        };
+
+        var DEFAULTS = [
+            { type: '慢速', css: 't-slow', icon: ICONS.slow, label: '慢速推进', desc: '暂无剧情推进', empty: true },
+            { type: '快速', css: 't-fast', icon: ICONS.fast, label: '快速推进', desc: '暂无剧情推进', empty: true },
+            { type: '奇想', css: 't-wild', icon: ICONS.wild, label: '奇思妙想', desc: '暂无剧情推进', empty: true },
+            { type: '涩涩', css: 't-nsfw', icon: ICONS.nsfw, label: 'NSFW 推进', desc: '暂无剧情推进', empty: true }
+        ];
+
+        var TYPE_MAP = {
+            '慢速': { css: 't-slow', icon: ICONS.slow, label: '慢速推进' },
+            '快速': { css: 't-fast', icon: ICONS.fast, label: '快速推进' },
+            '奇想': { css: 't-wild', icon: ICONS.wild, label: '奇思妙想' },
+            '涩涩': { css: 't-nsfw', icon: ICONS.nsfw, label: 'NSFW 推进' }
+        };
+
+        // ----- 工具函数：获取 ST 上下文 (新增) -----
+        function getSTContext() {
+            try {
+                if (window.parent && window.parent.SillyTavern && window.parent.SillyTavern.getContext) return window.parent.SillyTavern.getContext();
+                if (window.SillyTavern && window.SillyTavern.getContext) return window.SillyTavern.getContext();
+                if (window.top && window.top.SillyTavern && window.top.SillyTavern.getContext) return window.top.SillyTavern.getContext();
+                if (window.parent && window.parent.__SILLYTAVERN__ && window.parent.__SILLYTAVERN__.getContext) return window.parent.__SILLYTAVERN__.getContext();
+            } catch(e) {}
+            return null;
+        }
+
+        // ----- 直接发送模式：保存/加载设置 (新增) -----
+        function saveDirectSend(val) {
+            try {
+                var ctx = getSTContext();
+                if (ctx) {
+                    if (!ctx.extensionSettings) ctx.extensionSettings = {};
+                    if (!ctx.extensionSettings.TideOptions) ctx.extensionSettings.TideOptions = {};
+                    ctx.extensionSettings.TideOptions.directSend = val;
+                    if (ctx.saveSettingsDebounced) ctx.saveSettingsDebounced();
+                } else {
+                    localStorage.setItem('tide_directSend', JSON.stringify(val));
+                }
+            } catch(e) {}
+        }
+
+        function loadDirectSend() {
+            try {
+                var ctx = getSTContext();
+                if (ctx && ctx.extensionSettings && ctx.extensionSettings.TideOptions && ctx.extensionSettings.TideOptions.directSend !== undefined) {
+                    return ctx.extensionSettings.TideOptions.directSend;
+                }
+            } catch(e) {}
+            try {
+                return JSON.parse(localStorage.getItem('tide_directSend') || 'true');
+            } catch(e) {}
+            return true;
+        }
+
+        // ----- 核心发送逻辑：替换/追加，自动发送 (新增) -----
+        function handleSelect(text) {
+            try {
+                var parentDoc = window.parent.document;
+                var textarea = parentDoc.getElementById('send_textarea');
+                if (!textarea) return false;
+
+                if (directSend) {
+                    textarea.value = text;   // 替换
+                } else {
+                    var cur = textarea.value;
+                    var sep = (cur && !cur.endsWith('\n')) ? ' ' : '';
+                    textarea.value = cur + sep + text;  // 追加
+                }
+
+                textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                textarea.dispatchEvent(new Event('change', { bubbles: true }));
+
+                // 直接发送模式：自动触发生成
+                if (directSend) {
+                    var ctx = getSTContext();
+                    if (ctx && typeof ctx.generate === 'function') {
+                        ctx.generate();
+                    } else {
+                        var sendBtn = parentDoc.getElementById('send_but');
+                        if (sendBtn) sendBtn.click();
+                    }
+                }
+                return true;
+            } catch(e) {
+                console.warn('[推进选项] 发送失败', e);
+                return false;
+            }
+        }
+
+        // 仅追加（不自动发送）——用于关闭直接发送时的行为
+        function appendToTextareaOnly(text) {
+            try {
+                var parentDoc = window.parent.document;
+                var textarea = parentDoc.getElementById('send_textarea');
+                if (!textarea) return false;
+                var cur = textarea.value;
+                var sep = (cur && !cur.endsWith('\n')) ? ' ' : '';
+                textarea.value = cur + sep + text;
+                textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                textarea.dispatchEvent(new Event('change', { bubbles: true }));
+                return true;
+            } catch(e) { return false; }
+        }
+
+        // 统一发送入口 (根据开关决定行为)
+        function sendContent(text) {
+            if (!text) return;
+            if (directSend) {
+                // 直接发送模式：替换并自动发送
+                handleSelect(text);
+            } else {
+                // 追加模式：只追加到输入框，不自动发送
+                appendToTextareaOnly(text);
+            }
+        }
+
+        // 保留原 triggerSlash 作为后备 (如果需要)
+        function fallbackSend(text) {
+            try {
+                var fn = null;
+                if (typeof triggerSlash === 'function') fn = triggerSlash;
+                else if (window.parent && typeof window.parent.triggerSlash === 'function') fn = window.parent.triggerSlash.bind(window.parent);
+                if (fn) fn('/send ' + text + '|/trigger');
+            } catch(e) {}
+        }
+
+        // ----- 原有辅助函数 (保留) -----
+        function detectTheme() {
+            try {
+                var el = null;
+                if (window.parent && window.parent.document) {
+                    el = window.parent.document.querySelector('#chat') || window.parent.document.body;
+                }
+                if (!el) el = document.body;
+                var bg = window.parent.getComputedStyle(el).backgroundColor;
+                var m = bg.match(/\d+/g);
+                if (m && m.length >= 3) {
+                    var lum = (parseInt(m[0]) * 299 + parseInt(m[1]) * 587 + parseInt(m[2]) * 114) / 1000;
+                    if (lum < 128) {
+                        document.body.classList.add('dark');
+                        isDark = true;
+                    }
+                }
+            } catch (e) {
+                document.body.classList.add('dark');
+                isDark = true;
+            }
+        }
+
+        function getMessageData() {
+            try {
+                var chatMessages = getChatMessages(getCurrentMessageId());
+                if (!chatMessages || chatMessages.length === 0) return null;
+                return chatMessages[0].message;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function parseOptions(messageText) {
+            if (!messageText) return [];
+            var tagMatch = messageText.match(/<story_options>([\s\S]*?)<\/story_options>/);
+            if (!tagMatch || !tagMatch[1]) return [];
+            var content = tagMatch[1];
+            var regex = /\[([^\|]+)\|([^\]]+)\]/g;
+            var match, result = [];
+            while ((match = regex.exec(content)) !== null) {
+                var typeKey = match[1].trim();
+                var desc = match[2].trim();
+                var info = TYPE_MAP[typeKey];
+                if (info) {
+                    result.push({ type: typeKey, css: info.css, icon: info.icon, label: info.label, desc: desc, empty: false });
+                }
+            }
+            return result;
+        }
+
+        function escapeHtml(str) {
+            var div = document.createElement('div');
+            div.textContent = str || '';
+            return div.innerHTML;
+        }
+
+        function buildOptionsData(parsed) {
+            var parsedMap = {};
+            for (var i = 0; i < parsed.length; i++) parsedMap[parsed[i].type] = parsed[i];
+            optionsData = [];
+            for (var j = 0; j < DEFAULTS.length; j++) {
+                var type = DEFAULTS[j].type;
+                if (parsedMap[type]) {
+                    optionsData.push({
+                        type: parsedMap[type].type, css: parsedMap[type].css,
+                        icon: parsedMap[type].icon, label: parsedMap[type].label,
+                        desc: parsedMap[type].desc, empty: false
+                    });
+                } else {
+                    optionsData.push({
+                        type: DEFAULTS[j].type, css: DEFAULTS[j].css,
+                        icon: DEFAULTS[j].icon, label: DEFAULTS[j].label,
+                        desc: DEFAULTS[j].desc, empty: true
+                    });
+                }
+            }
+        }
+
+        // ----- 渲染页面 (包含开关UI) -----
+        function renderPage() {
+            var html = '<div class="main-layout">';
+            // 左侧选项区
+            html += '<div class="options-section animate-in" style="animation-delay:0.02s">';
+            html += '<div class="section-header"><span>选择剧情推进方向</span></div>';
+            html += '<div class="options-list" id="optionsList">';
+            for (var i = 0; i < optionsData.length; i++) {
+                var opt = optionsData[i];
+                var emptyClass = opt.empty ? ' is-empty' : '';
+                var delay = 0.05 + i * 0.06;
+                html += '<div class="option-item ' + opt.css + emptyClass + ' animate-in" data-index="' + i + '" style="animation-delay:' + delay + 's">';
+                html += '<div class="option-icon">' + opt.icon + '</div>';
+                html += '<div class="option-text">';
+                html += '<div class="option-label">' + escapeHtml(opt.label) + '</div>';
+                html += '<span class="option-desc-text">' + escapeHtml(opt.desc) + '</span>';
+                html += '<textarea class="option-desc-input">' + escapeHtml(opt.empty ? '' : opt.desc) + '</textarea>';
+                html += '</div>';
+                html += '<button class="option-edit" data-action="edit" title="编辑选项">';
+                html += '<span class="icon-pen">' + ICONS.pen + '</span>';
+                html += '<span class="icon-check">' + ICONS.check + '</span>';
+                html += '</button>';
+                html += '<div class="option-arrow">' + ICONS.arrow + '</div>';
+                html += '</div>';
+            }
+            html += '</div></div>';
+
+            // 右侧输入区 + 开关
+            html += '<div class="input-section animate-in" style="animation-delay:0.3s">';
+            html += '<div class="section-header">';
+            html += '<span>自定义推进</span>';
+            // 直接发送开关 (新增UI)
+            html += '<div class="toggle-wrapper" id="directSendToggle">';
+            html += '<span class="toggle-label">直接发送</span>';
+            html += '<div class="toggle-switch"><div class="toggle-knob"></div></div>';
+            html += '</div>';
+            html += '</div>';
+            html += '<div class="input-card">';
+            html += '<textarea class="custom-textarea" id="customInput" placeholder="输入你想要的剧情发展..."></textarea>';
+            html += '<button class="btn-send" id="btnSend">继续</button>';
+            html += '</div></div>';
+            html += '</div>';
+
+            document.getElementById('content').innerHTML = html;
+            bindEvents();
+            initToggle();   // 初始化开关状态
+        }
+
+        // ----- 绑定事件 -----
+        function bindEvents() {
+            var list = document.getElementById('optionsList');
+            if (list) {
+                list.addEventListener('click', function(e) {
+                    var editBtn = e.target.closest('[data-action="edit"]');
+                    var item = e.target.closest('.option-item');
+                    if (!item) return;
+                    var idx = parseInt(item.dataset.index);
+                    if (editBtn) {
+                        e.stopPropagation();
+                        toggleEdit(idx, item);
+                        return;
+                    }
+                    if (e.target.closest('.option-desc-input')) return;
+                    if (item.classList.contains('is-editing')) return;
+                    if (optionsData[idx].empty) return;
+                    handleOptionClick(idx, item);
+                });
+            }
+            var btnSend = document.getElementById('btnSend');
+            if (btnSend) {
+                btnSend.addEventListener('click', function() {
+                    sendCustom();
+                });
+            }
+        }
+
+function handleOptionClick(idx, el) {
+    var desc = optionsData[idx].desc;
+    if (!desc || desc === '暂无剧情推进') return;
+    if (el.classList.contains('is-editing')) return;
+    el.classList.add('clicked');
+    sendContent(desc);
+    setTimeout(function() {
+        el.classList.remove('clicked');
+    }, 150);
+}
+        function toggleEdit(idx, item) {
+            if (item.classList.contains('is-editing')) {
+                var textarea = item.querySelector('.option-desc-input');
+                var descText = item.querySelector('.option-desc-text');
+                var newVal = (textarea.value || '').trim();
+                if (newVal) {
+                    optionsData[idx].desc = newVal;
+                    optionsData[idx].empty = false;
+                    descText.textContent = newVal;
+                    item.classList.remove('is-empty');
+                } else {
+                    optionsData[idx].desc = '暂无剧情推进';
+                    optionsData[idx].empty = true;
+                    descText.textContent = '暂无剧情推进';
+                    item.classList.add('is-empty');
+                }
+                item.classList.remove('is-editing');
+                editingIndex = -1;
+            } else {
+                var editingItems = document.querySelectorAll('.option-item.is-editing');
+                for (var i = 0; i < editingItems.length; i++) {
+                    var eidx = parseInt(editingItems[i].dataset.index);
+                    toggleEdit(eidx, editingItems[i]);
+                }
+                var textarea = item.querySelector('.option-desc-input');
+                textarea.value = optionsData[idx].empty ? '' : optionsData[idx].desc;
+                item.classList.add('is-editing');
+                editingIndex = idx;
+                setTimeout(function() { textarea.focus(); }, 60);
+            }
+        }
+
+        function sendCustom() {
+            var input = document.getElementById('customInput');
+            if (!input) return;
+            var val = (input.value || '').trim();
+            if (!val) return;
+            var btn = document.getElementById('btnSend');
+            if (btn) { btn.disabled = true; btn.textContent = '发送中...'; }
+            setTimeout(function() {
+                sendContent(val);    // 改用统一发送
+                if (btn) { btn.disabled = false; btn.textContent = '继续'; }
+            }, 180);
+        }
+
+        // ----- 开关初始化 (新增) -----
+        function initToggle() {
+            var toggleContainer = document.getElementById('directSendToggle');
+            if (!toggleContainer) return;
+            var switchEl = toggleContainer.querySelector('.toggle-switch');
+            directSend = loadDirectSend();
+            if (directSend) switchEl.classList.add('active');
+            else switchEl.classList.remove('active');
+
+            switchEl.onclick = function(e) {
+                e.stopPropagation();
+                directSend = !directSend;
+                if (directSend) switchEl.classList.add('active');
+                else switchEl.classList.remove('active');
+                saveDirectSend(directSend);
+            };
+        }
+
+        // ----- 主初始化 -----
+        function init() {
+            try {
+                detectTheme();
+                var messageText = getMessageData();
+                var parsed = parseOptions(messageText);
+                buildOptionsData(parsed);
+                renderPage();
+            } catch (error) {
+                console.error("初始化失败:", error);
+                document.getElementById('content').innerHTML = '<div class="loading">加载失败：' + (error.message || error) + '</div>';
+            }
+        }
+
+        // 启动 (酒馆环境通常有jQuery)
+        if (typeof $ !== 'undefined') {
+            $(function() { init(); });
+        } else {
+            window.addEventListener('DOMContentLoaded', init);
+        }
+    })();
+</script>
+</body>
+</html>
+```

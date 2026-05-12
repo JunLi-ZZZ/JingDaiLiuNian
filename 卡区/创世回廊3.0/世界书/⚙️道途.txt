@@ -1,0 +1,105 @@
+<%
+var dtGateData = getMessageVar('stat_data', { defaults: {} });
+var dtGateLevel = Number(_.get(dtGateData, '人物.等级', 0)) || 0;
+%>
+<% if (dtGateLevel >= 10) { %>
+<道途系统>
+核心：复刻正义之怒机制。严禁基础数值膨胀，通过机制篡改与世界联动体现史诗感
+
+**避免滥强**: **道途并非银弹，虽然是能带来新机制的破格能力，但强度与十个阶级挂钩，高阶级的能力更为强大，低阶级道途能力并不能直接帮助玩家蹂躏比自己强得多的敌人。更强调独特性而非绝对万用的滥强，但不要过于强调代价**
+
+红线与机制:
+  - 禁令: 
+    - 任何道途机制（要素/奇迹/权能/能力）均**严禁**提升生命值上限或六维基础属性
+    - 道途能力禁止简单粗暴的写造成xx伤害，参考WotR，均为独特机制性颠覆。可以是增强其他技能伤害
+    - 禁止直接提及正义之怒
+    - 【绝对禁止】禁止照搬以下举例，须完整回顾WotR道途设定后重新设计
+
+  - 解锁与进阶: 等级>10遇明确史诗契机解锁为阶段1。此后人物等级每逢整十级（20,30...），安排跨越生死的专属试炼，通过后阶段+1
+  - 阶层命名: 1触火, 2叩门,3见兆, 4定相, 5蜕形, 6具名, 7逾阶, 8大功, 9满溢,10登升
+  - 源力: 上限 = 阶段数 + 2。阶段进阶时增加上限，施放主动道途能力时扣除，仅可通过长休恢复
+
+概念合成树 (要素 -> 奇迹 -> 权能):
+  - 定位: 常驻法则异化，代表肉体与灵魂的升华
+  - 要素 (上限3):
+      机制: 随进阶或宏大剧情获取。表现为特定条件的优势或部分规则弯折
+  - 奇迹 (3要素合成):
+      机制: 满3要素后触发进阶试炼。合成后记录溯源(写明材料)，必须立刻remove原3要素。表现为领域级常驻法则
+  - 权能 (3奇迹合成):
+      机制: 满3奇迹触发改变世界格局的宏大试炼。合成后记录溯源，remove原3奇迹。表现为概念实体的降维打击
+
+主动道途能力:
+  - 定位: 消耗源力主动触发的破格大招，需要玩家主动宣告使用
+  - 随要素获得而添加，要素合成时道途能力也必须合成，两者强关联。合成时同步remove并重建对应的资源技能与道途能力
+  - 存储: /人物/道途/道途能力 仅存技能名；实体详情必须同步add至 /人物/资源技能
+  - 规范: 必含[道途]标签
+  - 消耗机制: 必须扣除源力，无冷却。根据破坏力扣除1点、3点或5点
+  - 例: 消耗1点强制将即将到来的大失败检定篡改为自然暴击；消耗3点令攻击无视所有免伤与抗性，造成真实伤害并强制驱散敌方增益。
+  - 参考WotR原版机制(仅供参考，实际根据玩家道途风格转化，严禁照搬)
+
+世界影响与全局联动:
+  - 概念标签: 锚定当前道途属性的词缀数组，如["神圣", "威严", "净化之炎"]，随道途阶级提升而升级。需以此为基准生成环境异象与叙事基调
+  - 特殊效果 (全方位世界干涉):
+      - 传闻与声望: 概念标签会自动冻结或极端化特定势力的声望，高阶异象会自动在坊间生成悬赏、神谕或街头传说
+      - 社交压制: 面对低阶凡人，强制附加特殊心理状态。阵营冲突的同伴好感度极难提升，甚至引发敌意或离队危机。不可完全负面
+      - 资产变异: 拥有领地或店铺时，解锁对应道途的专属特殊建筑或产出，并引来待办危机事件
+      - 战斗降维: 面对威胁度过低的常规敌人，允许通过道途威压直接碾压跳过战斗流程；遭遇特殊宿敌时，触发专属的宿命互动与规则碰撞
+      - 道途奇遇: 冒险中偶尔触发与道途关联的奇遇事件
+
+## 道途状态播报
+<%
+var dtRuleCtx = (function () {
+  const dtRuleData = dtGateData;
+  const dtRuleLevel = dtGateLevel;
+  const dtRulePath = _.get(dtRuleData, '人物.道途', {}) || {};
+  const dtRuleName = String(_.get(dtRulePath, '道途名称', '') || '').trim();
+  const dtRuleStage = Math.max(0, Number(_.get(dtRulePath, '阶段', 0)) || 0);
+  const dtRuleStageNameMap = {
+    1: '触火',
+    2: '叩门',
+    3: '见兆',
+    4: '定相',
+    5: '蜕形',
+    6: '具名',
+    7: '越阶',
+    8: '大功',
+    9: '满溢',
+    10: '登升'
+  };
+  const dtRuleStageName = dtRuleStageNameMap[dtRuleStage] || `阶段${dtRuleStage}`;
+  const dtRuleNextStage = Math.min(dtRuleStage + 1, 10);
+  const dtRuleNextStageName = dtRuleStageNameMap[dtRuleNextStage] || `阶段${dtRuleNextStage}`;
+  const dtRuleExpectedStage = Math.floor(dtRuleLevel / 10);
+  const dtRuleNeedTrial = !!dtRuleName && dtRuleLevel >= 20 && dtRuleStage < dtRuleExpectedStage;
+
+  return {
+    level: dtRuleLevel,
+    name: dtRuleName,
+    stage: dtRuleStage,
+    stageName: dtRuleStageName,
+    nextStage: dtRuleNextStage,
+    nextStageName: dtRuleNextStageName,
+    needTrial: dtRuleNeedTrial
+  };
+})();
+%>
+
+<% if (!dtRuleCtx.name) { %>
+玩家已达道途解锁等级，道途系统开启，需安排试炼任务。道途叙事必须借用《正义之怒》式的史诗剧情感。完成试炼后，提供3个候选道途方向：
+1) 更靠近《正义之怒》风格的方向；
+2) 更贴合玩家近期行动倾向的方向；
+3) 与前两者风格都明显不同的方向。
+在玩家明确选定前，禁止直接写死道途名称或提前觉醒。玩家选定后，必须演绎对应的史诗感剧情完成道途觉醒，并一次性初始化道途全字段，同时授予首个要素与对应道途能力（并同步写入/人物/资源技能）
+3个候选道途方向只能选择其一，禁止三合一、多合一破坏道途规则。如果都不满意也可以重新进行道途试炼任务以重置为另外三个
+<% } %>
+当前道途：<%= dtRuleCtx.name || '未定' %>。当前阶段：<%= dtRuleCtx.stage %>阶·<%= dtRuleCtx.stageName %>。
+<% if (dtRuleCtx.needTrial) { %>
+玩家已达到道途进阶等级，阶段仍然滞后，需立即安排对应的道途试炼任务，下一阶段为<%= dtRuleCtx.nextStage %>阶·<%= dtRuleCtx.nextStageName %>。
+<% } %>
+
+</道途系统>
+<% } else { %>
+<道途系统>
+<user>等级小于10，暂不解锁道途系统
+</道途系统>
+<% } %>

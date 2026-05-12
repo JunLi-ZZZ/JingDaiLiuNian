@@ -1,0 +1,114 @@
+---
+# 艾恩葛朗特当前楼层资料，参考此设计楼层
+Aincrad_TRPG_Module_Floor:
+<%= await (async function () {
+    var log = function (msg) {
+      try { console.log('[楼层资料EJS] ' + msg); } catch (_) {}
+    };
+
+    var statData = _.cloneDeep(getMessageVar('stat_data', { defaults: {} })) || {};
+    var regionText = String(_.get(statData, '世界信息.位置.区域', '') || '');
+    var continentText = String(_.get(statData, '世界信息.位置.大陆', '') || '');
+
+    var digitToCn = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+
+    var numberToChinese = function (num) {
+      if (!Number.isInteger(num) || num <= 0 || num > 100) return '';
+      if (num < 10) return digitToCn[num];
+      if (num === 10) return '十';
+      if (num < 20) return '十' + digitToCn[num % 10];
+      if (num < 100) {
+        var tens = Math.floor(num / 10);
+        var ones = num % 10;
+        return ones === 0
+          ? (digitToCn[tens] + '十')
+          : (digitToCn[tens] + '十' + digitToCn[ones]);
+      }
+      return '一百';
+    };
+
+    var findFloorInText = function (text) {
+      var source = String(text || '');
+      if (!source.trim()) return null;
+
+      var best = null;
+
+      for (var floor = 1; floor <= 100; floor++) {
+        var aliases = [
+          '第' + floor + '层',
+          '第' + numberToChinese(floor) + '层'
+        ];
+
+        for (var j = 0; j < aliases.length; j++) {
+          var alias = aliases[j];
+          var index = source.indexOf(alias);
+          if (index === -1) continue;
+
+          if (!best || index < best.index) {
+            best = { floor: floor, alias: alias, index: index };
+          }
+        }
+      }
+
+      return best;
+    };
+
+    var isFloorHeaderLine = function (line, floor) {
+      return String(line || '').trim() === ('Floor_' + String(floor) + ':');
+    };
+
+    var isAnyFloorHeaderLine = function (line) {
+      var text = String(line || '').trim();
+      if (text.length < 8) return false;
+      if (text.slice(0, 6) !== 'Floor_') return false;
+      if (text.charAt(text.length - 1) !== ':') return false;
+
+      var middle = text.slice(6, -1);
+      if (!middle) return false;
+
+      for (var i = 0; i < middle.length; i++) {
+        var ch = middle.charAt(i);
+        if (ch < '0' || ch > '9') return false;
+      }
+
+      return true;
+    };
+
+    var regionMatch = findFloorInText(regionText);
+    var continentMatch = findFloorInText(continentText);
+    var matched = regionMatch || continentMatch;
+
+    if (!matched) {
+      log('未匹配到楼层信息，区域="' + regionText + '"，大陆="' + continentText + '"');
+      return '';
+    }
+
+    var raw = String(await getWorldInfo('sao楼层资料') || '');
+    if (!raw.trim()) {
+      log('世界书条目 sao楼层资料 不存在或为空');
+      return '';
+    }
+
+    var lines = raw.replace(/\r\n/g, '\n').split('\n');
+
+    var startIndex = lines.findIndex(function (line) {
+      return isFloorHeaderLine(line, matched.floor);
+    });
+
+    if (startIndex < 0) {
+      log('未找到 Floor_' + String(matched.floor) + ' 对应段落');
+      return '';
+    }
+
+    var endIndex = lines.length;
+    for (var i = startIndex + 1; i < lines.length; i++) {
+      if (isAnyFloorHeaderLine(lines[i])) {
+        endIndex = i;
+        break;
+      }
+    }
+
+    var result = lines.slice(startIndex, endIndex).join('\n').trimEnd();
+    log('命中' + matched.alias + '，输出 Floor_' + String(matched.floor) + '，共 ' + result.length + ' 字符');
+    return result ? (result + '\n') : '';
+  })() %>

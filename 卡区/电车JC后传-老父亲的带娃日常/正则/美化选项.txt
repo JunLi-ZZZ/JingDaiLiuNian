@@ -1,0 +1,156 @@
+<cat987 /> 
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>粉色追加选择框</title>
+<style>
+:root {
+    --warm-pink-bg: linear-gradient(-70deg, #fff0f7 0%, #ffeaf4 100%);
+    --button-text-color: #6d4a5f;
+    --button-bg: rgba(255, 230, 240, 0.6);
+    --button-hover-bg: rgba(255, 200, 220, 0.7);
+    --button-border: rgba(230, 180, 200, 0.4);
+    --button-active-bg: rgba(255, 150, 180, 0.3);
+    --button-active-border: rgba(255, 120, 160, 0.8);
+}
+body {
+    background: transparent;
+    margin: 0;
+    padding: 0;
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+.mystic-card-silent {
+    display: flex;
+    flex-direction: column;
+    background: var(--warm-pink-bg);
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08), inset 0 0 1px 1px rgba(255,255,255,0.6);
+    border: 1px solid var(--button-border);
+    position: relative;
+    overflow: hidden;
+}
+.card-summary {
+    list-style: none;
+    cursor: pointer;
+    order: 2;
+    margin-top: 8px;
+}
+.card-summary::-webkit-details-marker {
+    display: none;
+}
+.mystic-card-silent:not([open]) > .card-summary {
+    margin-top: 0;
+}
+.button-group-silent {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    order: 1;
+}
+.action-btn-silent {
+    box-sizing: border-box;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    border: 1px solid var(--button-border);
+    background-color: var(--button-bg);
+    color: var(--button-text-color);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+.action-btn-silent:not(.toggle-collapse-btn) {
+    cursor: pointer;
+}
+.action-btn-silent:not(.toggle-collapse-btn):hover {
+    background-color: var(--button-hover-bg);
+    border-color: rgba(255, 150, 180, 0.6);
+    transform: translateY(-1px);
+}
+.action-btn-silent.active {
+    background-color: var(--button-active-bg);
+    border-color: var(--button-active-border);
+}
+.toggle-collapse-btn {
+    text-align: center;
+    background-color: rgba(255, 200, 220, 0.5);
+    border-color: rgba(255, 150, 180, 0.5);
+}
+.card-summary:hover .toggle-collapse-btn {
+    background-color: rgba(255, 180, 200, 0.7) !important;
+    border-color: rgba(255, 120, 160, 0.7);
+}
+</style>
+</head>
+<body>
+<details class="mystic-card-silent">
+  <summary class="card-summary">
+    <div class="action-btn-silent toggle-collapse-btn">展开</div>
+  </summary>
+  <div class="button-group-silent" id="dynamic-buttons"></div>
+</details>
+
+<script>
+  function renderOptions() {
+    const container = document.getElementById('dynamic-buttons');
+    container.innerHTML = ''; // 清空旧按钮
+  
+    // 从父页面抓取用户消息
+    const userMsg = `$1`;
+  
+    // 提取所有 <op>…</op>
+    const opRegex = /<op>(.*?)<\/op>/gis;
+    let match;
+    while ((match = opRegex.exec(userMsg)) !== null) {   // ← 这里用 userMsg
+      const text = match[1].trim();
+      if (!text) continue;
+  
+      const btn = document.createElement('button');
+      btn.className = 'action-btn-silent';
+      btn.textContent = text;
+      btn.setAttribute('data-action', text);
+  
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        try {
+          const input = window.parent.document.querySelector('#send_textarea');
+          if (input) {
+            const cur = input.value.trim();
+            input.value = cur ? `${cur} ${text}` : text;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        } catch (err) {
+          console.error(err);
+        }
+        btn.classList.toggle('active');
+      });
+  
+      container.appendChild(btn);
+    }
+  }
+  
+  // 初始渲染 + 监听父页面输入变化
+  renderOptions();
+  try {
+    const input = window.parent.document.querySelector('#send_textarea');
+    if (input) input.addEventListener('input', renderOptions);
+  } catch (e) {}
+  
+  // 展开/收起文字切换
+  const details = document.querySelector('.mystic-card-silent');
+  const toggleBtn = document.querySelector('.toggle-collapse-btn');
+  details?.addEventListener('toggle', () => {
+    toggleBtn && (toggleBtn.textContent = details.open ? '收起' : '展开');
+  });
+</script>
+</body>
+</html>
+```
