@@ -77,7 +77,7 @@
                     <div class="mirror-surface">
                       <div class="mirror-mist mist-1"></div><div class="mirror-mist mist-2"></div>
                       <div class="panel-title">镜 渡</div>
-                      <div class="panel-sub">{{ mirrorDir === 'toMe' ? '红颜来此' : '前往彼方' }}</div>
+                      <div class="panel-sub">{{ mirrorDir === 'toMe' ? '唤至此岸' : '渡往彼岸' }}</div>
                       <div class="direction-toggle">
                         <button class="toggle-btn" :class="{ active: mirrorDir === 'toMe' }" @click="mirrorDir = 'toMe'">召唤来此</button>
                         <div class="toggle-track" @click="mirrorDir = mirrorDir === 'toMe' ? 'toWorld' : 'toMe'"><div class="toggle-thumb" :class="mirrorDir"></div></div>
@@ -87,14 +87,48 @@
                       <div class="custom-section">
                         <button class="btn-custom-toggle" @click="mxCustom = !mxCustom"><span class="btn-icon">{{ mxCustom ? '▾' : '▸' }}</span>自定义镜渡</button>
                         <div v-if="mxCustom" class="custom-form">
-                          <div class="form-row"><label>外貌风格</label><select v-model="mxForm.style"><option value="">随机</option><option>古风</option><option>现代</option><option>异域</option><option>科幻</option><option>哥特</option><option>奇幻</option><option>战损</option></select></div>
-                          <div class="form-row"><label>性格特质</label><div class="tag-pool"><span v-for="t in mxTraits" :key="t" class="tag" :class="{ picked: mxForm.traits.includes(t) }" @click="mxToggleTrait(t)">{{ t }}</span></div></div>
-                          <div class="form-row"><label>体态身材</label><select v-model="mxForm.bodyType"><option value="">随机</option><option>纤细</option><option>匀称</option><option>丰满</option><option>娇小</option><option>高挑</option><option>健美</option><option>丰腴</option></select></div>
-                          <div class="form-row"><label>种族</label><input v-model="mxForm.race" placeholder="随机留空" /></div>
-                          <div class="form-row"><label>年龄感</label><select v-model="mxForm.age"><option value="">随机</option><option>少女</option><option>御姐</option><option>成熟</option><option>不老</option><option>幼态</option></select></div>
-                          <div class="form-row"><label>来源世界</label><select v-model="mxForm.origin"><option value="">随机/与目的地一致</option><option>主世界</option><option>妖灵位面</option><option>仙道位面</option><option>古代位面</option><option>异世界</option><option>深渊</option><option>同人位面</option><option>幽冥位面</option><option>虚数位面</option></select></div>
-                          <div class="form-row"><label>身份地位</label><input v-model="mxForm.role" placeholder="如：剑之圣女、魔界公主…" /></div>
-                          <div class="form-row"><label>同人作品</label><input v-model="mxForm.fandom" placeholder="如：哥布林杀手、原神…空则AI原创" /></div>
+                          <div class="form-section" @click="mxOpen.basic = !mxOpen.basic"><span class="mx-arrow" :class="{ open: mxOpen.basic }">▸</span> 基本设定</div>
+                          <div v-if="mxOpen.basic" class="section-body">
+                            <div class="form-row"><label>外貌风格</label><select v-model="mxForm.style"><option value="">✨ 随机</option><option>古风</option><option>现代</option><option>异域</option><option>科幻</option><option>哥特</option><option>奇幻</option><option>战损</option><option value="自定义">自定义 ▼</option></select></div>
+                            <div v-if="mxForm.style==='自定义'" class="form-row"><input v-model="mxForm.styleCustom" placeholder="填写自定义风格…" /></div>
+                            <div class="form-row"><label>性格特质</label><div class="tag-pool"><span v-for="t in pickedTraits" :key="'s_'+t" class="tag picked" @click="mxToggleTag(mxForm.traits,t)">{{ t }}</span><span v-for="t in mxTraits" :key="'t_'+t" v-show="!mxForm.traits.includes(t)" class="tag" @click="mxToggleTag(mxForm.traits,t)">{{ t }}</span><span class="tag tag-custom"><input v-model="mxForm.traitInput" placeholder="自定义+" @keyup.enter="mxForm.traitInput=mxAddCustom(mxForm.traits,mxForm.traitInput)" /></span></div></div>
+                            <div class="form-row"><label>体态身材</label><select v-model="mxForm.bodyType"><option value="">✨ 随机</option><option>纤细</option><option>匀称</option><option>丰满</option><option>娇小</option><option>高挑</option><option>健美</option><option>丰腴</option><option value="自定义">自定义 ▼</option></select></div>
+                            <div v-if="mxForm.bodyType==='自定义'" class="form-row"><input v-model="mxForm.bodyTypeCustom" placeholder="填写自定义体态…" /></div>
+                            <div class="form-row"><label>种族</label><select v-model="mxForm.race"><option value="">✨ 随机</option><option>人类</option><option>妖族</option><option>仙族</option><option>魔族</option><option>精灵</option><option>龙族</option><option>天使</option><option>恶魔</option><option>亡灵</option><option>吸血鬼</option><option value="自定义">自定义 ▼</option></select></div>
+                            <div v-if="mxForm.race==='自定义'" class="form-row"><input v-model="mxForm.raceCustom" placeholder="填写自定义种族…" /></div>
+                            <div class="form-row"><label>年龄感</label><select v-model="mxForm.age"><option value="">✨ 随机</option><option>少女</option><option>御姐</option><option>成熟</option><option>不老</option><option>幼态</option><option value="自定义">自定义 ▼</option></select></div>
+                            <div v-if="mxForm.age==='自定义'" class="form-row"><input v-model="mxForm.ageCustom" placeholder="填写自定义年龄感…" /></div>
+                          </div>
+                          <div class="form-section" @click="mxOpen.world = !mxOpen.world"><span class="mx-arrow" :class="{ open: mxOpen.world }">▸</span> 世界与能力</div>
+                          <div v-if="mxOpen.world" class="section-body">
+                            <div class="form-row"><label>来源世界</label><select v-model="mxForm.origin"><option value="">✨ 随机</option><option>主世界</option><option>妖灵位面</option><option>仙道位面</option><option>古代位面</option><option>异世界</option><option>深渊</option><option>同人位面</option><option>幽冥位面</option><option>虚数位面</option><option value="自定义">自定义 ▼</option></select></div>
+                            <div v-if="mxForm.origin==='自定义'" class="form-row"><input v-model="mxForm.originCustom" placeholder="填写自定义位面…" /></div>
+                            <div class="form-row"><label>天赋能力</label><div class="tag-pool"><span v-for="t in pickedAbilities" :key="'a_'+t" class="tag picked" @click="mxToggleTag(mxForm.abilities,t)">{{ t }}</span><span v-for="t in mxAbilities" :key="'ab_'+t" v-show="!mxForm.abilities.includes(t)" class="tag" @click="mxToggleTag(mxForm.abilities,t)">{{ t }}</span><span class="tag tag-custom"><input v-model="mxForm.abilityInput" placeholder="自定义+" @keyup.enter="mxForm.abilityInput=mxAddCustom(mxForm.abilities,mxForm.abilityInput)" /></span></div></div>
+                            <div class="form-row"><label>身份地位</label><select v-model="mxForm.role"><option value="">✨ 随机</option><option v-for="t in mxRoles" :key="'r_'+t" :value="t">{{ t }}</option><option value="自定义">自定义 ▼</option></select></div>
+                            <div v-if="mxForm.role==='自定义'" class="form-row"><input v-model="mxForm.roleCustom" placeholder="填写自定义身份…" /></div>
+                          </div>
+                          <div class="form-section" @click="mxOpen.deep = !mxOpen.deep"><span class="mx-arrow" :class="{ open: mxOpen.deep }">▸</span> 深层设定</div>
+                          <div v-if="mxOpen.deep" class="section-body">
+                            <div class="form-row"><label>同人作品 <span class="mx-mode-toggle" @click="mxFandomMode=!mxFandomMode">{{ mxFandomMode ? '⟲ 简单' : '⟳ 魔改' }}</span></label>
+                              <div v-if="!mxFandomMode" class="mx-fandom-simple">
+                                <select v-model="mxForm.fandom"><option value="">✨ 原创（不指定）</option><option v-for="t in mxFandoms" :key="'f_'+t" :value="t">{{ t }}</option><option value="自定义">自定义 ▼</option></select>
+                                <div v-if="mxForm.fandom==='自定义'"><input v-model="mxForm.fandomCustom" placeholder="填写作品名…" /></div>
+                              </div>
+                              <div v-if="mxFandomMode" class="mx-fandom-ext">
+                                <select v-model="mxForm.fandomType"><option value="">魔改向</option><option>原作向</option><option>魔改向</option><option>反转向</option><option>纯净向</option><option>融合向</option><option value="自定义">自定义 ▼</option></select>
+                                <div v-if="mxForm.fandomType==='自定义'" class="form-row"><input v-model="mxForm.fandomTypeCustom" placeholder="填写类型…" /></div>
+                                <select v-model="mxForm.fandom"><option value="">✨ 选择作品</option><option v-for="t in mxFandoms" :key="'fe_'+t" :value="t">{{ t }}</option><option value="自定义">自定义 ▼</option></select>
+                                <div v-if="mxForm.fandom==='自定义'" class="form-row"><input v-model="mxForm.fandomCustom" placeholder="填写作品名…" /></div>
+                                <input v-model="mxForm.fandomDesc" placeholder="描述魔改细节，如：性转吉尔伽美什…" />
+                              </div>
+                            </div>
+                            <div class="form-row"><label>核心特质</label><select v-model="mxForm.coreTrait"><option value="">✨ 随机</option><option v-for="t in mxCoreTraits" :key="'ct_'+t" :value="t">{{ t }}</option><option value="自定义">自定义 ▼</option></select></div>
+                            <div v-if="mxForm.coreTrait==='自定义'" class="form-row"><input v-model="mxForm.coreTraitCustom" placeholder="如：被神遗弃的最后使徒…" /></div>
+                            <div class="form-row"><label>初见态度</label><select v-model="mxForm.attitude"><option value="">✨ 随机</option><option v-for="t in mxAttitudes" :key="'at_'+t" :value="t">{{ t }}</option><option value="自定义">自定义 ▼</option></select></div>
+                            <div v-if="mxForm.attitude==='自定义'" class="form-row"><input v-model="mxForm.attitudeCustom" placeholder="填写自定义态度…" /></div>
+                            <div class="form-row"><label>特殊标记</label><select v-model="mxForm.specialMark"><option value="">无</option><option v-for="t in mxMarks" :key="'mk_'+t" :value="t">{{ t }}</option><option value="自定义">自定义 ▼</option></select></div>
+                            <div v-if="mxForm.specialMark==='自定义'" class="form-row"><input v-model="mxForm.specialMarkCustom" placeholder="填写自定义标记…" /></div>
+                          </div>
                           <button class="btn-send" @click="mxCustomSummon()">开启镜渡</button>
                         </div>
                       </div>
@@ -223,17 +257,48 @@ const theme = ref('cream');
 const mirrorOpen = ref(false);
 const mirrorDir = ref<'toMe' | 'toWorld'>('toMe');
 const mxCustom = ref(false);
-const mxTraits = ['傲娇','温柔','冷淡','活泼','腹黑','天然','病娇','慵懒','忠犬','高冷','毒舌','元气','邪魅','偏执','纯真'];
-const mxForm = reactive({ style: '', traits: [] as string[], bodyType: '', race: '', age: '', origin: '', role: '', fandom: '' });
-function mxToggleTrait(t: string) { const i = mxForm.traits.indexOf(t); if (i >= 0) mxForm.traits.splice(i, 1); else mxForm.traits.push(t); }
+const mxTraits = ['傲娇','温柔','冷淡','活泼','腹黑','天然','病娇','慵懒','忠犬','高冷','毒舌','元气','邪魅','偏执','纯真','三无','冒失','小恶魔'];
+const mxAbilities = ['剑术','魔法','神术','体术','幻术','锻造','医术','毒术','暗杀','读心','预知','不死','控火','御水','时空','魅惑','兽化','机关术'];
+const mxRoles = ['剑圣','魔女','公主','圣女','骑士','精灵王','龙神','堕天使','死神','妖王','贤者','佣兵王','刺客','流浪武士','星界旅者'];
+const mxCoreTraits = ['背负灭族之仇的末裔','流浪千年的观测者','被诅咒的不死者','失忆的前任神祇','逃出实验室的造物','隐居市井的古神'];
+const mxAttitudes = ['冷漠','好奇','敌意','友善','崇拜','试探','困惑','漠然','警惕','亲近'];
+const mxFandoms = ['哥布林杀手','原神','Fate','东方Project','明日方舟','崩坏星穹铁道','蔚蓝档案','葬送的芙莉莲','鬼灭之刃','咒术回战'];
+const mxMarks = ['左眼封印','说话带古语腔','随身携带骨灰盒','异色瞳','身上有纹身','戴着面纱','半透明身体'];
+const mxFandomMode = ref(false);
+const mxOpen = reactive({ basic: false, world: false, deep: false });
+const mxForm = reactive({
+  style: '', styleCustom: '', traits: [] as string[], traitInput: '',
+  bodyType: '', bodyTypeCustom: '', race: '', raceCustom: '', age: '', ageCustom: '',
+  origin: '', originCustom: '', role: '', roleCustom: '', fandom: '',
+  abilities: [] as string[], abilityInput: '', coreTrait: '', coreTraitCustom: '', attitude: '', attitudeCustom: '', specialMark: '', specialMarkCustom: '', fandomCustom: '', fandomType: '', fandomTypeCustom: '', fandomDesc: ''
+});
+const pickedTraits = computed(() => mxForm.traits);
+const pickedAbilities = computed(() => mxForm.abilities);
+function mxToggleTag(arr: string[], t: string) { const i = arr.indexOf(t); if (i >= 0) arr.splice(i, 1); else arr.push(t); }
+function mxAddCustom(arr: string[], v: string): string { const s = v.trim(); if (s && !arr.includes(s)) arr.push(s); return ''; }
 function mxSend(msg: string) { const $p = (window as any).parent?.$; if (!$p) return; $p('#send_textarea').val(msg).trigger('input'); setTimeout(() => $p('#send_but').trigger('click'), 50); mirrorOpen.value = false; mxCustom.value = false; }
 function mxRandom() { mxSend(mirrorDir.value === 'toMe' ? '使用母镜随机召唤一位红颜来到身边' : '使用母镜前往一位随机红颜所在的世界'); }
 function mxCustomSummon() {
-  const parts: string[] = []; const s: string[] = []; const d = mxForm;
-  if (mirrorDir.value === 'toMe') parts.push('使用母镜召唤一位红颜来到身边'); else parts.push('使用母镜前往一位红颜所在的世界');
-  if (d.style) s.push(d.style + '风'); if (d.traits.length) s.push('性格' + d.traits.join('、')); if (d.bodyType) s.push('体态' + d.bodyType); if (d.race) s.push('种族：' + d.race); if (d.age) s.push(d.age); if (d.origin) s.push('来自' + d.origin); if (d.role) s.push('身份：' + d.role); if (d.fandom) s.push('出自《' + d.fandom + '》');
-  if (s.length) parts.push(s.join('；'));
-  mxSend(parts.filter(Boolean).join('，'));
+  const d = mxForm;
+  const dir = mirrorDir.value === 'toMe' ? '使用母镜召唤一位红颜来到身边' : '使用母镜前往一位红颜所在的世界';
+  const v = (s: string, c: string) => (s === '自定义' || !s) ? (c || '随机') : s;
+  const obj: Record<string, any> = {
+    外貌风格: v(d.style, d.styleCustom),
+    性格特质: d.traits.length ? d.traits : ['随机'],
+    体态身材: v(d.bodyType, d.bodyTypeCustom),
+    种族: v(d.race, d.raceCustom),
+    年龄感: v(d.age, d.ageCustom) || '随机',
+    来源世界: v(d.origin, d.originCustom),
+    天赋能力: d.abilities.length ? d.abilities : ['随机'],
+    身份地位: v(d.role, d.roleCustom),
+    同人: mxFandomMode.value
+      ? { 类型: (d.fandomType === '自定义' ? d.fandomTypeCustom : d.fandomType) || '魔改向', 作品: v(d.fandom, d.fandomCustom) || '随机', 描述: d.fandomDesc || '无' }
+      : (v(d.fandom, d.fandomCustom) || '原创'),
+    核心特质: v(d.coreTrait, d.coreTraitCustom),
+    初见态度: v(d.attitude, d.attitudeCustom),
+    特殊标记: d.specialMark === '自定义' ? (d.specialMarkCustom || '无') : (d.specialMark || '无'),
+  };
+  mxSend(dir + '\n' + JSON.stringify(obj, null, '  '));
 }
 const expandedChars = ref(new Set<string>());
 const expandedSubs = ref(new Set<string>());
@@ -422,7 +487,7 @@ function getCharRelations(char: NearbyChar): [string, string][] { return Object.
 .cloth-list { display:flex; flex-direction:column; gap:3px; }
 .cloth-row { display:flex; align-items:center; gap:8px; padding:4px 8px; background:var(--t-bg); box-shadow:0 0 0 1px var(--t-border); border-radius:var(--t-radius-sm); cursor:pointer; transition:background 0.15s;
   &:hover { background:var(--t-surface-deep); } }
-.cloth-key { font-family: '寒蝉全圆体', var(--font-main); font-size:8px; color:var(--t-dim); letter-spacing:1px; min-width:28px; text-transform:uppercase; font-weight:500; }
+.cloth-key { font-family: '寒蝉全圆体', var(--font-main); font-size:10px; color:var(--t-dim); letter-spacing:0.5px; min-width:28px; }
 .cloth-val { font-family: 'DouyinSans', var(--font-main); font-size:11px; color:var(--t-text); flex:1; &.dim { color:var(--t-dim); } }
 .cloth-status { font-family: '寒蝉全圆体', var(--font-main); font-size:8px; color:var(--t-accent); background:var(--t-accent-dim); padding:1px 8px; border-radius:9999px; font-weight:500; letter-spacing:0.5px; }
 .cloth-detail { font-family: 'DouyinSans', var(--font-main); font-size:10px; color:var(--t-muted); padding:2px 8px 4px 36px; line-height:1.5; }
@@ -457,8 +522,9 @@ function getCharRelations(char: NearbyChar): [string, string][] { return Object.
 
 /* 镜渡面板 */
 .mirror-item { cursor:pointer; &:hover { border-color: var(--t-accent); } }
+.mirror-item .item-name { background:linear-gradient(135deg, #6b4a28, #8b5a30, #7a5030, #6b4a28); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; font-weight:700; }
 .mirror-item.mirror-open { background: var(--t-accent-dim); border-color: var(--t-accent); }
-.mirror-toggle { font-size:8px; color:var(--t-accent); margin-left:4px; }
+.mirror-toggle { font-size:8px; background:linear-gradient(135deg, #6b4a28, #8b5a30); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; margin-left:4px; }
 .mirror-panel {
   --m-accent: #c9a96e; --m-accent-dim: rgba(201,169,110,0.2); --m-glow: rgba(201,169,110,0.1);
   --m-surface: linear-gradient(165deg, #f5ede0 0%, #ede4d4 40%, #f0e8d8 100%);
@@ -466,8 +532,8 @@ function getCharRelations(char: NearbyChar): [string, string][] { return Object.
   --m-rose: #c47b8b; --m-rose-dim: rgba(196,123,139,0.2);
   --m-teal: #5ea0a7; --m-teal-dim: rgba(94,160,167,0.18);
   padding:4px 0 6px;
-  &.theme-red { --m-accent: var(--m-rose); --m-accent-dim: var(--m-rose-dim); }
-  &.theme-teal { --m-accent: var(--m-teal); --m-accent-dim: var(--m-teal-dim); }
+  &.theme-red { --m-accent: var(--m-rose); --m-accent-dim: var(--m-rose-dim); --m-surface: linear-gradient(165deg, #251c1f 0%, #2d2025 50%, #221a1e 100%); --m-text: #e0d0d8; --m-muted: #b098a0; --m-dim: #786068; }
+  &.theme-teal { --m-accent: var(--m-teal); --m-accent-dim: var(--m-teal-dim); --m-surface: linear-gradient(165deg, #1c2325 0%, #20282d 50%, #1a2123 100%); --m-text: #d0dce0; --m-muted: #98a8b0; --m-dim: #607078; }
 }
 .mirror-frame {
   position:relative; border-radius:12px; padding:4px;
@@ -494,12 +560,12 @@ function getCharRelations(char: NearbyChar): [string, string][] { return Object.
 .mist-1 { width:120px; height:70px; background:#c9a96e; opacity:0.08; top:-20px; right:-25px; }
 .mist-2 { width:90px; height:60px; background:#8b7355; opacity:0.06; bottom:5px; left:-15px; }
 .panel-title { font-family: '寒蝉全圆体', var(--font-main); text-align:center; font-size:18px; font-weight:700; letter-spacing:6px; position:relative; z-index:1;
-  background:linear-gradient(135deg, #8b7355 0%, #c9a96e 40%, #e0c888 60%, #c9a96e 80%, #8b7355 100%);
+  background:linear-gradient(135deg, #6b4a28 0%, #8b5a30 40%, #6b4a28 60%, #8b5a30 100%);
   -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
 .panel-sub { font-family: '寒蝉全圆体', var(--font-main); text-align:center; font-size:9px; color:var(--m-accent); letter-spacing:2px; margin-bottom:8px; position:relative; z-index:1; }
 .direction-toggle { display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:8px; position:relative; z-index:1; }
-.toggle-btn { background:none; border:none; font-family: '寒蝉全圆体', var(--font-main); font-size:9px; color:var(--m-muted); cursor:pointer; letter-spacing:1px; padding:2px 4px; transition:color 0.2s;
-  &.active { color:var(--m-accent); font-weight:600; } }
+.toggle-btn { background:none; border:none; font-family: '寒蝉全圆体', var(--font-main); font-size:9px; color:var(--m-muted); cursor:pointer; letter-spacing:1px; padding:3px 8px; border-radius:6px; transition:all 0.2s;
+  &.active { color:#fff; background:var(--m-accent); font-weight:600; } }
 .toggle-track { width:30px; height:16px; background:rgba(139,115,85,0.12); border-radius:8px; cursor:pointer; position:relative; }
 .toggle-thumb { width:12px; height:12px; border-radius:50%; background:var(--m-accent); position:absolute; top:2px; left:2px; transition:left 0.25s;
   &.toWorld { left:16px; } }
@@ -509,12 +575,25 @@ function getCharRelations(char: NearbyChar): [string, string][] { return Object.
 .btn-custom-toggle { display:flex; align-items:center; gap:6px; width:100%; padding:7px 0; background:none; border:1px dashed var(--m-accent-dim); border-radius:8px; cursor:pointer; color:var(--m-accent); font-family: '寒蝉全圆体', var(--font-main); font-size:10px; letter-spacing:2px; transition:all 0.2s; position:relative; z-index:1;
   &:hover { border-color:var(--m-accent); border-style:solid; } }
 .custom-form { display:flex; flex-direction:column; gap:5px; margin-top:6px; padding:10px; background:rgba(139,115,85,0.04); border:1px solid rgba(139,115,85,0.1); border-radius:8px; }
+.form-section { padding:6px 8px; background:rgba(139,115,85,0.06); border-radius:6px; cursor:pointer; font-family: '寒蝉全圆体', var(--font-main); font-size:10px; color:var(--m-muted); letter-spacing:1px; transition:background 0.15s; user-select:none;
+  &:hover { background:rgba(139,115,85,0.12); } }
+.mx-arrow { display:inline-block; transition:transform 0.2s; font-size:10px; margin-right:2px; &.open { transform:rotate(90deg); } }
+.section-body { display:flex; flex-direction:column; gap:5px; padding-top:4px; }
+.mx-mode-toggle { font-size:8px; color:var(--m-accent); cursor:pointer; background:var(--m-accent-dim); padding:1px 6px; border-radius:8px; margin-left:4px; transition:all 0.15s; &:hover { background:var(--m-accent); color:#fff; } }
+.mx-fandom-simple { display:flex; flex-direction:column; gap:5px; }
+.mx-fandom-simple select,.mx-fandom-simple input { padding:5px 8px; border-radius:6px; border:1px solid rgba(139,115,85,0.15); background:rgba(255,255,255,0.6); color:#4a4035; font-family:'DouyinSans',var(--font-main); font-size:10px; outline:none;
+  &:focus { border-color:var(--m-accent); } }
+.mx-fandom-ext { display:flex; flex-direction:column; gap:4px; padding:6px; background:rgba(139,115,85,0.04); border:1px solid rgba(139,115,85,0.1); border-radius:6px; }
+.mx-fandom-ext select,.mx-fandom-ext input { padding:5px 8px; border-radius:6px; border:1px solid rgba(139,115,85,0.15); background:rgba(255,255,255,0.6); color:var(--m-text); font-family:'DouyinSans',var(--font-main); font-size:10px; outline:none;
+  &:focus { border-color:var(--m-accent); } }
+.tag-custom { border-style:dashed!important; display:inline-flex; align-items:center; }
+.tag-custom input { width:54px; height:16px; line-height:16px; border:none; background:transparent; font-family:inherit; font-size:9px; color:var(--m-muted); outline:none; text-align:center; padding:0; &::placeholder { color:var(--m-dim); } }
 .form-row { display:flex; flex-direction:column; gap:3px;
   label { font-family: '寒蝉全圆体', var(--font-main); font-size:9px; color:var(--m-muted); letter-spacing:1px; }
-  select,input { padding:5px 8px; border-radius:6px; border:1px solid rgba(139,115,85,0.15); background:rgba(255,255,255,0.6); color:var(--m-text); font-family: 'DouyinSans', var(--font-main); font-size:10px; outline:none;
+  select,input { padding:5px 8px; border-radius:6px; border:1px solid rgba(139,115,85,0.15); background:rgba(255,255,255,0.6); color:#4a4035; font-family: 'DouyinSans', var(--font-main); font-size:10px; outline:none;
     &:focus { border-color:var(--m-accent); } } }
 .tag-pool { display:flex; flex-wrap:wrap; gap:4px; }
-.tag { padding:2px 8px; border-radius:10px; border:1px solid rgba(139,115,85,0.15); font-family: '寒蝉全圆体', var(--font-main); font-size:9px; color:var(--m-muted); cursor:pointer; transition:all 0.12s;
+.tag { padding:2px 8px; border-radius:10px; border:1px solid rgba(139,115,85,0.15); font-family: 'DouyinSans', var(--font-main); font-size:9px; color:var(--m-muted); cursor:pointer; transition:all 0.12s;
   &:hover { border-color:var(--m-accent); color:var(--m-accent); }
   &.picked { background:var(--m-accent-dim); border-color:var(--m-accent); color:var(--m-accent); font-weight:600; } }
 .btn-send { width:100%; padding:8px 0; margin-top:4px; background:var(--m-accent); border:none; border-radius:8px; cursor:pointer; color:#fff; font-family: '寒蝉全圆体', var(--font-main); font-size:12px; font-weight:700; letter-spacing:4px; transition:opacity 0.2s;
