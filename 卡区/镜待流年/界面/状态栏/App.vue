@@ -482,10 +482,10 @@ async function mxSaveGenResult() {
   try {
     const TH = (window as any).parent?.TavernHelper;
     if (!TH) { mxGenError.value = '未检测到酒馆助手。'; return; }
-    const nameMatch = mxGenArchive.value.match(/姓名[：:]\s*(\S+)/);
+    const nameMatch = mxGenArchive.value.match(/姓名[：:][^\S\n]*(\S+)/);
     let charName = nameMatch ? nameMatch[1].replace(/[（(].*$/, '') : '新红颜';
-    const aliasMatch = mxGenArchive.value.match(/化名[：:]\s*(\S+)/);
-    const alias = aliasMatch ? aliasMatch[1].replace(/[（(].*$/, '') : '';
+    const aliasMatch = mxGenArchive.value.match(/化名[：:][^\S\n]*(\S[^\n]*\S|\S)/);
+    const alias = aliasMatch ? aliasMatch[1].replace(/[（(].*$/, '').trim() : '';
     const keys = [charName];
     if (alias) keys.push(alias);
     let wbName: string = TH.getCharLorebooks()?.primary;
