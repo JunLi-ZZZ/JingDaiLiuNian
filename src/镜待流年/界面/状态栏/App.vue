@@ -126,10 +126,34 @@
                             <div v-if="mxForm.coreTrait==='自定义'" class="form-row"><input v-model="mxForm.coreTraitCustom" placeholder="如：被神遗弃的最后使徒…" /></div>
                             <div class="form-row"><label>初见态度</label><select v-model="mxForm.attitude"><option value="">✨ 随机</option><option v-for="t in mxAttitudes" :key="'at_'+t" :value="t">{{ t }}</option><option value="自定义">自定义 ▼</option></select></div>
                             <div v-if="mxForm.attitude==='自定义'" class="form-row"><input v-model="mxForm.attitudeCustom" placeholder="填写自定义态度…" /></div>
+                            <div class="form-row"><label>相识状态</label><select v-model="mxForm.acquaintance"><option value="">✨ 随机</option><option v-for="t in mxAcquaintances" :key="'aq_'+t" :value="t">{{ t }}</option><option value="自定义">自定义 ▼</option></select></div>
+                            <div v-if="mxForm.acquaintance==='自定义'" class="form-row"><input v-model="mxForm.acquaintanceCustom" placeholder="填写自定义相识状态…" /></div>
                             <div class="form-row"><label>特殊标记</label><select v-model="mxForm.specialMark"><option value="">无</option><option v-for="t in mxMarks" :key="'mk_'+t" :value="t">{{ t }}</option><option value="自定义">自定义 ▼</option></select></div>
                             <div v-if="mxForm.specialMark==='自定义'" class="form-row"><input v-model="mxForm.specialMarkCustom" placeholder="填写自定义标记…" /></div>
+                            <div class="form-row"><label>其他补充</label><textarea v-model="mxForm.other" placeholder="自由填写未列出的信息，如特定设定、限制条件、参考角色等…" class="mx-other-input"></textarea></div>
                           </div>
-                          <button class="btn-send" @click="mxCustomSummon()">开启镜渡</button>
+                          <div v-if="mxGenerating" class="mx-gen-status"><span class="gen-spinner"></span>正在生成详细人设…</div>
+                          <div v-if="mxGenError" class="mx-gen-status error">{{ mxGenError }}</div>
+                          <div v-if="mxGenResult" class="mx-gen-result">
+                            <div class="gen-result-label">世界书档案</div>
+                            <textarea v-model="mxGenArchive" class="gen-result-text" placeholder="(未解析到档案内容)"></textarea>
+                            <div class="gen-result-actions">
+                              <button v-if="!mxSavedToWB" class="btn-gen-save" @click="mxSaveGenResult()">保存到世界书</button>
+                              <span v-else class="gen-saved-hint">已保存 ✓</span>
+                              <button class="btn-gen-inject" @click="mxInjectArchive()">注入聊天</button>
+                              <button class="btn-gen-retry" @click="mxGenerateDetail()">重新生成</button>
+                            </div>
+                          </div>
+                          <div class="mx-gen-row">
+                            <label class="mx-save-toggle" @click.stop>
+                              <input type="checkbox" v-model="mxIncludeChat" />
+                              <span class="toggle-label">附带聊天记录</span>
+                            </label>
+                          </div>
+                          <div class="btn-row">
+                            <button class="btn-send" @click="mxCustomSummon()">开启镜渡</button>
+                            <button class="btn-gen" :disabled="mxGenerating" @click="mxGenerateDetail()">{{ mxGenerating ? '生成中…' : '生成详细人设' }}</button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -264,13 +288,22 @@ const mxCoreTraits = ['背负灭族之仇的末裔','流浪千年的观测者','
 const mxAttitudes = ['冷漠','好奇','敌意','友善','崇拜','试探','困惑','漠然','警惕','亲近'];
 const mxFandoms = ['哥布林杀手','原神','Fate','东方Project','明日方舟','崩坏星穹铁道','蔚蓝档案','葬送的芙莉莲','鬼灭之刃','咒术回战'];
 const mxMarks = ['左眼封印','说话带古语腔','随身携带骨灰盒','异色瞳','身上有纹身','戴着面纱','半透明身体'];
+const mxAcquaintances = ['未相识','已相识（主世界）','已相识（其他位面）','前世相识','梦中相识','宿命相连'];
 const mxFandomMode = ref(false);
+const mxIncludeChat = ref(false);
+const mxGenerating = ref(false);
+const mxGenResult = ref('');
+const mxGenArchive = ref('');
+const mxGenError = ref('');
+const mxSavedToWB = ref(false);
 const mxOpen = reactive({ basic: false, world: false, deep: false });
 const mxForm = reactive({
   style: '', styleCustom: '', traits: [] as string[], traitInput: '',
   bodyType: '', bodyTypeCustom: '', race: '', raceCustom: '', age: '', ageCustom: '',
   origin: '', originCustom: '', role: '', roleCustom: '', fandom: '',
-  abilities: [] as string[], abilityInput: '', coreTrait: '', coreTraitCustom: '', attitude: '', attitudeCustom: '', specialMark: '', specialMarkCustom: '', fandomCustom: '', fandomType: '', fandomTypeCustom: '', fandomDesc: ''
+  abilities: [] as string[], abilityInput: '', coreTrait: '', coreTraitCustom: '', attitude: '', attitudeCustom: '', specialMark: '', specialMarkCustom: '', fandomCustom: '', fandomType: '', fandomTypeCustom: '', fandomDesc: '',
+  acquaintance: '', acquaintanceCustom: '',
+  other: ''
 });
 const pickedTraits = computed(() => mxForm.traits);
 const pickedAbilities = computed(() => mxForm.abilities);
@@ -296,9 +329,197 @@ function mxCustomSummon() {
       : (v(d.fandom, d.fandomCustom) || '原创'),
     核心特质: v(d.coreTrait, d.coreTraitCustom),
     初见态度: v(d.attitude, d.attitudeCustom),
+    相识状态: v(d.acquaintance, d.acquaintanceCustom),
     特殊标记: d.specialMark === '自定义' ? (d.specialMarkCustom || '无') : (d.specialMark || '无'),
+    其他补充: d.other || '无',
   };
   mxSend(dir + '\n' + JSON.stringify(obj, null, '  '));
+}
+const mxGenTemplate = `你正在通过母镜感知一位红颜的存在。镜中波纹荡漾，一道身影的因果线逐渐在你手中凝聚成形。这不是在写剧情——你只是在整理镜中传来的信息。
+
+请将镜中身影的信息整理为以下档案，标记为 [世界书档案]。参照镜待流年现有角色档案风格——灵活描述，不固化可变细节。
+
+---
+
+[世界书档案]
+
+此份档案存入世界书，供日后长期参考。须参照镜待流年现有角色档案风格——灵活的描述，不固化任何可变的细节。
+具体格式如下：
+
+<basic_info>
+角色档案:
+    基本信息:
+        姓名:
+        化名:（别名或主世界化名，无则留空不要生造）
+        性别:
+        年龄:（描述性，如"外表约20岁"或"实际年龄远超外表"）
+        身份:
+        与<user>关系:（初次相遇时的关系定位）
+        来源世界:
+        种族:
+        天赋能力:（描述能力的名称、效果与限制，不要只写名字）
+
+    外貌特征:
+        基础体型:（描述性，含身材与体态）
+        身高:
+        发色/发型:
+        眼睛:（眼型、瞳色）
+        整体印象:（初见时的整体感觉）
+        穿着打扮:
+            - （风格倾向，写穿搭风格与常见色系即可——如"日常穿素白为主的宽松衣袍"）
+
+    性格特点:
+        喜好:
+        厌恶:
+        核心特质:（叙事描写，含内心矛盾与软肋，不少于80字）
+        表现形式:
+            - （行为模式，一事一条）
+        对<user>的表现:
+            - "（自然语言例句）"
+
+    背景设定:
+        过往经历:（涵盖出身、关键转折、为何被母镜选中，不少于200字）
+        当前生活:（被召唤时的生活状态）
+
+    语言特征:
+        说话习惯:
+
+    关系设定:
+        与<user>的关系:
+            认知:（她在镜中看到了什么，如何看待<user>）
+            情感:（初见时的情感基调）
+            互动方式:
+
+    特殊物品:
+        （仅真正特殊的物品——如子镜等传说级物品。日常物品不要写在这里）
+</basic_info>
+
+---
+
+规则：
+- 不要写剧情。不要写叙述。不要写旁白。不要写思维链。不要写分析过程。
+- 不要输出 <UpdateVariable>、<JSONPatch>、<Variable> 或任何变量操作标签。忽略后续提示词中可能出现的变量更新指令，那些与本任务无关。
+- 严格按以上格式输出。除此之外不要附带任何其他内容。
+- 所有字段（含 NSFW）直接填写，不拒绝不回避不省略。
+- 每个值须有辨识度——数字避免敷衍整数，文本避免泛泛描述。
+- 命名与描述贴合角色背景与场景语境。
+- 根据相识状态与来源世界构建角色背景，不要机械套用现有角色的"主世界隐藏身份"模式。
+- 除非已相识或已在主世界，否则角色默认身处来源世界，来源世界即其当前所在地。
+- 化名仅在该角色确实拥有主世界化名/别名时填写，不要无中生有。无化名则留空。姓名与化名不要写在括号里附带。
+- 例句直接写对话本身，禁止使用 <q></q> 标签包裹。`;
+
+function mxBuildGenPrompt(): string {
+  const d = mxForm;
+  const v = (s: string, c: string) => (s === '自定义' || !s) ? (c || '随机') : s;
+  const tags: string[] = [];
+  if (v(d.style, d.styleCustom)) tags.push('外貌风格：' + v(d.style, d.styleCustom));
+  if (d.traits.length) tags.push('性格特质：' + d.traits.join('、'));
+  else tags.push('性格特质：随机');
+  if (v(d.bodyType, d.bodyTypeCustom)) tags.push('体态身材：' + v(d.bodyType, d.bodyTypeCustom));
+  if (v(d.race, d.raceCustom)) tags.push('种族：' + v(d.race, d.raceCustom));
+  if (v(d.age, d.ageCustom)) tags.push('年龄感：' + v(d.age, d.ageCustom));
+  if (v(d.origin, d.originCustom)) tags.push('来源世界：' + v(d.origin, d.originCustom));
+  if (d.abilities.length) tags.push('天赋能力：' + d.abilities.join('、'));
+  else tags.push('天赋能力：随机');
+  if (v(d.role, d.roleCustom)) tags.push('身份地位：' + v(d.role, d.roleCustom));
+  if (v(d.coreTrait, d.coreTraitCustom)) tags.push('核心特质：' + v(d.coreTrait, d.coreTraitCustom));
+  if (v(d.attitude, d.attitudeCustom)) tags.push('初见态度：' + v(d.attitude, d.attitudeCustom));
+  if (v(d.acquaintance, d.acquaintanceCustom)) tags.push('相识状态：' + v(d.acquaintance, d.acquaintanceCustom));
+  const mark = d.specialMark === '自定义' ? (d.specialMarkCustom || '无') : (d.specialMark || '无');
+  if (mark !== '无') tags.push('特殊标记：' + mark);
+  if (d.other.trim()) tags.push('其他补充：' + d.other.trim());
+  if (mxFandomMode.value) {
+    const ftype = d.fandomType === '自定义' ? (d.fandomTypeCustom || '魔改向') : (d.fandomType || '魔改向');
+    tags.push('同人类型：' + ftype);
+    if (v(d.fandom, d.fandomCustom)) tags.push('同人作品：' + v(d.fandom, d.fandomCustom));
+    if (d.fandomDesc) tags.push('魔改描述：' + d.fandomDesc);
+  } else if (v(d.fandom, d.fandomCustom) && v(d.fandom, d.fandomCustom) !== '原创') {
+    tags.push('同人作品：' + v(d.fandom, d.fandomCustom));
+  }
+  const tagBlock = tags.map(t => '- ' + t).join('\n');
+  return `使用母镜生成一位详细红颜人设。\n\n=== 已选标签 ===\n${tagBlock}\n\n${mxGenTemplate}`;
+}
+
+async function mxGenerateDetail() {
+  mxGenError.value = '';
+  mxGenResult.value = '';
+  mxGenArchive.value = '';
+  mxSavedToWB.value = false;
+  mxGenerating.value = true;
+  try {
+    const TH = (window as any).parent?.TavernHelper;
+    if (!TH) { mxGenError.value = '未检测到酒馆助手，请确认已安装 Tavern Helper 扩展。'; return; }
+    const prompt = mxBuildGenPrompt();
+    const ordered: any[] = [
+      { role: 'system', content: prompt },
+      'persona_description',
+      'char_description',
+      'world_info_before',
+      'world_info_after',
+    ];
+    if (mxIncludeChat.value) ordered.push('chat_history');
+    ordered.push('user_input');
+    const result = await TH.generateRaw({
+      user_input: '（请按上述模板输出 [世界书档案] 。）',
+      should_silence: true,
+      max_chat_history: mxIncludeChat.value ? 6 : undefined,
+      ordered_prompts: ordered,
+    });
+    const text = typeof result === 'string' ? result : (result.content || JSON.stringify(result));
+    mxGenResult.value = text;
+    const archMatch = text.match(/\[世界书档案\]\s*([\s\S]*)/);
+    if (archMatch) mxGenArchive.value = archMatch[1].trim();
+    else mxGenArchive.value = text;
+  } catch (e: any) {
+    mxGenError.value = e?.message || String(e);
+  } finally {
+    mxGenerating.value = false;
+  }
+}
+
+async function mxSaveGenResult() {
+  if (!mxGenArchive.value) return;
+  try {
+    const TH = (window as any).parent?.TavernHelper;
+    if (!TH) { mxGenError.value = '未检测到酒馆助手。'; return; }
+    const nameMatch = mxGenArchive.value.match(/姓名[：:]\s*(\S+)/);
+    let charName = nameMatch ? nameMatch[1].replace(/[（(].*$/, '') : '新红颜';
+    const aliasMatch = mxGenArchive.value.match(/化名[：:]\s*(\S+)/);
+    const alias = aliasMatch ? aliasMatch[1].replace(/[（(].*$/, '') : '';
+    const keys = [charName];
+    if (alias) keys.push(alias);
+    let wbName: string = TH.getCharLorebooks()?.primary;
+    if (!wbName) {
+      wbName = '镜待流年';
+      await TH.createLorebook(wbName);
+      await TH.setCurrentCharLorebooks({ primary: wbName });
+    }
+    const existing = await TH.getLorebookEntries(wbName);
+    const genOrders = existing.map((e: any) => e.order ?? 0).filter((o: number) => o >= 1000 && o < 10000);
+    const nextOrder = genOrders.length ? Math.max(...genOrders) + 5 : 1000;
+    await TH.createLorebookEntries(wbName, [{
+      comment: `镜渡生成 - ${charName}`,
+      enabled: true,
+      type: 'selective',
+      keys,
+      position: 'before_character_definition',
+      order: nextOrder,
+      probability: 100,
+      exclude_recursion: true,
+      prevent_recursion: true,
+      content: mxGenArchive.value,
+    }]);
+    mxSavedToWB.value = true;
+  } catch (e: any) {
+    mxGenError.value = '保存失败：' + (e?.message || String(e));
+  }
+}
+function mxInjectArchive() {
+  if (!mxGenArchive.value) return;
+  const dir = mirrorDir.value === 'toMe'
+    ? '使用母镜召唤一位红颜来到身边。以下是镜中传来的信息：\n\n'
+    : '使用母镜前往一位红颜所在的世界。以下是镜中传来的信息：\n\n';
+  mxSend(dir + mxGenArchive.value);
 }
 const expandedChars = ref(new Set<string>());
 const expandedSubs = ref(new Set<string>());
@@ -596,6 +817,34 @@ function getCharRelations(char: NearbyChar): [string, string][] { return Object.
 .tag { padding:2px 8px; border-radius:10px; border:1px solid rgba(139,115,85,0.15); font-family: 'DouyinSans', var(--font-main); font-size:9px; color:var(--m-muted); cursor:pointer; transition:all 0.12s;
   &:hover { border-color:var(--m-accent); color:var(--m-accent); }
   &.picked { background:var(--m-accent-dim); border-color:var(--m-accent); color:var(--m-accent); font-weight:600; } }
-.btn-send { width:100%; padding:8px 0; margin-top:4px; background:var(--m-accent); border:none; border-radius:8px; cursor:pointer; color:#fff; font-family: '寒蝉全圆体', var(--font-main); font-size:12px; font-weight:700; letter-spacing:4px; transition:opacity 0.2s;
+.btn-send { flex:1; padding:8px 0; background:var(--m-accent); border:none; border-radius:8px; cursor:pointer; color:#fff; font-family: '寒蝉全圆体', var(--font-main); font-size:12px; font-weight:700; letter-spacing:2px; transition:opacity 0.2s;
   &:hover { opacity:0.85; } }
+.btn-gen { flex:1.3; padding:8px 0; background:var(--m-accent-dim); border:1px solid var(--m-accent); border-radius:8px; cursor:pointer; color:var(--m-accent); font-family: '寒蝉全圆体', var(--font-main); font-size:10px; font-weight:600; letter-spacing:1px; transition:all 0.2s;
+  &:hover:not(:disabled) { background:var(--m-accent); color:#fff; }
+  &:disabled { opacity:0.5; cursor:not-allowed; } }
+.mx-other-input { padding:5px 8px; border-radius:6px; border:1px solid rgba(139,115,85,0.15); background:rgba(255,255,255,0.6); color:#4a4035; font-family: 'DouyinSans', var(--font-main); font-size:10px; outline:none; resize:vertical; min-height:50px;
+  &:focus { border-color:var(--m-accent); }
+  &::placeholder { color:var(--m-dim); } }
+.mx-gen-row { display:flex; align-items:center; justify-content:flex-end; padding:2px 0; }
+.mx-save-toggle { display:inline-flex; align-items:center; gap:4px; cursor:pointer; user-select:none;
+  input[type="checkbox"] { accent-color:var(--m-accent); width:12px; height:12px; cursor:pointer; }
+  .toggle-label { font-family: '寒蝉全圆体', var(--font-main); font-size:8px; color:var(--m-muted); letter-spacing:1px; transition:color 0.15s; }
+  &:hover .toggle-label { color:var(--m-accent); } }
+.btn-row { display:flex; gap:6px; margin-top:4px; }
+.mx-gen-status { text-align:center; padding:8px; font-family: '寒蝉全圆体', var(--font-main); font-size:10px; color:var(--m-muted); letter-spacing:1px;
+  &.error { color:var(--m-rose); } }
+.gen-spinner { display:inline-block; width:12px; height:12px; border:2px solid var(--m-accent-dim); border-top-color:var(--m-accent); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:6px; vertical-align:middle; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.mx-gen-result { margin-top:6px; padding:0; background:rgba(139,115,85,0.06); border:1px solid rgba(139,115,85,0.12); border-radius:8px; overflow:hidden; }
+.gen-result-label { font-family: '寒蝉全圆体', var(--font-main); font-size:9px; color:var(--m-accent); letter-spacing:2px; padding:6px 8px; border-bottom:1px solid rgba(139,115,85,0.1); }
+.gen-result-text { display:block; width:100%; min-height:180px; max-height:300px; overflow-y:auto; white-space:pre-wrap; font-family: 'DouyinSans', var(--font-main); font-size:10px; color:var(--m-text); line-height:1.7; padding:8px; background:rgba(255,255,255,0.3); border:1px solid rgba(139,115,85,0.12); border-radius:6px; resize:vertical; outline:none;
+  &:focus { border-color:var(--m-accent); } }
+.gen-result-actions { display:flex; gap:6px; margin-top:6px; padding:0 4px 4px; align-items:center; }
+.btn-gen-save { padding:5px 12px; background:var(--m-accent); border:none; border-radius:6px; cursor:pointer; color:#fff; font-family: '寒蝉全圆体', var(--font-main); font-size:9px; letter-spacing:1px; transition:opacity 0.15s;
+  &:hover { opacity:0.85; } }
+.btn-gen-inject { padding:5px 12px; background:none; border:1px solid var(--m-accent); border-radius:6px; cursor:pointer; color:var(--m-accent); font-family: '寒蝉全圆体', var(--font-main); font-size:9px; letter-spacing:1px; transition:all 0.15s;
+  &:hover { background:var(--m-accent); color:#fff; } }
+.btn-gen-retry { padding:5px 12px; background:none; border:1px solid var(--m-accent-dim); border-radius:6px; cursor:pointer; color:var(--m-muted); font-family: '寒蝉全圆体', var(--font-main); font-size:9px; letter-spacing:1px; transition:all 0.15s;
+  &:hover { border-color:var(--m-accent); color:var(--m-accent); } }
+.gen-saved-hint { font-family: '寒蝉全圆体', var(--font-main); font-size:9px; color:var(--m-accent); letter-spacing:1px; }
 </style>
