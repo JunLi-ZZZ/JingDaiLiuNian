@@ -461,12 +461,23 @@
       查找表达式: /<update(?:variable)?>(?!.*<\/update(?:variable)?>)\s*(.*)\s*$/gsi
       替换为: |-
 
-        <div class="var-update-box var-update-partial">
-        <details>
-        <summary>变量更新中{{random::.::..::...}}</summary>
-        $1
+        <div class="jdnl-var-box jdnl-var-partial">
+        <details class="jdnl-var-details" style="font-family:'DouyinSans',var(--font-main,sans-serif);background-color:var(--jdnl-var-bg,rgba(139,115,85,0.02));border:1px solid var(--jdnl-var-border,rgba(139,115,85,0.08));border-radius:8px;overflow:hidden;color:var(--jdnl-var-text,#4a4035);font-size:10px;line-height:1.6;transition:all 0.2s;">
+          <summary style="font-family:'寒蝉全圆体',var(--font-main,sans-serif);font-size:10px;letter-spacing:1px;cursor:pointer;padding:6px 10px;list-style:none;color:var(--jdnl-var-accent,#8b7355);display:flex;align-items:center;gap:6px;">
+            <span style="font-size:7px;opacity:0.5;">▸</span>
+            变量更新中{{random::.::..::...}}
+          </summary>
+          <div style="padding:0 10px 8px;color:var(--jdnl-var-muted,#8a7e6e);white-space:pre-wrap;max-height:300px;overflow-y:auto;">$1</div>
         </details>
         </div>
+        <style>
+          .jdnl-var-details ::-webkit-scrollbar { width: 5px; }
+          .jdnl-var-details ::-webkit-scrollbar-track { background: transparent; }
+          .jdnl-var-details ::-webkit-scrollbar-thumb { background: var(--jdnl-var-accent,rgba(139,115,85,0.2)); border-radius: 3px; }
+          .jdnl-var-details summary::marker { display: none; }
+          .jdnl-var-details summary::-webkit-details-marker { display: none; }
+          .jdnl-var-details[open] summary span { transform: rotate(90deg); display: inline-block; transition: transform 0.2s; }
+        </style>
       来源:
         用户输入: true
         AI输出: true
@@ -480,12 +491,23 @@
       查找表达式: /<update(?:variable)?>\s*(.*)\s*<\/update(?:variable)?>/gsi
       替换为: |-
 
-        <div class="var-update-box var-update-full">
-        <details>
-        <summary>变量更新情况</summary>
-        $1
+        <div class="jdnl-var-box jdnl-var-full">
+        <details class="jdnl-var-details" style="font-family:'DouyinSans',var(--font-main,sans-serif);background-color:var(--jdnl-var-bg,rgba(139,115,85,0.02));border:1px solid var(--jdnl-var-border,rgba(139,115,85,0.08));border-radius:8px;overflow:hidden;color:var(--jdnl-var-text,#4a4035);font-size:10px;line-height:1.6;transition:all 0.2s;">
+          <summary style="font-family:'寒蝉全圆体',var(--font-main,sans-serif);font-size:10px;letter-spacing:1px;cursor:pointer;padding:6px 10px;list-style:none;color:var(--jdnl-var-accent,#8b7355);display:flex;align-items:center;gap:6px;">
+            <span style="font-size:7px;opacity:0.5;">▸</span>
+            变量更新情况
+          </summary>
+          <div style="padding:0 10px 8px;color:var(--jdnl-var-muted,#8a7e6e);white-space:pre-wrap;max-height:300px;overflow-y:auto;">$1</div>
         </details>
         </div>
+        <style>
+          .jdnl-var-details ::-webkit-scrollbar { width: 5px; }
+          .jdnl-var-details ::-webkit-scrollbar-track { background: transparent; }
+          .jdnl-var-details ::-webkit-scrollbar-thumb { background: var(--jdnl-var-accent,rgba(139,115,85,0.2)); border-radius: 3px; }
+          .jdnl-var-details summary::marker { display: none; }
+          .jdnl-var-details summary::-webkit-details-marker { display: none; }
+          .jdnl-var-details[open] summary span { transform: rotate(90deg); display: inline-block; transition: transform 0.2s; }
+        </style>
       来源:
         用户输入: true
         AI输出: true
@@ -566,6 +588,6 @@
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/StageDog/tavern_helper_template/dist/镜待流年/脚本/变量结构/index.js';
+          import 'http://127.0.0.1:8080/镜待流年/脚本/变量结构/index.js';
 
     变量: {}

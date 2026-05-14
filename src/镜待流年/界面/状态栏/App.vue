@@ -65,18 +65,17 @@
             <div v-if="showItems" class="sub-body">
               <div v-if="itemEntries.length === 0" class="empty-hint">暂无</div>
               <div v-for="[name, item] in itemEntries" :key="name">
-                <div class="item-card" :class="{ 'mirror-item': name === '母镜', 'mirror-open': name === '母镜' && mirrorOpen }" @click="name === '母镜' ? mirrorOpen = !mirrorOpen : null">
+                <div class="item-card" :class="{ 'mirror-item': name.includes('母镜'), 'mirror-open': name.includes('母镜') && mirrorOpen }" @click="name.includes('母镜') ? mirrorOpen = !mirrorOpen : null">
                   <span class="item-name">{{ name }}</span>
                   <span class="item-desc">{{ item.描述 }}</span>
                   <span v-if="item.数量" class="item-qty">×{{ item.数量 }}</span>
-                  <span v-if="name === '母镜'" class="mirror-toggle">{{ mirrorOpen ? '▾' : '▸' }}</span>
+                  <span v-if="name.includes('母镜')" class="mirror-toggle">{{ mirrorOpen ? '▾' : '▸' }}</span>
                 </div>
-                <div v-if="name === '母镜' && mirrorOpen" class="mirror-panel" :class="mirrorDir === 'toMe' ? 'theme-red' : 'theme-teal'">
+                <div v-if="name.includes('母镜') && mirrorOpen" class="mirror-panel" :class="mirrorDir === 'toMe' ? 'theme-red' : 'theme-teal'">
                   <div class="mirror-frame">
                     <div class="frame-ring"></div><div class="frame-inset"></div>
                     <div class="mirror-surface">
-                      <div class="mirror-mist mist-1"></div><div class="mirror-mist mist-2"></div>
-                      <div class="panel-title">镜 渡</div>
+                                            <div class="panel-title">镜 渡</div>
                       <div class="panel-sub">{{ mirrorDir === 'toMe' ? '唤至此岸' : '渡往彼岸' }}</div>
                       <div class="direction-toggle">
                         <button class="toggle-btn" :class="{ active: mirrorDir === 'toMe' }" @click="mirrorDir = 'toMe'">召唤来此</button>
@@ -278,22 +277,24 @@ const showRelations = ref(false);
 const showChars = ref(false);
 const showThemes = ref(false);
 const theme = ref((typeof localStorage !== 'undefined' && localStorage.getItem('jdnl_theme')) || 'cream');
-watch(theme, v => { if (typeof localStorage !== 'undefined') localStorage.setItem('jdnl_theme', v); injectVarStyle(); }, { immediate: true });
-function injectVarStyle() {
-  const doc = (window as any).parent?.document;
+watch(theme, v => { if (typeof localStorage !== 'undefined') localStorage.setItem('jdnl_theme', v); syncVarTheme(); }, { immediate: true });
+function syncVarTheme() {
+  const doc = (window as any).parent?.document?.body;
   if (!doc) return;
-  let el = doc.getElementById('jdnl-var-style');
-  if (!el) { el = doc.createElement('style'); el.id = 'jdnl-var-style'; doc.head.appendChild(el); }
   const t = theme.value;
-  const dark = t !== 'cream';
-  const accent = { cream: '#8b7355', purple: '#9b7ec4', gold: '#c9a96e', teal: '#5ea0a7', rose: '#c47b8b' }[t] || '#8b7355';
-  const accentDim = { cream: 'rgba(139,115,85,0.12)', purple: 'rgba(155,126,196,0.15)', gold: 'rgba(201,169,110,0.15)', teal: 'rgba(94,160,167,0.15)', rose: 'rgba(196,123,139,0.15)' }[t] || 'rgba(139,115,85,0.12)';
-  el.textContent = [
-    '.var-update-box { margin:6px 0; border-radius:10px; padding:10px 14px; font-family:"DouyinSans",var(--font-main,sans-serif); font-size:11px; line-height:1.7; transition:all 0.3s; }',
-    dark
-      ? `.var-update-box { background:#1e1c17; border:1px solid rgba(255,255,255,0.06); color:#d4cee0; } .var-update-box summary { color:${accent}; font-family:"寒蝉全圆体",var(--font-main,sans-serif); font-size:11px; letter-spacing:1px; cursor:pointer; } .var-update-box details { color:#867e95; }`
-      : `.var-update-box { background:rgba(139,115,85,0.03); border:1px solid ${accentDim}; color:#4a4035; } .var-update-box summary { color:${accent}; font-family:"寒蝉全圆体",var(--font-main,sans-serif); font-size:11px; letter-spacing:1px; cursor:pointer; } .var-update-box details { color:#8a7e6e; }`,
-  ].join('\n');
+  const colors: Record<string, { bg: string; border: string; text: string; muted: string; accent: string }> = {
+    cream:  { bg: 'rgba(139,115,85,0.02)', border: 'rgba(139,115,85,0.08)', text: '#4a4035', muted: '#8a7e6e', accent: '#8b7355' },
+    purple: { bg: 'rgba(155,126,196,0.02)', border: 'rgba(155,126,196,0.08)', text: '#d4cee0', muted: '#867e95', accent: '#9b7ec4' },
+    gold:   { bg: 'rgba(201,169,110,0.02)', border: 'rgba(201,169,110,0.08)', text: '#d4cee0', muted: '#867e95', accent: '#c9a96e' },
+    teal:   { bg: 'rgba(94,160,167,0.02)', border: 'rgba(94,160,167,0.08)', text: '#d4cee0', muted: '#867e95', accent: '#5ea0a7' },
+    rose:   { bg: 'rgba(196,123,139,0.02)', border: 'rgba(196,123,139,0.08)', text: '#d4cee0', muted: '#867e95', accent: '#c47b8b' },
+  };
+  const c = colors[t] || colors.cream;
+  doc.style.setProperty('--jdnl-var-bg', c.bg);
+  doc.style.setProperty('--jdnl-var-border', c.border);
+  doc.style.setProperty('--jdnl-var-text', c.text);
+  doc.style.setProperty('--jdnl-var-muted', c.muted);
+  doc.style.setProperty('--jdnl-var-accent', c.accent);
 }
 const mirrorOpen = ref(false);
 const mirrorDir = ref<'toMe' | 'toWorld'>('toMe');
@@ -684,17 +685,15 @@ function getCharRelations(char: NearbyChar): [string, string][] { return Object.
     --t-stripe:rgba(196,123,139,0.3); --t-mist:rgba(196,123,139,0.02);
   }
 }
-.master-bar { display:flex; align-items:center; gap:8px; padding:8px 12px; cursor:pointer; background:var(--t-surface); position:relative; overflow:hidden;
-  &::after { content:''; position:absolute; top:-50%; right:-20%; width:160px; height:120px; border-radius:50%; background:var(--t-accent); opacity:0.03; filter:blur(30px); pointer-events:none; }
+.master-bar { display:flex; align-items:center; gap:8px; padding:8px 12px; cursor:pointer; background:var(--t-surface); position:relative;
   &:hover { background:var(--t-surface-open); } }
 .master-info { font-family: '寒蝉全圆体', var(--font-main); flex:1; font-size:10px; color:var(--t-gold); letter-spacing:0.5px; position:relative; z-index:1; }
 .master-arrow { font-size:10px; color:var(--t-dim); position:relative; z-index:1; }
 .brand { font-family: '寒蝉全圆体', var(--font-main); font-size:10px; letter-spacing:2px; color:var(--t-accent); font-weight:600; position:relative; z-index:1; }
 .main-body { border-top:1px solid var(--t-border); position:relative; }
-.main-body::before { content:''; position:absolute; inset:0; pointer-events:none;
-  background:radial-gradient(ellipse at 50% 0%, var(--t-mist) 0%, transparent 70%),
-             radial-gradient(ellipse at 85% 100%, var(--t-mist) 0%, transparent 50%);
-  z-index:0; }
+.main-body::before { content:''; position:absolute; inset:0; pointer-events:none; z-index:0;
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 1px, var(--t-accent) 1px, var(--t-accent) 2px), repeating-linear-gradient(-45deg, transparent, transparent 1px, var(--t-accent) 1px, var(--t-accent) 2px);
+  opacity:0.03; }
 .settings-bar { display:flex; justify-content:flex-end; padding:4px 12px; background:var(--t-surface); border-bottom:1px solid var(--t-border); }
 .gear-btn { background:none; border:none; color:var(--t-muted); cursor:pointer; font-size:10px; padding:2px 6px; border-radius:var(--t-radius-sm); letter-spacing:0.5px;
   &:hover { color:var(--t-accent); background:var(--t-accent-dim); } }
@@ -765,13 +764,13 @@ function getCharRelations(char: NearbyChar): [string, string][] { return Object.
 .mirror-toggle { font-size:8px; background:linear-gradient(135deg, #6b4a28, #8b5a30); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; margin-left:4px; }
 .mirror-panel {
   --m-accent: #c9a96e; --m-accent-dim: rgba(201,169,110,0.2); --m-glow: rgba(201,169,110,0.1);
-  --m-surface: linear-gradient(165deg, #f5ede0 0%, #ede4d4 40%, #f0e8d8 100%);
+  --m-surface: #f5ede0;
   --m-text: #4a4035; --m-muted: #8a7e6e; --m-dim: #b8a898;
   --m-rose: #c47b8b; --m-rose-dim: rgba(196,123,139,0.2);
   --m-teal: #5ea0a7; --m-teal-dim: rgba(94,160,167,0.18);
   padding:4px 0 6px;
-  &.theme-red { --m-accent: var(--m-rose); --m-accent-dim: var(--m-rose-dim); --m-surface: linear-gradient(165deg, #251c1f 0%, #2d2025 50%, #221a1e 100%); --m-text: #e0d0d8; --m-muted: #b098a0; --m-dim: #786068; }
-  &.theme-teal { --m-accent: var(--m-teal); --m-accent-dim: var(--m-teal-dim); --m-surface: linear-gradient(165deg, #1c2325 0%, #20282d 50%, #1a2123 100%); --m-text: #d0dce0; --m-muted: #98a8b0; --m-dim: #607078; }
+  &.theme-red { --m-accent: var(--m-rose); --m-accent-dim: var(--m-rose-dim); --m-surface: #251c1f; --m-text: #e0d0d8; --m-muted: #b098a0; --m-dim: #786068; }
+  &.theme-teal { --m-accent: var(--m-teal); --m-accent-dim: var(--m-teal-dim); --m-surface: #1c2325; --m-text: #d0dce0; --m-muted: #98a8b0; --m-dim: #607078; }
 }
 .mirror-frame {
   position:relative; border-radius:12px; padding:4px;
@@ -785,18 +784,11 @@ function getCharRelations(char: NearbyChar): [string, string][] { return Object.
   position:relative; z-index:1; border-radius:9px; padding:14px 12px 10px;
   background:var(--m-surface); overflow:hidden;
   &::before {
-    content:''; position:absolute; top:-50%; left:-50%; width:200%; height:200%; z-index:0; pointer-events:none;
-    background:radial-gradient(circle at center, rgba(201,169,110,0.08) 0%, transparent 40%);
-    animation: mirrorGlow 3s ease-in-out infinite;
+    content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background-image: repeating-linear-gradient(45deg, transparent, transparent 2px, var(--m-accent) 2px, var(--m-accent) 3px), repeating-linear-gradient(-45deg, transparent, transparent 2px, var(--m-accent) 2px, var(--m-accent) 3px);
+    opacity:0.04;
   }
 }
-@keyframes mirrorGlow {
-  0%,100% { transform:scale(1); opacity:0.6; }
-  50% { transform:scale(1.15); opacity:1; }
-}
-.mirror-mist { position:absolute; border-radius:50%; filter:blur(35px); pointer-events:none; }
-.mist-1 { width:120px; height:70px; background:#c9a96e; opacity:0.08; top:-20px; right:-25px; }
-.mist-2 { width:90px; height:60px; background:#8b7355; opacity:0.06; bottom:5px; left:-15px; }
 .panel-title { font-family: '寒蝉全圆体', var(--font-main); text-align:center; font-size:18px; font-weight:700; letter-spacing:6px; position:relative; z-index:1;
   background:linear-gradient(135deg, #6b4a28 0%, #8b5a30 40%, #6b4a28 60%, #8b5a30 100%);
   -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }

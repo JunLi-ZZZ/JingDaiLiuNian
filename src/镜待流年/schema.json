@@ -2,6 +2,10 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
+    "_初始化完成": {
+      "default": false,
+      "type": "boolean"
+    },
     "世界": {
       "default": {},
       "type": "object",

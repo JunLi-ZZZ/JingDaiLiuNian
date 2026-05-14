@@ -1,9 +1,6 @@
 <template>
   <!-- 前置页：环境检测 + 简介 -->
   <div v-if="showIntro" class="cover" :class="`theme-${theme}`">
-    <div class="mist mist-1"></div>
-    <div class="mist mist-2"></div>
-
     <div class="title-section">
       <div class="sub-mark">✦ 浮世千面 ✦</div>
       <h1 class="title">镜 待 流 年</h1>
@@ -45,9 +42,6 @@
 
   <!-- 开局选择页 -->
   <div v-else class="cover" :class="`theme-${theme}`">
-    <div class="mist mist-1"></div>
-    <div class="mist mist-2"></div>
-
     <div class="title-section">
       <div class="sub-mark">✦ 浮世千面 ✦</div>
       <h1 class="title">镜 待 流 年</h1>
@@ -197,7 +191,7 @@ function sendCustom() {
   --c-card-bg: rgba(139, 115, 85, 0.06);
   --c-card-border: rgba(139, 115, 85, 0.12);
   --c-card-hover: rgba(139, 115, 85, 0.1);
-  --c-bg: linear-gradient(175deg, #f5f0e8 0%, #ede6d8 40%, #faf7f0 100%);
+  --c-bg: #f5f0e8;
   --c-border: rgba(139, 115, 85, 0.15);
   width: 100%;
   max-width: 520px;
@@ -211,28 +205,18 @@ function sendCustom() {
   font-family: var(--font-main);
   color: var(--c-text);
   user-select: none;
-  &.theme-purple { --c-gold:#b8a0d4; --c-text:#d4cee0; --c-text-dim:#867e95; --c-card-bg:rgba(155,126,196,0.08); --c-card-border:rgba(155,126,196,0.15); --c-card-hover:rgba(155,126,196,0.15); --c-bg:linear-gradient(175deg, #1e1a24 0%, #252131 40%, #1f1c26 100%); --c-border:rgba(255,255,255,0.06); }
-  &.theme-gold { --c-gold:#d4b878; --c-text:#d4cee0; --c-text-dim:#867e95; --c-card-bg:rgba(201,169,110,0.08); --c-card-border:rgba(201,169,110,0.15); --c-card-hover:rgba(201,169,110,0.15); --c-bg:linear-gradient(175deg, #1e1c17 0%, #25221c 40%, #1d1b16 100%); --c-border:rgba(255,255,255,0.06); }
-  &.theme-teal { --c-gold:#6eb8bf; --c-text:#d4cee0; --c-text-dim:#867e95; --c-card-bg:rgba(94,160,167,0.08); --c-card-border:rgba(94,160,167,0.15); --c-card-hover:rgba(94,160,167,0.15); --c-bg:linear-gradient(175deg, #171e20 0%, #1c2325 40%, #161d1e 100%); --c-border:rgba(255,255,255,0.06); }
-  &.theme-rose { --c-gold:#d08b99; --c-text:#d4cee0; --c-text-dim:#867e95; --c-card-bg:rgba(196,123,139,0.08); --c-card-border:rgba(196,123,139,0.15); --c-card-hover:rgba(196,123,139,0.15); --c-bg:linear-gradient(175deg, #1e181a 0%, #251c1f 40%, #1c1719 100%); --c-border:rgba(255,255,255,0.06); }
+  &.theme-purple { --c-gold:#b8a0d4; --c-text:#d4cee0; --c-text-dim:#867e95; --c-card-bg:rgba(155,126,196,0.08); --c-card-border:rgba(155,126,196,0.15); --c-card-hover:rgba(155,126,196,0.15); --c-bg:#1e1a24; --c-border:rgba(255,255,255,0.06); }
+  &.theme-gold { --c-gold:#d4b878; --c-text:#d4cee0; --c-text-dim:#867e95; --c-card-bg:rgba(201,169,110,0.08); --c-card-border:rgba(201,169,110,0.15); --c-card-hover:rgba(201,169,110,0.15); --c-bg:#1e1c17; --c-border:rgba(255,255,255,0.06); }
+  &.theme-teal { --c-gold:#6eb8bf; --c-text:#d4cee0; --c-text-dim:#867e95; --c-card-bg:rgba(94,160,167,0.08); --c-card-border:rgba(94,160,167,0.15); --c-card-hover:rgba(94,160,167,0.15); --c-bg:#171e20; --c-border:rgba(255,255,255,0.06); }
+  &.theme-rose { --c-gold:#d08b99; --c-text:#d4cee0; --c-text-dim:#867e95; --c-card-bg:rgba(196,123,139,0.08); --c-card-border:rgba(196,123,139,0.15); --c-card-hover:rgba(196,123,139,0.15); --c-bg:#1e181a; --c-border:rgba(255,255,255,0.06); }
 }
 
-.mist {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(60px);
-  opacity: 0.1;
-  pointer-events: none;
-}
-.mist-1 {
-  width: 180px; height: 120px;
-  background: #c9a96e;
-  top: -30px; right: -40px;
-}
-.mist-2 {
-  width: 200px; height: 100px;
-  background: #b8a090;
-  bottom: 40px; left: -60px;
+.cover::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    repeating-linear-gradient(45deg, transparent, transparent 1px, var(--c-gold) 1px, var(--c-gold) 2px),
+    repeating-linear-gradient(-45deg, transparent, transparent 1px, var(--c-gold) 1px, var(--c-gold) 2px);
+  opacity: 0.03;
 }
 
 .title-section { text-align: center; margin-bottom: 22px; position: relative; z-index: 1; }
