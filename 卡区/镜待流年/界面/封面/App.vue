@@ -1,6 +1,6 @@
 <template>
   <!-- 前置页：环境检测 + 简介 -->
-  <div v-if="showIntro" class="cover">
+  <div v-if="showIntro" class="cover" :class="`theme-${theme}`">
     <div class="mist mist-1"></div>
     <div class="mist mist-2"></div>
 
@@ -44,7 +44,7 @@
   </div>
 
   <!-- 开局选择页 -->
-  <div v-else class="cover">
+  <div v-else class="cover" :class="`theme-${theme}`">
     <div class="mist mist-1"></div>
     <div class="mist mist-2"></div>
 
@@ -103,7 +103,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
+
+const theme = ref((typeof localStorage !== 'undefined' && localStorage.getItem('jdnl_theme')) || 'cream');
+function onStorage(e: StorageEvent) { if (e.key === 'jdnl_theme' && e.newValue) theme.value = e.newValue; }
+onMounted(() => { addEventListener('storage', onStorage); });
+onUnmounted(() => { removeEventListener('storage', onStorage); });
 
 const showIntro = ref(true);
 const showCustom = ref(false);
@@ -183,6 +188,8 @@ function sendCustom() {
 </script>
 
 <style lang="scss" scoped>
+@import url("https://fontsapi.zeoseven.com/3/main/result.css");
+@import url("https://fontsapi.zeoseven.com/84/main/result.css");
 .cover {
   --c-gold: #8b7355;
   --c-text: #4a4035;
@@ -190,18 +197,24 @@ function sendCustom() {
   --c-card-bg: rgba(139, 115, 85, 0.06);
   --c-card-border: rgba(139, 115, 85, 0.12);
   --c-card-hover: rgba(139, 115, 85, 0.1);
+  --c-bg: linear-gradient(175deg, #f5f0e8 0%, #ede6d8 40%, #faf7f0 100%);
+  --c-border: rgba(139, 115, 85, 0.15);
   width: 100%;
   max-width: 520px;
   margin: 0 auto;
   padding: 28px 20px 20px;
-  background: linear-gradient(175deg, #f5f0e8 0%, #ede6d8 40%, #faf7f0 100%);
+  background: var(--c-bg);
   border-radius: 12px;
-  border: 1px solid rgba(139, 115, 85, 0.15);
+  border: 1px solid var(--c-border);
   position: relative;
   overflow: hidden;
   font-family: var(--font-main);
   color: var(--c-text);
   user-select: none;
+  &.theme-purple { --c-gold:#b8a0d4; --c-text:#d4cee0; --c-text-dim:#867e95; --c-card-bg:rgba(155,126,196,0.08); --c-card-border:rgba(155,126,196,0.15); --c-card-hover:rgba(155,126,196,0.15); --c-bg:linear-gradient(175deg, #1e1a24 0%, #252131 40%, #1f1c26 100%); --c-border:rgba(255,255,255,0.06); }
+  &.theme-gold { --c-gold:#d4b878; --c-text:#d4cee0; --c-text-dim:#867e95; --c-card-bg:rgba(201,169,110,0.08); --c-card-border:rgba(201,169,110,0.15); --c-card-hover:rgba(201,169,110,0.15); --c-bg:linear-gradient(175deg, #1e1c17 0%, #25221c 40%, #1d1b16 100%); --c-border:rgba(255,255,255,0.06); }
+  &.theme-teal { --c-gold:#6eb8bf; --c-text:#d4cee0; --c-text-dim:#867e95; --c-card-bg:rgba(94,160,167,0.08); --c-card-border:rgba(94,160,167,0.15); --c-card-hover:rgba(94,160,167,0.15); --c-bg:linear-gradient(175deg, #171e20 0%, #1c2325 40%, #161d1e 100%); --c-border:rgba(255,255,255,0.06); }
+  &.theme-rose { --c-gold:#d08b99; --c-text:#d4cee0; --c-text-dim:#867e95; --c-card-bg:rgba(196,123,139,0.08); --c-card-border:rgba(196,123,139,0.15); --c-card-hover:rgba(196,123,139,0.15); --c-bg:linear-gradient(175deg, #1e181a 0%, #251c1f 40%, #1c1719 100%); --c-border:rgba(255,255,255,0.06); }
 }
 
 .mist {
@@ -223,7 +236,7 @@ function sendCustom() {
 }
 
 .title-section { text-align: center; margin-bottom: 22px; position: relative; z-index: 1; }
-.sub-mark { font-size: 11px; letter-spacing: 4px; color: var(--c-gold); margin-bottom: 8px; }
+.sub-mark { font-family: '寒蝉全圆体', var(--font-main); font-size: 11px; letter-spacing: 4px; color: var(--c-gold); margin-bottom: 8px; }
 .title { font-size: 28px; font-weight: 700; letter-spacing: 6px; color: #4a4035; text-shadow: 0 0 40px rgba(139, 115, 85, 0.15); margin-bottom: 10px; }
 
 .divider { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 10px; }
@@ -231,7 +244,7 @@ function sendCustom() {
 .divider-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--c-gold); opacity: 0.6; }
 .divider-diamond { color: var(--c-gold); font-size: 8px; opacity: 0.7; }
 
-.tagline { font-size: 11px; color: var(--c-text-dim); letter-spacing: 2px; line-height: 1.8; }
+.tagline { font-family: 'DouyinSans', var(--font-main); font-size: 11px; color: var(--c-text-dim); letter-spacing: 2px; line-height: 1.8; }
 
 .intro-section {
   position: relative; z-index: 1;
@@ -239,6 +252,7 @@ function sendCustom() {
   padding: 0 4px;
 }
 .intro-text {
+  font-family: 'DouyinSans', var(--font-main);
   font-size: 11px; color: var(--c-text-dim); letter-spacing: 1px;
   line-height: 1.9; text-align: center; margin-bottom: 18px;
 }
@@ -250,11 +264,13 @@ function sendCustom() {
   border-radius: 8px;
 }
 .env-title {
+  font-family: '寒蝉全圆体', var(--font-main);
   font-size: 10px; font-weight: 600; color: var(--c-text-dim);
   letter-spacing: 2px; margin-bottom: 4px; text-align: center;
 }
 .env-row { display: flex; align-items: center; gap: 10px; }
 .env-icon {
+  font-family: '寒蝉全圆体', var(--font-main);
   width: 20px; height: 20px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-size: 10px; font-weight: 700; flex-shrink: 0;
@@ -262,10 +278,10 @@ function sendCustom() {
   &.fail { background: rgba(200, 100, 100, 0.12); color: #b06060; }
 }
 .env-info { display: flex; flex-direction: column; gap: 1px; }
-.env-name { font-size: 11px; font-weight: 600; color: var(--c-text); }
-.env-hint { font-size: 9px; color: var(--c-text-dim); }
-.env-all-ok { text-align: center; font-size: 10px; color: #5a8a5a; margin-top: 10px; letter-spacing: 1px; }
-.env-warn { text-align: center; font-size: 10px; color: #b06060; margin-top: 10px; letter-spacing: 1px; }
+.env-name { font-family: '寒蝉全圆体', var(--font-main); font-size: 11px; font-weight: 600; color: var(--c-text); }
+.env-hint { font-family: 'DouyinSans', var(--font-main); font-size: 9px; color: var(--c-text-dim); }
+.env-all-ok { font-family: '寒蝉全圆体', var(--font-main); text-align: center; font-size: 10px; color: #5a8a5a; margin-top: 10px; letter-spacing: 1px; }
+.env-warn { font-family: '寒蝉全圆体', var(--font-main); text-align: center; font-size: 10px; color: #b06060; margin-top: 10px; letter-spacing: 1px; }
 
 .enter-btn {
   display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -273,7 +289,7 @@ function sendCustom() {
   background: rgba(139, 115, 85, 0.08);
   border: 1px solid rgba(139, 115, 85, 0.18);
   border-radius: 8px; cursor: pointer; position: relative; z-index: 1;
-  color: var(--c-gold); font-family: inherit; font-size: 13px; font-weight: 600;
+  color: var(--c-gold); font-family: '寒蝉全圆体', var(--font-main); font-size: 13px; font-weight: 600;
   letter-spacing: 4px;
   transition: all 0.25s ease;
   &:hover { background: rgba(139, 115, 85, 0.14); border-color: rgba(139, 115, 85, 0.3); }
@@ -302,6 +318,7 @@ function sendCustom() {
 }
 
 .scene-index {
+  font-family: '寒蝉全圆体', var(--font-main);
   width: 22px; height: 22px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-size: 10px; font-weight: 600; flex-shrink: 0;
@@ -309,9 +326,9 @@ function sendCustom() {
 }
 
 .scene-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.scene-char { font-size: 13px; font-weight: 600; color: var(--c-text); letter-spacing: 1px; }
-.scene-location { font-size: 9px; color: var(--c-text-dim); letter-spacing: 0.5px; }
-.scene-teaser { font-size: 10px; color: #8a7e6e; margin-top: 2px; line-height: 1.5; }
+.scene-char { font-family: '寒蝉全圆体', var(--font-main); font-size: 13px; font-weight: 600; color: var(--c-text); letter-spacing: 1px; }
+.scene-location { font-family: 'DouyinSans', var(--font-main); font-size: 9px; color: var(--c-text-dim); letter-spacing: 0.5px; }
+.scene-teaser { font-family: 'DouyinSans', var(--font-main); font-size: 10px; color: #8a7e6e; margin-top: 2px; line-height: 1.5; }
 
 .scene-arrow {
   font-size: 10px; color: var(--c-text-dim); flex-shrink: 0;
@@ -331,7 +348,7 @@ function sendCustom() {
   border: 1px solid var(--c-card-border);
   background: rgba(139, 115, 85, 0.04);
   color: var(--c-text);
-  font-family: inherit; font-size: 12px;
+  font-family: 'DouyinSans', var(--font-main); font-size: 12px;
   resize: vertical;
   outline: none;
   &::placeholder { color: var(--c-text-dim); }
@@ -344,7 +361,7 @@ function sendCustom() {
   border: none;
   background: var(--c-gold);
   color: #fff;
-  font-family: inherit; font-size: 11px; font-weight: 600;
+  font-family: '寒蝉全圆体', var(--font-main); font-size: 11px; font-weight: 600;
   cursor: pointer; letter-spacing: 1px;
   transition: opacity 0.2s;
   &:hover { opacity: 0.85; }

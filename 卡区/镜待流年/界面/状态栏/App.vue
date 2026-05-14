@@ -263,7 +263,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { useDataStore } from './store';
 
 const store = useDataStore();
@@ -277,7 +277,24 @@ const showItems = ref(false);
 const showRelations = ref(false);
 const showChars = ref(false);
 const showThemes = ref(false);
-const theme = ref('cream');
+const theme = ref((typeof localStorage !== 'undefined' && localStorage.getItem('jdnl_theme')) || 'cream');
+watch(theme, v => { if (typeof localStorage !== 'undefined') localStorage.setItem('jdnl_theme', v); injectVarStyle(); }, { immediate: true });
+function injectVarStyle() {
+  const doc = (window as any).parent?.document;
+  if (!doc) return;
+  let el = doc.getElementById('jdnl-var-style');
+  if (!el) { el = doc.createElement('style'); el.id = 'jdnl-var-style'; doc.head.appendChild(el); }
+  const t = theme.value;
+  const dark = t !== 'cream';
+  const accent = { cream: '#8b7355', purple: '#9b7ec4', gold: '#c9a96e', teal: '#5ea0a7', rose: '#c47b8b' }[t] || '#8b7355';
+  const accentDim = { cream: 'rgba(139,115,85,0.12)', purple: 'rgba(155,126,196,0.15)', gold: 'rgba(201,169,110,0.15)', teal: 'rgba(94,160,167,0.15)', rose: 'rgba(196,123,139,0.15)' }[t] || 'rgba(139,115,85,0.12)';
+  el.textContent = [
+    '.var-update-box { margin:6px 0; border-radius:10px; padding:10px 14px; font-family:"DouyinSans",var(--font-main,sans-serif); font-size:11px; line-height:1.7; transition:all 0.3s; }',
+    dark
+      ? `.var-update-box { background:#1e1c17; border:1px solid rgba(255,255,255,0.06); color:#d4cee0; } .var-update-box summary { color:${accent}; font-family:"寒蝉全圆体",var(--font-main,sans-serif); font-size:11px; letter-spacing:1px; cursor:pointer; } .var-update-box details { color:#867e95; }`
+      : `.var-update-box { background:rgba(139,115,85,0.03); border:1px solid ${accentDim}; color:#4a4035; } .var-update-box summary { color:${accent}; font-family:"寒蝉全圆体",var(--font-main,sans-serif); font-size:11px; letter-spacing:1px; cursor:pointer; } .var-update-box details { color:#8a7e6e; }`,
+  ].join('\n');
+}
 const mirrorOpen = ref(false);
 const mirrorDir = ref<'toMe' | 'toWorld'>('toMe');
 const mxCustom = ref(false);
