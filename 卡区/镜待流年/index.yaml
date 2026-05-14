@@ -523,7 +523,7 @@
         ```
         <body>
         <script>
-        $('body').load('http://127.0.0.1:8080/镜待流年/界面/状态栏/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian@master/dist/镜待流年_v4/界面/状态栏/index.html')
         </script>
         </body>
         ```
@@ -541,7 +541,7 @@
         ```
         <body>
         <script>
-        $('body').load('http://127.0.0.1:8080/镜待流年/界面/封面/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian@master/dist/镜待流年_v4/界面/封面/index.html')
         </script>
         </body>
         ```
@@ -588,6 +588,6 @@
         启用: true
         类型: 脚本
         内容: |-
-          import 'http://127.0.0.1:8080/镜待流年/脚本/变量结构/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian@master/dist/镜待流年_v4/脚本/变量结构/index.js';
 
     变量: {}
