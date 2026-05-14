@@ -497,7 +497,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian@master/dist/镜待流年/界面/状态栏/index.html?v=3')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian@master/dist/镜待流年_v2/界面/状态栏/index.html')
         </script>
         </body>
         ```
@@ -515,7 +515,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian@master/dist/镜待流年/界面/封面/index.html?v=3')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian@master/dist/镜待流年_v2/界面/封面/index.html')
         </script>
         </body>
         ```
