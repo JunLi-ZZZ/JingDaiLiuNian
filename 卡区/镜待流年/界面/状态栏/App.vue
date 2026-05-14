@@ -25,6 +25,7 @@
           <div class="stat-row-inline">
             <span class="stat-item">💰 财富 <b>{{ data.主角.财富 }}</b></span>
             <span class="stat-item">⭐ 境界 <b>{{ data.主角.境界 || '凡人' }}</b></span>
+            <span class="stat-item">⚔️ 战力 <b>{{ data.主角.战力 || 0 }}</b></span>
           </div>
 
           <div class="sub-block" :class="{ open: showProtagBasic }">
@@ -40,6 +41,8 @@
               <div class="info-line"><span class="info-label">厌恶</span>：<span class="info-value">{{ data.主角.厌恶 || '待设定' }}</span></div>
               <div class="info-line"><span class="info-label">外貌</span>：<span class="info-value">{{ data.主角.外貌特征 || '待设定' }}</span></div>
               <div class="info-line"><span class="info-label">体型</span>：<span class="info-value">{{ data.主角.基础体型 || '待设定' }}</span></div>
+              <div class="info-line"><span class="info-label">神态</span>：<span class="info-value">{{ data.主角.神态 || '待设定' }}</span></div>
+              <div class="info-line"><span class="info-label">特征</span>：<span class="info-value">{{ data.主角.特征 || '无' }}</span></div>
               <div class="info-line"><span class="info-label">天赋</span>：<span class="info-value">{{ data.主角.天赋能力 || '待设定' }}</span></div>
               </div>
             </div>
@@ -192,6 +195,7 @@
                 <span class="stat-item">❤️ 好感 <b>{{ char.好感度 }}</b></span>
                 <span class="stat-item">💰 财富 <b>{{ char.财富 }}</b></span>
                 <span class="stat-item">⭐ 境界 <b>{{ char.境界 || '凡人' }}</b></span>
+                <span class="stat-item">⚔️ 战力 <b>{{ char.战力 || 0 }}</b></span>
               </div>
 
               <div class="sub-block" :class="{ open: sub(char._key+'-basic') }">
@@ -208,6 +212,8 @@
                   <div class="info-line"><span class="info-label">厌恶</span>：<span class="info-value">{{ char.厌恶 || '待设定' }}</span></div>
                   <div class="info-line"><span class="info-label">外貌</span>：<span class="info-value">{{ char.外貌特征 || '待设定' }}</span></div>
                   <div class="info-line"><span class="info-label">体型</span>：<span class="info-value">{{ char.基础体型 || '待设定' }}</span></div>
+                  <div class="info-line"><span class="info-label">神态</span>：<span class="info-value">{{ char.神态 || '待设定' }}</span></div>
+                  <div class="info-line"><span class="info-label">特征</span>：<span class="info-value">{{ char.特征 || '无' }}</span></div>
                   <div class="info-line"><span class="info-label">天赋</span>：<span class="info-value">{{ char.天赋能力 || '待设定' }}</span></div>
                   </div>
                 </div>
@@ -379,6 +385,7 @@ const mxGenTemplate = `你正在通过母镜感知一位红颜的存在。镜中
 
     外貌特征:
         基础体型:（描述性，含身材与体态）
+        特征:（角色不可变的生理标记，不含服装/饰品/可卸物。无则留空）
         身高:
         发色/发型:
         眼睛:（眼型、瞳色）
@@ -586,8 +593,8 @@ const relationEntries = computed(() => Object.entries(data.value.主角.人际�
 
 type CharInfo = {
   性别?: string; 年龄?: number; 种族?: string; 来源世界?: string;
-  喜好?: string; 厌恶?: string; 外貌特征?: string; 基础体型?: string; 天赋能力?: string;
-  好感度?: number; 财富?: number; 境界?: string; 所在位置?: string;
+  喜好?: string; 厌恶?: string; 外貌特征?: string; 基础体型?: string; 神态?: string; 特征?: string; 天赋能力?: string;
+  好感度?: number; 财富?: number; 境界?: string; 战力?: number; 所在位置?: string;
   服装?: Record<string, { 名称?: string; 描述?: string; 状态?: string }>; 随身物品?: Record<string, { 描述?: string; 数量?: number }>;
   人际关系?: Record<string, string>;
   nsfw档案?: { 初次存在与否?: boolean; 性对象?: string; 是否怀孕?: boolean; 子嗣列表?: string };
@@ -595,7 +602,7 @@ type CharInfo = {
 interface NearbyChar {
   _key: string; name: string;
   性别?: string; 年龄?: number; 种族?: string; 来源世界?: string;
-  喜好?: string; 厌恶?: string; 外貌特征?: string; 基础体型?: string; 天赋能力?: string;
+  喜好?: string; 厌恶?: string; 外貌特征?: string; 基础体型?: string; 神态?: string; 特征?: string; 天赋能力?: string;
   好感度: number; 财富?: number; 境界?: string; 所在位置?: string;
   服装?: Record<string, { 名称?: string; 描述?: string; 状态?: string }>; 随身物品?: Record<string, { 描述?: string; 数量?: number }>;
   人际关系?: Record<string, string>;

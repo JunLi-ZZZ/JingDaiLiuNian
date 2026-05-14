@@ -78,6 +78,14 @@
           "default": "",
           "type": "string"
         },
+        "神态": {
+          "default": "",
+          "type": "string"
+        },
+        "特征": {
+          "default": "",
+          "type": "string"
+        },
         "天赋能力": {
           "default": "",
           "type": "string"
@@ -89,6 +97,10 @@
         "境界": {
           "default": "凡人",
           "type": "string"
+        },
+        "战力": {
+          "default": 0,
+          "type": "number"
         },
         "所在位置": {
           "default": "",
@@ -285,6 +297,14 @@
             "default": "",
             "type": "string"
           },
+          "神态": {
+            "default": "",
+            "type": "string"
+          },
+          "特征": {
+            "default": "",
+            "type": "string"
+          },
           "天赋能力": {
             "default": "",
             "type": "string"
@@ -296,6 +316,10 @@
           "境界": {
             "default": "凡人",
             "type": "string"
+          },
+          "战力": {
+            "default": 0,
+            "type": "number"
           },
           "好感度": {
             "default": 0,
