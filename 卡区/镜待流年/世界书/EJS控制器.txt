@@ -1,5 +1,5 @@
 <%_
-if (getvar('stat_data._初始化完成', { defaults: false })) {
+if (getvar('stat_data.初始化完成', { defaults: false })) {
 _%>
 <%- await getwi('mvu_update_变量更新规则_日常') %>
 <%

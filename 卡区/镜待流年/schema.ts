@@ -1,5 +1,5 @@
 export const Schema = z.object({
-  _初始化完成: z.boolean().prefault(false),
+  初始化完成: z.boolean().prefault(false),
 
   世界: z.object({
     当前时间: z.string().prefault(''),
