@@ -555,12 +555,12 @@ async function mxAddToCharList() {
     const charId = idMatch ? idMatch[1].trim() : '未知';
     const wbName = TH.getCharLorebooks()?.primary;
     if (!wbName) { mxGenError.value = '未找到世界书。'; return; }
+    const entries = await TH.getLorebookEntries(wbName);
+    const target = entries.find((e: any) => e.comment === '生成角色列表');
+    if (!target) throw new Error('未找到生成角色列表条目');
     const newEntry = '\n  - ' + charName + ':\n      身份: ' + charId;
-    await TH.updateLorebookEntriesWith(wbName, (entries: any[]) => {
-      const target = entries.find((e: any) => e.comment === '生成角色列表');
-      if (!target) throw new Error('未找到生成角色列表条目');
-      return [{ uid: target.uid, content: (target.content || '') + newEntry }];
-    });
+    const newContent = (target.content || '') + newEntry;
+    await TH.setLorebookEntries(wbName, [{ uid: target.uid, content: newContent }]);
     mxAddedToList.value = true;
   } catch (e: any) {
     mxGenError.value = '添加失败：' + (e?.message || String(e));
