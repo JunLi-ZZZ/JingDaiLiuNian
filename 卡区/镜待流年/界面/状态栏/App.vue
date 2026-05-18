@@ -665,19 +665,26 @@ function normalizeLoc(s: string): string {
 function presence(char: NearbyChar): string {
   const pLoc = data.value.主角.当前地点;
   const cLoc = char.当前地点;
-  if (!cLoc || !isSet(cLoc.场景)) return 'absent';
+  if (!cLoc) return 'absent';
 
-  if (isSet(pLoc.场景) && cLoc.场景 === pLoc.场景) return 'present';
+  const cScene = (cLoc.场景 || '').trim();
+  const pScene = (pLoc.场景 || '').trim();
+  if (cScene && pScene && cScene === pScene) return 'present';
 
   if (isSet(pLoc.具体位置) && isSet(cLoc.具体位置)) {
-    if (cLoc.具体位置 === pLoc.具体位置) return 'present';
+    if (cLoc.具体位置.trim() === pLoc.具体位置.trim()) return 'present';
     const nHere = normalizeLoc(pLoc.具体位置);
     const nChar = normalizeLoc(cLoc.具体位置);
     if (nChar && nHere && (nChar === nHere || nChar.includes(nHere) || nHere.includes(nChar))) return 'present';
   }
 
-  if (isSet(pLoc.区域) && cLoc.区域 === pLoc.区域) return 'nearby';
-  if (isSet(pLoc.城市) && cLoc.城市 === pLoc.城市) return 'nearby';
+  const cRegion = (cLoc.区域 || '').trim();
+  const pRegion = (pLoc.区域 || '').trim();
+  if (cRegion && pRegion && cRegion === pRegion) return 'nearby';
+
+  const cCity = (cLoc.城市 || '').trim();
+  const pCity = (pLoc.城市 || '').trim();
+  if (cCity && pCity && cCity === pCity) return 'nearby';
 
   return 'absent';
 }
