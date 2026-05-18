@@ -13,36 +13,6 @@
         "当前时间": {
           "default": "",
           "type": "string"
-        },
-        "当前地点": {
-          "default": {},
-          "type": "object",
-          "properties": {
-            "位面": {
-              "default": "",
-              "type": "string"
-            },
-            "大陆": {
-              "default": "",
-              "type": "string"
-            },
-            "城市": {
-              "default": "",
-              "type": "string"
-            },
-            "区域": {
-              "default": "",
-              "type": "string"
-            },
-            "场景": {
-              "default": "",
-              "type": "string"
-            },
-            "具体位置": {
-              "default": "",
-              "type": "string"
-            }
-          }
         }
       }
     },
@@ -106,9 +76,35 @@
           "default": 0,
           "type": "number"
         },
-        "所在位置": {
-          "default": "",
-          "type": "string"
+        "当前地点": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "位面": {
+              "default": "",
+              "type": "string"
+            },
+            "大陆": {
+              "default": "",
+              "type": "string"
+            },
+            "城市": {
+              "default": "",
+              "type": "string"
+            },
+            "区域": {
+              "default": "",
+              "type": "string"
+            },
+            "场景": {
+              "default": "",
+              "type": "string"
+            },
+            "具体位置": {
+              "default": "",
+              "type": "string"
+            }
+          }
         },
         "服装": {
           "default": {},
@@ -329,9 +325,35 @@
             "default": 0,
             "type": "number"
           },
-          "所在位置": {
-            "default": "",
-            "type": "string"
+          "当前地点": {
+            "default": {},
+            "type": "object",
+            "properties": {
+              "位面": {
+                "default": "",
+                "type": "string"
+              },
+              "大陆": {
+                "default": "",
+                "type": "string"
+              },
+              "城市": {
+                "default": "",
+                "type": "string"
+              },
+              "区域": {
+                "default": "",
+                "type": "string"
+              },
+              "场景": {
+                "default": "",
+                "type": "string"
+              },
+              "具体位置": {
+                "default": "",
+                "type": "string"
+              }
+            }
           },
           "服装": {
             "default": {},
