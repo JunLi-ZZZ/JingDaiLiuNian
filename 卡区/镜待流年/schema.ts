@@ -8,6 +8,7 @@ export const Schema = z.object({
       大陆: z.string().prefault(''),
       城市: z.string().prefault(''),
       区域: z.string().prefault(''),
+      场景: z.string().prefault(''),
       具体位置: z.string().prefault(''),
     }).prefault({}),
   }).prefault({}),

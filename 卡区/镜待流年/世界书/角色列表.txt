@@ -1,4 +1,4 @@
-<charater_list>
+<character_list>
 已在<user>身边的角色:
   - <user>:
       身份: 星见大学研究生
@@ -31,4 +31,4 @@
       身份: 未来红颜 | 云砚宗画道峰峰主，乖巧可爱女徒儿的师尊
   - 苏幼清:
       身份: 未来红颜 | 云砚宗画道峰亲传弟子，苏墨染的乖巧小徒儿
-</charater_list>
+</character_list>
