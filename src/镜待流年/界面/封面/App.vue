@@ -17,12 +17,14 @@
       <div class="card-intro">
         <p>一面古镜，万千位面。镜渡随心，去往任何你向往的世界</p>
         <p>陌生的位面、钟爱的同人作品、未曾触及的因果线，皆在镜中</p>
-        <p>归来时，超凡入世。看她们褪去光环融入现代社会，在日常烟火里找到属于自己的位置</p>
-        <p>
-          不止于此。可以选择挂上任意角色的世界书，她便循着因果网落入这个世界。打破第四面墙——你喜欢的她，不需要被定义在哪张卡里
-        </p>
+        <p>归来时，超凡入世</p>
+        <p>看她们褪去光环融入现代社会，在日常烟火里找到属于自己的位置</p>
+        <p>还可以选择挂上任意角色的世界书，她便循着因果网落入这个世界</p>
+        <p>打破第四面墙——你喜欢的她，不需要被定义在哪张卡里</p>
         <p class="intro-ending">镜待流年，故事无限</p>
       </div>
+
+      <div class="section-divider"><span></span><i>◇</i><span></span></div>
 
       <div class="env-checks">
         <div class="env-title">环境检测</div>
@@ -38,6 +40,8 @@
       <div v-if="allOk" class="env-all-ok">所有扩展就绪，祝您游玩愉快</div>
       <div v-else class="env-warn">请先安装/启用上方的扩展，否则可能出现功能异常</div>
     </div>
+
+    <div class="section-divider"><span></span><i>◇</i><span></span></div>
 
     <div class="author-section">
       <span class="author-label">作者</span>
@@ -62,6 +66,7 @@
 
   <!-- 开局选择页 -->
   <div v-else class="cover" :class="`theme-${theme}`">
+    <button class="back-btn" @click="showIntro = true">←</button>
     <div class="title-section">
       <div class="sub-mark">✦ 浮世千面 ✦</div>
       <h1 class="title">镜 待 流 年</h1>
@@ -102,11 +107,11 @@
           placeholder="写下你想对 AI 说的话，作为故事的开端…"
           rows="3"
         ></textarea>
-        <button class="custom-send" @click.stop="sendCustom" :disabled="!customMsg.trim()">发送</button>
+        <button class="custom-send" :disabled="!customMsg.trim()" @click.stop="sendCustom">发送</button>
       </div>
     </div>
 
-    <p class="footer-note">选择一幕，开启你的镜中之旅</p>
+    <p class="footer-note">选择一幕，开启你的" @click.stop="sendCustom</p>
   </div>
 </template>
 
@@ -297,6 +302,13 @@ function sendCustom() {
   opacity: 0.03;
 }
 
+.back-btn {
+  position: absolute; top: 14px; left: 16px; z-index: 2;
+  background: none; border: none; cursor: pointer;
+  font-size: 18px; color: var(--c-text-dim); line-height: 1;
+  padding: 4px 8px; transition: color 0.2s;
+  &:hover { color: var(--c-gold); }
+}
 .title-section {
   text-align: center;
   margin-bottom: 22px;
@@ -377,6 +389,27 @@ function sendCustom() {
     margin-top: 4px;
   }
 }
+.section-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  position: relative;
+  z-index: 1;
+  span {
+    display: block;
+    width: 50px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--c-gold), transparent);
+  }
+  i {
+    color: var(--c-gold);
+    font-size: 7px;
+    font-style: normal;
+    opacity: 0.5;
+  }
+}
 .author-section {
   position: relative;
   z-index: 1;
@@ -429,8 +462,7 @@ function sendCustom() {
   font-size: 10px;
   color: var(--c-text-dim);
   letter-spacing: 0.5px;
-  padding-left: 14px;
-  text-indent: -14px;
+  text-align: center;
   line-height: 1.6;
 }
 .env-checks {
@@ -454,6 +486,7 @@ function sendCustom() {
 .env-row {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
 }
 .env-icon {
