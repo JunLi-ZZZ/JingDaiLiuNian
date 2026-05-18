@@ -34,6 +34,10 @@
               "default": "",
               "type": "string"
             },
+            "场景": {
+              "default": "",
+              "type": "string"
+            },
             "具体位置": {
               "default": "",
               "type": "string"
