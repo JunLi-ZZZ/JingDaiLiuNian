@@ -593,7 +593,7 @@ const userName = computed(() => {
 const timeText = computed(() => isSet(data.value.世界.当前时间) ? data.value.世界.当前时间 : '序章');
 const locationFull = computed(() => {
   const loc = data.value.世界.当前地点;
-  const parts = [loc.位面, loc.大陆, loc.城市, loc.区域, loc.具体位置].filter(v => v && v !== '待设定');
+  const parts = [loc.位面, loc.大陆, loc.城市, loc.区域, loc.场景, loc.具体位置].filter(v => v && v !== '待设定');
   return parts.length > 0 ? parts.join(' · ') : '';
 });
 
@@ -653,12 +653,38 @@ const allChars = computed<NearbyChar[]>(() => {
   return chars;
 });
 
+function normalizeLoc(s: string): string {
+  const suffixes = /[上下里内外旁辺中前后处间角面边侧]$/;
+  let r = s;
+  while (suffixes.test(r)) r = r.replace(suffixes, '').trim();
+  return r;
+}
+
 function presence(char: NearbyChar): string {
   const here = data.value.世界.当前地点.具体位置;
+  const scene = data.value.世界.当前地点.场景;
+  const region = data.value.世界.当前地点.区域;
+  const city = data.value.世界.当前地点.城市;
   const charLoc: string = char.所在位置 || '';
-  if (!isSet(here) || !isSet(charLoc)) return 'absent';
-  if (charLoc === here || charLoc.includes(here) || here.includes(charLoc)) return 'present';
-  if (isSet(data.value.世界.当前地点.城市) && charLoc.includes(data.value.世界.当前地点.城市)) return 'nearby';
+  if (!isSet(charLoc)) return 'absent';
+
+  // same scene
+  if (isSet(scene) && charLoc.includes(scene)) return 'present';
+
+  // same specific position
+  if (isSet(here)) {
+    if (charLoc === here || charLoc.includes(here) || here.includes(charLoc)) return 'present';
+    const nHere = normalizeLoc(here);
+    const nChar = normalizeLoc(charLoc);
+    if (nChar && nHere && (nChar === nHere || nChar.includes(nHere) || nHere.includes(nChar))) return 'present';
+  }
+
+  // same region → nearby
+  if (isSet(region) && charLoc.includes(region)) return 'nearby';
+
+  // same city → nearby (fallback)
+  if (isSet(city) && charLoc.includes(city)) return 'nearby';
+
   return 'absent';
 }
 function presenceText(char: NearbyChar): string {
