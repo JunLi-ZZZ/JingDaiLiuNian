@@ -592,7 +592,7 @@ const userName = computed(() => {
 });
 const timeText = computed(() => isSet(data.value.世界.当前时间) ? data.value.世界.当前时间 : '序章');
 const locationFull = computed(() => {
-  const loc = data.value.世界.当前地点;
+  const loc = data.value.主角.当前地点;
   const parts = [loc.位面, loc.大陆, loc.城市, loc.区域, loc.场景, loc.具体位置].filter(v => v && v !== '待设定');
   return parts.length > 0 ? parts.join(' · ') : '';
 });
@@ -621,7 +621,8 @@ const relationEntries = computed(() => Object.entries(data.value.主角.人际�
 type CharInfo = {
   性别?: string; 年龄?: number; 种族?: string; 来源世界?: string;
   喜好?: string; 厌恶?: string; 外貌特征?: string; 基础体型?: string; 神态?: string; 特征?: string; 天赋能力?: string;
-  好感度?: number; 财富?: number; 境界?: string; 战力?: number; 所在位置?: string;
+  好感度?: number; 财富?: number; 境界?: string; 战力?: number;
+  当前地点?: { 位面?: string; 大陆?: string; 城市?: string; 区域?: string; 场景?: string; 具体位置?: string };
   服装?: Record<string, { 名称?: string; 描述?: string; 状态?: string }>; 随身物品?: Record<string, { 描述?: string; 数量?: number }>;
   人际关系?: Record<string, string>;
   nsfw档案?: { 初次存在与否?: boolean; 性对象?: string; 是否怀孕?: boolean; 子嗣列表?: string };
@@ -630,7 +631,8 @@ interface NearbyChar {
   _key: string; name: string;
   性别?: string; 年龄?: number; 种族?: string; 来源世界?: string;
   喜好?: string; 厌恶?: string; 外貌特征?: string; 基础体型?: string; 神态?: string; 特征?: string; 天赋能力?: string;
-  好感度: number; 财富?: number; 境界?: string; 所在位置?: string;
+  好感度: number; 财富?: number; 境界?: string; 战力?: number;
+  当前地点?: { 位面?: string; 大陆?: string; 城市?: string; 区域?: string; 场景?: string; 具体位置?: string };
   服装?: Record<string, { 名称?: string; 描述?: string; 状态?: string }>; 随身物品?: Record<string, { 描述?: string; 数量?: number }>;
   人际关系?: Record<string, string>;
   nsfw档案?: { 初次存在与否?: boolean; 性对象?: string; 是否怀孕?: boolean; 子嗣列表?: string };
@@ -642,7 +644,7 @@ const allChars = computed<NearbyChar[]>(() => {
   const chars: NearbyChar[] = [];
   const rec = (data.value as any).角色名录 || {};
   for (const [name, info] of Object.entries(rec as Record<string, CharInfo | undefined>)) {
-    if (info) chars.push({ _key: name, name, 好感度: info.好感度 ?? 0, ...info });
+    if (info) chars.push({ _key: name, name, 好感度: info.好感度 ?? 0, 当前地点: info.当前地点, ...info });
   }
   chars.sort((a, b) => {
     const pa = presOrder(presence(a));
@@ -661,29 +663,21 @@ function normalizeLoc(s: string): string {
 }
 
 function presence(char: NearbyChar): string {
-  const here = data.value.世界.当前地点.具体位置;
-  const scene = data.value.世界.当前地点.场景;
-  const region = data.value.世界.当前地点.区域;
-  const city = data.value.世界.当前地点.城市;
-  const charLoc: string = char.所在位置 || '';
-  if (!isSet(charLoc)) return 'absent';
+  const pLoc = data.value.主角.当前地点;
+  const cLoc = char.当前地点;
+  if (!cLoc || !isSet(cLoc.场景)) return 'absent';
 
-  // same scene
-  if (isSet(scene) && charLoc.includes(scene)) return 'present';
+  if (isSet(pLoc.场景) && cLoc.场景 === pLoc.场景) return 'present';
 
-  // same specific position
-  if (isSet(here)) {
-    if (charLoc === here || charLoc.includes(here) || here.includes(charLoc)) return 'present';
-    const nHere = normalizeLoc(here);
-    const nChar = normalizeLoc(charLoc);
+  if (isSet(pLoc.具体位置) && isSet(cLoc.具体位置)) {
+    if (cLoc.具体位置 === pLoc.具体位置) return 'present';
+    const nHere = normalizeLoc(pLoc.具体位置);
+    const nChar = normalizeLoc(cLoc.具体位置);
     if (nChar && nHere && (nChar === nHere || nChar.includes(nHere) || nHere.includes(nChar))) return 'present';
   }
 
-  // same region → nearby
-  if (isSet(region) && charLoc.includes(region)) return 'nearby';
-
-  // same city → nearby (fallback)
-  if (isSet(city) && charLoc.includes(city)) return 'nearby';
+  if (isSet(pLoc.区域) && cLoc.区域 === pLoc.区域) return 'nearby';
+  if (isSet(pLoc.城市) && cLoc.城市 === pLoc.城市) return 'nearby';
 
   return 'absent';
 }

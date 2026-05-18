@@ -3,14 +3,6 @@ export const Schema = z.object({
 
   世界: z.object({
     当前时间: z.string().prefault(''),
-    当前地点: z.object({
-      位面: z.string().prefault(''),
-      大陆: z.string().prefault(''),
-      城市: z.string().prefault(''),
-      区域: z.string().prefault(''),
-      场景: z.string().prefault(''),
-      具体位置: z.string().prefault(''),
-    }).prefault({}),
   }).prefault({}),
 
   主角: z.object({
@@ -28,7 +20,14 @@ export const Schema = z.object({
     财富: z.coerce.number().prefault(0).transform(v => _.isNaN(v) || !_.isFinite(v) ? 0 : v),
     境界: z.string().prefault('凡人'),
     战力: z.coerce.number().prefault(0).transform(v => _.isNaN(v) || !_.isFinite(v) ? 0 : v),
-    所在位置: z.string().prefault(''),
+    当前地点: z.object({
+      位面: z.string().prefault(''),
+      大陆: z.string().prefault(''),
+      城市: z.string().prefault(''),
+      区域: z.string().prefault(''),
+      场景: z.string().prefault(''),
+      具体位置: z.string().prefault(''),
+    }).prefault({}),
     服装: z.object({
       上衣: z.object({ 名称: z.string().prefault(''), 描述: z.string().prefault(''), 状态: z.string().prefault('') }).prefault({}),
       内衣: z.object({ 名称: z.string().prefault(''), 描述: z.string().prefault(''), 状态: z.string().prefault('') }).prefault({}),
@@ -61,7 +60,14 @@ export const Schema = z.object({
     境界: z.string().prefault('凡人'),
     战力: z.coerce.number().prefault(0).transform(v => _.isNaN(v) || !_.isFinite(v) ? 0 : v),
     好感度: z.coerce.number().prefault(0).transform(v => _.isNaN(v) || !_.isFinite(v) ? 0 : v).transform(v => _.clamp(v, 0, 100)),
-    所在位置: z.string().prefault(''),
+    当前地点: z.object({
+      位面: z.string().prefault(''),
+      大陆: z.string().prefault(''),
+      城市: z.string().prefault(''),
+      区域: z.string().prefault(''),
+      场景: z.string().prefault(''),
+      具体位置: z.string().prefault(''),
+    }).prefault({}),
     服装: z.object({
       上衣: z.object({ 名称: z.string().prefault(''), 描述: z.string().prefault(''), 状态: z.string().prefault('') }).prefault({}),
       内衣: z.object({ 名称: z.string().prefault(''), 描述: z.string().prefault(''), 状态: z.string().prefault('') }).prefault({}),

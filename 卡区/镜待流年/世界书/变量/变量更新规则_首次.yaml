@@ -14,6 +14,7 @@
       check:
         - 根据开场白中的季节、天气、时间暗示合理设定初始时间
 
+  主角:
     当前地点:
       位面:
         check:
@@ -33,11 +34,6 @@
       具体位置:
         check:
           - 首次必填。精确到场景内的具体位置，如沙发、床上、书桌前等
-
-  主角:
-    所在位置:
-      check:
-        - 与具体位置同步
     财富:
       type: number
       check:
@@ -115,7 +111,8 @@
       { [角色名]: {
         姓名: string; 性别: string; 年龄: number; 来源世界: string; 种族: string;
         喜好: string; 厌恶: string; 外貌特征: string; 基础体型: string; 神态: string; 特征: string; 天赋能力: string;
-        财富: number; 境界: string; 战力: number; 好感度: number; 所在位置: string;
+        财富: number; 境界: string; 战力: number; 好感度: number;
+        当前地点: { 位面: string; 大陆: string; 城市: string; 区域: string; 场景: string; 具体位置: string; };
         服装: { 上衣: { 名称: string; 描述: string; 状态: string; }; 内衣: { 名称: string; 描述: string; 状态: string; }; 下装: { 名称: string; 描述: string; 状态: string; }; 内裤: { 名称: string; 描述: string; 状态: string; }; 袜子: { 名称: string; 描述: string; 状态: string; }; 鞋子: { 名称: string; 描述: string; 状态: string; }; };
         随身物品: { [物品名]: { 描述: string; 数量: number; } };
         人际关系: { [关系对象]: string; };
@@ -141,8 +138,9 @@
         type: number
         check:
           - 必须根据角色境界和背景合理估算。跨位面统一标尺
-      所在位置:
-        - 必须填入在场角色的当前精确位置
+      当前地点:
+        - 角色与<user>同场景时，该角色的场景及以上层级（区域/城市/大陆/位面）须与主角的当前地点一字不差地复刻。角色与<user>不同场景时，各层级独立填入
+        - 高层级变动时，低层级必然随之变化（如城市变了，区域、场景、具体位置必不同）
       服装:
         - 首次 insert 时六个部位全部填满。正文描述优先；未提及则根据场景和角色设定合理推断
         - 名称填服装本体（不含修饰定语），状态填当前可变状况，描述填静态细节。六个部位 insert 时全部填满

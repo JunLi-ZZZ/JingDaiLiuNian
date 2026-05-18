@@ -27,11 +27,13 @@
 
       <div class="env-checks">
         <div class="env-title">环境检测</div>
-        <div v-for="ext in extensions" :key="ext.name" class="env-row">
-          <span class="env-icon" :class="ext.ok ? 'ok' : 'fail'">{{ ext.ok ? '✓' : '✗' }}</span>
-          <div class="env-info">
-            <span class="env-name">{{ ext.name }}</span>
-            <span class="env-hint">{{ ext.hint }}</span>
+        <div class="env-items">
+          <div v-for="ext in extensions" :key="ext.name" class="env-row">
+            <span class="env-icon" :class="ext.ok ? 'ok' : 'fail'">{{ ext.ok ? '✓' : '✗' }}</span>
+            <div class="env-info">
+              <span class="env-name">{{ ext.name }}</span>
+              <span class="env-hint">{{ ext.hint }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -477,7 +479,7 @@ function sendCustom() {
 .env-checks {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 6px;
   padding: 12px 14px;
   background: rgba(139, 115, 85, 0.04);
@@ -492,6 +494,9 @@ function sendCustom() {
   letter-spacing: 2px;
   margin-bottom: 4px;
   text-align: center;
+}
+.env-items {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
 }
 .env-row {
   display: flex;

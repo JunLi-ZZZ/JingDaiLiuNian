@@ -19,6 +19,7 @@
       check:
         - 每次回复根据剧情消耗的时间推进
 
+  主角:
     当前地点:
       位面:
         check:
@@ -37,12 +38,7 @@
           - 剧情中是否切换了室内/室外场景（如从客厅到卧室、从室内到街道）？变了才更新。场景描述当前所处的空间类型，不包含具体方位
       具体位置:
         check:
-          - 每次必确认场景内的精确位置。角色在场景内是否移动（如从沙发到书桌、从门口到窗边）？变了才更新，没变保持原名
-
-  主角:
-    所在位置:
-      check:
-        - 每次与具体位置同步
+          - 每次必确认场景内的精确位置。用户是否在场景内移动（如从沙发到书桌、从门口到窗边）？变了才更新，没变保持原名
     财富:
       type: number
       check:
@@ -117,7 +113,8 @@
       { [角色名]: {
         姓名: string; 性别: string; 年龄: number; 来源世界: string; 种族: string;
         喜好: string; 厌恶: string; 外貌特征: string; 基础体型: string; 神态: string; 特征: string; 天赋能力: string;
-        财富: number; 境界: string; 战力: number; 好感度: number; 所在位置: string;
+        财富: number; 境界: string; 战力: number; 好感度: number;
+        当前地点: { 位面: string; 大陆: string; 城市: string; 区域: string; 场景: string; 具体位置: string; };
         服装: { 上衣: { 名称: string; 描述: string; 状态: string; }; 内衣: { 名称: string; 描述: string; 状态: string; }; 下装: { 名称: string; 描述: string; 状态: string; }; 内裤: { 名称: string; 描述: string; 状态: string; }; 袜子: { 名称: string; 描述: string; 状态: string; }; 鞋子: { 名称: string; 描述: string; 状态: string; }; };
         随身物品: { [物品名]: { 描述: string; 数量: number; } };
         人际关系: { [关系对象]: string; };
@@ -154,9 +151,12 @@
         type: number
         check:
           - 剧情中该角色实力是否发生了可量化的变化？用 delta 更新
-      所在位置:
+      当前地点:
         check:
-          - 角色是否在场？在场则更新其位置；不在场不更新
+          - 角色是否在场？在场则更新其当前地点
+          - 角色与<user>同场景时，该角色的场景及以上层级（区域/城市/大陆/位面）须与主角的当前地点一字不差地复刻
+          - 角色与<user>不同场景时，各层级独立更新
+          - 高层级变动时，低层级必然随之变化
       服装:
         check:
           - 名称填服装本体（不含修饰定语），状态填当前可变状况（整洁/半脱/湿透/破损等），描述填静态细节。状态变化时只更新状态字段，避免全量 replace
