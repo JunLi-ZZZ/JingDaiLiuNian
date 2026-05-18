@@ -17,10 +17,9 @@
       <div class="card-intro">
         <p>一面古镜，万千位面。镜渡随心，去往任何你向往的世界</p>
         <p>陌生的位面、钟爱的同人作品、未曾触及的因果线，皆在镜中</p>
-        <p>归来时，超凡入世</p>
-        <p>看她们褪去光环融入现代社会，在日常烟火里找到属于自己的位置</p>
+        <p>亦可看她们褪去光环融入现代社会，在日常烟火里寻觅</p>
         <p>还可以选择挂上任意角色的世界书，她便循着因果网落入这个世界</p>
-        <p>打破第四面墙——你喜欢的她，不需要被定义在哪张卡里</p>
+        <p>你喜欢的她，不需要被定义在哪张卡里</p>
         <p class="intro-ending">镜待流年，故事无限</p>
       </div>
 
@@ -303,11 +302,21 @@ function sendCustom() {
 }
 
 .back-btn {
-  position: absolute; top: 14px; left: 16px; z-index: 2;
-  background: none; border: none; cursor: pointer;
-  font-size: 18px; color: var(--c-text-dim); line-height: 1;
-  padding: 4px 8px; transition: color 0.2s;
-  &:hover { color: var(--c-gold); }
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  z-index: 2;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--c-text-dim);
+  line-height: 1;
+  padding: 4px 8px;
+  transition: color 0.2s;
+  &:hover {
+    color: var(--c-gold);
+  }
 }
 .title-section {
   text-align: center;
@@ -468,7 +477,10 @@ function sendCustom() {
 .env-checks {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 6px;
+  width: fit-content;
+  margin: 0 auto;
   padding: 12px 14px;
   background: rgba(139, 115, 85, 0.04);
   border: 1px solid rgba(139, 115, 85, 0.1);
@@ -486,7 +498,6 @@ function sendCustom() {
 .env-row {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 10px;
 }
 .env-icon {
