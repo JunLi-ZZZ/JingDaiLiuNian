@@ -110,7 +110,7 @@
       </div>
     </div>
 
-    <p class="footer-note">选择一幕，开启你的" @click.stop="sendCustom</p>
+    <p class="footer-note">选择一幕，开启你的镜中之旅</p>
   </div>
 </template>
 
@@ -479,8 +479,6 @@ function sendCustom() {
   flex-direction: column;
   align-items: flex-start;
   gap: 6px;
-  width: fit-content;
-  margin: 0 auto;
   padding: 12px 14px;
   background: rgba(139, 115, 85, 0.04);
   border: 1px solid rgba(139, 115, 85, 0.1);
