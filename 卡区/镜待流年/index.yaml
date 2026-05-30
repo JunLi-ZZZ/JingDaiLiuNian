@@ -188,13 +188,26 @@
       不可激活其他条目: true
     文件: 世界书\系统\剧情生成规则
 
-  - 名称: 角色风格规则
+  - 名称: Gemini行为纠正
     启用: true
     激活策略:
       类型: 蓝灯
     插入位置:
       类型: 角色定义之前
       顺序: 218
+    激活概率: 100
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+    文件: 世界书\系统\Gemini行为纠正
+
+  - 名称: 角色风格规则
+    启用: true
+    激活策略:
+      类型: 蓝灯
+    插入位置:
+      类型: 角色定义之前
+      顺序: 219
     激活概率: 100
     递归:
       不可被其他条目激活: true
@@ -207,7 +220,7 @@
       类型: 蓝灯
     插入位置:
       类型: 角色定义之前
-      顺序: 219
+      顺序: 220
     激活概率: 100
     递归:
       不可被其他条目激活: true
@@ -220,7 +233,7 @@
       类型: 蓝灯
     插入位置:
       类型: 角色定义之前
-      顺序: 220
+      顺序: 221
     激活概率: 100
     递归:
       不可被其他条目激活: true
@@ -599,7 +612,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v19/界面/状态栏/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v20/界面/状态栏/index.html')
         </script>
         </body>
         ```
@@ -617,7 +630,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v19/界面/封面/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v20/界面/封面/index.html')
         </script>
         </body>
         ```
@@ -664,6 +677,6 @@
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v19/脚本/变量结构/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v20/脚本/变量结构/index.js';
 
     变量: {}

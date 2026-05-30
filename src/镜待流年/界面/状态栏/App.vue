@@ -669,7 +669,9 @@ function presence(char: NearbyChar): string {
 
   const cScene = (cLoc.场景 || '').trim();
   const pScene = (pLoc.场景 || '').trim();
-  if (cScene && pScene && cScene === pScene) return 'present';
+  const cRegion = (cLoc.区域 || '').trim();
+  const pRegion = (pLoc.区域 || '').trim();
+  if (cScene && pScene && cScene === pScene && cRegion === pRegion) return 'present';
 
   if (isSet(pLoc.具体位置) && isSet(cLoc.具体位置)) {
     if (cLoc.具体位置.trim() === pLoc.具体位置.trim()) return 'present';
@@ -678,8 +680,6 @@ function presence(char: NearbyChar): string {
     if (nChar && nHere && (nChar === nHere || nChar.includes(nHere) || nHere.includes(nChar))) return 'present';
   }
 
-  const cRegion = (cLoc.区域 || '').trim();
-  const pRegion = (pLoc.区域 || '').trim();
   if (cRegion && pRegion && cRegion === pRegion) return 'nearby';
 
   const cCity = (cLoc.城市 || '').trim();
