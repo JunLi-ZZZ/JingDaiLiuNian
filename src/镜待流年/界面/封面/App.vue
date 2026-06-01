@@ -1,6 +1,6 @@
 <template>
   <!-- 前置页：环境检测 + 简介 -->
-  <div v-if="showIntro" class="cover" :class="`theme-${theme}`">
+  <div v-if="page === 'intro'" class="cover" :class="`theme-${theme}`">
     <div class="title-section">
       <div class="sub-mark">✦ 浮世千面 ✦</div>
       <h1 class="title">镜 待 流 年</h1>
@@ -126,15 +126,41 @@
       </div>
     </div>
 
-    <button class="enter-btn" @click="showIntro = false">
+    <button class="enter-btn" @click="page = 'dlc'">
       进入
       <span class="enter-arrow">→</span>
     </button>
   </div>
 
+  <!-- DLC 选择页 -->
+  <div v-if="page === 'dlc'" class="cover" :class="`theme-${theme}`">
+    <button class="back-btn" @click="page = 'intro'">←</button>
+    <div class="title-section">
+      <div class="sub-mark">✦ 浮世千面 ✦</div>
+      <h1 class="title">镜 待 流 年</h1>
+      <div class="divider">
+        <span class="divider-dot"></span><span class="divider-line"></span>
+        <span class="divider-diamond">◇</span>
+        <span class="divider-line"></span><span class="divider-dot"></span>
+      </div>
+      <p class="tagline">选择你想要的旅途</p>
+    </div>
+    <div class="dlc-list">
+      <button class="dlc-card" @click="page = 'scenes'">
+        <span class="dlc-index">✦</span>
+        <div class="dlc-body">
+          <span class="dlc-name">原版故事</span>
+          <span class="dlc-desc">多元位面交汇于你，来自不同世界的红颜逐一走入你的生活</span>
+        </div>
+        <span class="scene-arrow"></span>
+      </button>
+    </div>
+    <p class="footer-note">更多故事，敬请期待</p>
+  </div>
+
   <!-- 开局选择页 -->
-  <div v-else class="cover" :class="`theme-${theme}`">
-    <button class="back-btn" @click="showIntro = true">←</button>
+  <div v-if="page === 'scenes'" class="cover" :class="`theme-${theme}`">
+    <button class="back-btn" @click="page = 'dlc'">←</button>
     <div class="title-section">
       <div class="sub-mark">✦ 浮世千面 ✦</div>
       <h1 class="title">镜 待 流 年</h1>
@@ -198,7 +224,7 @@ onUnmounted(() => {
   removeEventListener('storage', onStorage);
 });
 
-const showIntro = ref(true);
+const page = ref('intro');
 const showCustom = ref(false);
 const customMsg = ref('');
 
@@ -939,6 +965,25 @@ function sendCustom() {
 }
 .protagonist-error { text-align: center; font-size: 10px; color: #b06060; margin-top: 4px; }
 .protagonist-success { text-align: center; font-size: 10px; color: #5a8a5a; margin-top: 4px; }
+
+.dlc-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; position: relative; z-index: 1; }
+.dlc-card {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 14px 16px;
+  background: var(--c-card-bg); border: 1px solid var(--c-card-border);
+  border-radius: 10px; cursor: pointer; transition: all 0.25s ease;
+  text-align: left; color: inherit; font-family: inherit;
+  &:hover { background: var(--c-card-hover); border-color: var(--c-gold); transform: translateX(3px); box-shadow: 0 0 20px rgba(139,115,85,0.06); }
+}
+.dlc-index {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; background: rgba(139,115,85,0.1); color: var(--c-gold);
+  flex-shrink: 0;
+}
+.dlc-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dlc-name { font-family: '寒蝉全圆体', var(--font-main); font-size: 14px; font-weight: 600; color: var(--c-text); letter-spacing: 2px; }
+.dlc-desc { font-family: 'DouyinSans', var(--font-main); font-size: 10px; color: var(--c-text-dim); line-height: 1.5; }
 
 .scenes {
   display: flex;
