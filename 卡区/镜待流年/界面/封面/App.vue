@@ -104,6 +104,7 @@
           <label>风格标签</label>
           <div class="tag-pool">
             <span v-for="t in pTraits" :key="t" class="tag" :class="{ picked: pForm.traits.includes(t) }" @click="pToggleTag(t)">{{ t }}</span>
+            <span class="tag tag-custom"><input v-model="pTagInput" placeholder="自定义+" @keyup.enter="pTagInput = pAddCustom(pTagInput)" /><button class="tag-custom-btn" @click="pTagInput = pAddCustom(pTagInput)">+</button></span>
           </div>
         </div>
         <div class="form-field">
@@ -222,7 +223,9 @@ const pForm = reactive({
   备注: (savedProto as any).备注 || '',
 });
 watch(pForm, (v) => { localStorage.setItem('jdnl_protagonist', JSON.stringify({ ...v })); }, { deep: true });
+const pTagInput = ref('');
 function pToggleTag(t: string) { const i = pForm.traits.indexOf(t); if (i >= 0) pForm.traits.splice(i, 1); else pForm.traits.push(t); }
+function pAddCustom(v: string): string { const s = v.trim(); if (s && !pForm.traits.includes(s)) pForm.traits.push(s); return ''; }
 
 const pGenPrompt = `你正在协助玩家自定义主角人设。根据以下标签生成一份详细的主角档案。
 
@@ -339,7 +342,7 @@ async function saveProtagonist() {
       }]);
     }
     if (defaultEntry) {
-      await TH.setLorebookEntries(wbName, [{ uid: defaultEntry.uid, content: '（此条目已被自定义主角代替，当前未启用）' }]);
+      await TH.setLorebookEntries(wbName, [{ uid: defaultEntry.uid, enabled: false }]);
     }
     protagonistActive.value = true;
     protagonistSuccess.value = '自定义主角已保存';
@@ -362,32 +365,10 @@ async function resetProtagonist() {
     const defaultEntry = entries.find((e: any) => e.comment === 'user人设');
     const customEntry = entries.find((e: any) => e.comment === 'user人设(自定义)');
     if (defaultEntry) {
-      await TH.setLorebookEntries(wbName, [{ uid: defaultEntry.uid, content: `<character_info>
-角色档案:
-    基本信息:
-        姓名: <user>
-        性别: 男
-        年龄: 研究生在读（约22岁）
-        身份: 星见大学研究生
-
-    外貌特征:
-        基础体型: 体态修长匀称
-        整体印象: 气质出尘，长相宛若谪仙，待人温和
-        补充: 暂无
-
-    性格特点:
-        待人温和有礼，不卑不亢。对自己"桃花运"的体质毫无自觉，常将红颜的主动接近理解为普通的友善。
-        对自己是"普通人"的认知根深蒂固，对超凡世界的存在一无所知。
-
-    特殊物品:
-        母镜:
-            - 一面古朴铜镜，虞姝昀在<user>幼时赠予，称"护身符"
-            - <user>不知其真实功能
-            - 偶尔能在镜中瞥见模糊的红颜特征
-</character_info>` }]);
+      await TH.setLorebookEntries(wbName, [{ uid: defaultEntry.uid, enabled: true }]);
     }
     if (customEntry) {
-      await TH.setLorebookEntries(wbName, [{ uid: customEntry.uid, content: '（已重置）' }]);
+      await TH.setLorebookEntries(wbName, [{ uid: customEntry.uid, enabled: false }]);
     }
     protagonistActive.value = false;
     protagonistSuccess.value = '已恢复默认主角';
@@ -914,6 +895,9 @@ function sendCustom() {
 .form-row-dual { display: flex; gap: 8px; & > .form-field { flex: 1; } }
 .protagonist-actions { display: flex; gap: 8px; margin-top: 2px; }
 .tag-pool { display: flex; flex-wrap: wrap; gap: 4px; }
+.tag-custom { border-style: dashed; display: inline-flex; align-items: center; gap: 1px; }
+.tag-custom input { width: 54px; height: 16px; line-height: 16px; border: none; background: transparent; font-family: inherit; font-size: 9px; color: var(--c-text-dim); outline: none; text-align: center; padding: 0; &::placeholder { color: var(--c-text-dim); } }
+.tag-custom-btn { width: 16px; height: 16px; border: none; border-radius: 50%; background: rgba(139,115,85,0.12); color: var(--c-gold); font-size: 10px; line-height: 16px; cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center; &:hover { background: var(--c-gold); color: #fff; } }
 .tag {
   padding: 2px 8px; border-radius: 10px; cursor: pointer;
   border: 1px solid var(--c-card-border); font-family: 'DouyinSans', var(--font-main);
