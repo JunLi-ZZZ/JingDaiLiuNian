@@ -884,7 +884,7 @@ function getCharRelations(char: NearbyChar): [string, string][] { return Object.
   &:hover { background:var(--m-accent); color:#fff; } }
 .form-row { display:flex; flex-direction:column; gap:3px;
   label { font-family: '寒蝉全圆体', var(--font-main); font-size:9px; color:var(--m-muted); letter-spacing:1px; }
-  select,input { padding:5px 8px; border-radius:6px; border:1px solid rgba(139,115,85,0.15); background:rgba(255,255,255,0.6); color:#4a4035; font-family: 'DouyinSans', var(--font-main); font-size:10px; outline:none;
+  > select, > input { padding:5px 8px; border-radius:6px; border:1px solid rgba(139,115,85,0.15); background:rgba(255,255,255,0.6); color:#4a4035; font-family: 'DouyinSans', var(--font-main); font-size:10px; outline:none;
     &:focus { border-color:var(--m-accent); } } }
 .tag-pool { display:flex; flex-wrap:wrap; gap:4px; }
 .tag { padding:2px 8px; border-radius:10px; cursor:pointer; border:1px solid var(--m-accent-dim); font-family: 'DouyinSans', var(--font-main); font-size:9px; color:var(--m-muted); transition:all 0.12s;
