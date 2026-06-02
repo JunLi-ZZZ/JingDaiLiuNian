@@ -879,7 +879,7 @@ function getCharRelations(char: NearbyChar): [string, string][] { return Object.
   &:focus { border-color:var(--m-accent); } }
 .tag-custom { border-style:dashed!important; display:inline-flex; align-items:center; }
 .tag-custom { display:inline-flex; align-items:center; gap:1px; }
-.tag-custom input { width:54px; height:16px; line-height:16px; border:none; background:transparent; font-family:inherit; font-size:9px; color:var(--m-muted); outline:none; text-align:center; padding:0; &::placeholder { color:var(--m-dim); } }
+.tag-pool .tag-custom input { width:54px; height:16px; line-height:16px; border:none; background:transparent; font-family:inherit; font-size:9px; color:var(--m-muted); outline:none; text-align:center; padding:0; &::placeholder { color:var(--m-dim); } }
 .tag-custom-btn { width:16px; height:16px; border:none; border-radius:50%; background:var(--m-accent-dim); color:var(--m-accent); font-size:10px; line-height:16px; cursor:pointer; padding:0; display:inline-flex; align-items:center; justify-content:center; transition:all 0.12s;
   &:hover { background:var(--m-accent); color:#fff; } }
 .form-row { display:flex; flex-direction:column; gap:3px;
