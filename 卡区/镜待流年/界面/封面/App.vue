@@ -62,7 +62,7 @@
     <div class="protagonist-area">
       <div class="protagonist-toggle" :class="{ active: showProtagonist || protagonistActive }" @click="showProtagonist = !showProtagonist">
         <span class="protagonist-icon">{{ protagonistActive ? '✦' : '▸' }}</span>
-        <span class="protagonist-label">{{ protagonistActive ? '自定义主角（已启用）' : '自定义主角' }}</span>
+        <span class="protagonist-label">{{ protagonistActive ? '自定义主角（已启用）' : '自定义主角（可选）' }}</span>
         <span class="protagonist-arrow">{{ showProtagonist ? '▾' : '▸' }}</span>
       </div>
       <div v-if="showProtagonist" class="protagonist-form">
@@ -146,11 +146,19 @@
       <p class="tagline">选择你想要的旅途</p>
     </div>
     <div class="dlc-list">
-      <button class="dlc-card" @click="page = 'scenes'">
+      <button class="dlc-card" @click="selectDlc('main')">
         <span class="dlc-index">✦</span>
         <div class="dlc-body">
           <span class="dlc-name">原版故事</span>
-          <span class="dlc-desc">多元位面交汇于你，来自不同世界的红颜逐一走入你的生活</span>
+          <span class="dlc-desc">主世界 · 星见市。来自不同位面的红颜融入现代都市，在日常烟火里与你相遇</span>
+        </div>
+        <span class="scene-arrow"></span>
+      </button>
+      <button class="dlc-card" @click="selectDlc('xianDao')">
+        <span class="dlc-index">☯</span>
+        <div class="dlc-body">
+          <span class="dlc-name">仙道位面</span>
+          <span class="dlc-desc">宗门林立，灵气充沛。画道峰上墨香未散，云烟阁里诗韵正浓</span>
         </div>
         <span class="scene-arrow"></span>
       </button>
@@ -175,7 +183,7 @@
     </div>
 
     <div class="scenes">
-      <button v-for="(scene, i) in scenes" :key="i" class="scene-card" :class="`scene-${i}`" @click="startScene(i)">
+      <button v-for="(scene, i) in activeScenes" :key="i" class="scene-card" :class="`scene-${i}`" @click="startScene(i)">
         <span class="scene-index">{{ i + 1 }}</span>
         <div class="scene-body">
           <span class="scene-char">{{ scene.char }}</span>
@@ -442,7 +450,8 @@ const extensions = computed(() => [
 
 const allOk = computed(() => extensions.value.every(e => e.ok));
 
-const scenes = [
+const currentDlc = ref('main');
+const mainScenes = [
   {
     char: '虞姝昀',
     location: '新湖区 · {{user}}的公寓',
@@ -483,6 +492,8 @@ const scenes = [
 出场角色：伊莉雅丝
 剧情大纲：伊莉雅丝的纯洁病症犯了，连着几天对什么都提不起劲儿。这段时间借着心理咨询名义来找她打听{{user}}消息的女学生越来越多，让她身心俱疲。她撑不住了，把{{user}}叫来，微嘟着唇瓣，故作可怜地让他帮自己按按摩。`,
   },
+];
+const xianDaoScenes = [
   {
     char: '苏墨染 · 苏幼清',
     location: '画道峰 · 云烟阁',
@@ -494,12 +505,49 @@ const scenes = [
 剧情大纲：苏墨染按心中所想之人的模样作了一幅画，画完后总觉得有形无神。徒儿苏幼清凑过来看了一眼，喃喃念了一句诗——那声音轻得像梦里念叨过无数遍的句子。话音落下，画上墨迹忽然晕开，子镜与母镜同时嗡鸣，师徒二人的共鸣竟将画中人的本尊从另一个世界唤了过来。`,
   },
 ];
+const activeScenes = computed(() => currentDlc.value === 'main' ? mainScenes : xianDaoScenes);
 
 function startScene(i: number) {
   const $p = (window as any).parent?.$;
   if (!$p) return;
-  $p('#send_textarea').val(scenes[i].message).trigger('input');
+  $p('#send_textarea').val(activeScenes.value[i].message).trigger('input');
   setTimeout(() => $p('#send_but').trigger('click'), 50);
+}
+
+const dlcSaving = ref(false);
+const dlcEntryMap: Record<string, { enable: string[]; disable: string[] }> = {
+  main: { enable: ['主世界'], disable: ['仙道位面'] },
+  xianDao: { enable: ['仙道位面'], disable: ['主世界'] },
+};
+
+async function selectDlc(dlc: string) {
+  if (dlcSaving.value) return;
+  dlcSaving.value = true;
+  try {
+    const TH = (window as any).parent?.TavernHelper;
+    if (TH) {
+      const wbName = TH.getCharLorebooks()?.primary;
+      if (wbName) {
+        const entries = await TH.getLorebookEntries(wbName);
+        const ops: { uid: number; enabled: boolean }[] = [];
+        const map = dlcEntryMap[dlc];
+        if (map) {
+          for (const name of map.enable) {
+            const e = entries.find((x: any) => x.comment === name || x.display_name === name);
+            if (e && !e.enabled) ops.push({ uid: e.uid, enabled: true });
+          }
+          for (const name of map.disable) {
+            const e = entries.find((x: any) => x.comment === name || x.display_name === name);
+            if (e && e.enabled) ops.push({ uid: e.uid, enabled: false });
+          }
+        }
+        if (ops.length) await TH.setLorebookEntries(wbName, ops);
+      }
+    }
+  } catch { /* silent */ }
+  dlcSaving.value = false;
+  currentDlc.value = dlc;
+  page.value = 'scenes';
 }
 
 function sendCustom() {
