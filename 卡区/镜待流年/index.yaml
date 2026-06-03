@@ -136,6 +136,32 @@
       不可激活其他条目: true
     文件: 世界书\仙道位面
 
+  - 名称: 洪荒位面
+    启用: false
+    激活策略:
+      类型: 蓝灯
+    插入位置:
+      类型: 角色定义之前
+      顺序: 220
+    激活概率: 100
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+    文件: 世界书\洪荒位面
+
+  - 名称: 洪荒入侵
+    启用: false
+    激活策略:
+      类型: 蓝灯
+    插入位置:
+      类型: 角色定义之前
+      顺序: 221
+    激活概率: 100
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+    文件: 世界书\洪荒入侵
+
   - 名称: 多元位面-体系概述
     启用: true
     激活策略:
@@ -259,7 +285,7 @@
       类型: 蓝灯
     插入位置:
       类型: 角色定义之前
-      顺序: 410
+      顺序: 299
     激活概率: 100
     递归:
       不可被其他条目激活: true
@@ -485,6 +511,43 @@
       不可激活其他条目: true
     文件: 世界书\苏幼清
 
+  - 名称: 白糯糯
+    启用: true
+    激活策略:
+      类型: 绿灯
+      关键字:
+        - 白糯糯
+        - 糯糯
+        - 小兔子
+        - 药师
+        - 垂耳玉兔
+    插入位置:
+      类型: 角色定义之前
+      顺序: 430
+    激活概率: 100
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+    文件: 世界书\白糯糯
+
+  - 名称: 陶冶月
+    启用: true
+    激活策略:
+      类型: 绿灯
+      关键字:
+        - 陶冶月
+        - 冶月
+        - 饕餮
+        - 陶大人
+    插入位置:
+      类型: 角色定义之前
+      顺序: 440
+    激活概率: 100
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+    文件: 世界书\陶冶月
+
   - 名称: 伊莉雅丝
     启用: true
     激活策略:
@@ -522,7 +585,7 @@
       类型: 蓝灯
     插入位置:
       类型: 角色定义之前
-      顺序: 500
+      顺序: 298
     激活概率: 100
     递归:
       不可被其他条目激活: true
@@ -612,7 +675,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v27/界面/状态栏/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v28/界面/状态栏/index.html')
         </script>
         </body>
         ```
@@ -630,7 +693,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v27/界面/封面/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v28/界面/封面/index.html')
         </script>
         </body>
         ```
@@ -677,6 +740,6 @@
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v27/脚本/变量结构/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v28/脚本/变量结构/index.js';
 
     变量: {}

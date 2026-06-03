@@ -262,7 +262,7 @@
                 </div>
               </div>
               <div v-if="char.nsfw档案" class="sub-block" :class="{ open: sub(char._key+'-body') }">
-                <div class="sub-head" @click="toggleSub(char._key+'-body')"><span>📐 身体档案</span><span class="block-arrow small">{{ sub(char._key+'-body') ? '▾' : '▸' }}</span></div>
+                <div class="sub-head" @click="toggleSub(char._key+'-body')"><span>📐 私密身体档案</span><span class="block-arrow small">{{ sub(char._key+'-body') ? '▾' : '▸' }}</span></div>
                 <div v-if="sub(char._key+'-body')" class="sub-body">
                   <div class="cloth-list">
                     <div class="cloth-row" @click="toggleClothDetail(char._key+'-bx')">

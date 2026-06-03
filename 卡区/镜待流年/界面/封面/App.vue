@@ -60,16 +60,28 @@
     </div>
 
     <div class="protagonist-area">
-      <div class="protagonist-toggle" :class="{ active: showProtagonist || protagonistActive }" @click="showProtagonist = !showProtagonist">
+      <div
+        class="protagonist-toggle"
+        :class="{ active: showProtagonist || protagonistActive }"
+        @click="showProtagonist = !showProtagonist"
+      >
         <span class="protagonist-icon">{{ protagonistActive ? '✦' : '▸' }}</span>
-        <span class="protagonist-label">{{ protagonistActive ? '自定义主角（已启用）' : '自定义主角（不选则用默认）' }}</span>
+        <span class="protagonist-label">{{
+          protagonistActive ? '自定义主角（已启用）' : '自定义主角（不选则用默认）'
+        }}</span>
         <span class="protagonist-arrow">{{ showProtagonist ? '▾' : '▸' }}</span>
       </div>
       <div v-if="showProtagonist" class="protagonist-form">
         <div class="form-row-dual">
           <div class="form-field">
             <label>年龄感</label>
-            <select v-model="pForm.年龄感"><option value="">不指定</option><option>少年</option><option>青年</option><option>成年</option><option>中年</option></select>
+            <select v-model="pForm.年龄感">
+              <option value="">不指定</option>
+              <option>少年</option>
+              <option>青年</option>
+              <option>成年</option>
+              <option>中年</option>
+            </select>
           </div>
           <div class="form-field">
             <label>种族</label>
@@ -93,8 +105,21 @@
         <div class="form-field">
           <label>风格标签</label>
           <div class="tag-pool">
-            <span v-for="t in pTraits" :key="t" class="tag" :class="{ picked: pForm.traits.includes(t) }" @click="pToggleTag(t)">{{ t }}</span>
-            <span class="tag tag-custom"><input v-model="pTagInput" placeholder="自定义+" @keyup.enter="pTagInput = pAddCustom(pTagInput)" /><button class="tag-custom-btn" @click="pTagInput = pAddCustom(pTagInput)">+</button></span>
+            <span
+              v-for="t in pTraits"
+              :key="t"
+              class="tag"
+              :class="{ picked: pForm.traits.includes(t) }"
+              @click="pToggleTag(t)"
+              >{{ t }}</span
+            >
+            <span class="tag tag-custom"
+              ><input
+                v-model="pTagInput"
+                placeholder="自定义+"
+                @keyup.enter="pTagInput = pAddCustom(pTagInput)"
+              /><button class="tag-custom-btn" @click="pTagInput = pAddCustom(pTagInput)">+</button></span
+            >
           </div>
         </div>
         <div class="form-field">
@@ -102,13 +127,26 @@
           <textarea v-model="pForm.备注" rows="2" placeholder="其他想补充的设定、背景、想法…"></textarea>
         </div>
         <div class="protagonist-actions">
-          <button class="protagonist-gen" :disabled="pGenerating" @click="pGenerate()">{{ pGenerating ? '生成中…' : 'AI 生成详细人设' }}</button>
+          <button class="protagonist-gen" :disabled="pGenerating" @click="pGenerate()">
+            {{ pGenerating ? '生成中…' : 'AI 生成详细人设' }}
+          </button>
           <button v-if="protagonistActive" class="protagonist-reset" @click="resetProtagonist()">恢复默认</button>
         </div>
         <div v-if="pGenResult" class="protagonist-result">
-          <textarea v-model="pGenResult" class="protagonist-result-text" rows="6" placeholder="（AI 生成的人设将显示在这里，可手动修改）"></textarea>
+          <textarea
+            v-model="pGenResult"
+            class="protagonist-result-text"
+            rows="6"
+            placeholder="（AI 生成的人设将显示在这里，可手动修改）"
+          ></textarea>
           <div class="protagonist-actions">
-            <button class="protagonist-save" :disabled="!pGenResult.trim() || protagonistSaving" @click="saveProtagonist()">{{ protagonistSaving ? '保存中…' : '确认主角' }}</button>
+            <button
+              class="protagonist-save"
+              :disabled="!pGenResult.trim() || protagonistSaving"
+              @click="saveProtagonist()"
+            >
+              {{ protagonistSaving ? '保存中…' : '确认主角' }}
+            </button>
           </div>
         </div>
         <div v-if="protagonistError" class="protagonist-error">{{ protagonistError }}</div>
@@ -152,6 +190,14 @@
         </div>
         <span class="scene-arrow"></span>
       </button>
+      <button class="dlc-card" @click="selectDlc('hongHuang')">
+        <span class="dlc-index">≋</span>
+        <div class="dlc-body">
+          <span class="dlc-name">洪荒位面</span>
+          <span class="dlc-desc">万妖祖地，异兽横行。洪荒与主世界意外接壤，奇珍异兽涌入现代都市</span>
+        </div>
+        <span class="scene-arrow"></span>
+      </button>
     </div>
     <p class="footer-note">更多故事，敬请期待</p>
   </div>
@@ -173,7 +219,13 @@
     </div>
 
     <div class="scenes">
-      <button v-for="(scene, i) in activeScenes" :key="i" class="scene-card" :class="`scene-${i}`" @click="startScene(i)">
+      <button
+        v-for="(scene, i) in activeScenes"
+        :key="i"
+        class="scene-card"
+        :class="`scene-${i}`"
+        @click="startScene(i)"
+      >
         <span class="scene-index">{{ i + 1 }}</span>
         <div class="scene-body">
           <span class="scene-char">{{ scene.char }}</span>
@@ -233,21 +285,42 @@ const protagonistError = ref('');
 const protagonistSuccess = ref('');
 const pGenerating = ref(false);
 const pGenResult = ref('');
-const pTraits = ['温和','冷峻','活泼','沉稳','叛逆','善良','腹黑','天然','孤僻','热血','慵懒','傲娇'];
-const savedProto = (() => { try { const r = localStorage.getItem('jdnl_protagonist'); return r ? JSON.parse(r) : {}; } catch { return {}; } })();
+const pTraits = ['温和', '冷峻', '活泼', '沉稳', '叛逆', '善良', '腹黑', '天然', '孤僻', '热血', '慵懒', '傲娇'];
+const savedProto = (() => {
+  try {
+    const r = localStorage.getItem('jdnl_protagonist');
+    return r ? JSON.parse(r) : {};
+  } catch {
+    return {};
+  }
+})();
 const pForm = reactive({
   年龄感: (savedProto as any).年龄感 || '',
   种族: (savedProto as any).种族 || '',
   身份: (savedProto as any).身份 || '',
   来源世界: (savedProto as any).来源世界 || '',
   境界: (savedProto as any).境界 || '',
-  traits: (savedProto as any).traits || [] as string[],
+  traits: (savedProto as any).traits || ([] as string[]),
   备注: (savedProto as any).备注 || '',
 });
-watch(pForm, (v) => { localStorage.setItem('jdnl_protagonist', JSON.stringify({ ...v })); }, { deep: true });
+watch(
+  pForm,
+  v => {
+    localStorage.setItem('jdnl_protagonist', JSON.stringify({ ...v }));
+  },
+  { deep: true },
+);
 const pTagInput = ref('');
-function pToggleTag(t: string) { const i = pForm.traits.indexOf(t); if (i >= 0) pForm.traits.splice(i, 1); else pForm.traits.push(t); }
-function pAddCustom(v: string): string { const s = v.trim(); if (s && !pForm.traits.includes(s)) pForm.traits.push(s); return ''; }
+function pToggleTag(t: string) {
+  const i = pForm.traits.indexOf(t);
+  if (i >= 0) pForm.traits.splice(i, 1);
+  else pForm.traits.push(t);
+}
+function pAddCustom(v: string): string {
+  const s = v.trim();
+  if (s && !pForm.traits.includes(s)) pForm.traits.push(s);
+  return '';
+}
 
 const pGenPrompt = `你正在协助玩家自定义主角人设。根据以下标签生成一份详细的主角档案。
 
@@ -290,7 +363,10 @@ async function pGenerate() {
   pGenerating.value = true;
   try {
     const TH = (window as any).parent?.TavernHelper;
-    if (!TH) { protagonistError.value = '未检测到酒馆助手。'; return; }
+    if (!TH) {
+      protagonistError.value = '未检测到酒馆助手。';
+      return;
+    }
     const tags = [];
     if (pForm.年龄感) tags.push('年龄感：' + pForm.年龄感);
     if (pForm.种族) tags.push('种族：' + pForm.种族);
@@ -314,7 +390,7 @@ async function pGenerate() {
         'user_input',
       ],
     });
-    const text = typeof result === 'string' ? result : (result.content || JSON.stringify(result));
+    const text = typeof result === 'string' ? result : result.content || JSON.stringify(result);
     const m = text.match(/<character_info>[\s\S]*<\/character_info>/);
     pGenResult.value = m ? m[0].trim() : text;
   } catch (e: any) {
@@ -332,7 +408,9 @@ async function checkProtagonistStatus() {
     if (!wbName) return;
     const entries = await TH.getLorebookEntries(wbName);
     protagonistActive.value = entries.some((e: any) => e.comment === 'user人设(自定义)' && e.enabled !== false);
-  } catch { /* silent */ }
+  } catch {
+    /* silent */
+  }
 }
 
 async function saveProtagonist() {
@@ -342,26 +420,34 @@ async function saveProtagonist() {
   protagonistSaving.value = true;
   try {
     const TH = (window as any).parent?.TavernHelper;
-    if (!TH) { protagonistError.value = '未检测到酒馆助手。'; return; }
+    if (!TH) {
+      protagonistError.value = '未检测到酒馆助手。';
+      return;
+    }
     const wbName = TH.getCharLorebooks()?.primary;
-    if (!wbName) { protagonistError.value = '未找到世界书。'; return; }
+    if (!wbName) {
+      protagonistError.value = '未找到世界书。';
+      return;
+    }
     const entries = await TH.getLorebookEntries(wbName);
     const defaultEntry = entries.find((e: any) => e.comment === 'user人设');
     const customEntry = entries.find((e: any) => e.comment === 'user人设(自定义)');
     if (customEntry) {
       await TH.setLorebookEntries(wbName, [{ uid: customEntry.uid, content: pGenResult.value }]);
     } else {
-      await TH.createLorebookEntries(wbName, [{
-        comment: 'user人设(自定义)',
-        enabled: true,
-        type: 'constant',
-        position: 'before_character_definition',
-        order: 505,
-        probability: 100,
-        exclude_recursion: true,
-        prevent_recursion: true,
-        content: pGenResult.value,
-      }]);
+      await TH.createLorebookEntries(wbName, [
+        {
+          comment: 'user人设(自定义)',
+          enabled: true,
+          type: 'constant',
+          position: 'before_character_definition',
+          order: 505,
+          probability: 100,
+          exclude_recursion: true,
+          prevent_recursion: true,
+          content: pGenResult.value,
+        },
+      ]);
     }
     if (defaultEntry) {
       await TH.setLorebookEntries(wbName, [{ uid: defaultEntry.uid, enabled: false }]);
@@ -380,9 +466,15 @@ async function resetProtagonist() {
   protagonistSuccess.value = '';
   try {
     const TH = (window as any).parent?.TavernHelper;
-    if (!TH) { protagonistError.value = '未检测到酒馆助手。'; return; }
+    if (!TH) {
+      protagonistError.value = '未检测到酒馆助手。';
+      return;
+    }
     const wbName = TH.getCharLorebooks()?.primary;
-    if (!wbName) { protagonistError.value = '未找到世界书。'; return; }
+    if (!wbName) {
+      protagonistError.value = '未找到世界书。';
+      return;
+    }
     const entries = await TH.getLorebookEntries(wbName);
     const defaultEntry = entries.find((e: any) => e.comment === 'user人设');
     const customEntry = entries.find((e: any) => e.comment === 'user人设(自定义)');
@@ -493,7 +585,21 @@ const xianDaoScenes = [
 剧情大纲：苏墨染按心中所想之人的模样作了一幅画，画完后总觉得有形无神。徒儿苏幼清凑过来看了一眼，喃喃念了一句诗——那声音轻得像梦里念叨过无数遍的句子。话音落下，画上墨迹忽然晕开，子镜与母镜同时嗡鸣，师徒二人的共鸣竟将画中人的本尊从另一个世界唤了过来。`,
   },
 ];
-const activeScenes = computed(() => currentDlc.value === 'main' ? mainScenes : xianDaoScenes);
+const hongHuangScenes = [
+  {
+    char: '白糯糯 · 陶冶月',
+    location: '东海州 · 位面裂隙附近',
+    teaser: '一只小兔子慌不择路穿过位面裂隙，身后追来一只贪她软毛的饕餮大妖',
+    message: `根据以下设定构建剧情开头：
+时间：黄昏
+地点：星见市郊外（东海州，位面裂隙附近）
+出场角色：白糯糯、陶冶月
+剧情大纲：洪荒与主世界边界重叠，穿越两个位面的裂隙常年存在……一只垂耳玉兔穿过裂隙，慌不择路撞进了{{user}}怀里。身后追来的饕餮大妖停在不远处，歪头看着{{user}}把兔子护在身后的样子，饶有兴致地蹲了下来。一副跃跃欲试也想要抱抱的模样。`,
+  },
+];
+const activeScenes = computed(() =>
+  currentDlc.value === 'hongHuang' ? hongHuangScenes : currentDlc.value === 'xianDao' ? xianDaoScenes : mainScenes,
+);
 
 function startScene(i: number) {
   const $p = (window as any).parent?.$;
@@ -504,8 +610,9 @@ function startScene(i: number) {
 
 const dlcSaving = ref(false);
 const dlcEntryMap: Record<string, { enable: string[]; disable: string[] }> = {
-  main: { enable: ['主世界'], disable: ['仙道位面'] },
-  xianDao: { enable: ['仙道位面'], disable: ['主世界'] },
+  main: { enable: ['主世界'], disable: ['仙道位面', '洪荒位面'] },
+  xianDao: { enable: ['仙道位面'], disable: ['主世界', '洪荒位面'] },
+  hongHuang: { enable: ['主世界', '洪荒位面', '洪荒入侵'], disable: ['仙道位面'] },
 };
 
 async function selectDlc(dlc: string) {
@@ -532,7 +639,9 @@ async function selectDlc(dlc: string) {
         if (ops.length) await TH.setLorebookEntries(wbName, ops);
       }
     }
-  } catch { /* silent */ }
+  } catch {
+    /* silent */
+  }
   dlcSaving.value = false;
   currentDlc.value = dlc;
   page.value = 'scenes';
@@ -821,7 +930,10 @@ function sendCustom() {
   text-align: center;
 }
 .env-items {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
 }
 .env-row {
   display: flex;
@@ -915,111 +1027,323 @@ function sendCustom() {
 }
 
 .protagonist-area {
-  position: relative; z-index: 1; margin-bottom: 14px;
+  position: relative;
+  z-index: 1;
+  margin-bottom: 14px;
 }
 .protagonist-toggle {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 14px; cursor: pointer;
-  border: 1px dashed var(--c-card-border); border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  border: 1px dashed var(--c-card-border);
+  border-radius: 8px;
   transition: all 0.2s;
-  &:hover { border-color: var(--c-gold); background: var(--c-card-hover); }
-  &.active { border-style: solid; border-color: var(--c-gold); background: rgba(139,115,85,0.06); }
+  &:hover {
+    border-color: var(--c-gold);
+    background: var(--c-card-hover);
+  }
+  &.active {
+    border-style: solid;
+    border-color: var(--c-gold);
+    background: rgba(139, 115, 85, 0.06);
+  }
 }
 .protagonist-icon {
-  width: 22px; height: 22px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; background: rgba(139,115,85,0.1); color: var(--c-text-dim);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  background: rgba(139, 115, 85, 0.1);
+  color: var(--c-text-dim);
   flex-shrink: 0;
 }
 .protagonist-label {
-  flex: 1; font-family: '寒蝉全圆体', var(--font-main);
-  font-size: 11px; color: var(--c-text); letter-spacing: 1px;
+  flex: 1;
+  font-family: '寒蝉全圆体', var(--font-main);
+  font-size: 11px;
+  color: var(--c-text);
+  letter-spacing: 1px;
 }
-.protagonist-arrow { font-size: 9px; color: var(--c-text-dim); }
+.protagonist-arrow {
+  font-size: 9px;
+  color: var(--c-text-dim);
+}
 .protagonist-form {
-  display: flex; flex-direction: column; gap: 8px;
-  margin-top: 6px; padding: 12px 14px;
-  background: rgba(139,115,85,0.04); border: 1px solid rgba(139,115,85,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 12px 14px;
+  background: rgba(139, 115, 85, 0.04);
+  border: 1px solid rgba(139, 115, 85, 0.1);
   border-radius: 8px;
 }
 .form-field {
-  display: flex; flex-direction: column; gap: 3px;
-  label { font-family: '寒蝉全圆体', var(--font-main); font-size: 9px; color: var(--c-text-dim); letter-spacing: 1px; }
-  input, select, textarea {
-    padding: 6px 8px; border-radius: 6px;
-    border: 1px solid var(--c-card-border); background: rgba(255,255,255,0.6);
-    color: var(--c-text); font-family: 'DouyinSans', var(--font-main); font-size: 11px;
-    outline: none; resize: vertical;
-    &::placeholder { color: var(--c-text-dim); }
-    &:focus { border-color: var(--c-gold); }
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  label {
+    font-family: '寒蝉全圆体', var(--font-main);
+    font-size: 9px;
+    color: var(--c-text-dim);
+    letter-spacing: 1px;
+  }
+  input,
+  select,
+  textarea {
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--c-card-border);
+    background: rgba(255, 255, 255, 0.6);
+    color: var(--c-text);
+    font-family: 'DouyinSans', var(--font-main);
+    font-size: 11px;
+    outline: none;
+    resize: vertical;
+    &::placeholder {
+      color: var(--c-text-dim);
+    }
+    &:focus {
+      border-color: var(--c-gold);
+    }
   }
 }
-.form-row-dual { display: flex; gap: 8px; & > .form-field { flex: 1; } }
-.protagonist-actions { display: flex; gap: 8px; margin-top: 2px; }
-.tag-pool { display: flex; flex-wrap: wrap; gap: 4px; }
-.tag-custom { border-style: dashed; display: inline-flex; align-items: center; gap: 1px; }
-.tag-custom input { width: 54px; height: 16px; line-height: 16px; border: none; background: transparent; font-family: inherit; font-size: 9px; color: var(--c-text-dim); outline: none; text-align: center; padding: 0; &::placeholder { color: var(--c-text-dim); } }
-.tag-custom-btn { width: 16px; height: 16px; border: none; border-radius: 50%; background: rgba(139,115,85,0.12); color: var(--c-gold); font-size: 10px; line-height: 16px; cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center; &:hover { background: var(--c-gold); color: #fff; } }
+.form-row-dual {
+  display: flex;
+  gap: 8px;
+  & > .form-field {
+    flex: 1;
+  }
+}
+.protagonist-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+.tag-pool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.tag-custom {
+  border-style: dashed;
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+}
+.tag-custom input {
+  width: 54px;
+  height: 16px;
+  line-height: 16px;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 9px;
+  color: var(--c-text-dim);
+  outline: none;
+  text-align: center;
+  padding: 0;
+  &::placeholder {
+    color: var(--c-text-dim);
+  }
+}
+.tag-custom-btn {
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(139, 115, 85, 0.12);
+  color: var(--c-gold);
+  font-size: 10px;
+  line-height: 16px;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  &:hover {
+    background: var(--c-gold);
+    color: #fff;
+  }
+}
 .tag {
-  padding: 2px 8px; border-radius: 10px; cursor: pointer;
-  border: 1px solid var(--c-card-border); font-family: 'DouyinSans', var(--font-main);
-  font-size: 9px; color: var(--c-text-dim); transition: all 0.12s;
-  &:hover { border-color: var(--c-gold); color: var(--c-gold); }
-  &.picked { background: rgba(139,115,85,0.12); border-color: var(--c-gold); color: var(--c-gold); font-weight: 600; }
+  padding: 2px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 1px solid var(--c-card-border);
+  font-family: 'DouyinSans', var(--font-main);
+  font-size: 9px;
+  color: var(--c-text-dim);
+  transition: all 0.12s;
+  &:hover {
+    border-color: var(--c-gold);
+    color: var(--c-gold);
+  }
+  &.picked {
+    background: rgba(139, 115, 85, 0.12);
+    border-color: var(--c-gold);
+    color: var(--c-gold);
+    font-weight: 600;
+  }
 }
 .protagonist-gen {
-  width: 100%; padding: 8px 0; border: 1px dashed var(--c-gold); border-radius: 8px; cursor: pointer;
-  background: transparent; color: var(--c-gold);
-  font-family: '寒蝉全圆体', var(--font-main); font-size: 11px; letter-spacing: 1px;
+  width: 100%;
+  padding: 8px 0;
+  border: 1px dashed var(--c-gold);
+  border-radius: 8px;
+  cursor: pointer;
+  background: transparent;
+  color: var(--c-gold);
+  font-family: '寒蝉全圆体', var(--font-main);
+  font-size: 11px;
+  letter-spacing: 1px;
   transition: all 0.2s;
-  &:hover:not(:disabled) { background: rgba(139,115,85,0.08); border-style: solid; }
-  &:disabled { opacity: 0.5; cursor: default; }
+  &:hover:not(:disabled) {
+    background: rgba(139, 115, 85, 0.08);
+    border-style: solid;
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
 }
-.protagonist-result { margin-top: 6px; }
+.protagonist-result {
+  margin-top: 6px;
+}
 .protagonist-result-text {
-  display: block; width: 100%; min-height: 120px; padding: 8px;
-  border-radius: 6px; border: 1px solid var(--c-card-border);
-  background: rgba(255,255,255,0.6); color: var(--c-text);
-  font-family: 'DouyinSans', var(--font-main); font-size: 10px; line-height: 1.5;
-  resize: vertical; outline: none;
-  &:focus { border-color: var(--c-gold); }
+  display: block;
+  width: 100%;
+  min-height: 120px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid var(--c-card-border);
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--c-text);
+  font-family: 'DouyinSans', var(--font-main);
+  font-size: 10px;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  &:focus {
+    border-color: var(--c-gold);
+  }
 }
 .protagonist-save {
-  flex: 1; padding: 8px 0; border: none; border-radius: 8px; cursor: pointer;
-  background: var(--c-gold); color: #fff;
-  font-family: '寒蝉全圆体', var(--font-main); font-size: 12px; font-weight: 600;
-  letter-spacing: 1px; transition: opacity 0.2s;
-  &:hover { opacity: 0.85; }
-  &:disabled { opacity: 0.4; cursor: default; }
+  flex: 1;
+  padding: 8px 0;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: var(--c-gold);
+  color: #fff;
+  font-family: '寒蝉全圆体', var(--font-main);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  transition: opacity 0.2s;
+  &:hover {
+    opacity: 0.85;
+  }
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
 }
 .protagonist-reset {
-  padding: 8px 14px; border: 1px solid rgba(200,100,100,0.2); border-radius: 8px; cursor: pointer;
-  background: transparent; color: #b06060;
-  font-family: '寒蝉全圆体', var(--font-main); font-size: 11px;
-  letter-spacing: 1px; transition: all 0.2s;
-  &:hover { background: rgba(200,100,100,0.06); border-color: rgba(200,100,100,0.4); }
+  padding: 8px 14px;
+  border: 1px solid rgba(200, 100, 100, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  background: transparent;
+  color: #b06060;
+  font-family: '寒蝉全圆体', var(--font-main);
+  font-size: 11px;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+  &:hover {
+    background: rgba(200, 100, 100, 0.06);
+    border-color: rgba(200, 100, 100, 0.4);
+  }
 }
-.protagonist-error { text-align: center; font-size: 10px; color: #b06060; margin-top: 4px; }
-.protagonist-success { text-align: center; font-size: 10px; color: #5a8a5a; margin-top: 4px; }
+.protagonist-error {
+  text-align: center;
+  font-size: 10px;
+  color: #b06060;
+  margin-top: 4px;
+}
+.protagonist-success {
+  text-align: center;
+  font-size: 10px;
+  color: #5a8a5a;
+  margin-top: 4px;
+}
 
-.dlc-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; position: relative; z-index: 1; }
+.dlc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+  position: relative;
+  z-index: 1;
+}
 .dlc-card {
-  display: flex; align-items: center; gap: 10px; width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
   padding: 14px 16px;
-  background: var(--c-card-bg); border: 1px solid var(--c-card-border);
-  border-radius: 10px; cursor: pointer; transition: all 0.25s ease;
-  text-align: left; color: inherit; font-family: inherit;
-  &:hover { background: var(--c-card-hover); border-color: var(--c-gold); transform: translateX(3px); box-shadow: 0 0 20px rgba(139,115,85,0.06); }
+  background: var(--c-card-bg);
+  border: 1px solid var(--c-card-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-align: left;
+  color: inherit;
+  font-family: inherit;
+  &:hover {
+    background: var(--c-card-hover);
+    border-color: var(--c-gold);
+    transform: translateX(3px);
+    box-shadow: 0 0 20px rgba(139, 115, 85, 0.06);
+  }
 }
 .dlc-index {
-  width: 28px; height: 28px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; background: rgba(139,115,85,0.1); color: var(--c-gold);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  background: rgba(139, 115, 85, 0.1);
+  color: var(--c-gold);
   flex-shrink: 0;
 }
-.dlc-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.dlc-name { font-family: '寒蝉全圆体', var(--font-main); font-size: 14px; font-weight: 600; color: var(--c-text); letter-spacing: 2px; }
-.dlc-desc { font-family: 'DouyinSans', var(--font-main); font-size: 10px; color: var(--c-text-dim); line-height: 1.5; }
+.dlc-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dlc-name {
+  font-family: '寒蝉全圆体', var(--font-main);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c-text);
+  letter-spacing: 2px;
+}
+.dlc-desc {
+  font-family: 'DouyinSans', var(--font-main);
+  font-size: 10px;
+  color: var(--c-text-dim);
+  line-height: 1.5;
+}
 
 .scenes {
   display: flex;

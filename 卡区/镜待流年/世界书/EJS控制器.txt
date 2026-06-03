@@ -12,6 +12,7 @@ _%>
 const plane = getvar('stat_data.主角.当前地点.位面', { defaults: '' });
 const mentionedMain = matchChatMessages(['主世界']);
 const mentionedXianDao = matchChatMessages(['仙道位面']);
+	const mentionedHongHuang = matchChatMessages(['洪荒位面']);
 
 if (plane === '主世界' || mentionedMain) {
 _%>
@@ -21,6 +22,8 @@ _%>
 if (plane === '仙道位面' || mentionedXianDao) {
 _%>
 <%- await getwi('仙道位面') %>
+<%_ } if (plane === '洪荒位面' || mentionedHongHuang) { _%>
+<%- await getwi('洪荒位面') %>
 <%
 }
 _%>
