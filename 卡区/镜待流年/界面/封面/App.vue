@@ -62,20 +62,10 @@
     <div class="protagonist-area">
       <div class="protagonist-toggle" :class="{ active: showProtagonist || protagonistActive }" @click="showProtagonist = !showProtagonist">
         <span class="protagonist-icon">{{ protagonistActive ? '✦' : '▸' }}</span>
-        <span class="protagonist-label">{{ protagonistActive ? '自定义主角（已启用）' : '自定义主角（可选）' }}</span>
+        <span class="protagonist-label">{{ protagonistActive ? '自定义主角（已启用）' : '自定义主角（不选则用默认）' }}</span>
         <span class="protagonist-arrow">{{ showProtagonist ? '▾' : '▸' }}</span>
       </div>
       <div v-if="showProtagonist" class="protagonist-form">
-        <div class="form-row-dual">
-          <div class="form-field">
-            <label>姓名</label>
-            <input v-model="pForm.姓名" placeholder="{{user}}" />
-          </div>
-          <div class="form-field">
-            <label>性别</label>
-            <input v-model="pForm.性别" placeholder="男 / 女 / 其他…" />
-          </div>
-        </div>
         <div class="form-row-dual">
           <div class="form-field">
             <label>年龄感</label>
@@ -246,8 +236,6 @@ const pGenResult = ref('');
 const pTraits = ['温和','冷峻','活泼','沉稳','叛逆','善良','腹黑','天然','孤僻','热血','慵懒','傲娇'];
 const savedProto = (() => { try { const r = localStorage.getItem('jdnl_protagonist'); return r ? JSON.parse(r) : {}; } catch { return {}; } })();
 const pForm = reactive({
-  姓名: (savedProto as any).姓名 || '',
-  性别: (savedProto as any).性别 || '',
   年龄感: (savedProto as any).年龄感 || '',
   种族: (savedProto as any).种族 || '',
   身份: (savedProto as any).身份 || '',
@@ -265,7 +253,7 @@ const pGenPrompt = `你正在协助玩家自定义主角人设。根据以下标
 
 格式要求：
 - 严格按 <character_info> 标签包裹的格式输出
-- 包含：基本信息（姓名/性别/年龄/种族/身份/来源世界/境界）、外貌特征（基础体型/整体印象）、性格特点
+- 包含：基本信息（年龄/种族/身份/来源世界/境界）、外貌特征（基础体型/整体印象）、性格特点
 - 如果种族、来源世界、境界未指定，根据整体设定合理推断
 - 末尾必须包含 特殊物品 段，内容为母镜（古朴铜镜，虞姝昀赠予的护身符，不知其真实功能，偶尔能瞥见红颜特征）
 - 灵活描述，不固化可变细节
@@ -312,7 +300,7 @@ async function pGenerate() {
     if (pForm.traits.length) tags.push('风格：' + pForm.traits.join('、'));
     if (pForm.备注) tags.push('补充：' + pForm.备注);
     const tagBlock = tags.map(t => '- ' + t).join('\n');
-    const prompt = `自定义主角设定：\n姓名：${pForm.姓名 || '{{user}}'}\n性别：${pForm.性别}\n${tagBlock}\n\n${pGenPrompt}`;
+    const prompt = `自定义主角设定：\n${tagBlock}\n\n${pGenPrompt}`;
     const result = await TH.generateRaw({
       user_input: '（请按上述格式输出主角人设。）',
       should_silence: true,

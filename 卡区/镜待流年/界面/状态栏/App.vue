@@ -140,11 +140,9 @@
                             <div class="gen-result-label">世界书档案</div>
                             <textarea v-model="mxGenArchive" class="gen-result-text" placeholder="(未解析到档案内容)"></textarea>
                             <div class="gen-result-actions">
-                              <button v-if="!mxSavedToWB" class="btn-gen-save" @click="mxSaveGenResult()">保存到世界书</button>
+                              <button v-if="!mxSaved" class="btn-gen-save" @click="mxSaveGenResult()">保存到世界书/角色列表</button>
                               <span v-else class="gen-saved-hint">已保存 ✓</span>
                               <button class="btn-gen-inject" @click="mxInjectArchive()">注入聊天</button>
-                              <button v-if="!mxAddedToList" class="btn-gen-retry" @click="mxAddToCharList()">加入角色列表</button>
-                              <span v-else class="gen-saved-hint">已加入列表 ✓</span>
                               <button class="btn-gen-retry" @click="mxGenerateDetail()">重新生成</button>
                             </div>
                           </div>
@@ -321,8 +319,7 @@ const mxGenerating = ref(false);
 const mxGenResult = ref('');
 const mxGenArchive = ref('');
 const mxGenError = ref('');
-const mxSavedToWB = ref(false);
-const mxAddedToList = ref(false);
+const mxSaved = ref(false);
 	const mxOpen = reactive({ basic: false, world: false, deep: false });
 const mxForm = reactive({
   style: '', styleCustom: '', traits: [] as string[], traitInput: '',
@@ -472,8 +469,7 @@ async function mxGenerateDetail() {
   mxGenError.value = '';
   mxGenResult.value = '';
   mxGenArchive.value = '';
-  mxSavedToWB.value = false;
-  mxAddedToList.value = false;
+  mxSaved.value = false;
 	mxGenerating.value = true;
   try {
     const TH = (window as any).parent?.TavernHelper;
@@ -538,32 +534,17 @@ async function mxSaveGenResult() {
       prevent_recursion: true,
       content: mxGenArchive.value,
     }]);
-    mxSavedToWB.value = true;
-  } catch (e: any) {
-    mxGenError.value = '保存失败：' + (e?.message || String(e));
-  }
-}
-async function mxAddToCharList() {
-  if (!mxGenArchive.value) return;
-  mxGenError.value = '';
-  try {
-    const TH = (window as any).parent?.TavernHelper;
-    if (!TH) { mxGenError.value = '未检测到酒馆助手。'; return; }
-    const nameMatch = mxGenArchive.value.match(/姓名[：:][^\S\n]*(\S[^\n]*)/);
-    const charName = nameMatch ? nameMatch[1].trim() : '新角色';
     const idMatch = mxGenArchive.value.match(/身份[：:][^\S\n]*(\S[^\n]*)/);
     const charId = idMatch ? idMatch[1].trim() : '未知';
-    const wbName = TH.getCharLorebooks()?.primary;
-    if (!wbName) { mxGenError.value = '未找到世界书。'; return; }
-    const entries = await TH.getLorebookEntries(wbName);
-    const target = entries.find((e: any) => e.comment === '生成角色列表');
-    if (!target) throw new Error('未找到生成角色列表条目');
-    const newEntry = '\n  - ' + charName + ':\n      身份: ' + charId;
-    const newContent = (target.content || '') + newEntry;
-    await TH.setLorebookEntries(wbName, [{ uid: target.uid, content: newContent }]);
-    mxAddedToList.value = true;
+    const target = existing.find((e: any) => e.comment === '生成角色列表');
+    if (target) {
+      const newEntry = '\n  - ' + charName + ':\n      身份: ' + charId;
+      const newContent = (target.content || '') + newEntry;
+      await TH.setLorebookEntries(wbName, [{ uid: target.uid, content: newContent }]);
+    }
+    mxSaved.value = true;
   } catch (e: any) {
-    mxGenError.value = '添加失败：' + (e?.message || String(e));
+    mxGenError.value = '保存失败：' + (e?.message || String(e));
   }
 }
 function mxInjectArchive() {
