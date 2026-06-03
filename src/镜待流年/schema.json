@@ -13,6 +13,14 @@
         "当前时间": {
           "default": "",
           "type": "string"
+        },
+        "周几": {
+          "default": "",
+          "type": "string"
+        },
+        "天气": {
+          "default": "",
+          "type": "string"
         }
       }
     },
@@ -518,6 +526,56 @@
               "子嗣列表": {
                 "default": "",
                 "type": "string"
+              },
+              "三围": {
+                "default": {},
+                "type": "object",
+                "properties": {
+                  "胸围": {
+                    "default": 0,
+                    "type": "number"
+                  },
+                  "腰围": {
+                    "default": 0,
+                    "type": "number"
+                  },
+                  "臀围": {
+                    "default": 0,
+                    "type": "number"
+                  }
+                }
+              },
+              "罩杯": {
+                "default": "",
+                "type": "string"
+              },
+              "胸型": {
+                "default": {},
+                "type": "object",
+                "properties": {
+                  "名称": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "描述": {
+                    "default": "",
+                    "type": "string"
+                  }
+                }
+              },
+              "户型": {
+                "default": {},
+                "type": "object",
+                "properties": {
+                  "名称": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "描述": {
+                    "default": "",
+                    "type": "string"
+                  }
+                }
               }
             }
           }
