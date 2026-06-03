@@ -256,6 +256,10 @@
                     <span class="nsfw-cell">性对象 <b>{{ char.nsfw档案.性对象 || '无' }}</b></span>
                     <span class="nsfw-cell">怀孕 <b>{{ char.nsfw档案.是否怀孕 ? '是' : '否' }}</b></span>
                     <span class="nsfw-cell">子嗣 <b>{{ char.nsfw档案.子嗣列表 || '无' }}</b></span>
+                    <span class="nsfw-cell">三围 <b>{{ char.nsfw档案.三围?.胸围 || 0 }}/{{ char.nsfw档案.三围?.腰围 || 0 }}/{{ char.nsfw档案.三围?.臀围 || 0 }}</b></span>
+                    <span class="nsfw-cell">罩杯 <b>{{ char.nsfw档案.罩杯 || '—' }}</b></span>
+                    <span class="nsfw-cell">胸型 <b>{{ char.nsfw档案.胸型?.名称 || '—' }}</b></span>
+                    <span class="nsfw-cell">户型 <b>{{ char.nsfw档案.户型?.名称 || '—' }}</b></span>
                   </div>
                 </div>
               </div>

@@ -3,6 +3,8 @@ export const Schema = z.object({
 
   世界: z.object({
     当前时间: z.string().prefault(''),
+    周几: z.string().prefault(''),
+    天气: z.string().prefault(''),
   }).prefault({}),
 
   主角: z.object({
@@ -86,6 +88,14 @@ export const Schema = z.object({
       性对象: z.string().prefault(''),
       是否怀孕: z.boolean().prefault(false),
       子嗣列表: z.string().prefault(''),
+      三围: z.object({
+        胸围: z.coerce.number().prefault(0),
+        腰围: z.coerce.number().prefault(0),
+        臀围: z.coerce.number().prefault(0),
+      }).prefault({}),
+      罩杯: z.string().prefault(''),
+      胸型: z.object({ 名称: z.string().prefault(''), 描述: z.string().prefault('') }).prefault({}),
+      户型: z.object({ 名称: z.string().prefault(''), 描述: z.string().prefault('') }).prefault({}),
     }).prefault({}),
   })).prefault({}),
 });

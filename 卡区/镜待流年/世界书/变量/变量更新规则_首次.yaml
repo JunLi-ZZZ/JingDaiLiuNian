@@ -10,9 +10,15 @@
 
   世界:
     当前时间:
-      format: YYYY年MM月DD日 HH:MM
+      format: YYYY年MM月DD日 HH:MM。年、月、日、时、分均填入数字
       check:
         - 根据开场白中的季节、天气、时间暗示合理设定初始时间
+    周几:
+      check:
+        - 首次必设。根据开场白日期推算或合理推断
+    天气:
+      check:
+        - 首次必设。根据开场白中的天气暗示合理设定
 
   主角:
     当前地点:
@@ -116,7 +122,7 @@
         服装: { 上衣: { 名称: string; 描述: string; 状态: string; }; 内衣: { 名称: string; 描述: string; 状态: string; }; 下装: { 名称: string; 描述: string; 状态: string; }; 内裤: { 名称: string; 描述: string; 状态: string; }; 袜子: { 名称: string; 描述: string; 状态: string; }; 鞋子: { 名称: string; 描述: string; 状态: string; }; };
         随身物品: { [物品名]: { 描述: string; 数量: number; } };
         人际关系: { [关系对象]: string; };
-        nsfw档案: { 初次存在与否: boolean; 性对象: string; 是否怀孕: boolean; 子嗣列表: string; };
+        nsfw档案: { 初次存在与否: boolean; 性对象: string; 是否怀孕: boolean; 子嗣列表: string; 三围: { 胸围: number; 腰围: number; 臀围: number; }; 罩杯: string; 胸型: { 名称: string; 描述: string; }; 户型: { 名称: string; 描述: string; }; };
       }}
     check:
       通用:
@@ -153,3 +159,5 @@
         - 仅当角色在剧情中实际发生性行为后，才将初次存在与否改为false、性对象加入该对象姓名
         - 是否怀孕：排卵期内射约20~30%概率，安全期内射约5%；体外/非阴道性行为不更新
         - 子嗣列表：分娩后新生儿姓名加入子嗣列表
+        - 三围：首次 insert 时根据角色体型合理填入数字
+        - 罩杯/胸型/户型：首次 insert 时填入。描述写具体特征

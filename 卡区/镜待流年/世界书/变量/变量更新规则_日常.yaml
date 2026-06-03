@@ -15,9 +15,15 @@
 
   世界:
     当前时间:
-      format: YYYY年MM月DD日 HH:MM
+      format: YYYY年MM月DD日 HH:MM。年月日时分均填入数字，不可填入文本
       check:
         - 每次回复根据剧情消耗的时间推进
+    周几:
+      check:
+        - 日期推进导致周几变化时更新
+    天气:
+      check:
+        - 剧情中天气是否发生变化？变了才更新
 
   主角:
     当前地点:
@@ -119,7 +125,7 @@
         服装: { 上衣: { 名称: string; 描述: string; 状态: string; }; 内衣: { 名称: string; 描述: string; 状态: string; }; 下装: { 名称: string; 描述: string; 状态: string; }; 内裤: { 名称: string; 描述: string; 状态: string; }; 袜子: { 名称: string; 描述: string; 状态: string; }; 鞋子: { 名称: string; 描述: string; 状态: string; }; };
         随身物品: { [物品名]: { 描述: string; 数量: number; } };
         人际关系: { [关系对象]: string; };
-        nsfw档案: { 初次存在与否: boolean; 性对象: string; 是否怀孕: boolean; 子嗣列表: string; };
+        nsfw档案: { 初次存在与否: boolean; 性对象: string; 是否怀孕: boolean; 子嗣列表: string; 三围: { 胸围: number; 腰围: number; 臀围: number; }; 罩杯: string; 胸型: { 名称: string; 描述: string; }; 户型: { 名称: string; 描述: string; }; };
       }}
     check:
       通用:
@@ -180,3 +186,5 @@
           - 性对象描述的是"与谁发生过关系"，与人际关系中的情感描述是独立维度
           - 是否怀孕：排卵期内射约20~30%概率，安全期内射约5%；体外/非阴道性行为不更新
           - 子嗣列表：分娩后新生儿姓名加入子嗣列表
+          - 三围：首次 insert 时根据角色体型合理填入数字，之后仅体型发生实质性变化时更新
+          - 罩杯/胸型/户型：首次 insert 时填入，之后仅发生实质性变化时更新。描述写具体特征
