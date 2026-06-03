@@ -103,12 +103,12 @@
         </div>
         <div class="protagonist-actions">
           <button class="protagonist-gen" :disabled="pGenerating" @click="pGenerate()">{{ pGenerating ? '生成中…' : 'AI 生成详细人设' }}</button>
+          <button v-if="protagonistActive" class="protagonist-reset" @click="resetProtagonist()">恢复默认</button>
         </div>
         <div v-if="pGenResult" class="protagonist-result">
           <textarea v-model="pGenResult" class="protagonist-result-text" rows="6" placeholder="（AI 生成的人设将显示在这里，可手动修改）"></textarea>
           <div class="protagonist-actions">
             <button class="protagonist-save" :disabled="!pGenResult.trim() || protagonistSaving" @click="saveProtagonist()">{{ protagonistSaving ? '保存中…' : '确认主角' }}</button>
-            <button v-if="protagonistActive" class="protagonist-reset" @click="resetProtagonist()">恢复默认</button>
           </div>
         </div>
         <div v-if="protagonistError" class="protagonist-error">{{ protagonistError }}</div>

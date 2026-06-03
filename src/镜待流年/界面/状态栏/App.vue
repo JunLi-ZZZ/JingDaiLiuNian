@@ -258,8 +258,25 @@
                     <span class="nsfw-cell">子嗣 <b>{{ char.nsfw档案.子嗣列表 || '无' }}</b></span>
                     <span class="nsfw-cell">三围 <b>{{ char.nsfw档案.三围?.胸围 || 0 }}/{{ char.nsfw档案.三围?.腰围 || 0 }}/{{ char.nsfw档案.三围?.臀围 || 0 }}</b></span>
                     <span class="nsfw-cell">罩杯 <b>{{ char.nsfw档案.罩杯 || '—' }}</b></span>
-                    <span class="nsfw-cell">胸型 <b>{{ char.nsfw档案.胸型?.名称 || '—' }}</b></span>
-                    <span class="nsfw-cell">户型 <b>{{ char.nsfw档案.户型?.名称 || '—' }}</b></span>
+                  </div>
+                </div>
+              </div>
+              <div v-if="char.nsfw档案" class="sub-block" :class="{ open: sub(char._key+'-body') }">
+                <div class="sub-head" @click="toggleSub(char._key+'-body')"><span>📐 身体档案</span><span class="block-arrow small">{{ sub(char._key+'-body') ? '▾' : '▸' }}</span></div>
+                <div v-if="sub(char._key+'-body')" class="sub-body">
+                  <div class="cloth-list">
+                    <div class="cloth-row" @click="toggleClothDetail(char._key+'-bx')">
+                      <span class="cloth-key">胸型</span>
+                      <span class="cloth-val" :class="{ dim: !isSet(char.nsfw档案.胸型?.名称) }">{{ isSet(char.nsfw档案.胸型?.名称) ? char.nsfw档案.胸型.名称 : '—' }}</span>
+                      <span v-if="isSet(char.nsfw档案.胸型?.状态)" class="cloth-status">{{ char.nsfw档案.胸型.状态 }}</span>
+                    </div>
+                    <div v-if="clothDetail.has(char._key+'-bx') && isSet(char.nsfw档案.胸型?.描述)" class="cloth-detail">{{ char.nsfw档案.胸型.描述 }}</div>
+                    <div class="cloth-row" @click="toggleClothDetail(char._key+'-hx')">
+                      <span class="cloth-key">户型</span>
+                      <span class="cloth-val" :class="{ dim: !isSet(char.nsfw档案.户型?.名称) }">{{ isSet(char.nsfw档案.户型?.名称) ? char.nsfw档案.户型.名称 : '—' }}</span>
+                      <span v-if="isSet(char.nsfw档案.户型?.状态)" class="cloth-status">{{ char.nsfw档案.户型.状态 }}</span>
+                    </div>
+                    <div v-if="clothDetail.has(char._key+'-hx') && isSet(char.nsfw档案.户型?.描述)" class="cloth-detail">{{ char.nsfw档案.户型.描述 }}</div>
                   </div>
                 </div>
               </div>
@@ -610,7 +627,7 @@ type CharInfo = {
   当前地点?: { 位面?: string; 大陆?: string; 城市?: string; 区域?: string; 场景?: string; 具体位置?: string };
   服装?: Record<string, { 名称?: string; 描述?: string; 状态?: string }>; 随身物品?: Record<string, { 描述?: string; 数量?: number }>;
   人际关系?: Record<string, string>;
-  nsfw档案?: { 初次存在与否?: boolean; 性对象?: string; 是否怀孕?: boolean; 子嗣列表?: string };
+  nsfw档案?: { 初次存在与否?: boolean; 性对象?: string; 是否怀孕?: boolean; 子嗣列表?: string; 三围?: { 胸围?: number; 腰围?: number; 臀围?: number }; 罩杯?: string; 胸型?: { 名称?: string; 描述?: string; 状态?: string }; 户型?: { 名称?: string; 描述?: string; 状态?: string } };
 };
 interface NearbyChar {
   _key: string; name: string;
@@ -620,7 +637,7 @@ interface NearbyChar {
   当前地点?: { 位面?: string; 大陆?: string; 城市?: string; 区域?: string; 场景?: string; 具体位置?: string };
   服装?: Record<string, { 名称?: string; 描述?: string; 状态?: string }>; 随身物品?: Record<string, { 描述?: string; 数量?: number }>;
   人际关系?: Record<string, string>;
-  nsfw档案?: { 初次存在与否?: boolean; 性对象?: string; 是否怀孕?: boolean; 子嗣列表?: string };
+  nsfw档案?: { 初次存在与否?: boolean; 性对象?: string; 是否怀孕?: boolean; 子嗣列表?: string; 三围?: { 胸围?: number; 腰围?: number; 臀围?: number }; 罩杯?: string; 胸型?: { 名称?: string; 描述?: string; 状态?: string }; 户型?: { 名称?: string; 描述?: string; 状态?: string } };
 }
 
 function presOrder(p: string): number { return p === 'present' ? 0 : p === 'nearby' ? 1 : 2; }

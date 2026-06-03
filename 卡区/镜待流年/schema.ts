@@ -94,8 +94,8 @@ export const Schema = z.object({
         臀围: z.coerce.number().prefault(0),
       }).prefault({}),
       罩杯: z.string().prefault(''),
-      胸型: z.object({ 名称: z.string().prefault(''), 描述: z.string().prefault('') }).prefault({}),
-      户型: z.object({ 名称: z.string().prefault(''), 描述: z.string().prefault('') }).prefault({}),
+      胸型: z.object({ 名称: z.string().prefault(''), 描述: z.string().prefault(''), 状态: z.string().prefault('') }).prefault({}),
+      户型: z.object({ 名称: z.string().prefault(''), 描述: z.string().prefault(''), 状态: z.string().prefault('') }).prefault({}),
     }).prefault({}),
   })).prefault({}),
 });
