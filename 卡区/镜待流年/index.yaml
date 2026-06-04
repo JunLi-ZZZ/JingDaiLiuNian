@@ -110,13 +110,26 @@
       不可激活其他条目: true
     文件: 世界书\故事基调
 
-  - 名称: 主世界
+  - 名称: "[EJS]位面控制器"
     启用: true
     激活策略:
       类型: 蓝灯
     插入位置:
       类型: 角色定义之前
       顺序: 210
+    激活概率: 100
+    递归:
+      不可被其他条目激活: false
+      不可激活其他条目: false
+    文件: 世界书\EJS位面控制器
+
+  - 名称: 主世界
+    启用: false
+    激活策略:
+      类型: 蓝灯
+    插入位置:
+      类型: 角色定义之前
+      顺序: 215
     激活概率: 100
     递归:
       不可被其他条目激活: true
@@ -129,7 +142,7 @@
       类型: 蓝灯
     插入位置:
       类型: 角色定义之前
-      顺序: 215
+      顺序: 220
     激活概率: 100
     递归:
       不可被其他条目激活: true
@@ -142,7 +155,7 @@
       类型: 蓝灯
     插入位置:
       类型: 角色定义之前
-      顺序: 220
+      顺序: 221
     激活概率: 100
     递归:
       不可被其他条目激活: true
@@ -155,7 +168,7 @@
       类型: 蓝灯
     插入位置:
       类型: 角色定义之前
-      顺序: 221
+      顺序: 225
     激活概率: 100
     递归:
       不可被其他条目激活: true
@@ -675,7 +688,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v30/界面/状态栏/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v31/界面/状态栏/index.html')
         </script>
         </body>
         ```
@@ -693,7 +706,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v30/界面/封面/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v31/界面/封面/index.html')
         </script>
         </body>
         ```
@@ -740,6 +753,6 @@
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v30/脚本/变量结构/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v31/脚本/变量结构/index.js';
 
     变量: {}

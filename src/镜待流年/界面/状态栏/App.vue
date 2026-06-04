@@ -13,6 +13,7 @@
           :style="{ background: t.color }" :title="t.name" @click="theme = t.id"></button>
       </div>
       <div class="time-bar"><i class="fa-solid fa-clock"></i> {{ timeText }}</div>
+      <div class="weather-bar">{{ weekText }} · {{ weatherText }}</div>
       <div class="world-loc">🌍 {{ locationFull }}</div>
 
       <!-- 主角 -->
@@ -593,6 +594,8 @@ const userName = computed(() => {
   catch { return '{{user}}'; }
 });
 const timeText = computed(() => isSet(data.value.世界.当前时间) ? data.value.世界.当前时间 : '序章');
+const weekText = computed(() => isSet(data.value.世界.周几) ? data.value.世界.周几 : '');
+const weatherText = computed(() => isSet(data.value.世界.天气) ? data.value.世界.天气 : '');
 const locationFull = computed(() => {
   const loc = data.value.主角.当前地点;
   const parts = [loc.位面, loc.大陆, loc.城市, loc.区域, loc.场景, loc.具体位置].filter(v => v && v !== '待设定');
@@ -764,6 +767,7 @@ function getCharRelations(char: NearbyChar): [string, string][] { return Object.
 .theme-dot { width:18px; height:18px; border-radius:50%; border:2px solid transparent; cursor:pointer; transition:all 0.2s;
   &.active { border-color:var(--t-text); transform:scale(1.2); } &:hover { transform:scale(1.15); } }
 .time-bar { font-family: '寒蝉全圆体', var(--font-main); padding:10px 14px 2px; font-size:14px; font-weight:700; color:var(--t-gold); letter-spacing:1px; background:var(--t-bg); }
+.weather-bar { font-family: 'DouyinSans', var(--font-main); padding:2px 14px 0; font-size:10px; color:var(--t-muted); background:var(--t-bg); letter-spacing:0.5px; }
 .world-loc { font-family: 'DouyinSans', var(--font-main); padding:2px 14px 6px; font-size:10px; color:var(--t-muted); background:var(--t-bg); }
 
 .stat-row-inline { display:flex; flex-wrap:wrap; gap:10px; padding:4px 0 6px; }
