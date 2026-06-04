@@ -1,4 +1,4 @@
-<character_info>
+<user_info>
 角色档案:
     基本信息:
         姓名: <user>
@@ -17,4 +17,4 @@
         母镜:
             - 一面古朴铜镜，虞姝昀在<user>幼时赠予，称"护身符"
             - 偶尔能在镜中瞥见模糊的红颜特征
-</character_info>
+</user_info>
