@@ -12,8 +12,8 @@
         <button v-for="t in themes" :key="t.id" class="theme-dot" :class="{ active: theme === t.id }"
           :style="{ background: t.color }" :title="t.name" @click="theme = t.id"></button>
       </div>
-      <div class="time-bar"><i class="fa-solid fa-clock"></i> {{ timeText }}</div>
-      <div class="weather-bar">{{ weekText }} · {{ weatherText }}</div>
+      <div class="time-bar"><i class="fa-solid fa-clock"></i> {{ timeText }}<span v-if="weekText"> · {{ weekText }}</span></div>
+      <div class="weather-bar"><span v-if="weatherText">{{ weatherEmoji }} {{ weatherText }}</span></div>
       <div class="world-loc">🌍 {{ locationFull }}</div>
 
       <!-- 主角 -->
@@ -596,6 +596,19 @@ const userName = computed(() => {
 const timeText = computed(() => isSet(data.value.世界.当前时间) ? data.value.世界.当前时间 : '序章');
 const weekText = computed(() => isSet(data.value.世界.周几) ? data.value.世界.周几 : '');
 const weatherText = computed(() => isSet(data.value.世界.天气) ? data.value.世界.天气 : '');
+const weatherEmoji = computed(() => {
+  const w = weatherText.value;
+  if (!w) return '';
+  if (w.includes('雪')) return '❄️';
+  if (w.includes('雨')) return '🌧️';
+  if (w.includes('雷')) return '⛈️';
+  if (w.includes('阴')) return '☁️';
+  if (w.includes('风')) return '💨';
+  if (w.includes('雾')) return '🌫️';
+  if (w.includes('晴')) return '☀️';
+  if (w.includes('云')) return '⛅';
+  return '🌤️';
+});
 const locationFull = computed(() => {
   const loc = data.value.主角.当前地点;
   const parts = [loc.位面, loc.大陆, loc.城市, loc.区域, loc.场景, loc.具体位置].filter(v => v && v !== '待设定');
