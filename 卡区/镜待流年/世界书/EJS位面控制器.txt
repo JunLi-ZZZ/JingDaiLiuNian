@@ -5,13 +5,13 @@ const mentionedMain = matchChatMessages(['主世界']);
 const mentionedXianDao = matchChatMessages(['仙道位面', '仙道']);
 const mentionedHongHuang = matchChatMessages(['洪荒位面', '洪荒']);
 
-if (plane === '主世界' || mentionedMain) {
+if (plane.includes('主世界') || mentionedMain) {
   print(await getwi('主世界'));
 }
-if (plane === '仙道位面' || mentionedXianDao) {
+if (plane.includes('仙道') || mentionedXianDao) {
   print(await getwi('仙道位面'));
 }
-if (plane === '洪荒位面' || mentionedHongHuang) {
+if (plane.includes('洪荒') || mentionedHongHuang) {
   print(await getwi('洪荒位面'));
 }
 %>
