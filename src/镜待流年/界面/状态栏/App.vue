@@ -180,14 +180,12 @@
         <div class="block-head" @click="showChars = !showChars">
           <span class="block-title">角色名录</span>
           <span class="block-sub">{{ allChars.length }}人</span>
-          <button v-if="showChars && allChars.length > 0" class="del-btn" :class="{ active: deleteMode }" title="删除角色" @click.stop="deleteMode = !deleteMode; deleteSelection.clear()">🗑</button>
           <span class="block-arrow">{{ showChars ? '▾' : '▸' }}</span>
         </div>
         <div v-if="showChars" class="block-body">
           <div v-if="allChars.length === 0" class="empty-hint">暂无角色</div>
           <div v-for="char in allChars" :key="char._key" class="char-entry">
-            <div class="char-row" @click="deleteMode ? toggleCharDelete(char._key) : toggleChar(char._key)" :class="{ 'del-selected': deleteMode && deleteSelection.has(char._key) }">
-              <span v-if="deleteMode" class="del-check">{{ deleteSelection.has(char._key) ? '☑' : '☐' }}</span>
+            <div class="char-row" @click="toggleChar(char._key)">
               <span class="char-name">{{ char.name }}</span>
               <span class="char-hearts">{{ loveIcon(char.好感度) }}</span>
               <span class="char-presence" :class="presence(char)">{{ presenceText(char) }}</span>
@@ -282,10 +280,8 @@
                     <div v-if="clothDetail.has(char._key+'-hx') && isSet(char.nsfw档案.户型?.描述)" class="cloth-detail">{{ char.nsfw档案.户型.描述 }}</div>
                   </div>
                 </div>
-          <div v-if="deleteMode && deleteSelection.size > 0" class="del-actions">
-            <span class="del-count">已选 {{ deleteSelection.size }} 人</span>
-            <button class="del-confirm" @click="confirmDelete">确认删除</button>
-            <button class="del-cancel" @click="deleteMode = false; deleteSelection.clear()">取消</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -591,26 +587,6 @@ const expandedSubs = ref(new Set<string>());
 const clothDetail = ref(new Set<string>());
 function toggleClothDetail(k: string) { const s = new Set(clothDetail.value); s.has(k) ? s.delete(k) : s.add(k); clothDetail.value = s; }
 
-const deleteMode = ref(false);
-const deleteSelection = ref(new Set<string>());
-function toggleCharDelete(k: string) { const s = new Set(deleteSelection.value); s.has(k) ? s.delete(k) : s.add(k); deleteSelection.value = s; }
-async function confirmDelete() {
-  try {
-    const Mvu = (window as any).Mvu;
-    const _ = (window as any)._ || (window as any).parent?._;
-    if (!Mvu || !_) return;
-    const mid = (window as any).getCurrentMessageId?.() ?? -1;
-    const variables = Mvu.getMvuData({ type: 'message', message_id: mid });
-    const names = [...deleteSelection.value];
-    for (const n of names) {
-      _.unset(variables, `stat_data.角色名录.${n}`);
-    }
-    await Mvu.replaceMvuData(variables, { type: 'message', message_id: mid });
-  } catch (e) { console.error('删除角色失败', e); }
-  deleteMode.value = false;
-  deleteSelection.value = new Set();
-}
-
 const themes = [
   { id: 'cream', name: '米白', color: '#d4c8b6' },
   { id: 'purple', name: '墨紫', color: '#7b5ea7' },
@@ -858,15 +834,6 @@ function getCharRelations(char: NearbyChar): [string, string][] { return Object.
   &.absent { color:var(--t-dim); background:rgba(128,128,128,0.08); } }
 .char-row .block-arrow { margin-left:4px; }
 .char-detail { padding:8px 4px 4px; }
-.char-row.del-selected { background:rgba(200,80,80,0.1); border-color:rgba(200,80,80,0.3); }
-.del-btn { background:none; border:none; cursor:pointer; font-size:12px; padding:2px 4px; border-radius:4px; opacity:0.6; }
-.del-btn.active { opacity:1; background:rgba(200,80,80,0.1); }
-.del-check { font-size:11px; margin-right:4px; color:var(--t-accent); }
-.del-actions { display:flex; align-items:center; gap:6px; padding:8px 12px; border-top:1px solid var(--t-border); }
-.del-count { flex:1; font-family: '寒蝉全圆体', var(--font-main); font-size:10px; color:var(--t-muted); }
-.del-confirm { padding:3px 10px; background:#c85050; border:none; border-radius:4px; color:#fff; font-size:10px; cursor:pointer; font-family: '寒蝉全圆体', var(--font-main); }
-.del-confirm:hover { background:#a04040; }
-.del-cancel { padding:3px 10px; background:var(--t-surface); border:1px solid var(--t-border); border-radius:4px; color:var(--t-muted); font-size:10px; cursor:pointer; font-family: '寒蝉全圆体', var(--font-main); }
 
 .info-line { font-size:11px; color:var(--t-muted); padding:2px 0; line-height:1.5; }
 .info-label { font-family: '寒蝉全圆体', var(--font-main); color:var(--t-dim); font-size:10px; letter-spacing:0.5px; }
