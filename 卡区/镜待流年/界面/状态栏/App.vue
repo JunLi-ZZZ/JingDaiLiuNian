@@ -859,6 +859,15 @@ function getCharRelations(char: NearbyChar): [string, string][] { return Object.
   &.absent { color:var(--t-dim); background:rgba(128,128,128,0.08); } }
 .char-row .block-arrow { margin-left:4px; }
 .char-detail { padding:8px 4px 4px; }
+.char-row.del-selected { background:rgba(200,80,80,0.1); border-color:rgba(200,80,80,0.3); }
+.del-btn { background:none; border:none; cursor:pointer; font-size:12px; padding:2px 4px; border-radius:4px; opacity:0.6; }
+.del-btn.active { opacity:1; background:rgba(200,80,80,0.1); }
+.del-check { font-size:11px; margin-right:4px; color:var(--t-accent); }
+.del-actions { display:flex; align-items:center; gap:6px; padding:8px 12px; border-top:1px solid var(--t-border); }
+.del-count { flex:1; font-family: '寒蝉全圆体', var(--font-main); font-size:10px; color:var(--t-muted); }
+.del-confirm { padding:3px 10px; background:#c85050; border:none; border-radius:4px; color:#fff; font-size:10px; cursor:pointer; font-family: '寒蝉全圆体', var(--font-main); }
+.del-confirm:hover { background:#a04040; }
+.del-cancel { padding:3px 10px; background:var(--t-surface); border:1px solid var(--t-border); border-radius:4px; color:var(--t-muted); font-size:10px; cursor:pointer; font-family: '寒蝉全圆体', var(--font-main); }
 
 .info-line { font-size:11px; color:var(--t-muted); padding:2px 0; line-height:1.5; }
 .info-label { font-family: '寒蝉全圆体', var(--font-main); color:var(--t-dim); font-size:10px; letter-spacing:0.5px; }
