@@ -587,6 +587,24 @@ const expandedSubs = ref(new Set<string>());
 const clothDetail = ref(new Set<string>());
 function toggleClothDetail(k: string) { const s = new Set(clothDetail.value); s.has(k) ? s.delete(k) : s.add(k); clothDetail.value = s; }
 
+const deleteMode = ref(false);
+const deleteSelection = ref(new Set<string>());
+function toggleCharDelete(k: string) { const s = new Set(deleteSelection.value); s.has(k) ? s.delete(k) : s.add(k); deleteSelection.value = s; }
+async function confirmDelete() {
+  try {
+    const w = window as any;
+    if (!w.Mvu || !w._) return;
+    const mid = w.getCurrentMessageId?.() ?? -1;
+    const variables = w.Mvu.getMvuData({ type: 'message', message_id: mid });
+    for (const n of [...deleteSelection.value]) {
+      w._.unset(variables, `stat_data.角色名录.${n}`);
+    }
+    await w.Mvu.replaceMvuData(variables, { type: 'message', message_id: mid });
+  } catch (e) { console.error('删除角色失败', e); }
+  deleteMode.value = false;
+  deleteSelection.value = new Set();
+}
+
 const themes = [
   { id: 'cream', name: '米白', color: '#d4c8b6' },
   { id: 'purple', name: '墨紫', color: '#7b5ea7' },
