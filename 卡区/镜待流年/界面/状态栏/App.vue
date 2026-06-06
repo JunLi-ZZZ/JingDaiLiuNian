@@ -180,12 +180,14 @@
         <div class="block-head" @click="showChars = !showChars">
           <span class="block-title">角色名录</span>
           <span class="block-sub">{{ allChars.length }}人</span>
+          <button v-if="showChars && allChars.length > 0" class="del-btn" :class="{ active: deleteMode }" title="删除角色" @click.stop="deleteMode = !deleteMode; deleteSelection.clear()">🗑</button>
           <span class="block-arrow">{{ showChars ? '▾' : '▸' }}</span>
         </div>
         <div v-if="showChars" class="block-body">
           <div v-if="allChars.length === 0" class="empty-hint">暂无角色</div>
           <div v-for="char in allChars" :key="char._key" class="char-entry">
-            <div class="char-row" @click="toggleChar(char._key)">
+            <div class="char-row" @click="deleteMode ? toggleCharDelete(char._key) : toggleChar(char._key)" :class="{ 'del-selected': deleteMode && deleteSelection.has(char._key) }">
+              <span v-if="deleteMode" class="del-check">{{ deleteSelection.has(char._key) ? '☑' : '☐' }}</span>
               <span class="char-name">{{ char.name }}</span>
               <span class="char-hearts">{{ loveIcon(char.好感度) }}</span>
               <span class="char-presence" :class="presence(char)">{{ presenceText(char) }}</span>
@@ -282,6 +284,11 @@
                 </div>
               </div>
             </div>
+          </div>
+          <div v-if="deleteMode && deleteSelection.size > 0" class="del-actions">
+            <span class="del-count">已选 {{ deleteSelection.size }} 人</span>
+            <button class="del-confirm" @click="confirmDelete">确认删除</button>
+            <button class="del-cancel" @click="deleteMode = false; deleteSelection.clear()">取消</button>
           </div>
         </div>
       </div>
