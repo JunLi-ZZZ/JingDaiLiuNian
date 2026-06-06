@@ -92,46 +92,46 @@
                         <div v-if="mxCustom" class="custom-form">
                           <div class="form-section" @click="mxOpen.basic = !mxOpen.basic"><span class="mx-arrow" :class="{ open: mxOpen.basic }">▸</span> 基本设定</div>
                           <div v-if="mxOpen.basic" class="section-body">
-                            <div class="form-row"><label>外貌风格</label><select v-model="mxForm.style"><option value="">✨ 随机</option><option>古风</option><option>现代</option><option>异域</option><option>科幻</option><option>哥特</option><option>奇幻</option><option>战损</option><option value="自定义">自定义 ▼</option></select></div>
+                            <div class="form-row"><label>外貌风格</label><select v-model="mxForm.style"><option value="">✨ 随机</option><option value="自定义">自定义 ▼</option><option>古风</option><option>现代</option><option>异域</option><option>科幻</option><option>哥特</option><option>奇幻</option><option>战损</option><option>仙侠</option><option>汉服</option><option>赛博朋克</option><option>蒸汽朋克</option><option>和风</option></select></div>
                             <div v-if="mxForm.style==='自定义'" class="form-row"><input v-model="mxForm.styleCustom" placeholder="填写自定义风格…" /></div>
                             <div class="form-row"><label>性格特质</label><div class="tag-pool"><span v-for="t in pickedTraits" :key="'s_'+t" class="tag picked" @click="mxToggleTag(mxForm.traits,t)">{{ t }}</span><span v-for="t in mxTraits" :key="'t_'+t" v-show="!mxForm.traits.includes(t)" class="tag" @click="mxToggleTag(mxForm.traits,t)">{{ t }}</span><span class="tag tag-custom"><input v-model="mxForm.traitInput" placeholder="自定义+" @keyup.enter="mxForm.traitInput=mxAddCustom(mxForm.traits,mxForm.traitInput)" /><button class="tag-custom-btn" @click="mxForm.traitInput=mxAddCustom(mxForm.traits,mxForm.traitInput)">+</button></span></div></div>
-                            <div class="form-row"><label>体态身材</label><select v-model="mxForm.bodyType"><option value="">✨ 随机</option><option>纤细</option><option>匀称</option><option>丰满</option><option>娇小</option><option>高挑</option><option>健美</option><option>丰腴</option><option value="自定义">自定义 ▼</option></select></div>
+                            <div class="form-row"><label>体态身材</label><select v-model="mxForm.bodyType"><option value="">✨ 随机</option><option value="自定义">自定义 ▼</option><option>纤细</option><option>匀称</option><option>丰满</option><option>娇小</option><option>高挑</option><option>健美</option><option>丰腴</option><option>肉感</option><option>娇憨</option><option>结实</option><option>骨感</option></select></div>
                             <div v-if="mxForm.bodyType==='自定义'" class="form-row"><input v-model="mxForm.bodyTypeCustom" placeholder="填写自定义体态…" /></div>
-                            <div class="form-row"><label>种族</label><select v-model="mxForm.race"><option value="">✨ 随机</option><option>人类</option><option>妖族</option><option>仙族</option><option>魔族</option><option>精灵</option><option>龙族</option><option>天使</option><option>恶魔</option><option>亡灵</option><option>吸血鬼</option><option value="自定义">自定义 ▼</option></select></div>
+                            <div class="form-row"><label>种族</label><select v-model="mxForm.race"><option value="">✨ 随机</option><option value="自定义">自定义 ▼</option><option>人类</option><option>妖族</option><option>仙族</option><option>魔族</option><option>精灵</option><option>龙族</option><option>天使</option><option>恶魔</option><option>亡灵</option><option>吸血鬼</option><option>魅魔</option><option>兽人</option><option>妖精</option><option>神族</option><option>狐妖</option><option>猫娘</option><option>人鱼</option></select></div>
                             <div v-if="mxForm.race==='自定义'" class="form-row"><input v-model="mxForm.raceCustom" placeholder="填写自定义种族…" /></div>
-                            <div class="form-row"><label>年龄感</label><select v-model="mxForm.age"><option value="">✨ 随机</option><option>少女</option><option>御姐</option><option>成熟</option><option>不老</option><option>幼态</option><option value="自定义">自定义 ▼</option></select></div>
+                            <div class="form-row"><label>年龄感</label><select v-model="mxForm.age"><option value="">✨ 随机</option><option value="自定义">自定义 ▼</option><option>少女</option><option>御姐</option><option>成熟</option><option>不老</option><option>幼态</option><option>熟女</option><option>人妻</option></select></div>
                             <div v-if="mxForm.age==='自定义'" class="form-row"><input v-model="mxForm.ageCustom" placeholder="填写自定义年龄感…" /></div>
                           </div>
                           <div class="form-section" @click="mxOpen.world = !mxOpen.world"><span class="mx-arrow" :class="{ open: mxOpen.world }">▸</span> 世界与能力</div>
                           <div v-if="mxOpen.world" class="section-body">
-                            <div class="form-row"><label>来源世界</label><select v-model="mxForm.origin"><option value="">✨ 随机</option><option>主世界</option><option>妖灵位面</option><option>仙道位面</option><option>古代位面</option><option>异世界</option><option>深渊</option><option>同人位面</option><option>幽冥位面</option><option>虚数位面</option><option value="自定义">自定义 ▼</option></select></div>
+                            <div class="form-row"><label>来源世界</label><select v-model="mxForm.origin"><option value="">✨ 随机</option><option value="自定义">自定义 ▼</option><option>主世界</option><option>妖灵位面</option><option>仙道位面</option><option>古代位面</option><option>异世界</option><option>洪荒位面</option><option>深渊魔界</option><option>同人位面</option><option>幽冥位面</option><option>虚数位面</option></select></div>
                             <div v-if="mxForm.origin==='自定义'" class="form-row"><input v-model="mxForm.originCustom" placeholder="填写自定义位面…" /></div>
                             <div class="form-row"><label>天赋能力</label><div class="tag-pool"><span v-for="t in pickedAbilities" :key="'a_'+t" class="tag picked" @click="mxToggleTag(mxForm.abilities,t)">{{ t }}</span><span v-for="t in mxAbilities" :key="'ab_'+t" v-show="!mxForm.abilities.includes(t)" class="tag" @click="mxToggleTag(mxForm.abilities,t)">{{ t }}</span><span class="tag tag-custom"><input v-model="mxForm.abilityInput" placeholder="自定义+" @keyup.enter="mxForm.abilityInput=mxAddCustom(mxForm.abilities,mxForm.abilityInput)" /><button class="tag-custom-btn" @click="mxForm.abilityInput=mxAddCustom(mxForm.abilities,mxForm.abilityInput)">+</button></span></div></div>
-                            <div class="form-row"><label>身份地位</label><select v-model="mxForm.role"><option value="">✨ 随机</option><option v-for="t in mxRoles" :key="'r_'+t" :value="t">{{ t }}</option><option value="自定义">自定义 ▼</option></select></div>
+                            <div class="form-row"><label>身份地位</label><select v-model="mxForm.role"><option value="">✨ 随机</option><option value="自定义">自定义 ▼</option><option v-for="t in mxRoles" :key="'r_'+t" :value="t">{{ t }}</option></select></div>
                             <div v-if="mxForm.role==='自定义'" class="form-row"><input v-model="mxForm.roleCustom" placeholder="填写自定义身份…" /></div>
                           </div>
                           <div class="form-section" @click="mxOpen.deep = !mxOpen.deep"><span class="mx-arrow" :class="{ open: mxOpen.deep }">▸</span> 深层设定</div>
                           <div v-if="mxOpen.deep" class="section-body">
                             <div class="form-row"><label>同人作品 <span class="mx-mode-toggle" @click="mxFandomMode=!mxFandomMode">{{ mxFandomMode ? '⟲ 简单' : '⟳ 魔改' }}</span></label>
                               <div v-if="!mxFandomMode" class="mx-fandom-simple">
-                                <select v-model="mxForm.fandom"><option value="">✨ 原创（不指定）</option><option v-for="t in mxFandoms" :key="'f_'+t" :value="t">{{ t }}</option><option value="自定义">自定义 ▼</option></select>
+                                <select v-model="mxForm.fandom"><option value="">✨ 原创（不指定）</option><option value="自定义">自定义 ▼</option><option v-for="t in mxFandoms" :key="'f_'+t" :value="t">{{ t }}</option></select>
                                 <div v-if="mxForm.fandom==='自定义'"><input v-model="mxForm.fandomCustom" placeholder="填写作品名…" /></div>
                               </div>
                               <div v-if="mxFandomMode" class="mx-fandom-ext">
-                                <select v-model="mxForm.fandomType"><option value="">魔改向</option><option>原作向</option><option>魔改向</option><option>反转向</option><option>纯净向</option><option>融合向</option><option value="自定义">自定义 ▼</option></select>
+                                <select v-model="mxForm.fandomType"><option value="">魔改向</option><option value="自定义">自定义 ▼</option><option>原作向</option><option>魔改向</option><option>反转向</option><option>纯净向</option><option>融合向</option></select>
                                 <div v-if="mxForm.fandomType==='自定义'" class="form-row"><input v-model="mxForm.fandomTypeCustom" placeholder="填写类型…" /></div>
-                                <select v-model="mxForm.fandom"><option value="">✨ 选择作品</option><option v-for="t in mxFandoms" :key="'fe_'+t" :value="t">{{ t }}</option><option value="自定义">自定义 ▼</option></select>
+                                <select v-model="mxForm.fandom"><option value="">✨ 选择作品</option><option value="自定义">自定义 ▼</option><option v-for="t in mxFandoms" :key="'fe_'+t" :value="t">{{ t }}</option></select>
                                 <div v-if="mxForm.fandom==='自定义'" class="form-row"><input v-model="mxForm.fandomCustom" placeholder="填写作品名…" /></div>
                                 <input v-model="mxForm.fandomDesc" placeholder="描述魔改细节，如：性转吉尔伽美什…" />
                               </div>
                             </div>
-                            <div class="form-row"><label>核心特质</label><select v-model="mxForm.coreTrait"><option value="">✨ 随机</option><option v-for="t in mxCoreTraits" :key="'ct_'+t" :value="t">{{ t }}</option><option value="自定义">自定义 ▼</option></select></div>
+                            <div class="form-row"><label>核心特质</label><select v-model="mxForm.coreTrait"><option value="">✨ 随机</option><option value="自定义">自定义 ▼</option><option v-for="t in mxCoreTraits" :key="'ct_'+t" :value="t">{{ t }}</option></select></div>
                             <div v-if="mxForm.coreTrait==='自定义'" class="form-row"><input v-model="mxForm.coreTraitCustom" placeholder="如：被神遗弃的最后使徒…" /></div>
-                            <div class="form-row"><label>初见态度</label><select v-model="mxForm.attitude"><option value="">✨ 随机</option><option v-for="t in mxAttitudes" :key="'at_'+t" :value="t">{{ t }}</option><option value="自定义">自定义 ▼</option></select></div>
+                            <div class="form-row"><label>初见态度</label><select v-model="mxForm.attitude"><option value="">✨ 随机</option><option value="自定义">自定义 ▼</option><option v-for="t in mxAttitudes" :key="'at_'+t" :value="t">{{ t }}</option></select></div>
                             <div v-if="mxForm.attitude==='自定义'" class="form-row"><input v-model="mxForm.attitudeCustom" placeholder="填写自定义态度…" /></div>
-                            <div class="form-row"><label>相识状态</label><select v-model="mxForm.acquaintance"><option value="">✨ 随机</option><option v-for="t in mxAcquaintances" :key="'aq_'+t" :value="t">{{ t }}</option><option value="自定义">自定义 ▼</option></select></div>
+                            <div class="form-row"><label>相识状态</label><select v-model="mxForm.acquaintance"><option value="">✨ 随机</option><option value="自定义">自定义 ▼</option><option v-for="t in mxAcquaintances" :key="'aq_'+t" :value="t">{{ t }}</option></select></div>
                             <div v-if="mxForm.acquaintance==='自定义'" class="form-row"><input v-model="mxForm.acquaintanceCustom" placeholder="填写自定义相识状态…" /></div>
-                            <div class="form-row"><label>特殊标记</label><select v-model="mxForm.specialMark"><option value="">无</option><option v-for="t in mxMarks" :key="'mk_'+t" :value="t">{{ t }}</option><option value="自定义">自定义 ▼</option></select></div>
+                            <div class="form-row"><label>特殊标记</label><select v-model="mxForm.specialMark"><option value="">无</option><option value="自定义">自定义 ▼</option><option v-for="t in mxMarks" :key="'mk_'+t" :value="t">{{ t }}</option></select></div>
                             <div v-if="mxForm.specialMark==='自定义'" class="form-row"><input v-model="mxForm.specialMarkCustom" placeholder="填写自定义标记…" /></div>
                             <div class="form-row"><label>其他补充</label><textarea v-model="mxForm.other" placeholder="自由填写未列出的信息，如特定设定、限制条件、参考角色等…" class="mx-other-input"></textarea></div>
                           </div>
@@ -334,14 +334,14 @@ function syncVarTheme() {
 const mirrorOpen = ref(false);
 const mirrorDir = ref<'toMe' | 'toWorld'>('toMe');
 const mxCustom = ref(false);
-const mxTraits = ['傲娇','温柔','冷淡','活泼','腹黑','天然','病娇','慵懒','忠犬','高冷','毒舌','元气','邪魅','偏执','纯真','三无','冒失','小恶魔'];
-const mxAbilities = ['剑术','魔法','神术','体术','幻术','锻造','医术','毒术','暗杀','读心','预知','不死','控火','御水','时空','魅惑','兽化','机关术'];
-const mxRoles = ['剑圣','魔女','公主','圣女','骑士','精灵王','龙神','堕天使','死神','妖王','贤者','佣兵王','刺客','流浪武士','星界旅者'];
-const mxCoreTraits = ['背负灭族之仇的末裔','流浪千年的观测者','被诅咒的不死者','失忆的前任神祇','逃出实验室的造物','隐居市井的古神'];
-const mxAttitudes = ['冷漠','好奇','敌意','友善','崇拜','试探','困惑','漠然','警惕','亲近'];
-const mxFandoms = ['哥布林杀手','原神','Fate','东方Project','明日方舟','崩坏星穹铁道','蔚蓝档案','葬送的芙莉莲','鬼灭之刃','咒术回战'];
-const mxMarks = ['左眼封印','说话带古语腔','随身携带骨灰盒','异色瞳','身上有纹身','戴着面纱','半透明身体'];
-const mxAcquaintances = ['未相识','已相识（主世界）','已相识（其他位面）','前世相识','梦中相识','宿命相连'];
+const mxTraits = ['傲娇','温柔','冷淡','活泼','腹黑','天然','病娇','慵懒','忠犬','高冷','毒舌','元气','邪魅','偏执','纯真','三无','冒失','小恶魔','无口','大和抚子','女王','电波','残念','痴女'];
+const mxAbilities = ['剑术','魔法','神术','体术','幻术','锻造','医术','毒术','暗杀','读心','预知','不死','控火','御水','时空','魅惑','兽化','机关术','言灵','死灵术','炼金术','结界术','召唤术','傀儡术','狂化','重力','冰结','雷击','植物操控'];
+const mxRoles = ['剑圣','魔女','公主','圣女','骑士','精灵王','龙神','堕天使','死神','妖王','贤者','佣兵王','刺客','流浪武士','星界旅者','女王','修女','舞姬','女仆','猎魔人','吸血鬼领主','占星师','退魔师','巫女','机关师','武神','酒馆老板'];
+const mxCoreTraits = ['背负灭族之仇的末裔','流浪千年的观测者','被诅咒的不死者','失忆的前任神祇','逃出实验室的造物','隐居市井的古神','渴望平凡的绝世天才','厌倦永生的孤独者','被封印力量的上古存在','追寻宿敌的复仇者','守护崩坏世界的最后壁垒','伪装成凡人的旧日支配者'];
+const mxAttitudes = ['冷漠','好奇','敌意','友善','崇拜','试探','困惑','漠然','警惕','亲近','敬畏','怜悯','戏谑','羞怯'];
+const mxFandoms = ['哥布林杀手','原神','Fate','东方Project','明日方舟','崩坏星穹铁道','蔚蓝档案','葬送的芙莉莲','鬼灭之刃','咒术回战','艾尔登法环','赛马娘','碧蓝航线','崩坏3','少女前线','公主连结','无职转生','Re:从零开始的异世界生活'];
+const mxMarks = ['左眼封印','说话带古语腔','随身携带骨灰盒','异色瞳','身上有纹身','戴着面纱','半透明身体','嘴角泪痣','掌心旧疤','锁骨烙印','脚踝锁链残骸','背部羽翼印记','发尾异色','指尖常驻微光'];
+const mxAcquaintances = ['未相识','已相识（主世界）','已相识（其他位面）','前世相识','梦中相识','宿命相连','笔友/网友','旧日同窗','救命恩人','宿敌'];
 const mxFandomMode = ref(false);
 const mxIncludeChat = ref(false);
 const mxGenerating = ref(false);
@@ -452,6 +452,13 @@ const mxGenTemplate = `你正在通过母镜感知一位红颜的存在。镜中
             - （贴合角色体型与气质的描述，含形状、大小、色泽、触感，不可使用"一线天""馒头"等通用模板词）
         户型: [诗名]
             - （贴合角色身份与种族特质的描述，含形态、紧致度、特殊体感，不可使用"一线天""馒头"等通用模板词）
+
+    兴趣爱好:
+        [爱好名]:
+            动机:
+              - （这件爱好的情感来源，对角色个人的意义）
+            表现:
+              - （做这件事的具体方式与细节）
 </basic_info>
 
 ---
