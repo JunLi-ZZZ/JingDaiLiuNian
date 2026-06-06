@@ -1,0 +1,8 @@
+@@preprocessing
+<%
+if (getvar('stat_data.初始化完成', { defaults: false })) {
+  print(await getwi('mvu_update_变量更新规则_日常'));
+} else {
+  print(await getwi('mvu_update_变量更新规则_首次'));
+}
+%>
