@@ -1,5 +1,6 @@
 export const Schema = z.object({
   初始化完成: z.boolean().prefault(false),
+  R18模式: z.boolean().prefault(false),
 
   世界: z.object({
     当前时间: z.string().prefault(''),
@@ -47,6 +48,7 @@ export const Schema = z.object({
 
   角色名录: z.record(z.string(), z.object({
     姓名: z.string().prefault(''),
+    身份: z.string().prefault(''),
     性别: z.string().prefault(''),
     年龄: z.coerce.number().prefault(0).transform(v => _.isNaN(v) || !_.isFinite(v) ? 0 : v),
     来源世界: z.string().prefault(''),

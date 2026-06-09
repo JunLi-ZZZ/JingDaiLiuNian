@@ -7,7 +7,7 @@
     </div>
 
     <div v-if="showAll" class="main-body">
-      <div class="settings-bar"><button class="gear-btn" @click="showThemes = !showThemes">⚙ 主题</button></div>
+      <div class="settings-bar"><button class="gear-btn" @click="showThemes = !showThemes">⚙ 主题</button><button class="gear-btn r18-btn" :class="{ active: r18Mode }" @click="toggleR18()">{{ r18Mode ? '🔞' : '🔒' }} R18</button></div>
       <div v-if="showThemes" class="theme-picker">
         <button v-for="t in themes" :key="t.id" class="theme-dot" :class="{ active: theme === t.id }"
           :style="{ background: t.color }" :title="t.name" @click="theme = t.id"></button>
@@ -189,6 +189,7 @@
             <div class="char-row" @click="deleteMode ? toggleCharDelete(char._key) : toggleChar(char._key)" :class="{ 'del-selected': deleteMode && deleteSelection.has(char._key) }">
               <span v-if="deleteMode" class="del-check">{{ deleteSelection.has(char._key) ? '☑' : '☐' }}</span>
               <span class="char-name">{{ char.name }}</span>
+              <span v-if="char.身份" class="char-identity">{{ char.身份 }}</span>
               <span class="char-hearts">{{ loveIcon(char.好感度) }}</span>
               <span class="char-presence" :class="presence(char)">{{ presenceText(char) }}</span>
               <span class="block-arrow small">{{ expandedChars.has(char._key) ? '▾' : '▸' }}</span>
@@ -330,6 +331,21 @@ function syncVarTheme() {
   doc.style.setProperty('--jdnl-var-text', c.text);
   doc.style.setProperty('--jdnl-var-muted', c.muted);
   doc.style.setProperty('--jdnl-var-accent', c.accent);
+}
+const r18Mode = ref(false);
+watch(() => data.value.R18模式, v => { if (typeof v === 'boolean') r18Mode.value = v; }, { immediate: true });
+function toggleR18() {
+  r18Mode.value = !r18Mode.value;
+  try {
+    const Mvu = (window as any).Mvu;
+    if (Mvu) {
+      const _ = (window as any)._ || (window as any).parent?._;
+      const mid = (window as any).getCurrentMessageId?.() ?? -1;
+      const variables = Mvu.getMvuData({ type: 'message', message_id: mid });
+      _?.set(variables, 'stat_data.R18模式', r18Mode.value);
+      Mvu.replaceMvuData(variables, { type: 'message', message_id: mid });
+    }
+  } catch (e) { /* ignore */ }
 }
 const mirrorOpen = ref(false);
 const mirrorDir = ref<'toMe' | 'toWorld'>('toMe');
@@ -655,12 +671,12 @@ const locationFull = computed(() => {
 
 function isSet(v: unknown): boolean { return !!v && v !== '待设定' && v !== '待設定'; }
 function loveIcon(val: number): string {
-  if (val >= 100) return '💖';
-  if (val >= 80) return '❤️❤️❤️❤️❤️';
-  if (val >= 60) return '❤️❤️❤️❤️';
-  if (val >= 40) return '❤️❤️❤️';
-  if (val >= 20) return '❤️❤️';
-  if (val >= 1) return '❤️';
+  if (val >= 100) return '💍';
+  if (val >= 80) return '❤️‍🔥';
+  if (val >= 60) return '💝';
+  if (val >= 40) return '💗';
+  if (val >= 20) return '💖';
+  if (val >= 1) return '💓';
   return '🤍';
 }
 function toggleChar(k: string) { const s = new Set(expandedChars.value); s.has(k) ? s.delete(k) : s.add(k); expandedChars.value = s; }
@@ -675,6 +691,7 @@ const itemEntries = computed(() => Object.entries(data.value.主角.随身物品
 const relationEntries = computed(() => Object.entries(data.value.主角.人际关系 || {}) as [string, string][]);
 
 type CharInfo = {
+  身份?: string;
   性别?: string; 年龄?: number; 种族?: string; 来源世界?: string;
   喜好?: string; 厌恶?: string; 外貌特征?: string; 基础体型?: string; 神态?: string; 特征?: string; 天赋能力?: string;
   好感度?: number; 财富?: number; 境界?: string; 战力?: number;
@@ -685,6 +702,7 @@ type CharInfo = {
 };
 interface NearbyChar {
   _key: string; name: string;
+  身份?: string;
   性别?: string; 年龄?: number; 种族?: string; 来源世界?: string;
   喜好?: string; 厌恶?: string; 外貌特征?: string; 基础体型?: string; 神态?: string; 特征?: string; 天赋能力?: string;
   好感度: number; 财富?: number; 境界?: string; 战力?: number;
@@ -859,7 +877,8 @@ function getCharRelations(char: NearbyChar): [string, string][] { return Object.
 .char-row { display:flex; align-items:center; gap:6px; padding:6px 8px; cursor:pointer; border-radius:var(--t-radius-sm); background:var(--t-surface); border:1px solid var(--t-border);
   &:hover { background:var(--t-surface-open); } }
 .char-name { font-family: 'DouyinSans', var(--font-main); font-weight:600; font-size:12px; color:var(--t-accent); }
-.char-hearts { color:#e07080; font-size:12px; min-width:36px; }
+.char-identity { font-family: '寒蝉全圆体', var(--font-main); font-size:9px; color:var(--t-muted); background:var(--t-accent-dim); padding:1px 6px; border-radius:9999px; letter-spacing:0.5px; max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.char-hearts { font-size:13px; min-width:18px; }
 .char-presence { font-family: '寒蝉全圆体', var(--font-main); font-size:8px; margin-left:auto; padding:1px 8px; border-radius:9999px; font-weight:500; letter-spacing:0.5px;
   &.present { color:#4a7a4a; background:rgba(100,160,100,0.12); }
   &.nearby { color:#8a6a20; background:rgba(200,160,60,0.12); }

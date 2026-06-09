@@ -1,0 +1,6 @@
+@@preprocessing
+<%
+if (getvar('stat_data.R18模式', { defaults: false })) {
+  print(await getwi('NSFW场景规则'));
+}
+%>
