@@ -6,6 +6,10 @@
       "default": false,
       "type": "boolean"
     },
+    "R18模式": {
+      "default": false,
+      "type": "boolean"
+    },
     "世界": {
       "default": {},
       "type": "object",
@@ -270,6 +274,10 @@
         "type": "object",
         "properties": {
           "姓名": {
+            "default": "",
+            "type": "string"
+          },
+          "身份": {
             "default": "",
             "type": "string"
           },
