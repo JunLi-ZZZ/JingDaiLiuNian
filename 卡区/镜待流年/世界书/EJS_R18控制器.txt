@@ -1,6 +1,16 @@
 @@preprocessing
 <%
-if (getvar('stat_data.R18模式', { defaults: false })) {
+const r18On = getvar('stat_data.R18模式', { defaults: false });
+const mentionedR18 = matchChatMessages([
+  '插入', '进入', '顶入', '抽插', '肉棒', '蜜穴', '阴道', '阴茎', '龟头', '阴蒂',
+  '做爱', '交合', '交欢', '性交', '性爱', '缠绵',
+  '娇喘', '呻吟', '喘息', '啊哈', '嗯嗯',
+  '脱光', '褪去', '一丝不挂', '赤裸', '全裸',
+  '乳房', '乳尖', '乳头', '私处', '阴唇', '花蕊', '蜜核',
+  '爱液', '蜜汁', '湿润', '淫水',
+]);
+
+if (r18On || mentionedR18) {
   print(await getwi('NSFW场景规则'));
 }
 %>

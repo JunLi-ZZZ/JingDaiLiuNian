@@ -209,8 +209,8 @@
                                   >{{ t }}</span
                                 ><span
                                   v-for="t in mxTraits"
-                                  :key="'t_' + t"
                                   v-show="!mxForm.traits.includes(t)"
+                                  :key="'t_' + t"
                                   class="tag"
                                   @click="mxToggleTag(mxForm.traits, t)"
                                   >{{ t }}</span
@@ -329,8 +329,8 @@
                                   >{{ t }}</span
                                 ><span
                                   v-for="t in mxAbilities"
-                                  :key="'ab_' + t"
                                   v-show="!mxForm.abilities.includes(t)"
+                                  :key="'ab_' + t"
                                   class="tag"
                                   @click="mxToggleTag(mxForm.abilities, t)"
                                   >{{ t }}</span
@@ -482,7 +482,7 @@
                           </div>
                           <div class="mx-gen-row">
                             <label class="mx-save-toggle" @click.stop>
-                              <input type="checkbox" v-model="mxIncludeChat" />
+                              <input v-model="mxIncludeChat" type="checkbox" />
                               <span class="toggle-label">附带聊天记录</span>
                             </label>
                           </div>
@@ -539,8 +539,8 @@
           <div v-for="char in allChars" :key="char._key" class="char-entry">
             <div
               class="char-row"
-              @click="deleteMode ? toggleCharDelete(char._key) : toggleChar(char._key)"
               :class="{ 'del-selected': deleteMode && deleteSelection.has(char._key) }"
+              @click="deleteMode ? toggleCharDelete(char._key) : toggleChar(char._key)"
             >
               <span v-if="deleteMode" class="del-check">{{ deleteSelection.has(char._key) ? '☑' : '☐' }}</span>
               <span class="char-name">{{ char.name }}</span>
@@ -1280,7 +1280,7 @@ async function mxSaveGenResult() {
       return;
     }
     const nameMatch = mxGenArchive.value.match(/姓名[：:][^\S\n]*(\S+)/);
-    let charName = nameMatch ? nameMatch[1].replace(/[（(].*$/, '') : '新红颜';
+    const charName = nameMatch ? nameMatch[1].replace(/[（(].*$/, '') : '新红颜';
     const aliasMatch = mxGenArchive.value.match(/化名[：:][^\S\n]*(\S[^\n]*\S|\S)/);
     const alias = aliasMatch ? aliasMatch[1].replace(/[（(].*$/, '').trim() : '';
     const keys = [charName];
@@ -1403,12 +1403,12 @@ function isSet(v: unknown): boolean {
   return !!v && v !== '待设定' && v !== '待設定';
 }
 function loveIcon(val: number): string {
-  if (val >= 100) return '💍';
-  if (val >= 80) return '❤️‍🔥';
-  if (val >= 60) return '💝';
-  if (val >= 40) return '💗';
-  if (val >= 20) return '💖';
-  if (val >= 1) return '💓';
+  if (val >= 100) return '💗';
+  if (val >= 80) return '💝';
+  if (val >= 60) return '💖';
+  if (val >= 40) return '❤️‍🔥';
+  if (val >= 20) return '💓';
+  if (val >= 1) return '❤️';
   return '🤍';
 }
 function toggleChar(k: string) {
@@ -2031,9 +2031,6 @@ function getCharRelations(char: NearbyChar): [string, string][] {
   padding: 1px 6px;
   border-radius: 9999px;
   letter-spacing: 0.5px;
-  max-width: 100px;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 .char-hearts {
