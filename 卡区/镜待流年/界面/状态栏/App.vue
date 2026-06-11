@@ -1235,7 +1235,7 @@ function mxBuildGenPrompt(): { prompt: string; tagBlock: string } {
     tags.push('同人作品：' + v(d.fandom, d.fandomCustom));
   }
   const tagBlock = tags.map(t => '- ' + t).join('\n');
-  const fullPrompt = `使用母镜生成一位详细红颜人设。\n\n=== 已选标签 ===\n${tagBlock}\n\n${mxGenTemplate}`;
+  const fullPrompt = `使用母镜生成一位详细红颜人设。\n\n=== 已选标签 ===\n${tagBlock}\n\n${mxGenTemplate}\n\n（请按上述模板输出 [世界书档案] 。）`;
   return { prompt: fullPrompt, tagBlock };
 }
 
@@ -1252,6 +1252,15 @@ async function mxGenerateDetail() {
       return;
     }
     const { prompt } = mxBuildGenPrompt();
+    const kw: string[] = [];
+    [mxForm.race, mxForm.origin, mxForm.role, mxForm.coreTrait, mxForm.other].forEach(f => {
+      const val = typeof f === 'string' ? f : '';
+      if (val && val !== '自定义') kw.push(val);
+    });
+    if (mxForm.raceCustom && mxForm.race === '自定义') kw.push(mxForm.raceCustom);
+    if (mxForm.originCustom && mxForm.origin === '自定义') kw.push(mxForm.originCustom);
+    if (mxForm.roleCustom && mxForm.role === '自定义') kw.push(mxForm.roleCustom);
+    if (mxForm.coreTraitCustom && mxForm.coreTrait === '自定义') kw.push(mxForm.coreTraitCustom);
     const ordered: any[] = [
       { role: 'system', content: prompt },
       'persona_description',
@@ -1262,7 +1271,7 @@ async function mxGenerateDetail() {
     if (mxIncludeChat.value) ordered.push('chat_history');
     ordered.push('user_input');
     const result = await TH.generateRaw({
-      user_input: `${[mxForm.race, mxForm.origin, mxForm.role, mxForm.coreTrait].filter(Boolean).join('，')}\n（请按上述模板输出 [世界书档案] 。）`,
+      user_input: `已选标签，仅供镜渡参考：${kw.join('，')}`,
       should_silence: true,
       max_chat_history: mxIncludeChat.value ? 6 : undefined,
       ordered_prompts: ordered,
