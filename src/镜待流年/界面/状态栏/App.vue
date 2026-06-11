@@ -1267,12 +1267,12 @@ async function mxGenerateDetail() {
     if (v(mxForm.role, mxForm.roleCustom)) kw.push(v(mxForm.role, mxForm.roleCustom));
     if (v(mxForm.coreTrait, mxForm.coreTraitCustom)) kw.push(v(mxForm.coreTrait, mxForm.coreTraitCustom));
     const keywords = kw.join('，');
-    console.log('镜渡关键词:', keywords);
     const result = await TH.generateRaw({
-      user_input: `${keywords}\n（请按上述模板输出 [世界书档案] 。）`,
+      user_input: '（请按上述模板输出 [世界书档案] 。）',
       should_silence: true,
       max_chat_history: mxIncludeChat.value ? 6 : undefined,
       ordered_prompts: ordered,
+      injects: keywords ? [{ role: 'user', content: keywords, position: 'in_chat', depth: 0, should_scan: true }] : undefined,
     });
     const text = typeof result === 'string' ? result : result.content || JSON.stringify(result);
     mxGenResult.value = text;
