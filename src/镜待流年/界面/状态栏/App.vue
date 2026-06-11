@@ -1235,7 +1235,8 @@ function mxBuildGenPrompt(): { prompt: string; tagBlock: string } {
     tags.push('同人作品：' + v(d.fandom, d.fandomCustom));
   }
   const tagBlock = tags.map(t => '- ' + t).join('\n');
-  return { prompt: mxGenTemplate, tagBlock: `使用母镜生成一位详细红颜人设。\n\n=== 已选标签 ===\n${tagBlock}` };
+  const fullPrompt = `使用母镜生成一位详细红颜人设。\n\n=== 已选标签 ===\n${tagBlock}\n\n${mxGenTemplate}`;
+  return { prompt: fullPrompt, tagBlock };
 }
 
 async function mxGenerateDetail() {
@@ -1250,7 +1251,7 @@ async function mxGenerateDetail() {
       mxGenError.value = '未检测到酒馆助手，请确认已安装 Tavern Helper 扩展。';
       return;
     }
-    const { prompt, tagBlock } = mxBuildGenPrompt();
+    const { prompt } = mxBuildGenPrompt();
     const ordered: any[] = [
       { role: 'system', content: prompt },
       'persona_description',
@@ -1261,7 +1262,7 @@ async function mxGenerateDetail() {
     if (mxIncludeChat.value) ordered.push('chat_history');
     ordered.push('user_input');
     const result = await TH.generateRaw({
-      user_input: `${tagBlock}\n（请按上述模板输出 [世界书档案] 。）`,
+      user_input: `${[mxForm.race, mxForm.origin, mxForm.role, mxForm.coreTrait].filter(Boolean).join('，')}\n（请按上述模板输出 [世界书档案] 。）`,
       should_silence: true,
       max_chat_history: mxIncludeChat.value ? 6 : undefined,
       ordered_prompts: ordered,
