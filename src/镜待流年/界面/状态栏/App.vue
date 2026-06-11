@@ -1255,6 +1255,8 @@ async function mxGenerateDetail() {
       { role: 'system', content: prompt },
       'persona_description',
       'char_description',
+      'world_info_before',
+      'world_info_after',
     ];
     if (mxIncludeChat.value) ordered.push('chat_history');
     ordered.push('user_input');
@@ -1271,6 +1273,7 @@ async function mxGenerateDetail() {
       should_silence: true,
       max_chat_history: mxIncludeChat.value ? 6 : undefined,
       ordered_prompts: ordered,
+      overrides: { world_info_before: '', world_info_after: '' },
     });
     const text = typeof result === 'string' ? result : result.content || JSON.stringify(result);
     mxGenResult.value = text;
