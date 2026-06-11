@@ -1206,7 +1206,7 @@ const mxGenTemplate = `你正在通过母镜感知一位红颜的存在。镜中
 - 化名仅在该角色确实拥有主世界化名/别名时填写，不要无中生有。无化名则留空。姓名与化名不要写在括号里附带。
 - 例句直接写对话本身，禁止使用 <q></q> 标签包裹。`;
 
-function mxBuildGenPrompt(): string {
+function mxBuildGenPrompt(): { prompt: string; tagBlock: string } {
   const d = mxForm;
   const v = (s: string, c: string) => (s === '自定义' || !s ? c || '随机' : s);
   const tags: string[] = [];
@@ -1235,7 +1235,7 @@ function mxBuildGenPrompt(): string {
     tags.push('同人作品：' + v(d.fandom, d.fandomCustom));
   }
   const tagBlock = tags.map(t => '- ' + t).join('\n');
-  return `使用母镜生成一位详细红颜人设。\n\n=== 已选标签 ===\n${tagBlock}\n\n${mxGenTemplate}`;
+  return { prompt: mxGenTemplate, tagBlock: `使用母镜生成一位详细红颜人设。\n\n=== 已选标签 ===\n${tagBlock}` };
 }
 
 async function mxGenerateDetail() {
@@ -1250,7 +1250,7 @@ async function mxGenerateDetail() {
       mxGenError.value = '未检测到酒馆助手，请确认已安装 Tavern Helper 扩展。';
       return;
     }
-    const prompt = mxBuildGenPrompt();
+    const { prompt, tagBlock } = mxBuildGenPrompt();
     const ordered: any[] = [
       { role: 'system', content: prompt },
       'persona_description',
@@ -1260,19 +1260,11 @@ async function mxGenerateDetail() {
     ];
     if (mxIncludeChat.value) ordered.push('chat_history');
     ordered.push('user_input');
-    const v = (s: string, c: string) => (s === '自定义' || !s ? c || '' : s);
-    const kw: string[] = [];
-    if (v(mxForm.race, mxForm.raceCustom)) kw.push(v(mxForm.race, mxForm.raceCustom));
-    if (v(mxForm.origin, mxForm.originCustom)) kw.push(v(mxForm.origin, mxForm.originCustom));
-    if (v(mxForm.role, mxForm.roleCustom)) kw.push(v(mxForm.role, mxForm.roleCustom));
-    if (v(mxForm.coreTrait, mxForm.coreTraitCustom)) kw.push(v(mxForm.coreTrait, mxForm.coreTraitCustom));
-    const keywords = kw.join('，');
     const result = await TH.generateRaw({
-      user_input: '（请按上述模板输出 [世界书档案] 。）',
+      user_input: `${tagBlock}\n（请按上述模板输出 [世界书档案] 。）`,
       should_silence: true,
       max_chat_history: mxIncludeChat.value ? 6 : undefined,
       ordered_prompts: ordered,
-      injects: keywords ? [{ role: 'user', content: keywords, position: 'in_chat', depth: 0, should_scan: true }] : undefined,
     });
     const text = typeof result === 'string' ? result : result.content || JSON.stringify(result);
     mxGenResult.value = text;
