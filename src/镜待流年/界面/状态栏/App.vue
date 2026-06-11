@@ -1255,13 +1255,19 @@ async function mxGenerateDetail() {
       { role: 'system', content: prompt },
       'persona_description',
       'char_description',
-      'world_info_before',
-      'world_info_after',
     ];
     if (mxIncludeChat.value) ordered.push('chat_history');
     ordered.push('user_input');
+    const v = (s: string, c: string) => (s === '自定义' || !s ? c || '' : s);
+    const kw: string[] = [];
+    if (v(mxForm.race, mxForm.raceCustom)) kw.push(v(mxForm.race, mxForm.raceCustom));
+    if (v(mxForm.origin, mxForm.originCustom)) kw.push(v(mxForm.origin, mxForm.originCustom));
+    if (v(mxForm.role, mxForm.roleCustom)) kw.push(v(mxForm.role, mxForm.roleCustom));
+    if (v(mxForm.coreTrait, mxForm.coreTraitCustom)) kw.push(v(mxForm.coreTrait, mxForm.coreTraitCustom));
+    const keywords = kw.join('，');
+    console.log('镜渡关键词:', keywords);
     const result = await TH.generateRaw({
-      user_input: '（请按上述模板输出 [世界书档案] 。）',
+      user_input: `${keywords}\n（请按上述模板输出 [世界书档案] 。）`,
       should_silence: true,
       max_chat_history: mxIncludeChat.value ? 6 : undefined,
       ordered_prompts: ordered,
