@@ -6,7 +6,7 @@
 
 第一条消息:
   - 内容: |-
-      <prologue987/>
+      <zzzjunli612/>
       <StatusPlaceHolderImpl/>
 
 角色描述: ""
@@ -618,7 +618,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v53/界面/状态栏/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v54/界面/状态栏/index.html')
         </script>
         </body>
         ```
@@ -631,12 +631,12 @@
 
     - 正则名称: 开场白
       启用: true
-      查找表达式: <prologue987/>
+      查找表达式: <zzzjunli612/>
       替换为: |-
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v53/界面/封面/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v54/界面/封面/index.html')
         </script>
         </body>
         ```
@@ -683,6 +683,6 @@
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v53/脚本/变量结构/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v54/脚本/变量结构/index.js';
 
     变量: {}

@@ -1271,7 +1271,7 @@ async function mxGenerateDetail() {
     if (mxIncludeChat.value) ordered.push('chat_history');
     ordered.push('user_input');
     const result = await TH.generateRaw({
-      user_input: `已选标签，仅供镜渡参考：${kw.join('，')}`,
+      user_input: `本次为镜渡生成角色档案，勿编剧情。以下为部分已选标签，供扫描关键词激活世界书用：${kw.join('，')}`,
       should_silence: true,
       max_chat_history: mxIncludeChat.value ? 6 : undefined,
       ordered_prompts: ordered,
