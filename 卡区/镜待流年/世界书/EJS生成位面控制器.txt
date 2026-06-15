@@ -1,24 +1,4 @@
 @@preprocessing
 <%
-if (typeof generatedPlanes === 'undefined') {
-  var planeNames = [];
-  const planeListEntry = await getwi('生成位面列表');
-  if (planeListEntry) {
-    const lines = planeListEntry.split('\n');
-    for (const line of lines) {
-      const m = line.match(/^-\s*(.+)/);
-      if (m) planeNames.push(m[1].trim());
-    }
-  }
-  var generatedPlanes = planeNames;
-}
-
-if (generatedPlanes.length > 0) {
-  const currentPlane = getvar('stat_data.主角.当前地点.位面', { defaults: '' });
-  for (const planeName of generatedPlanes) {
-    if (currentPlane.includes(planeName) || matchChatMessages([planeName])) {
-      print(await getwi(planeName));
-    }
-  }
-}
+const plane = getvar('stat_data.主角.当前地点.位面', { defaults: '' });
 %>

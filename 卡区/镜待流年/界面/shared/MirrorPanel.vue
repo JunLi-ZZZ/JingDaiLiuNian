@@ -557,7 +557,7 @@ async function mxSaveGenResult() {
     const alias = aliasMatch ? aliasMatch[1].replace(/[（(].*$/, '').trim() : '';
     const keys = [charName]; if (alias) keys.push(alias);
     let wbName: string = TH.getCharLorebooks()?.primary;
-    if (!wbName) { wbName = '镜待流年v58'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
+    if (!wbName) { wbName = '镜待流年v59'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
     const existing = await TH.getLorebookEntries(wbName);
     const genOrders = existing.map((e: any) => e.order ?? 0).filter((o: number) => o >= 1000 && o < 10000);
     const nextOrder = genOrders.length ? Math.max(...genOrders) + 5 : 1000;
@@ -583,39 +583,57 @@ const plForm = reactive({ name: '', type: '', typeCustom: '', techLevel: '', mag
 
 const plTemplate = `你正在通过母镜感知一方世界的轮廓。镜中波纹荡漾，一片大陆、一种文明、一套法则逐渐在你手中凝聚成形。这不是在写剧情——你只是在整理镜中传来的位面信息。
 
-请将镜中世界的信息整理为以下档案，标记为 [位面档案]。
+请将镜中世界的信息整理为以下档案，标记为 [位面档案]。参照镜待流年现有位面档案风格——灵活描述，不固化可变细节。
 
 ---
 
 [位面档案]
 
-位面名称:
-位面类型:（仙道/洪荒/西幻/现代/异世界/深渊/妖灵/幽冥/科幻/武侠/神话/末日等）
-技术等级:（描述性，如"中古冷兵器时代"）
-魔法/灵力等级:（描述性，如"中魔——常见但不主导日常"）
+<basic_info>
+位面档案:
+    基本信息:
+        位面名称:
+        位面类型:（仙道/洪荒/西幻/现代/异世界/深渊/妖灵/幽冥/科幻/武侠/神话/末日等）
+        技术等级:（描述性，如"中古冷兵器时代——铁器普及，火药尚未出现"）
+        魔法/灵力等级:（描述性，如"中魔区间——城市有魔法公会，偏远地区仍以口耳相传的咒术为主"）
 
-地理概况:
-  - （大陆/国家/主要区域的简要描述）
+    地理概况:
+        大陆结构:（大陆数量、海洋分布、已知世界的范围边界）
+        核心区域:（1-3个故事最可能发生的主要区域，含地貌、气候、特色地标）
 
-文明特征:
-  - （社会结构、文化特色、政治格局等）
+    文明特征:
+        社会结构:（权力分布、阶级划分、主流政体形式）
+        文化特色:（独特的习俗、节日、艺术形式、禁忌）
+        种族构成:（主要智慧种族及其关系）
 
-力量体系:
-  - （该位面的核心力量规则，如修仙体系、魔法体系、科技体系等）
+    力量体系:
+        核心规则:（该位面力量的根本法则——灵力源于天地、魔力来自血脉、科技基于某种能源等）
+        等级划分:（力量体系的层级，如炼气→筑基→金丹或学徒→法师→大法师）
+        特殊现象:（位面独有的超自然现象，如定期出现的空间裂隙、灵气潮汐等）
 
-特色势力:
-  - （1-3个代表性势力，含名称与简要特征）
+    特色势力:
+        - （势力名）:
+            定位:（国家/宗门/教派/公会/家族等）
+            特征:（核心理念、标志性能力、对外态度）
 
-关联角色:
-  - （已有角色中与该位面相关的人物，无则写"暂无"）
+    关联角色:
+        - （已有角色中与该位面相关的人物，无则写"暂无"）
+
+    当前时局:
+        现状:（位面当前的政治/社会状态——和平、战争、变革等）
+        暗流:（正在酝酿的冲突或变化）
+</basic_info>
 
 ---
 
 规则：
 - 不要写剧情。不要写叙述。不要写分析过程。
+- 不要输出 <UpdateVariable>、<JSONPatch>、<Variable> 或任何变量操作标签。
 - 严格按以上格式输出。除此之外不要附带任何其他内容。
 - 位面不需要NSFW内容。
-- 描述贴合所选的类型与技术/魔法等级。`;
+- 描述贴合所选的类型与技术/魔法等级。
+- 每个势力写清楚定位与特征，不要只写名字。
+- 地理描述须有可辨识的地标或地形特征。`;
 
 async function plGenerate() {
   plGenError.value = ''; plGenResult.value = ''; plGenArchive.value = ''; plSaved.value = false; plGenerating.value = true;
@@ -624,19 +642,20 @@ async function plGenerate() {
     if (!TH) { plGenError.value = '未检测到酒馆助手'; return; }
     const d = plForm;
     const tags: string[] = [];
-    if (d.name) tags.push('位面名称：' + d.name);
+    tags.push('位面名称：' + (d.name || '随机'));
     if (d.type === '自定义' && d.typeCustom) tags.push('位面类型：' + d.typeCustom);
-    else if (d.type) tags.push('位面类型：' + d.type);
-    if (d.techLevel) tags.push('技术等级：' + d.techLevel);
-    if (d.magicLevel) tags.push('魔法/灵力等级：' + d.magicLevel);
-    if (d.coreFeature.trim()) tags.push('核心特征：' + d.coreFeature.trim());
-    if (d.linkedChars.trim()) tags.push('关联角色：' + d.linkedChars.trim());
+    else tags.push('位面类型：' + (d.type || '随机'));
+    tags.push('技术等级：' + (d.techLevel || '随机'));
+    tags.push('魔法/灵力等级：' + (d.magicLevel || '随机'));
+    if (d.coreFeature.trim()) tags.push('核心特征：' + d.coreFeature.trim()); else tags.push('核心特征：随机');
+    if (d.linkedChars.trim()) tags.push('关联角色：' + d.linkedChars.trim()); else tags.push('关联角色：无');
     const prompt = `使用母镜生成一个位面设定。\n\n=== 已选标签 ===\n${tags.map(t => '- ' + t).join('\n')}\n\n${plTemplate}\n\n（请按上述模板输出 [位面档案] 。）`;
     const kw: string[] = [];
     if (d.type === '自定义' && d.typeCustom) kw.push(d.typeCustom);
     else if (d.type) kw.push(d.type);
     if (d.techLevel) kw.push(d.techLevel);
     if (d.magicLevel) kw.push(d.magicLevel);
+    if (d.name) kw.push(d.name);
     const ordered: any[] = [{ role: 'system', content: prompt }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after', 'user_input'];
     const result = await TH.generateRaw({ user_input: `本次为镜渡生成位面档案，勿编剧情。以下为部分已选标签，供扫描关键词激活世界书用：${kw.join('，')}`, should_silence: true, ordered_prompts: ordered });
     const text = typeof result === 'string' ? result : result.content || JSON.stringify(result);
@@ -655,7 +674,7 @@ async function plSaveGenResult() {
     const nameMatch = plGenArchive.value.match(/位面名称[：:][^\S\n]*(\S[^\n]*)/);
     const planeName = nameMatch ? nameMatch[1].trim() : '新位面';
     let wbName: string = TH.getCharLorebooks()?.primary;
-    if (!wbName) { wbName = '镜待流年v58'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
+    if (!wbName) { wbName = '镜待流年v59'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
     const existing = await TH.getLorebookEntries(wbName);
     const genOrders = existing.map((e: any) => e.order ?? 0).filter((o: number) => o >= 9000 && o < 10000);
     const nextOrder = genOrders.length ? Math.max(...genOrders) + 5 : 9000;
@@ -666,14 +685,30 @@ async function plSaveGenResult() {
     }]);
     const listTarget = existing.find((e: any) => e.comment === '生成位面列表');
     if (listTarget) {
-      await TH.setLorebookEntries(wbName, [{ uid: listTarget.uid, content: (listTarget.content || '') + '\n- ' + planeName }]);
+      await TH.setLorebookEntries(wbName, [{ uid: listTarget.uid, content: (listTarget.content || '') + '\n  - ' + planeName }]);
     } else {
       await TH.createLorebookEntries(wbName, [{
         comment: '生成位面列表', enabled: true, type: 'selective', keys: ['生成位面列表'],
         position: 'before_character_definition', order: 8995, probability: 100,
         exclude_recursion: true, prevent_recursion: true,
-        content: '生成位面列表:\n- ' + planeName,
+        content: '生成位面列表:\n  - ' + planeName,
       }]);
+    }
+    // 追加 if 块到 EJS 生成位面控制器
+    const ejsTarget = existing.find((e: any) => e.comment === '[EJS]生成位面控制器');
+    if (ejsTarget) {
+      const planeType = plForm.type === '自定义' ? plForm.typeCustom : plForm.type;
+      const keywords = [planeName];
+      if (planeType) keywords.push(planeType);
+      const kStr = keywords.map(k => `'${k}'`).join(', ');
+      const newBlock = `
+if (plane.includes('${planeName}') || matchChatMessages([${kStr}])) {
+  print(await getwi('${planeName}'));
+}`;
+      let ejContent = ejsTarget.content;
+      ejContent = ejContent.replace(/%>\s*$/, '');
+      ejContent += newBlock + '\n%>';
+      await TH.setLorebookEntries(wbName, [{ uid: ejsTarget.uid, content: ejContent }]);
     }
     plSaved.value = true;
   } catch (e: any) { plGenError.value = '保存失败：' + (e?.message || String(e)); }
