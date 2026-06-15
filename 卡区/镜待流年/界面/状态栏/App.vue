@@ -135,372 +135,10 @@
                   <span v-if="item.数量" class="item-qty">×{{ item.数量 }}</span>
                   <span v-if="name.includes('母镜')" class="mirror-toggle">{{ mirrorOpen ? '▾' : '▸' }}</span>
                 </div>
-                <div
-                  v-if="name.includes('母镜') && mirrorOpen"
-                  class="mirror-panel"
-                  :class="mirrorDir === 'toMe' ? 'theme-red' : 'theme-teal'"
-                >
-                  <div class="mirror-frame">
-                    <div class="frame-ring"></div>
-                    <div class="frame-inset"></div>
-                    <div class="mirror-surface">
-                      <div class="panel-title">镜 渡</div>
-                      <div class="panel-sub">{{ mirrorDir === 'toMe' ? '唤至此岸' : '渡往彼岸' }}</div>
-                      <div class="direction-toggle">
-                        <button
-                          class="toggle-btn"
-                          :class="{ active: mirrorDir === 'toMe' }"
-                          @click="mirrorDir = 'toMe'"
-                        >
-                          召唤来此
-                        </button>
-                        <div class="toggle-track" @click="mirrorDir = mirrorDir === 'toMe' ? 'toWorld' : 'toMe'">
-                          <div class="toggle-thumb" :class="mirrorDir"></div>
-                        </div>
-                        <button
-                          class="toggle-btn"
-                          :class="{ active: mirrorDir === 'toWorld' }"
-                          @click="mirrorDir = 'toWorld'"
-                        >
-                          前往彼方
-                        </button>
-                      </div>
-                      <button class="btn-random" @click="mxRandom()"><span class="btn-icon">✦</span>随机镜渡</button>
-                      <div class="custom-section">
-                        <button class="btn-custom-toggle" @click="mxCustom = !mxCustom">
-                          <span class="btn-icon">{{ mxCustom ? '▾' : '▸' }}</span
-                          >自定义镜渡
-                        </button>
-                        <div v-if="mxCustom" class="custom-form">
-                          <div class="form-section" @click="mxOpen.basic = !mxOpen.basic">
-                            <span class="mx-arrow" :class="{ open: mxOpen.basic }">▸</span> 基本设定
-                          </div>
-                          <div v-if="mxOpen.basic" class="section-body">
-                            <div class="form-row">
-                              <label>外貌风格</label
-                              ><select v-model="mxForm.style">
-                                <option value="">✨ 随机</option>
-                                <option value="自定义">自定义 ▼</option>
-                                <option>古风</option>
-                                <option>现代</option>
-                                <option>异域</option>
-                                <option>科幻</option>
-                                <option>哥特</option>
-                                <option>奇幻</option>
-                                <option>战损</option>
-                                <option>仙侠</option>
-                                <option>汉服</option>
-                                <option>赛博朋克</option>
-                                <option>蒸汽朋克</option>
-                                <option>和风</option>
-                              </select>
-                            </div>
-                            <div v-if="mxForm.style === '自定义'" class="form-row">
-                              <input v-model="mxForm.styleCustom" placeholder="填写自定义风格…" />
-                            </div>
-                            <div class="form-row">
-                              <label>性格特质</label>
-                              <div class="tag-pool">
-                                <span
-                                  v-for="t in pickedTraits"
-                                  :key="'s_' + t"
-                                  class="tag picked"
-                                  @click="mxToggleTag(mxForm.traits, t)"
-                                  >{{ t }}</span
-                                ><span
-                                  v-for="t in mxTraits"
-                                  v-show="!mxForm.traits.includes(t)"
-                                  :key="'t_' + t"
-                                  class="tag"
-                                  @click="mxToggleTag(mxForm.traits, t)"
-                                  >{{ t }}</span
-                                ><span class="tag tag-custom"
-                                  ><input
-                                    v-model="mxForm.traitInput"
-                                    placeholder="自定义+"
-                                    @keyup.enter="mxForm.traitInput = mxAddCustom(mxForm.traits, mxForm.traitInput)"
-                                  /><button
-                                    class="tag-custom-btn"
-                                    @click="mxForm.traitInput = mxAddCustom(mxForm.traits, mxForm.traitInput)"
-                                  >
-                                    +
-                                  </button></span
-                                >
-                              </div>
-                            </div>
-                            <div class="form-row">
-                              <label>体态身材</label
-                              ><select v-model="mxForm.bodyType">
-                                <option value="">✨ 随机</option>
-                                <option value="自定义">自定义 ▼</option>
-                                <option>纤细</option>
-                                <option>匀称</option>
-                                <option>丰满</option>
-                                <option>娇小</option>
-                                <option>高挑</option>
-                                <option>健美</option>
-                                <option>丰腴</option>
-                                <option>肉感</option>
-                                <option>娇憨</option>
-                                <option>结实</option>
-                                <option>骨感</option>
-                              </select>
-                            </div>
-                            <div v-if="mxForm.bodyType === '自定义'" class="form-row">
-                              <input v-model="mxForm.bodyTypeCustom" placeholder="填写自定义体态…" />
-                            </div>
-                            <div class="form-row">
-                              <label>种族</label
-                              ><select v-model="mxForm.race">
-                                <option value="">✨ 随机</option>
-                                <option value="自定义">自定义 ▼</option>
-                                <option>人类</option>
-                                <option>妖族</option>
-                                <option>仙族</option>
-                                <option>魔族</option>
-                                <option>精灵</option>
-                                <option>龙族</option>
-                                <option>天使</option>
-                                <option>恶魔</option>
-                                <option>亡灵</option>
-                                <option>吸血鬼</option>
-                                <option>魅魔</option>
-                                <option>兽人</option>
-                                <option>妖精</option>
-                                <option>神族</option>
-                                <option>狐妖</option>
-                                <option>猫娘</option>
-                                <option>人鱼</option>
-                              </select>
-                            </div>
-                            <div v-if="mxForm.race === '自定义'" class="form-row">
-                              <input v-model="mxForm.raceCustom" placeholder="填写自定义种族…" />
-                            </div>
-                            <div class="form-row">
-                              <label>年龄感</label
-                              ><select v-model="mxForm.age">
-                                <option value="">✨ 随机</option>
-                                <option value="自定义">自定义 ▼</option>
-                                <option>少女</option>
-                                <option>御姐</option>
-                                <option>成熟</option>
-                                <option>不老</option>
-                                <option>幼态</option>
-                                <option>熟女</option>
-                                <option>人妻</option>
-                              </select>
-                            </div>
-                            <div v-if="mxForm.age === '自定义'" class="form-row">
-                              <input v-model="mxForm.ageCustom" placeholder="填写自定义年龄感…" />
-                            </div>
-                          </div>
-                          <div class="form-section" @click="mxOpen.world = !mxOpen.world">
-                            <span class="mx-arrow" :class="{ open: mxOpen.world }">▸</span> 世界与能力
-                          </div>
-                          <div v-if="mxOpen.world" class="section-body">
-                            <div class="form-row">
-                              <label>来源世界</label
-                              ><select v-model="mxForm.origin">
-                                <option value="">✨ 随机</option>
-                                <option value="自定义">自定义 ▼</option>
-                                <option>主世界</option>
-                                <option>妖灵位面</option>
-                                <option>仙道位面</option>
-                                <option>古代位面</option>
-                                <option>异世界</option>
-                                <option>西幻位面</option>
-                                <option>洪荒位面</option>
-                                <option>深渊魔界</option>
-                                <option>同人位面</option>
-                                <option>幽冥位面</option>
-                                <option>虚数位面</option>
-                              </select>
-                            </div>
-                            <div v-if="mxForm.origin === '自定义'" class="form-row">
-                              <input v-model="mxForm.originCustom" placeholder="填写自定义位面…" />
-                            </div>
-                            <div class="form-row">
-                              <label>天赋能力</label>
-                              <div class="tag-pool">
-                                <span
-                                  v-for="t in pickedAbilities"
-                                  :key="'a_' + t"
-                                  class="tag picked"
-                                  @click="mxToggleTag(mxForm.abilities, t)"
-                                  >{{ t }}</span
-                                ><span
-                                  v-for="t in mxAbilities"
-                                  v-show="!mxForm.abilities.includes(t)"
-                                  :key="'ab_' + t"
-                                  class="tag"
-                                  @click="mxToggleTag(mxForm.abilities, t)"
-                                  >{{ t }}</span
-                                ><span class="tag tag-custom"
-                                  ><input
-                                    v-model="mxForm.abilityInput"
-                                    placeholder="自定义+"
-                                    @keyup.enter="
-                                      mxForm.abilityInput = mxAddCustom(mxForm.abilities, mxForm.abilityInput)
-                                    "
-                                  /><button
-                                    class="tag-custom-btn"
-                                    @click="mxForm.abilityInput = mxAddCustom(mxForm.abilities, mxForm.abilityInput)"
-                                  >
-                                    +
-                                  </button></span
-                                >
-                              </div>
-                            </div>
-                            <div class="form-row">
-                              <label>身份地位</label
-                              ><select v-model="mxForm.role">
-                                <option value="">✨ 随机</option>
-                                <option value="自定义">自定义 ▼</option>
-                                <option v-for="t in mxRoles" :key="'r_' + t" :value="t">{{ t }}</option>
-                              </select>
-                            </div>
-                            <div v-if="mxForm.role === '自定义'" class="form-row">
-                              <input v-model="mxForm.roleCustom" placeholder="填写自定义身份…" />
-                            </div>
-                          </div>
-                          <div class="form-section" @click="mxOpen.deep = !mxOpen.deep">
-                            <span class="mx-arrow" :class="{ open: mxOpen.deep }">▸</span> 深层设定
-                          </div>
-                          <div v-if="mxOpen.deep" class="section-body">
-                            <div class="form-row">
-                              <label
-                                >同人作品
-                                <span class="mx-mode-toggle" @click="mxFandomMode = !mxFandomMode">{{
-                                  mxFandomMode ? '⟲ 简单' : '⟳ 魔改'
-                                }}</span></label
-                              >
-                              <div v-if="!mxFandomMode" class="mx-fandom-simple">
-                                <select v-model="mxForm.fandom">
-                                  <option value="">✨ 原创（不指定）</option>
-                                  <option value="自定义">自定义 ▼</option>
-                                  <option v-for="t in mxFandoms" :key="'f_' + t" :value="t">{{ t }}</option>
-                                </select>
-                                <div v-if="mxForm.fandom === '自定义'">
-                                  <input v-model="mxForm.fandomCustom" placeholder="填写作品名…" />
-                                </div>
-                              </div>
-                              <div v-if="mxFandomMode" class="mx-fandom-ext">
-                                <select v-model="mxForm.fandomType">
-                                  <option value="">魔改向</option>
-                                  <option value="自定义">自定义 ▼</option>
-                                  <option>原作向</option>
-                                  <option>魔改向</option>
-                                  <option>反转向</option>
-                                  <option>纯净向</option>
-                                  <option>融合向</option>
-                                </select>
-                                <div v-if="mxForm.fandomType === '自定义'" class="form-row">
-                                  <input v-model="mxForm.fandomTypeCustom" placeholder="填写类型…" />
-                                </div>
-                                <select v-model="mxForm.fandom">
-                                  <option value="">✨ 选择作品</option>
-                                  <option value="自定义">自定义 ▼</option>
-                                  <option v-for="t in mxFandoms" :key="'fe_' + t" :value="t">{{ t }}</option>
-                                </select>
-                                <div v-if="mxForm.fandom === '自定义'" class="form-row">
-                                  <input v-model="mxForm.fandomCustom" placeholder="填写作品名…" />
-                                </div>
-                                <input v-model="mxForm.fandomDesc" placeholder="描述魔改细节，如：性转吉尔伽美什…" />
-                              </div>
-                            </div>
-                            <div class="form-row">
-                              <label>核心特质</label
-                              ><select v-model="mxForm.coreTrait">
-                                <option value="">✨ 随机</option>
-                                <option value="自定义">自定义 ▼</option>
-                                <option v-for="t in mxCoreTraits" :key="'ct_' + t" :value="t">{{ t }}</option>
-                              </select>
-                            </div>
-                            <div v-if="mxForm.coreTrait === '自定义'" class="form-row">
-                              <input v-model="mxForm.coreTraitCustom" placeholder="如：被神遗弃的最后使徒…" />
-                            </div>
-                            <div class="form-row">
-                              <label>初见态度</label
-                              ><select v-model="mxForm.attitude">
-                                <option value="">✨ 随机</option>
-                                <option value="自定义">自定义 ▼</option>
-                                <option v-for="t in mxAttitudes" :key="'at_' + t" :value="t">{{ t }}</option>
-                              </select>
-                            </div>
-                            <div v-if="mxForm.attitude === '自定义'" class="form-row">
-                              <input v-model="mxForm.attitudeCustom" placeholder="填写自定义态度…" />
-                            </div>
-                            <div class="form-row">
-                              <label>相识状态</label
-                              ><select v-model="mxForm.acquaintance">
-                                <option value="">✨ 随机</option>
-                                <option value="自定义">自定义 ▼</option>
-                                <option v-for="t in mxAcquaintances" :key="'aq_' + t" :value="t">{{ t }}</option>
-                              </select>
-                            </div>
-                            <div v-if="mxForm.acquaintance === '自定义'" class="form-row">
-                              <input v-model="mxForm.acquaintanceCustom" placeholder="填写自定义相识状态…" />
-                            </div>
-                            <div class="form-row">
-                              <label>特殊标记</label
-                              ><select v-model="mxForm.specialMark">
-                                <option value="">无</option>
-                                <option value="自定义">自定义 ▼</option>
-                                <option v-for="t in mxMarks" :key="'mk_' + t" :value="t">{{ t }}</option>
-                              </select>
-                            </div>
-                            <div v-if="mxForm.specialMark === '自定义'" class="form-row">
-                              <input v-model="mxForm.specialMarkCustom" placeholder="填写自定义标记…" />
-                            </div>
-                            <div class="form-row">
-                              <label>其他补充</label
-                              ><textarea
-                                v-model="mxForm.other"
-                                placeholder="自由填写未列出的信息，如特定设定、限制条件、参考角色等…"
-                                class="mx-other-input"
-                              ></textarea>
-                            </div>
-                          </div>
-                          <div v-if="mxGenerating" class="mx-gen-status">
-                            <span class="gen-spinner"></span>正在生成详细人设…
-                          </div>
-                          <div v-if="mxGenError" class="mx-gen-status error">{{ mxGenError }}</div>
-                          <div v-if="mxGenResult" class="mx-gen-result">
-                            <div class="gen-result-label">世界书档案</div>
-                            <textarea
-                              v-model="mxGenArchive"
-                              class="gen-result-text"
-                              placeholder="(未解析到档案内容)"
-                            ></textarea>
-                            <div class="gen-result-actions">
-                              <button v-if="!mxSaved" class="btn-gen-save" @click="mxSaveGenResult()">
-                                保存到世界书/角色列表
-                              </button>
-                              <span v-else class="gen-saved-hint">已保存 ✓</span>
-                              <button class="btn-gen-inject" @click="mxInjectArchive()">注入聊天</button>
-                              <button class="btn-gen-retry" @click="mxGenerateDetail()">重新生成</button>
-                            </div>
-                          </div>
-                          <div class="mx-gen-row">
-                            <label class="mx-save-toggle" @click.stop>
-                              <input v-model="mxIncludeChat" type="checkbox" />
-                              <span class="toggle-label">附带聊天记录</span>
-                            </label>
-                          </div>
-                          <div class="btn-row">
-                            <button class="btn-send" @click="mxCustomSummon()">开启镜渡</button>
-                            <button class="btn-gen" :disabled="mxGenerating" @click="mxGenerateDetail()">
-                              {{ mxGenerating ? '生成中…' : '生成详细人设' }}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+              </div>
+              <MirrorPanel v-if="mirrorOpen" @close="mirrorOpen = false" />
                 </div>
               </div>
-            </div>
-          </div>
           <div class="sub-block" :class="{ open: showRelations }">
             <div class="sub-head" @click="showRelations = !showRelations">
               <span>👥 人际关系</span><span class="block-arrow small">{{ showRelations ? '▾' : '▸' }}</span>
@@ -763,6 +401,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue';
 import { useDataStore } from './store';
+import MirrorPanel from '../shared/MirrorPanel.vue';
 
 const store = useDataStore();
 const data = computed(() => store.data);
@@ -858,6 +497,13 @@ function toggleR18() {
 const mirrorOpen = ref(false);
 const mirrorDir = ref<'toMe' | 'toWorld'>('toMe');
 const mxCustom = ref(false);
+const activeTab = ref<'lady' | 'plane' | 'npc'>('lady');
+const tabLabel = computed(() => {
+  if (activeTab.value === 'plane') return '构筑一方世界';
+  if (activeTab.value === 'npc') return '众生皆在镜中';
+  return mirrorDir.value === 'toMe' ? '唤至此岸' : '渡往彼岸';
+});
+function switchTab(tab: 'lady' | 'plane' | 'npc') { activeTab.value = tab; mxGenError.value = ''; plGenError.value = ''; }
 const mxTraits = [
   '傲娇',
   '温柔',
@@ -1047,6 +693,7 @@ const mxForm = reactive({
   raceCustom: '',
   age: '',
   ageCustom: '',
+  gender: '',
   origin: '',
   originCustom: '',
   role: '',
@@ -1083,17 +730,25 @@ function mxAddCustom(arr: string[], v: string): string {
 function mxSend(msg: string) {
   const $p = (window as any).parent?.$;
   if (!$p) return;
-  $p('#send_textarea').val(msg).trigger('input');
+  const current = String($p('#send_textarea').val() || '');
+  $p('#send_textarea').val(current ? current + '\n\n' + msg : msg).trigger('input');
   setTimeout(() => $p('#send_but').trigger('click'), 50);
   mirrorOpen.value = false;
   mxCustom.value = false;
 }
 function mxRandom() {
-  mxSend(mirrorDir.value === 'toMe' ? '使用母镜随机召唤一位红颜来到身边' : '使用母镜前往一位随机红颜所在的世界');
+  if (activeTab.value === 'npc') {
+    mxSend(mirrorDir.value === 'toMe' ? '使用母镜随机召唤一人来到身边' : '使用母镜前往一位随机人物所在的世界');
+  } else {
+    mxSend(mirrorDir.value === 'toMe' ? '使用母镜随机召唤一位红颜来到身边' : '使用母镜前往一位随机红颜所在的世界');
+  }
 }
 function mxCustomSummon() {
   const d = mxForm;
-  const dir = mirrorDir.value === 'toMe' ? '使用母镜召唤一位红颜来到身边' : '使用母镜前往一位红颜所在的世界';
+  const isNPC = activeTab.value === 'npc';
+  const summon = mirrorDir.value === 'toMe'
+    ? (isNPC ? '使用母镜召唤一人来到身边' : '使用母镜召唤一位红颜来到身边')
+    : (isNPC ? '使用母镜前往一人所在的世界' : '使用母镜前往一位红颜所在的世界');
   const v = (s: string, c: string) => (s === '自定义' || !s ? c || '随机' : s);
   const obj: Record<string, any> = {
     外貌风格: v(d.style, d.styleCustom),
@@ -1117,7 +772,7 @@ function mxCustomSummon() {
     特殊标记: d.specialMark === '自定义' ? d.specialMarkCustom || '无' : d.specialMark || '无',
     其他补充: d.other || '无',
   };
-  mxSend(dir + '\n' + JSON.stringify(obj, null, '  '));
+  mxSend(summon + '\n' + JSON.stringify(obj, null, '  '));
 }
 const mxGenTemplate = `你正在通过母镜感知一位红颜的存在。镜中波纹荡漾，一道身影的因果线逐渐在你手中凝聚成形。这不是在写剧情——你只是在整理镜中传来的信息。
 
@@ -1164,7 +819,6 @@ const mxGenTemplate = `你正在通过母镜感知一位红颜的存在。镜中
 
     背景设定:
         过往经历:（涵盖出身、关键转折、为何被母镜选中，不少于200字）
-        当前生活:（被召唤时的生活状态）
 
     语言特征:
         说话习惯:
@@ -1206,6 +860,135 @@ const mxGenTemplate = `你正在通过母镜感知一位红颜的存在。镜中
 - 化名仅在该角色确实拥有主世界化名/别名时填写，不要无中生有。无化名则留空。姓名与化名不要写在括号里附带。
 - 例句直接写对话本身，禁止使用 <q></q> 标签包裹。`;
 
+const npcGenTemplate = `你正在通过母镜感知一道身影的存在。镜中波纹荡漾，一条因果线逐渐在你手中凝聚成形。这不是在写剧情——你只是在整理镜中传来的信息。
+
+请将镜中身影的信息整理为以下档案，标记为 [世界书档案]。参照镜待流年现有角色档案风格——灵活描述，不固化可变细节。
+
+---
+
+[世界书档案]
+
+此份档案存入世界书，供日后长期参考。须参照镜待流年现有角色档案风格——灵活的描述，不固化任何可变的细节。
+具体格式如下：
+
+<basic_info>
+角色档案:
+    基本信息:
+        姓名:
+        化名:（别名或主世界化名，无则留空不要生造）
+        性别:
+        年龄:（描述性，如"外表约20岁"或"实际年龄远超外表"）
+        身份:
+        与<user>关系:（初次相遇时的关系定位。此人未必对<user>怀有爱慕，写出真实的关系基调即可）
+        来源世界:
+        种族:
+        天赋能力:（描述能力的名称、效果与限制，不要只写名字）
+
+    外貌特征:
+        基础体型:（描述性，含身材与体态）
+        特征:（角色不可变的生理标记，不含服装/饰品/可卸物。无则留空）
+        身高:
+        发色/发型:
+        眼睛:（眼型、瞳色）
+        整体印象:（初见时的整体感觉）
+        穿着打扮:
+            - （风格倾向，写穿搭风格与常见色系即可——如"日常穿素白为主的宽松衣袍"）
+
+    性格特点:
+        喜好:
+        厌恶:
+        核心特质:（叙事描写，含内心矛盾与软肋，不少于80字）
+        表现形式:
+            - （行为模式，一事一条）
+        对<user>的表现:
+            - "（自然语言例句）"
+
+    背景设定:
+        过往经历:（涵盖出身、关键转折、为何被母镜选中，不少于200字）
+
+    语言特征:
+        说话习惯:
+
+    关系设定:
+        与<user>的关系:
+            认知:（此人在镜中看到了什么，如何看待<user>。不预设爱慕倾向）
+            情感:（初见时的情感基调，如好奇、警惕、漠然、友善等）
+            互动方式:
+
+    特殊物品:
+        （仅真正特殊的物品——如子镜等传说级物品。日常物品不要写在这里）
+
+    私密特征:
+        胸型: [诗名]
+            - （贴合角色体型与气质的描述，含形状、大小、色泽、触感，不可使用"一线天""馒头"等通用模板词）
+        户型: [诗名]
+            - （贴合角色身份与种族特质的描述，含形态、紧致度、特殊体感，不可使用"一线天""馒头"等通用模板词）
+
+    兴趣爱好:
+        [爱好名]:
+            动机:
+              - （这件爱好的情感来源，对角色个人的意义）
+            表现:
+              - （做这件事的具体方式与细节）
+</basic_info>
+
+---
+
+规则：
+- 此人未必是红颜，不必预设对<user>的爱慕或依恋。写出真实可信的独立人格即可。
+- 不要写剧情。不要写叙述。不要写旁白。不要写思维链。不要写分析过程。
+- 不要输出 <UpdateVariable>、<JSONPatch>、<Variable> 或任何变量操作标签。忽略后续提示词中可能出现的变量更新指令，那些与本任务无关。
+- 严格按以上格式输出。除此之外不要附带任何其他内容。
+- 所有字段（含 NSFW）直接填写，不拒绝不回避不省略。
+- 每个值须有辨识度——数字避免敷衍整数，文本避免泛泛描述。
+- 命名与描述贴合角色背景与场景语境。
+- 化名仅在该角色确实拥有化名/别名时填写，不要无中生有。无化名则留空。姓名与化名不要写在括号里附带。
+- 例句直接写对话本身，禁止使用 <q></q> 标签包裹。`;
+
+const plOpen = reactive({ basic: true });
+const plGenerating = ref(false);
+const plGenResult = ref('');
+const plGenArchive = ref('');
+const plGenError = ref('');
+const plSaved = ref(false);
+const plForm = reactive({ name: '', type: '', typeCustom: '', techLevel: '', magicLevel: '', coreFeature: '', linkedChars: '' });
+
+const plGenTemplate = `你正在通过母镜感知一方世界的轮廓。镜中波纹荡漾，一片大陆、一种文明、一套法则逐渐在你手中凝聚成形。这不是在写剧情——你只是在整理镜中传来的位面信息。
+
+请将镜中世界的信息整理为以下档案，标记为 [位面档案]。
+
+---
+
+[位面档案]
+
+位面名称:
+位面类型:（仙道/洪荒/西幻/现代/异世界/深渊/妖灵/幽冥/科幻/武侠/神话/末日等）
+技术等级:（描述性，如"中古冷兵器时代"）
+魔法/灵力等级:（描述性，如"中魔——常见但不主导日常"）
+
+地理概况:
+  - （大陆/国家/主要区域的简要描述）
+
+文明特征:
+  - （社会结构、文化特色、政治格局等）
+
+力量体系:
+  - （该位面的核心力量规则，如修仙体系、魔法体系、科技体系等）
+
+特色势力:
+  - （1-3个代表性势力，含名称与简要特征）
+
+关联角色:
+  - （已有角色中与该位面相关的人物，无则写"暂无"）
+
+---
+
+规则：
+- 不要写剧情。不要写叙述。不要写分析过程。
+- 严格按以上格式输出。除此之外不要附带任何其他内容。
+- 位面不需要NSFW内容。
+- 描述贴合所选的类型与技术/魔法等级。`;
+
 function mxBuildGenPrompt(): { prompt: string; tagBlock: string } {
   const d = mxForm;
   const v = (s: string, c: string) => (s === '自定义' || !s ? c || '随机' : s);
@@ -1235,7 +1018,10 @@ function mxBuildGenPrompt(): { prompt: string; tagBlock: string } {
     tags.push('同人作品：' + v(d.fandom, d.fandomCustom));
   }
   const tagBlock = tags.map(t => '- ' + t).join('\n');
-  const fullPrompt = `使用母镜生成一位详细红颜人设。\n\n=== 已选标签 ===\n${tagBlock}\n\n${mxGenTemplate}\n\n（请按上述模板输出 [世界书档案] 。）`;
+  const isNPC = activeTab.value === 'npc';
+  const tmpl = isNPC ? npcGenTemplate : mxGenTemplate;
+  const roleHint = isNPC ? '一位详细角色人设（非红颜，普通人物）。' : '一位详细红颜人设。';
+  const fullPrompt = `使用母镜生成${roleHint}\n\n=== 已选标签 ===\n${tagBlock}\n\n${tmpl}\n\n（请按上述模板输出 [世界书档案] 。）`;
   return { prompt: fullPrompt, tagBlock };
 }
 
@@ -1304,7 +1090,7 @@ async function mxSaveGenResult() {
     if (alias) keys.push(alias);
     let wbName: string = TH.getCharLorebooks()?.primary;
     if (!wbName) {
-      wbName = '镜待流年v56';
+      wbName = '镜待流年v57';
       await TH.createLorebook(wbName);
       await TH.setCurrentCharLorebooks({ primary: wbName });
     }
@@ -1340,12 +1126,77 @@ async function mxSaveGenResult() {
 }
 function mxInjectArchive() {
   if (!mxGenArchive.value) return;
+  const isNPC = activeTab.value === 'npc';
+  const subject = isNPC ? '一人' : '一位红颜';
   const dir =
     mirrorDir.value === 'toMe'
-      ? '使用母镜召唤一位红颜来到身边。以下是镜中传来的信息：\n\n'
-      : '使用母镜前往一位红颜所在的世界。以下是镜中传来的信息：\n\n';
+      ? `使用母镜召唤${subject}来到身边。以下是镜中传来的信息：\n\n`
+      : `使用母镜前往${subject}所在的世界。以下是镜中传来的信息：\n\n`;
   mxSend(dir + mxGenArchive.value);
 }
+
+async function plGenerate() {
+  plGenError.value = ''; plGenResult.value = ''; plGenArchive.value = ''; plSaved.value = false; plGenerating.value = true;
+  try {
+    const TH = (window as any).parent?.TavernHelper;
+    if (!TH) { plGenError.value = '未检测到酒馆助手'; return; }
+    const d = plForm;
+    const tags: string[] = [];
+    if (d.name) tags.push('位面名称：' + d.name);
+    if (d.type === '自定义' && d.typeCustom) tags.push('位面类型：' + d.typeCustom);
+    else if (d.type) tags.push('位面类型：' + d.type);
+    if (d.techLevel) tags.push('技术等级：' + d.techLevel);
+    if (d.magicLevel) tags.push('魔法/灵力等级：' + d.magicLevel);
+    if (d.coreFeature.trim()) tags.push('核心特征：' + d.coreFeature.trim());
+    if (d.linkedChars.trim()) tags.push('关联角色：' + d.linkedChars.trim());
+    const prompt = `使用母镜生成一个位面设定。\n\n=== 已选标签 ===\n${tags.map(t => '- ' + t).join('\n')}\n\n${plGenTemplate}\n\n（请按上述模板输出 [位面档案] 。）`;
+    const ordered: any[] = ['system', 'persona_description', 'char_description', 'world_info_before', 'world_info_after', 'user_input'];
+    const result = await TH.generateRaw({ user_input: '本次为镜渡生成位面档案，勿编剧情。', should_silence: true, ordered_prompts: ordered });
+    const text = typeof result === 'string' ? result : result.content || JSON.stringify(result);
+    plGenResult.value = text;
+    const archMatch = text.match(/\[位面档案\]\s*([\s\S]*)/);
+    if (archMatch) plGenArchive.value = archMatch[1].trim(); else plGenArchive.value = text;
+  } catch (e: any) { plGenError.value = e?.message || String(e); }
+  finally { plGenerating.value = false; }
+}
+
+async function plSaveGenResult() {
+  if (!plGenArchive.value) return;
+  try {
+    const TH = (window as any).parent?.TavernHelper;
+    if (!TH) { plGenError.value = '未检测到酒馆助手'; return; }
+    const nameMatch = plGenArchive.value.match(/位面名称[：:][^\S\n]*(\S[^\n]*)/);
+    const planeName = nameMatch ? nameMatch[1].trim() : '新位面';
+    let wbName: string = TH.getCharLorebooks()?.primary;
+    if (!wbName) { wbName = '镜待流年v56'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
+    const existing = await TH.getLorebookEntries(wbName);
+    const genOrders = existing.map((e: any) => e.order ?? 0).filter((o: number) => o >= 9000 && o < 10000);
+    const nextOrder = genOrders.length ? Math.max(...genOrders) + 5 : 9000;
+    await TH.createLorebookEntries(wbName, [{
+      comment: `镜渡生成 - 位面:${planeName}`, enabled: true, type: 'selective', keys: [planeName],
+      position: 'before_character_definition', order: nextOrder, probability: 100,
+      exclude_recursion: true, prevent_recursion: true, content: plGenArchive.value,
+    }]);
+    const listTarget = existing.find((e: any) => e.comment === '生成位面列表');
+    if (listTarget) {
+      await TH.setLorebookEntries(wbName, [{ uid: listTarget.uid, content: (listTarget.content || '') + '\n- ' + planeName }]);
+    } else {
+      await TH.createLorebookEntries(wbName, [{
+        comment: '生成位面列表', enabled: true, type: 'selective', keys: ['生成位面列表'],
+        position: 'before_character_definition', order: 8995, probability: 100,
+        exclude_recursion: true, prevent_recursion: true,
+        content: '生成位面列表:\n- ' + planeName,
+      }]);
+    }
+    plSaved.value = true;
+  } catch (e: any) { plGenError.value = '保存失败：' + (e?.message || String(e)); }
+}
+
+function plInjectArchive() {
+  if (!plGenArchive.value) return;
+  mxSend('使用母镜前往一个位面。以下是镜中传来的位面信息：\n\n' + plGenArchive.value);
+}
+
 const expandedChars = ref(new Set<string>());
 const expandedSubs = ref(new Set<string>());
 const clothDetail = ref(new Set<string>());
@@ -2218,602 +2069,5 @@ function getCharRelations(char: NearbyChar): [string, string][] {
   background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-left: 4px;
-}
-.mirror-panel {
-  --m-accent: #c9a96e;
-  --m-accent-dim: rgba(201, 169, 110, 0.2);
-  --m-glow: rgba(201, 169, 110, 0.1);
-  --m-surface: #f5ede0;
-  --m-text: #4a4035;
-  --m-muted: #8a7e6e;
-  --m-dim: #b8a898;
-  --m-rose: #c47b8b;
-  --m-rose-dim: rgba(196, 123, 139, 0.2);
-  --m-teal: #5ea0a7;
-  --m-teal-dim: rgba(94, 160, 167, 0.18);
-  padding: 4px 0 6px;
-  &.theme-red {
-    --m-accent: var(--m-rose);
-    --m-accent-dim: var(--m-rose-dim);
-    --m-surface: #251c1f;
-    --m-text: #e0d0d8;
-    --m-muted: #b098a0;
-    --m-dim: #786068;
-  }
-  &.theme-teal {
-    --m-accent: var(--m-teal);
-    --m-accent-dim: var(--m-teal-dim);
-    --m-surface: #1c2325;
-    --m-text: #d0dce0;
-    --m-muted: #98a8b0;
-    --m-dim: #607078;
-  }
-}
-.mirror-frame {
-  position: relative;
-  border-radius: 12px;
-  padding: 4px;
-  background: linear-gradient(145deg, #8b7355, #6b5a48 25%, #c9a96e 50%, #6b5a48 75%, #8b7355);
-  box-shadow: 0 0 24px rgba(201, 169, 110, 0.15);
-}
-.frame-ring,
-.frame-inset {
-  position: absolute;
-  border-radius: 10px;
-  border: 1px solid rgba(201, 169, 110, 0.25);
-  pointer-events: none;
-}
-.frame-ring {
-  inset: 4px;
-}
-.frame-inset {
-  inset: 8px;
-  border-color: rgba(201, 169, 110, 0.1);
-}
-.mirror-surface {
-  position: relative;
-  z-index: 1;
-  border-radius: 9px;
-  padding: 14px 12px 10px;
-  background: var(--m-surface);
-  overflow: hidden;
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background-image:
-      repeating-linear-gradient(45deg, transparent, transparent 2px, var(--m-accent) 2px, var(--m-accent) 3px),
-      repeating-linear-gradient(-45deg, transparent, transparent 2px, var(--m-accent) 2px, var(--m-accent) 3px);
-    opacity: 0.04;
-  }
-}
-.panel-title {
-  font-family: '寒蝉全圆体', var(--font-main);
-  text-align: center;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 6px;
-  position: relative;
-  z-index: 1;
-  background: linear-gradient(135deg, #6b4a28 0%, #8b5a30 40%, #6b4a28 60%, #8b5a30 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-.panel-sub {
-  font-family: '寒蝉全圆体', var(--font-main);
-  text-align: center;
-  font-size: 9px;
-  color: var(--m-accent);
-  letter-spacing: 2px;
-  margin-bottom: 8px;
-  position: relative;
-  z-index: 1;
-}
-.direction-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin-bottom: 8px;
-  position: relative;
-  z-index: 1;
-}
-.toggle-btn {
-  background: none;
-  border: none;
-  font-family: '寒蝉全圆体', var(--font-main);
-  font-size: 9px;
-  color: var(--m-muted);
-  cursor: pointer;
-  letter-spacing: 1px;
-  padding: 3px 8px;
-  border-radius: 6px;
-  transition: all 0.2s;
-  &.active {
-    color: #fff;
-    background: var(--m-accent);
-    font-weight: 600;
-  }
-}
-.toggle-track {
-  width: 30px;
-  height: 16px;
-  background: rgba(139, 115, 85, 0.12);
-  border-radius: 8px;
-  cursor: pointer;
-  position: relative;
-}
-.toggle-thumb {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--m-accent);
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  transition: left 0.25s;
-  &.toWorld {
-    left: 16px;
-  }
-}
-.btn-random {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  padding: 10px 0;
-  margin-bottom: 6px;
-  background: var(--m-accent-dim);
-  border: 1px solid var(--m-accent);
-  border-radius: 8px;
-  cursor: pointer;
-  position: relative;
-  z-index: 1;
-  color: var(--m-accent);
-  font-family: '寒蝉全圆体', var(--font-main);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 3px;
-  transition: all 0.2s;
-  &:hover {
-    background: var(--m-accent);
-    color: #fff;
-  }
-}
-.btn-icon {
-  font-size: 10px;
-}
-.btn-custom-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  padding: 7px 0;
-  background: none;
-  border: 1px dashed var(--m-accent-dim);
-  border-radius: 8px;
-  cursor: pointer;
-  color: var(--m-accent);
-  font-family: '寒蝉全圆体', var(--font-main);
-  font-size: 10px;
-  letter-spacing: 2px;
-  transition: all 0.2s;
-  position: relative;
-  z-index: 1;
-  &:hover {
-    border-color: var(--m-accent);
-    border-style: solid;
-  }
-}
-.custom-form {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  margin-top: 6px;
-  padding: 10px;
-  background: rgba(139, 115, 85, 0.04);
-  border: 1px solid rgba(139, 115, 85, 0.1);
-  border-radius: 8px;
-}
-.form-section {
-  padding: 6px 8px;
-  background: rgba(139, 115, 85, 0.06);
-  border-radius: 6px;
-  cursor: pointer;
-  font-family: '寒蝉全圆体', var(--font-main);
-  font-size: 10px;
-  color: var(--m-muted);
-  letter-spacing: 1px;
-  transition: background 0.15s;
-  user-select: none;
-  &:hover {
-    background: rgba(139, 115, 85, 0.12);
-  }
-}
-.mx-arrow {
-  display: inline-block;
-  transition: transform 0.2s;
-  font-size: 10px;
-  margin-right: 2px;
-  &.open {
-    transform: rotate(90deg);
-  }
-}
-.section-body {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding-top: 4px;
-}
-.mx-mode-toggle {
-  font-size: 8px;
-  color: var(--m-accent);
-  cursor: pointer;
-  background: var(--m-accent-dim);
-  padding: 1px 6px;
-  border-radius: 8px;
-  margin-left: 4px;
-  transition: all 0.15s;
-  &:hover {
-    background: var(--m-accent);
-    color: #fff;
-  }
-}
-.mx-fandom-simple {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-.mx-fandom-simple select,
-.mx-fandom-simple input {
-  padding: 5px 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(139, 115, 85, 0.15);
-  background: rgba(255, 255, 255, 0.6);
-  color: #4a4035;
-  font-family: 'DouyinSans', var(--font-main);
-  font-size: 10px;
-  outline: none;
-  &:focus {
-    border-color: var(--m-accent);
-  }
-}
-.mx-fandom-ext {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 6px;
-  background: rgba(139, 115, 85, 0.04);
-  border: 1px solid rgba(139, 115, 85, 0.1);
-  border-radius: 6px;
-}
-.mx-fandom-ext select,
-.mx-fandom-ext input {
-  padding: 5px 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(139, 115, 85, 0.15);
-  background: rgba(255, 255, 255, 0.6);
-  color: var(--m-text);
-  font-family: 'DouyinSans', var(--font-main);
-  font-size: 10px;
-  outline: none;
-  &:focus {
-    border-color: var(--m-accent);
-  }
-}
-.tag-custom {
-  border-style: dashed !important;
-  display: inline-flex;
-  align-items: center;
-}
-.tag-custom {
-  display: inline-flex;
-  align-items: center;
-  gap: 1px;
-}
-.tag-pool .tag-custom input {
-  width: 54px;
-  height: 16px;
-  line-height: 16px;
-  border: none;
-  background: transparent;
-  font-family: inherit;
-  font-size: 9px;
-  color: var(--m-muted);
-  outline: none;
-  text-align: center;
-  padding: 0;
-  &::placeholder {
-    color: var(--m-dim);
-  }
-}
-.tag-custom-btn {
-  width: 16px;
-  height: 16px;
-  border: none;
-  border-radius: 50%;
-  background: var(--m-accent-dim);
-  color: var(--m-accent);
-  font-size: 10px;
-  line-height: 16px;
-  cursor: pointer;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.12s;
-  &:hover {
-    background: var(--m-accent);
-    color: #fff;
-  }
-}
-.form-row {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  label {
-    font-family: '寒蝉全圆体', var(--font-main);
-    font-size: 9px;
-    color: var(--m-muted);
-    letter-spacing: 1px;
-  }
-  > select,
-  > input {
-    padding: 5px 8px;
-    border-radius: 6px;
-    border: 1px solid rgba(139, 115, 85, 0.15);
-    background: rgba(255, 255, 255, 0.6);
-    color: #4a4035;
-    font-family: 'DouyinSans', var(--font-main);
-    font-size: 10px;
-    outline: none;
-    &:focus {
-      border-color: var(--m-accent);
-    }
-  }
-}
-.tag-pool {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-.tag {
-  padding: 2px 8px;
-  border-radius: 10px;
-  cursor: pointer;
-  border: 1px solid var(--m-accent-dim);
-  font-family: 'DouyinSans', var(--font-main);
-  font-size: 9px;
-  color: var(--m-muted);
-  transition: all 0.12s;
-  &:hover {
-    border-color: var(--m-accent);
-    color: var(--m-accent);
-  }
-  &.picked {
-    background: var(--m-accent-dim);
-    border-color: var(--m-accent);
-    color: var(--m-accent);
-    font-weight: 600;
-  }
-}
-.btn-send {
-  flex: 1;
-  padding: 8px 0;
-  background: var(--m-accent);
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  color: #fff;
-  font-family: '寒蝉全圆体', var(--font-main);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  transition: opacity 0.2s;
-  &:hover {
-    opacity: 0.85;
-  }
-}
-.btn-gen {
-  flex: 1.3;
-  padding: 8px 0;
-  background: var(--m-accent-dim);
-  border: 1px solid var(--m-accent);
-  border-radius: 8px;
-  cursor: pointer;
-  color: var(--m-accent);
-  font-family: '寒蝉全圆体', var(--font-main);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  transition: all 0.2s;
-  &:hover:not(:disabled) {
-    background: var(--m-accent);
-    color: #fff;
-  }
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-.mx-other-input {
-  padding: 5px 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(139, 115, 85, 0.15);
-  background: rgba(255, 255, 255, 0.6);
-  color: #4a4035;
-  font-family: 'DouyinSans', var(--font-main);
-  font-size: 10px;
-  outline: none;
-  resize: vertical;
-  min-height: 50px;
-  &:focus {
-    border-color: var(--m-accent);
-  }
-  &::placeholder {
-    color: var(--m-dim);
-  }
-}
-.mx-gen-row {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 2px 0;
-}
-.mx-save-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  user-select: none;
-  input[type='checkbox'] {
-    accent-color: var(--m-accent);
-    width: 12px;
-    height: 12px;
-    cursor: pointer;
-  }
-  .toggle-label {
-    font-family: '寒蝉全圆体', var(--font-main);
-    font-size: 8px;
-    color: var(--m-muted);
-    letter-spacing: 1px;
-    transition: color 0.15s;
-  }
-  &:hover .toggle-label {
-    color: var(--m-accent);
-  }
-}
-.btn-row {
-  display: flex;
-  gap: 6px;
-  margin-top: 4px;
-}
-.mx-gen-status {
-  text-align: center;
-  padding: 8px;
-  font-family: '寒蝉全圆体', var(--font-main);
-  font-size: 10px;
-  color: var(--m-muted);
-  letter-spacing: 1px;
-  &.error {
-    color: var(--m-rose);
-  }
-}
-.gen-spinner {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border: 2px solid var(--m-accent-dim);
-  border-top-color: var(--m-accent);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin-right: 6px;
-  vertical-align: middle;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-.mx-gen-result {
-  margin-top: 6px;
-  padding: 0;
-  background: rgba(139, 115, 85, 0.06);
-  border: 1px solid rgba(139, 115, 85, 0.12);
-  border-radius: 8px;
-  overflow: hidden;
-}
-.gen-result-label {
-  font-family: '寒蝉全圆体', var(--font-main);
-  font-size: 9px;
-  color: var(--m-accent);
-  letter-spacing: 2px;
-  padding: 6px 8px;
-  border-bottom: 1px solid rgba(139, 115, 85, 0.1);
-}
-.gen-result-text {
-  display: block;
-  width: 100%;
-  min-height: 180px;
-  max-height: 300px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  font-family: 'DouyinSans', var(--font-main);
-  font-size: 10px;
-  color: var(--m-text);
-  line-height: 1.7;
-  padding: 8px;
-  background: rgba(255, 255, 255, 0.3);
-  border: 1px solid rgba(139, 115, 85, 0.12);
-  border-radius: 6px;
-  resize: vertical;
-  outline: none;
-  &:focus {
-    border-color: var(--m-accent);
-  }
-}
-.gen-result-actions {
-  display: flex;
-  gap: 6px;
-  margin-top: 6px;
-  padding: 0 4px 4px;
-  align-items: center;
-}
-.btn-gen-save {
-  padding: 5px 12px;
-  background: var(--m-accent);
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  color: #fff;
-  font-family: '寒蝉全圆体', var(--font-main);
-  font-size: 9px;
-  letter-spacing: 1px;
-  transition: opacity 0.15s;
-  &:hover {
-    opacity: 0.85;
-  }
-}
-.btn-gen-inject {
-  padding: 5px 12px;
-  background: none;
-  border: 1px solid var(--m-accent);
-  border-radius: 6px;
-  cursor: pointer;
-  color: var(--m-accent);
-  font-family: '寒蝉全圆体', var(--font-main);
-  font-size: 9px;
-  letter-spacing: 1px;
-  transition: all 0.15s;
-  &:hover {
-    background: var(--m-accent);
-    color: #fff;
-  }
-}
-.btn-gen-retry {
-  padding: 5px 12px;
-  background: none;
-  border: 1px solid var(--m-accent-dim);
-  border-radius: 6px;
-  cursor: pointer;
-  color: var(--m-muted);
-  font-family: '寒蝉全圆体', var(--font-main);
-  font-size: 9px;
-  letter-spacing: 1px;
-  transition: all 0.15s;
-  &:hover {
-    border-color: var(--m-accent);
-    color: var(--m-accent);
-  }
-}
-.gen-saved-hint {
-  font-family: '寒蝉全圆体', var(--font-main);
-  font-size: 9px;
-  color: var(--m-accent);
-  letter-spacing: 1px;
 }
 </style>

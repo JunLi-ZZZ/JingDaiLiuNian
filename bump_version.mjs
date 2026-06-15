@@ -73,16 +73,37 @@ const REPLACEMENTS = [
   // 卡片/世界书名称
   {
     file: '卡区/镜待流年/界面/状态栏/App.vue',
-    desc: 'wbName fallback（卡区）',
+    desc: 'wbName fallback（状态栏 卡区）',
     old: `wbName = '${oldCardName}'`,
     nw: `wbName = '${newCardName}'`,
     all: false,
   },
   {
     file: 'src/镜待流年/界面/状态栏/App.vue',
-    desc: 'wbName fallback（src）',
+    desc: 'wbName fallback（状态栏 src）',
     old: `wbName = '${oldCardName}'`,
     nw: `wbName = '${newCardName}'`,
+    all: false,
+  },
+  {
+    file: '卡区/镜待流年/界面/shared/MirrorPanel.vue',
+    desc: 'wbName fallback（MirrorPanel 卡区，2处）',
+    old: `wbName = '${oldCardName}'`,
+    nw: `wbName = '${newCardName}'`,
+    all: true,
+  },
+  {
+    file: 'src/镜待流年/界面/shared/MirrorPanel.vue',
+    desc: 'wbName fallback（MirrorPanel src，2处）',
+    old: `wbName = '${oldCardName}'`,
+    nw: `wbName = '${newCardName}'`,
+    all: true,
+  },
+  {
+    file: 'tavern_sync.yaml',
+    desc: '同步配置键名',
+    old: `  ${oldCardName}:`,
+    nw: `  ${newCardName}:`,
     all: false,
   },
   {

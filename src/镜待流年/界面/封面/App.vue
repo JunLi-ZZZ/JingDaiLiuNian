@@ -154,10 +154,15 @@
       </div>
     </div>
 
+    <button class="mirror-trigger-btn" @click="coverMirrorOpen = !coverMirrorOpen">
+      <span class="mirror-trigger-icon">🪞</span>
+      {{ coverMirrorOpen ? '关闭镜渡' : '打开镜渡' }}
+    </button>
     <button class="enter-btn" @click="page = 'dlc'">
       进入
       <span class="enter-arrow">→</span>
     </button>
+    <MirrorPanel v-if="coverMirrorOpen" @close="coverMirrorOpen = false" />
   </div>
 
   <!-- DLC 选择页 -->
@@ -261,8 +266,10 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import MirrorPanel from '../shared/MirrorPanel.vue';
 
 const theme = ref((typeof localStorage !== 'undefined' && localStorage.getItem('jdnl_theme')) || 'cream');
+const coverMirrorOpen = ref(false);
 function onStorage(e: StorageEvent) {
   if (e.key === 'jdnl_theme' && e.newValue) theme.value = e.newValue;
 }
@@ -1003,6 +1010,32 @@ function sendCustom() {
   letter-spacing: 1px;
 }
 
+.mirror-trigger-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto 8px;
+  padding: 10px 0;
+  background: rgba(201, 169, 110, 0.08);
+  border: 1px dashed rgba(201, 169, 110, 0.25);
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--c-accent);
+  font-family: '寒蝉全圆体', var(--font-main);
+  font-size: 12px;
+  letter-spacing: 3px;
+  transition: all 0.2s;
+  &:hover {
+    border-style: solid;
+    background: rgba(201, 169, 110, 0.15);
+  }
+}
+.mirror-trigger-icon {
+  font-size: 14px;
+}
 .enter-btn {
   display: flex;
   align-items: center;
