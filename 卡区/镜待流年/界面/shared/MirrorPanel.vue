@@ -529,7 +529,7 @@ async function mxDoGenerate() {
     if (mxForm.originCustom && mxForm.origin === '自定义') kw.push(mxForm.originCustom);
     if (mxForm.roleCustom && mxForm.role === '自定义') kw.push(mxForm.roleCustom);
     if (mxForm.coreTraitCustom && mxForm.coreTrait === '自定义') kw.push(mxForm.coreTraitCustom);
-    const ordered: any[] = ['system', 'persona_description', 'char_description', 'world_info_before', 'world_info_after'];
+    const ordered: any[] = [{ role: 'system', content: prompt }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after'];
     if (mxIncludeChat.value) ordered.push('chat_history');
     ordered.push('user_input');
     const result = await TH.generateRaw({
@@ -557,7 +557,7 @@ async function mxSaveGenResult() {
     const alias = aliasMatch ? aliasMatch[1].replace(/[（(].*$/, '').trim() : '';
     const keys = [charName]; if (alias) keys.push(alias);
     let wbName: string = TH.getCharLorebooks()?.primary;
-    if (!wbName) { wbName = '镜待流年v57'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
+    if (!wbName) { wbName = '镜待流年v58'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
     const existing = await TH.getLorebookEntries(wbName);
     const genOrders = existing.map((e: any) => e.order ?? 0).filter((o: number) => o >= 1000 && o < 10000);
     const nextOrder = genOrders.length ? Math.max(...genOrders) + 5 : 1000;
@@ -632,8 +632,13 @@ async function plGenerate() {
     if (d.coreFeature.trim()) tags.push('核心特征：' + d.coreFeature.trim());
     if (d.linkedChars.trim()) tags.push('关联角色：' + d.linkedChars.trim());
     const prompt = `使用母镜生成一个位面设定。\n\n=== 已选标签 ===\n${tags.map(t => '- ' + t).join('\n')}\n\n${plTemplate}\n\n（请按上述模板输出 [位面档案] 。）`;
-    const ordered: any[] = ['system', 'persona_description', 'char_description', 'world_info_before', 'world_info_after', 'user_input'];
-    const result = await TH.generateRaw({ user_input: '本次为镜渡生成位面档案，勿编剧情。', should_silence: true, ordered_prompts: ordered });
+    const kw: string[] = [];
+    if (d.type === '自定义' && d.typeCustom) kw.push(d.typeCustom);
+    else if (d.type) kw.push(d.type);
+    if (d.techLevel) kw.push(d.techLevel);
+    if (d.magicLevel) kw.push(d.magicLevel);
+    const ordered: any[] = [{ role: 'system', content: prompt }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after', 'user_input'];
+    const result = await TH.generateRaw({ user_input: `本次为镜渡生成位面档案，勿编剧情。以下为部分已选标签，供扫描关键词激活世界书用：${kw.join('，')}`, should_silence: true, ordered_prompts: ordered });
     const text = typeof result === 'string' ? result : result.content || JSON.stringify(result);
     plGenResult.value = text;
     const archMatch = text.match(/\[位面档案\]\s*([\s\S]*)/);
@@ -650,12 +655,12 @@ async function plSaveGenResult() {
     const nameMatch = plGenArchive.value.match(/位面名称[：:][^\S\n]*(\S[^\n]*)/);
     const planeName = nameMatch ? nameMatch[1].trim() : '新位面';
     let wbName: string = TH.getCharLorebooks()?.primary;
-    if (!wbName) { wbName = '镜待流年v57'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
+    if (!wbName) { wbName = '镜待流年v58'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
     const existing = await TH.getLorebookEntries(wbName);
     const genOrders = existing.map((e: any) => e.order ?? 0).filter((o: number) => o >= 9000 && o < 10000);
     const nextOrder = genOrders.length ? Math.max(...genOrders) + 5 : 9000;
     await TH.createLorebookEntries(wbName, [{
-      comment: `镜渡生成 - 位面:${planeName}`, enabled: true, type: 'selective', keys: [planeName],
+      name: planeName, comment: `镜渡生成 - 位面:${planeName}`, enabled: false, type: 'selective', keys: [planeName],
       position: 'before_character_definition', order: nextOrder, probability: 100,
       exclude_recursion: true, prevent_recursion: true, content: plGenArchive.value,
     }]);

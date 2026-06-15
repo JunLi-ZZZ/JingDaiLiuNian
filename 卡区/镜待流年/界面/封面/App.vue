@@ -58,7 +58,27 @@
         <div class="notice-item">请勿在墙内社区、QQ群传播、讨论相关内容</div>
       </div>
     </div>
+    <button class="enter-btn" @click="page = 'tools'">
+      进入
+      <span class="enter-arrow">→</span>
+    </button>
+  </div>
 
+  <!-- 工具页：自定义主角 + 镜渡 -->
+  <div v-if="page === 'tools'" class="cover" :class="`theme-${theme}`">
+    <button class="back-btn" @click="page = 'intro'">←</button>
+    <div class="title-section">
+      <div class="sub-mark">✦ 浮世千面 ✦</div>
+      <h1 class="title">镜 待 流 年</h1>
+      <div class="divider">
+        <span class="divider-dot"></span>
+        <span class="divider-line"></span>
+        <span class="divider-diamond">◇</span>
+        <span class="divider-line"></span>
+        <span class="divider-dot"></span>
+      </div>
+    </div>
+    <div class="tools-section">
     <div class="protagonist-area">
       <div
         class="protagonist-toggle"
@@ -158,16 +178,17 @@
       <span class="mirror-trigger-icon">🪞</span>
       {{ coverMirrorOpen ? '关闭镜渡' : '打开镜渡' }}
     </button>
+      <MirrorPanel v-if="coverMirrorOpen" @close="coverMirrorOpen = false" />
+    </div>
     <button class="enter-btn" @click="page = 'dlc'">
-      进入
+      继续
       <span class="enter-arrow">→</span>
     </button>
-    <MirrorPanel v-if="coverMirrorOpen" @close="coverMirrorOpen = false" />
   </div>
 
   <!-- DLC 选择页 -->
   <div v-if="page === 'dlc'" class="cover" :class="`theme-${theme}`">
-    <button class="back-btn" @click="page = 'intro'">←</button>
+    <button class="back-btn" @click="page = 'tools'">←</button>
     <div class="title-section">
       <div class="sub-mark">✦ 浮世千面 ✦</div>
       <h1 class="title">镜 待 流 年</h1>
@@ -1010,6 +1031,11 @@ function sendCustom() {
   letter-spacing: 1px;
 }
 
+.tools-section {
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+}
 .mirror-trigger-btn {
   display: flex;
   align-items: center;
