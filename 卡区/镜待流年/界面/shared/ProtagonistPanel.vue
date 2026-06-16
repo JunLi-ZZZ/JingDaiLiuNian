@@ -4,11 +4,8 @@
       <div class="frame-ring"></div>
       <div class="frame-inset"></div>
       <div class="mirror-surface">
-        <div class="panel-title">自定义主角</div>
-        <div class="form-section" @click="showProtagonist = !showProtagonist">
-          <span class="mx-arrow" :class="{ open: showProtagonist }">▸</span> {{ protagonistActive ? '✦ 已启用' : '展开设定（不选则用默认）' }}
-        </div>
-        <div v-if="showProtagonist" class="section-body">
+        <div class="panel-title">{{ protagonistActive ? '✦ 自定义主角' : '自定义主角' }}</div>
+        <div class="section-body" style="padding-top:0">
       <div class="form-row-dual">
         <div class="form-field">
           <label>年龄感</label>
@@ -255,6 +252,7 @@ onMounted(() => { checkProtagonistStatus(); });
   padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(139,115,85,0.15);
   background: rgba(255,255,255,0.5); color: var(--m-text); font-size: 11px; outline: none; font-family: inherit;
 }
+.form-field select, .form-field input, .form-field textarea { width: 100%; box-sizing: border-box; }
 .form-field select:focus, .form-field input:focus, .form-field textarea:focus { border-color: var(--m-accent); }
 .mirror-surface { max-height: none; overflow: visible; }
 .panel-title { background: linear-gradient(135deg, var(--c-accent, #c9a96e) 0%, color-mix(in srgb, var(--c-accent, #c9a96e) 70%, #fff) 50%, var(--c-accent, #c9a96e) 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }

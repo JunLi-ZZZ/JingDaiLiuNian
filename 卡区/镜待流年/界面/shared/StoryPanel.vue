@@ -4,11 +4,8 @@
       <div class="frame-ring"></div>
       <div class="frame-inset"></div>
       <div class="mirror-surface">
-        <div class="panel-title">自定义剧情</div>
-        <div class="form-section" @click="showStory = !showStory">
-          <span class="mx-arrow" :class="{ open: showStory }">▸</span> {{ storyActive ? '✦ 已保存' : '展开设定' }}
-        </div>
-        <div v-if="showStory" class="section-body">
+        <div class="panel-title">{{ storyActive ? '✦ 自定义剧情' : '自定义剧情' }}</div>
+        <div class="section-body" style="padding-top:0">
       <div class="form-field">
         <label>剧情标题</label>
         <input v-model="sForm.title" placeholder="为空则随机…" />
@@ -251,6 +248,7 @@ async function sReset() {
   padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(139,115,85,0.15);
   background: rgba(255,255,255,0.5); color: var(--m-text); font-size: 11px; outline: none; font-family: inherit;
 }
+.form-field select, .form-field input, .form-field textarea, .form-row select, .form-row input, .form-row textarea { width: 100%; box-sizing: border-box; }
 .form-field select:focus, .form-field input:focus, .form-field textarea:focus, .form-row select:focus, .form-row input:focus { border-color: var(--m-accent); }
 .mirror-surface { max-height: none; overflow: visible; }
 .panel-title { background: linear-gradient(135deg, var(--c-accent, #c9a96e) 0%, color-mix(in srgb, var(--c-accent, #c9a96e) 70%, #fff) 50%, var(--c-accent, #c9a96e) 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
