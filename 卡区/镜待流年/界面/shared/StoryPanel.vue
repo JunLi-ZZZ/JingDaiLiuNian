@@ -14,9 +14,9 @@
         <label>剧情类型</label>
         <select v-model="sForm.type">
           <option value="">随机</option><option value="自定义">自定义 ▼</option>
-          <option>时局暗流</option><option>角色关联</option><option>历史事件</option>
-          <option>冲突爆发</option><option>日常事件</option><option>位面交汇</option>
-          <option>个人任务</option><option>势力博弈</option>
+          <option>世界机制</option><option>位面规则</option><option>特殊现象</option>
+          <option>势力格局</option><option>传说秘闻</option><option>组织/榜单</option>
+          <option>赛事/仪式</option>
         </select>
       </div>
       <div v-if="sForm.type === '自定义'" class="form-row"><input v-model="sForm.typeCustom" placeholder="填写自定义类型…" /></div>
@@ -96,7 +96,7 @@ const sFandomMode = ref(false);
 const sFandoms = ['哥布林杀手','原神','Fate','东方Project','明日方舟','崩坏星穹铁道','蔚蓝档案','葬送的芙莉莲','鬼灭之刃','咒术回战','艾尔登法环','赛马娘','碧蓝航线','崩坏3','少女前线','公主连结','无职转生','Re:从零开始的异世界生活'];
 const sForm = reactive({ title: '', type: '', typeCustom: '', plane: '', chars: '', fandom: '', fandomCustom: '', fandomType: '', fandomTypeCustom: '', fandomDesc: '', note: '' });
 
-const sTemplate = `你正在协助玩家生成一段背景设定。根据以下标签，整理一份记录已发生事件与当前状态的档案。
+const sTemplate = `你正在协助玩家为世界观添加一条新的设定元素。根据以下标签，生成一份可以拓展故事可能性的背景档案。
 
 请将信息整理为以下档案，标记为 [剧情档案]。
 
@@ -106,24 +106,28 @@ const sTemplate = `你正在协助玩家生成一段背景设定。根据以下�
 
 <story_info>
 背景档案:
-    标题:
-    类型:
-    关联位面:
-    关联角色:（与此背景直接相关的角色，含其立场或动机）
+    名称:
+    类型:（世界机制/位面规则/特殊现象/势力格局/传说/组织/榜单/赛事等）
+    适用范围:（此设定在哪些位面/区域生效，无限制则写"不限"）
 
-    事件:
-      - （已发生的核心事件或变化，写清楚发生了什么、为何发生、造成了什么后果）
+    概述:
+      - （一句话定义——这是什么？用最简洁的方式说清楚）
 
-    现状:
-      - （事件之后当前格局的具体状态、各方反应、仍在持续的影响）
+    规则与细节:
+      - （它如何运作？有什么规则、条件、周期？）
+      - （谁参与其中？谁是发起者或关键方？）
+
+    叙事价值:
+      - （这条设定为故事带来哪些新的可能性？可以催生怎样的情节或角色关系？）
 </story_info>
 
 ---
 
 规则：
-- 只写已发生的事件和当前状态，不预设未来走向，不写角色未来行动。
-- 每个条目写具体事实，不写空泛的"可能""或许""将会"。
-- 不要写叙述。不要写分析过程。
+- 写的是世界观的扩展，不是剧本。不要预设角色将做何事、走向何方。
+- 为可能性留空间——规则写清楚，但不要写死所有细节。
+- 不限制必须发生在某个位面，除非标签明确指定。
+- 不要写叙述、分析过程、创作建议。
 - 不要输出 <UpdateVariable>、<JSONPatch>、<Variable> 或任何变量操作标签。
 - 严格按以上格式输出。除此之外不要附带任何其他内容。`;
 

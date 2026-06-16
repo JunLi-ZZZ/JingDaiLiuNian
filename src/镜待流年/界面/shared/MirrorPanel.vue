@@ -587,7 +587,7 @@ async function mxSaveGenResult() {
     const alias = aliasMatch ? aliasMatch[1].replace(/[（(].*$/, '').trim() : '';
     const keys = [charName]; if (alias) keys.push(alias);
     let wbName: string = TH.getCharLorebooks()?.primary;
-    if (!wbName) { wbName = '镜待流年v70'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
+    if (!wbName) { wbName = '镜待流年v71'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
     const existing = await TH.getLorebookEntries(wbName);
     const genOrders = existing.map((e: any) => e.order ?? 0).filter((o: number) => o >= 4000 && o < 6000);
     const nextOrder = genOrders.length ? Math.max(...genOrders) + 5 : 4000;
@@ -729,7 +729,7 @@ async function plSaveGenResult() {
     const nameMatch = plGenArchive.value.match(/位面名称[：:][^\S\n]*(\S[^\n]*)/);
     const planeName = nameMatch ? nameMatch[1].trim() : '新位面';
     let wbName: string = TH.getCharLorebooks()?.primary;
-    if (!wbName) { wbName = '镜待流年v70'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
+    if (!wbName) { wbName = '镜待流年v71'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
     const existing = await TH.getLorebookEntries(wbName);
     const genOrders = existing.map((e: any) => e.order ?? 0).filter((o: number) => o >= 1000 && o < 3000);
     const nextOrder = genOrders.length ? Math.max(...genOrders) + 5 : 1000;
@@ -1156,7 +1156,8 @@ function plInjectArchive() {
     letter-spacing: 1px;
   }
   > select,
-  > input {
+  > input,
+  > textarea {
     padding: 5px 8px;
     border-radius: 6px;
     border: 1px solid rgba(139, 115, 85, 0.15);
@@ -1165,6 +1166,7 @@ function plInjectArchive() {
     font-family: 'DouyinSans', var(--font-main);
     font-size: 10px;
     outline: none;
+    resize: vertical;
     &:focus {
       border-color: var(--m-accent);
     }
