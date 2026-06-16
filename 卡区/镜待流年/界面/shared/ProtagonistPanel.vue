@@ -5,73 +5,84 @@
       <div class="frame-inset"></div>
       <div class="mirror-surface">
         <div class="panel-title">{{ protagonistActive ? '✦ 自定义主角' : '自定义主角' }}</div>
-        <div class="section-body" style="padding-top:0">
-      <div class="form-row-dual">
-        <div class="form-field">
-          <label>年龄感</label>
-          <select v-model="pForm.年龄感">
-            <option value="">不指定</option>
-            <option>少年</option>
-            <option>青年</option>
-            <option>成年</option>
-            <option>中年</option>
-          </select>
-        </div>
-        <div class="form-field">
-          <label>种族</label>
-          <input v-model="pForm.种族" placeholder="如：人类 / 自定义…" />
-        </div>
-      </div>
-      <div class="form-row-dual">
-        <div class="form-field">
-          <label>身份</label>
-          <input v-model="pForm.身份" placeholder="如：星见大学研究生" />
-        </div>
-        <div class="form-field">
-          <label>来源世界</label>
-          <input v-model="pForm.来源世界" placeholder="如：主世界 / 自定义…" />
-        </div>
-      </div>
-      <div class="form-field">
-        <label>境界</label>
-        <input v-model="pForm.境界" placeholder="如：凡人 / 自定义…" />
-      </div>
-      <div class="form-field">
-        <label>风格标签</label>
-        <div class="tag-pool">
-          <span
-            v-for="t in pTraits"
-            :key="t"
-            class="tag"
-            :class="{ picked: pForm.traits.includes(t) }"
-            @click="pToggleTag(t)"
-          >{{ t }}</span>
-          <span class="tag tag-custom">
-            <input v-model="pTagInput" placeholder="自定义+" @keyup.enter="pTagInput = pAddCustom(pTagInput)" />
-            <button class="tag-custom-btn" @click="pTagInput = pAddCustom(pTagInput)">+</button>
-          </span>
-        </div>
-      </div>
-      <div class="form-field">
-        <label>补充说明</label>
-        <textarea v-model="pForm.备注" rows="2" placeholder="其他想补充的设定、背景、想法…"></textarea>
-      </div>
-      <div class="btn-row">
-        <button class="btn-gen" :disabled="pGenerating" @click="pGenerate()">
-          {{ pGenerating ? '生成中…' : 'AI 生成详细人设' }}
-        </button>
-        <button v-if="protagonistActive" class="protagonist-reset" @click="resetProtagonist()">恢复默认</button>
-      </div>
-      <div v-if="pGenResult" class="protagonist-result">
-        <textarea v-model="pGenResult" class="protagonist-result-text" rows="6" placeholder="（AI 生成的人设将显示在这里，可手动修改）"></textarea>
-        <div class="btn-row">
-          <button class="btn-gen-save" :disabled="!pGenResult.trim() || protagonistSaving" @click="saveProtagonist()">
-            {{ protagonistSaving ? '保存中…' : '确认主角' }}
-          </button>
-        </div>
-      </div>
-      <div v-if="protagonistError" class="protagonist-error">{{ protagonistError }}</div>
-      <div v-if="protagonistSuccess" class="protagonist-success">{{ protagonistSuccess }}</div>
+        <div class="section-body" style="padding-top: 0">
+          <div class="form-row-dual">
+            <div class="form-row">
+              <label>年龄感</label>
+              <select v-model="pForm.年龄感">
+                <option value="">不指定</option>
+                <option>少年</option>
+                <option>青年</option>
+                <option>成年</option>
+                <option>中年</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>种族</label>
+              <input v-model="pForm.种族" placeholder="如：人类 / 自定义…" />
+            </div>
+          </div>
+          <div class="form-row-dual">
+            <div class="form-row">
+              <label>身份</label>
+              <input v-model="pForm.身份" placeholder="如：星见大学研究生" />
+            </div>
+            <div class="form-row">
+              <label>来源世界</label>
+              <input v-model="pForm.来源世界" placeholder="如：主世界 / 自定义…" />
+            </div>
+          </div>
+          <div class="form-row">
+            <label>境界</label>
+            <input v-model="pForm.境界" placeholder="如：凡人 / 自定义…" />
+          </div>
+          <div class="form-row">
+            <label>风格标签</label>
+            <div class="tag-pool">
+              <span
+                v-for="t in pTraits"
+                :key="t"
+                class="tag"
+                :class="{ picked: pForm.traits.includes(t) }"
+                @click="pToggleTag(t)"
+                >{{ t }}</span
+              >
+              <span class="tag tag-custom">
+                <input v-model="pTagInput" placeholder="自定义+" @keyup.enter="pTagInput = pAddCustom(pTagInput)" />
+                <button class="tag-custom-btn" @click="pTagInput = pAddCustom(pTagInput)">+</button>
+              </span>
+            </div>
+          </div>
+          <div class="form-row">
+            <label>补充说明</label>
+            <textarea v-model="pForm.备注" rows="2" placeholder="其他想补充的设定、背景、想法…"></textarea>
+          </div>
+          <div class="btn-row">
+            <button class="btn-gen" :disabled="pGenerating" @click="pGenerate()">
+              {{ pGenerating ? '生成中…' : 'AI 生成详细人设' }}
+            </button>
+          </div>
+          <div v-if="pGenResult" class="mx-gen-result">
+            <div class="gen-result-label">主角档案</div>
+            <textarea
+              v-model="pGenResult"
+              class="gen-result-text"
+              rows="6"
+              placeholder="（AI 生成的人设将显示在这里，可手动修改）"
+            ></textarea>
+            <div class="gen-result-actions">
+              <button
+                class="btn-gen-save"
+                :disabled="!pGenResult.trim() || protagonistSaving"
+                @click="saveProtagonist()"
+              >
+                {{ protagonistSaving ? '保存中…' : '确认主角' }}
+              </button>
+              <span v-if="protagonistSuccess" class="gen-saved-hint">{{ protagonistSuccess }}</span>
+              <button v-if="protagonistActive" class="btn-gen-retry" @click="resetProtagonist()">恢复默认</button>
+            </div>
+          </div>
+          <div v-if="protagonistError" class="mx-gen-status error">{{ protagonistError }}</div>
         </div>
       </div>
     </div>
@@ -79,7 +90,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, onMounted } from 'vue';
+import { onMounted, reactive, ref, watch } from 'vue';
 
 const showProtagonist = ref(false);
 const protagonistActive = ref(false);
@@ -93,7 +104,9 @@ const savedProto = (() => {
   try {
     const r = localStorage.getItem('jdnl_protagonist');
     return r ? JSON.parse(r) : {};
-  } catch { return {}; }
+  } catch {
+    return {};
+  }
 })();
 const pForm = reactive({
   年龄感: (savedProto as any).年龄感 || '',
@@ -104,45 +117,59 @@ const pForm = reactive({
   traits: (savedProto as any).traits || ([] as string[]),
   备注: (savedProto as any).备注 || '',
 });
-watch(pForm, v => { localStorage.setItem('jdnl_protagonist', JSON.stringify({ ...v })); }, { deep: true });
+watch(
+  pForm,
+  v => {
+    localStorage.setItem('jdnl_protagonist', JSON.stringify({ ...v }));
+  },
+  { deep: true },
+);
 const pTagInput = ref('');
-function pToggleTag(t: string) { const i = pForm.traits.indexOf(t); if (i >= 0) pForm.traits.splice(i, 1); else pForm.traits.push(t); }
-function pAddCustom(v: string): string { const s = v.trim(); if (s && !pForm.traits.includes(s)) pForm.traits.push(s); return ''; }
+function pToggleTag(t: string) {
+  const i = pForm.traits.indexOf(t);
+  if (i >= 0) pForm.traits.splice(i, 1);
+  else pForm.traits.push(t);
+}
+function pAddCustom(v: string): string {
+  const s = v.trim();
+  if (s && !pForm.traits.includes(s)) pForm.traits.push(s);
+  return '';
+}
 
 const pGenPrompt = `你正在协助玩家自定义主角人设。根据以下标签生成一份详细的主角档案。
 
 格式要求：
-- 严格按 <character_info> 标签包裹的格式输出
 - 包含：基本信息（年龄/种族/身份/来源世界/境界）、外貌特征（基础体型/整体印象）、性格特点
 - 如果种族、来源世界、境界未指定，根据整体设定合理推断
-- 末尾必须包含 特殊物品 段，内容为母镜（古朴铜镜，虞姝昀赠予的护身符，不知其真实功能，偶尔能瞥见红颜特征）
+- 末尾必须包含 特殊物品 段，内容为母镜（一面古朴铜镜，虞姝昀赠予的护身符，偶尔能在镜中瞥见模糊的红颜特征）
 - 灵活描述，不固化可变细节
 
 输出格式：
-<character_info>
-角色档案:
+<protagonist>
+主角档案:
     基本信息:
-        姓名: ...
-        性别: ...
-        年龄: ...
-        种族: ...
-        身份: ...
-        来源世界: ...
-        境界: ...
+        姓名:
+        性别:
+        年龄:
+        种族:
+        身份:
+        来源世界:
+        境界:
 
     外貌特征:
-        基础体型: ...
-        整体印象: ...
+        基础体型:
+        整体印象:
 
     性格特点:
-        ...
+        喜好:
+        厌恶:
+        核心特质:
 
     特殊物品:
         母镜:
             - 一面古朴铜镜，虞姝昀在<user>幼时赠予，称"护身符"
-            - <user>不知其真实功能
             - 偶尔能在镜中瞥见模糊的红颜特征
-</character_info>`;
+</protagonist>`;
 
 async function pGenerate() {
   pGenResult.value = '';
@@ -150,7 +177,10 @@ async function pGenerate() {
   pGenerating.value = true;
   try {
     const TH = (window as any).parent?.TavernHelper;
-    if (!TH) { protagonistError.value = '未检测到酒馆助手。'; return; }
+    if (!TH) {
+      protagonistError.value = '未检测到酒馆助手。';
+      return;
+    }
     const tags: string[] = [];
     if (pForm.年龄感) tags.push('年龄感：' + pForm.年龄感);
     if (pForm.种族) tags.push('种族：' + pForm.种族);
@@ -162,16 +192,26 @@ async function pGenerate() {
     const tagBlock = tags.map(t => '- ' + t).join('\n');
     const prompt = `自定义主角设定：\n${tagBlock}\n\n${pGenPrompt}`;
     const result = await TH.generateRaw({
-      user_input: '（请按上述格式输出主角人设。）',
+      user_input: '根据档案模板生成主角人设。',
       should_silence: true,
       max_chat_history: 0,
-      ordered_prompts: [{ role: 'system', content: prompt }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after', 'user_input'],
+      ordered_prompts: [
+        { role: 'system', content: prompt },
+        'persona_description',
+        'char_description',
+        'world_info_before',
+        'world_info_after',
+        'user_input',
+      ],
     });
     const text = typeof result === 'string' ? result : result.content || JSON.stringify(result);
-    const m = text.match(/<character_info>[\s\S]*<\/character_info>/);
+    const m = text.match(/<protagonist>[\s\S]*<\/protagonist>/);
     pGenResult.value = m ? m[0].trim() : text;
-  } catch (e: any) { protagonistError.value = e?.message || String(e); }
-  finally { pGenerating.value = false; }
+  } catch (e: any) {
+    protagonistError.value = e?.message || String(e);
+  } finally {
+    pGenerating.value = false;
+  }
 }
 
 async function checkProtagonistStatus() {
@@ -182,7 +222,9 @@ async function checkProtagonistStatus() {
     if (!wbName) return;
     const entries = await TH.getLorebookEntries(wbName);
     protagonistActive.value = entries.some((e: any) => e.comment === 'user人设(自定义)' && e.enabled !== false);
-  } catch { /* silent */ }
+  } catch {
+    /* silent */
+  }
 }
 
 async function saveProtagonist() {
@@ -192,28 +234,45 @@ async function saveProtagonist() {
   protagonistSaving.value = true;
   try {
     const TH = (window as any).parent?.TavernHelper;
-    if (!TH) { protagonistError.value = '未检测到酒馆助手。'; return; }
+    if (!TH) {
+      protagonistError.value = '未检测到酒馆助手。';
+      return;
+    }
     const wbName = TH.getCharLorebooks()?.primary;
-    if (!wbName) { protagonistError.value = '未找到世界书。'; return; }
+    if (!wbName) {
+      protagonistError.value = '未找到世界书。';
+      return;
+    }
     const entries = await TH.getLorebookEntries(wbName);
     const defaultEntry = entries.find((e: any) => e.comment === 'user人设');
     const customEntry = entries.find((e: any) => e.comment === 'user人设(自定义)');
     if (customEntry) {
       await TH.setLorebookEntries(wbName, [{ uid: customEntry.uid, content: pGenResult.value }]);
     } else {
-      await TH.createLorebookEntries(wbName, [{
-        comment: 'user人设(自定义)', enabled: true, type: 'constant',
-        position: 'before_character_definition', order: 505, probability: 100,
-        exclude_recursion: true, prevent_recursion: true, content: pGenResult.value,
-      }]);
+      await TH.createLorebookEntries(wbName, [
+        {
+          comment: 'user人设(自定义)',
+          enabled: true,
+          type: 'constant',
+          position: 'before_character_definition',
+          order: 2996,
+          probability: 100,
+          exclude_recursion: true,
+          prevent_recursion: true,
+          content: pGenResult.value,
+        },
+      ]);
     }
     if (defaultEntry) {
       await TH.setLorebookEntries(wbName, [{ uid: defaultEntry.uid, enabled: false }]);
     }
     protagonistActive.value = true;
     protagonistSuccess.value = '自定义主角已保存';
-  } catch (e: any) { protagonistError.value = e?.message || '保存失败'; }
-  finally { protagonistSaving.value = false; }
+  } catch (e: any) {
+    protagonistError.value = e?.message || '保存失败';
+  } finally {
+    protagonistSaving.value = false;
+  }
 }
 
 async function resetProtagonist() {
@@ -221,9 +280,15 @@ async function resetProtagonist() {
   protagonistSuccess.value = '';
   try {
     const TH = (window as any).parent?.TavernHelper;
-    if (!TH) { protagonistError.value = '未检测到酒馆助手。'; return; }
+    if (!TH) {
+      protagonistError.value = '未检测到酒馆助手。';
+      return;
+    }
     const wbName = TH.getCharLorebooks()?.primary;
-    if (!wbName) { protagonistError.value = '未找到世界书。'; return; }
+    if (!wbName) {
+      protagonistError.value = '未找到世界书。';
+      return;
+    }
     const entries = await TH.getLorebookEntries(wbName);
     const defaultEntry = entries.find((e: any) => e.comment === 'user人设');
     const customEntry = entries.find((e: any) => e.comment === 'user人设(自定义)');
@@ -231,30 +296,28 @@ async function resetProtagonist() {
     if (customEntry) await TH.setLorebookEntries(wbName, [{ uid: customEntry.uid, enabled: false }]);
     protagonistActive.value = false;
     protagonistSuccess.value = '已恢复默认主角';
-  } catch (e: any) { protagonistError.value = e?.message || '恢复失败'; }
+  } catch (e: any) {
+    protagonistError.value = e?.message || '恢复失败';
+  }
 }
 
-onMounted(() => { checkProtagonistStatus(); });
+onMounted(() => {
+  checkProtagonistStatus();
+});
 </script>
 <style scoped>
 .theme-mirror {
   --m-accent: var(--c-accent, #c9a96e);
   --m-accent-dim: rgba(201, 169, 110, 0.2);
   --m-surface: var(--c-bg, #f5ede0);
-  --m-text: var(--c-text, #4a4035);
-  --m-muted: var(--c-text-dim, #8a7e6e);
+  --m-text: #4a4035;
+  --m-muted: #8a7e6e;
   margin-bottom: 10px;
 }
 .form-row-dual { display: flex; gap: 8px; }
-.form-field { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-.form-field label { font-size: 10px; color: var(--m-muted); letter-spacing: 1px; }
-.form-field select, .form-field input, .form-field textarea {
-  padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(139,115,85,0.15);
-  background: rgba(255,255,255,0.5); color: var(--m-text); font-size: 11px; outline: none; font-family: inherit;
-}
-.form-field select, .form-field input, .form-field textarea { width: 100%; box-sizing: border-box; }
-.form-field select:focus, .form-field input:focus, .form-field textarea:focus { border-color: var(--m-accent); }
-.tag { background: transparent !important; }
+.form-row-dual > * { flex: 1; }
+.tag { background: rgba(139,115,85,0.04) !important; }
+.tag.picked { background: var(--m-accent-dim) !important; border-color: var(--m-accent); color: var(--m-accent); }
 .mirror-surface { max-height: none; overflow: visible; }
-.panel-title { background: linear-gradient(135deg, var(--c-accent, #c9a96e) 0%, color-mix(in srgb, var(--c-accent, #c9a96e) 70%, #fff) 50%, var(--c-accent, #c9a96e) 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.panel-title { background: linear-gradient(135deg, #6b4a28, #8b5a30 40%, #6b4a28 60%, #8b5a30); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 </style>

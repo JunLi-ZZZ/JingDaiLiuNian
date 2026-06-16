@@ -6,11 +6,11 @@
       <div class="mirror-surface">
         <div class="panel-title">{{ storyActive ? '✦ 自定义剧情' : '自定义剧情' }}</div>
         <div class="section-body" style="padding-top:0">
-      <div class="form-field">
+      <div class="form-row">
         <label>剧情标题</label>
         <input v-model="sForm.title" placeholder="为空则随机…" />
       </div>
-      <div class="form-field">
+      <div class="form-row">
         <label>剧情类型</label>
         <select v-model="sForm.type">
           <option value="">随机</option><option value="自定义">自定义 ▼</option>
@@ -21,16 +21,16 @@
       </div>
       <div v-if="sForm.type === '自定义'" class="form-row"><input v-model="sForm.typeCustom" placeholder="填写自定义类型…" /></div>
       <div class="form-row-dual">
-        <div class="form-field">
+        <div class="form-row">
           <label>关联位面</label>
           <input v-model="sForm.plane" placeholder="位面名称，留空则不限…" />
         </div>
-        <div class="form-field">
+        <div class="form-row">
           <label>关联角色</label>
           <input v-model="sForm.chars" placeholder="角色名，逗号分隔，留空则不限…" />
         </div>
       </div>
-      <div class="form-field">
+      <div class="form-row">
         <label>同人作品 <span class="mx-mode-toggle" @click="sFandomMode = !sFandomMode">{{ sFandomMode ? '⟲ 简单' : '⟳ 魔改' }}</span></label>
         <div v-if="!sFandomMode" class="mx-fandom-simple">
           <select v-model="sForm.fandom">
@@ -53,7 +53,7 @@
           <input v-model="sForm.fandomDesc" placeholder="描述魔改细节，如：IF线/性转/角色替换…" />
         </div>
       </div>
-      <div class="form-field">
+      <div class="form-row">
         <label>补充说明</label>
         <textarea v-model="sForm.note" rows="2" placeholder="额外的设定、限制、方向…"></textarea>
       </div>
@@ -61,20 +61,20 @@
         <button class="btn-gen" :disabled="sGenerating" @click="sGenerate()">
           {{ sGenerating ? '生成中…' : 'AI 生成剧情' }}
         </button>
-        <button v-if="storyActive" class="protagonist-reset" @click="sReset()">清除已保存</button>
       </div>
-      <div v-if="sGenResult" class="protagonist-result">
-        <textarea v-model="sGenArchive" class="protagonist-result-text" rows="6" placeholder="（AI 生成的剧情将显示在这里，可手动修改）"></textarea>
-        <div class="btn-row">
+      <div v-if="sGenResult" class="mx-gen-result">
+        <div class="gen-result-label">剧情档案</div>
+        <textarea v-model="sGenArchive" class="gen-result-text" rows="6" placeholder="（AI 生成的剧情将显示在这里，可手动修改）"></textarea>
+        <div class="gen-result-actions">
           <button class="btn-gen-save" :disabled="!sGenArchive.trim() || sSaving" @click="sSave()">
             {{ sSaving ? '保存中…' : '保存到世界书' }}
           </button>
-          <button class="btn-gen-inject" @click="sInject()">注入聊天</button>
+          <span v-if="sSuccess" class="gen-saved-hint">{{ sSuccess }}</span>
           <button class="btn-gen-retry" @click="sGenerate()">重新生成</button>
+          <button v-if="storyActive" class="btn-gen-retry" @click="sReset()" style="border-color:rgba(196,123,139,0.2);color:#c47b8b;background:transparent">清除已保存</button>
         </div>
       </div>
-      <div v-if="sError" class="protagonist-error">{{ sError }}</div>
-      <div v-if="sSuccess" class="protagonist-success">{{ sSuccess }}</div>
+      <div v-if="sError" class="mx-gen-status error">{{ sError }}</div>
         </div>
       </div>
     </div>
@@ -96,39 +96,47 @@ const sFandomMode = ref(false);
 const sFandoms = ['哥布林杀手','原神','Fate','东方Project','明日方舟','崩坏星穹铁道','蔚蓝档案','葬送的芙莉莲','鬼灭之刃','咒术回战','艾尔登法环','赛马娘','碧蓝航线','崩坏3','少女前线','公主连结','无职转生','Re:从零开始的异世界生活'];
 const sForm = reactive({ title: '', type: '', typeCustom: '', plane: '', chars: '', fandom: '', fandomCustom: '', fandomType: '', fandomTypeCustom: '', fandomDesc: '', note: '' });
 
-const sTemplate = `你正在协助玩家生成一段剧情设定。根据以下标签整理为剧情档案。
+const sTemplate = `你正在协助玩家生成一段背景设定。根据以下标签，整理一份记录已发生事件与当前格局的档案。
 
-请将剧情信息整理为以下档案，标记为 [剧情档案]。
+请将信息整理为以下档案，标记为 [剧情档案]。
 
 ---
 
 [剧情档案]
 
 <story_info>
-剧情档案:
+背景档案:
     标题:
-    类型:（时局暗流/角色关联/历史事件/冲突爆发/日常事件/位面交汇/个人任务/势力博弈等）
-    关联位面:（留空则不限）
-    关联角色:（与此剧情直接相关的角色，含其立场或动机）
+    类型:（时局暗流/角色关联/历史事件/冲突爆发/位面交汇/势力博弈等）
 
-    背景:
-      - （剧情发生的背景——当前位面状态、相关势力的格局、触发因素）
+    关联位面:
+    关联角色:（与此背景直接相关的角色，含其立场或动机）
 
-    剧情概述:
-      - （核心事件或冲突的描述，含起因、关键转折、可能的走向，不少于100字）
+    背景概述:
+      - （当前位面/区域的局势状态——当下的政治格局、势力分布、社会氛围）
+      - （已发生的重大事件与关键转折——只写已经发生过的事，不预设未来走向）
 
-    特殊规则:
-      - （此剧情独有的规则或约束——如时间限制、不可逆的后果、特定触发条件等，无则写"无"）
+    事件脉络:
+      （按时间顺序列出已发生的核心事件，模仿以下格式）
+      （事件名）:
+        时期:（距今多久/发生在哪个年代）
+        起因:（事件为何发生）
+        过程:（关键节点与转折，不写结局未定之事）
+        影响:（事件留下的后果、造成的格局变化、仍在持续的余波）
+
+    现存格局:
+      - （当前各方势力的状态——谁在崛起、谁在衰落、哪些矛盾正在酝酿）
+      - （潜在的不稳定因素——已有的紧张关系、悬而未决的冲突、未完成的计划）
 </story_info>
 
 ---
 
 规则：
+- 只写已发生的事和当前状态，不写未来走向、不写剧本式叙述、不写角色具体行动路线。
 - 不要写叙述。不要写分析过程。
 - 不要输出 <UpdateVariable>、<JSONPatch>、<Variable> 或任何变量操作标签。
 - 严格按以上格式输出。除此之外不要附带任何其他内容。
-- 标题简洁有辨识度。
-- 剧情概述须写清起因、转折、走向三个要素。`;
+- 标题简洁有辨识度。`;
 
 async function sGenerate() {
   sError.value = '';
@@ -236,20 +244,12 @@ async function sReset() {
   --m-accent: var(--c-accent, #c9a96e);
   --m-accent-dim: rgba(201, 169, 110, 0.2);
   --m-surface: var(--c-bg, #f5ede0);
-  --m-text: var(--c-text, #4a4035);
-  --m-muted: var(--c-text-dim, #8a7e6e);
+  --m-text: #4a4035;
+  --m-muted: #8a7e6e;
   margin-bottom: 10px;
 }
-.form-row { margin-bottom: 5px; }
 .form-row-dual { display: flex; gap: 8px; }
-.form-field { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-.form-field label, .form-row label { font-size: 10px; color: var(--m-muted); letter-spacing: 1px; }
-.form-field select, .form-field input, .form-field textarea, .form-row select, .form-row input, .form-row textarea {
-  padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(139,115,85,0.15);
-  background: rgba(255,255,255,0.5); color: var(--m-text); font-size: 11px; outline: none; font-family: inherit;
-}
-.form-field select, .form-field input, .form-field textarea, .form-row select, .form-row input, .form-row textarea { width: 100%; box-sizing: border-box; }
-.form-field select:focus, .form-field input:focus, .form-field textarea:focus, .form-row select:focus, .form-row input:focus { border-color: var(--m-accent); }
+.form-row-dual > * { flex: 1; }
 .mirror-surface { max-height: none; overflow: visible; }
-.panel-title { background: linear-gradient(135deg, var(--c-accent, #c9a96e) 0%, color-mix(in srgb, var(--c-accent, #c9a96e) 70%, #fff) 50%, var(--c-accent, #c9a96e) 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.panel-title { background: linear-gradient(135deg, #6b4a28, #8b5a30 40%, #6b4a28 60%, #8b5a30); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 </style>
