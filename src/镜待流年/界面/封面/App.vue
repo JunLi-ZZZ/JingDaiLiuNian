@@ -79,14 +79,15 @@
       </div>
       <p class="tagline">塑造你的故事</p>
     </div>
+    <div class="tools-tabs">
+      <button :class="{ active: toolsTab === 'protag' }" @click="toolsTab = 'protag'">自定义主角</button>
+      <button :class="{ active: toolsTab === 'mirror' }" @click="toolsTab = 'mirror'">镜 渡</button>
+      <button :class="{ active: toolsTab === 'story' }" @click="toolsTab = 'story'">自定义剧情</button>
+    </div>
     <div class="tools-section">
-      <ProtagonistPanel />
-    <button class="mirror-trigger-btn" @click="coverMirrorOpen = !coverMirrorOpen">
-      <span class="mirror-trigger-icon">🪞</span>
-      {{ coverMirrorOpen ? '关闭镜渡' : '打开镜渡' }}
-    </button>
-      <MirrorPanel v-show="coverMirrorOpen" @close="coverMirrorOpen = false" />
-      <StoryPanel />
+      <ProtagonistPanel v-show="toolsTab === 'protag'" />
+      <MirrorPanel v-show="toolsTab === 'mirror'" @close="toolsTab = 'protag'" />
+      <StoryPanel v-show="toolsTab === 'story'" />
     </div>
     <button class="enter-btn" @click="page = 'dlc'">
       继续
@@ -200,7 +201,7 @@ import ProtagonistPanel from '../shared/ProtagonistPanel.vue';
 import StoryPanel from '../shared/StoryPanel.vue';
 
 const theme = ref((typeof localStorage !== 'undefined' && localStorage.getItem('jdnl_theme')) || 'cream');
-const coverMirrorOpen = ref(false);
+const toolsTab = ref<'protag' | 'mirror' | 'story'>('protag');
 function onStorage(e: StorageEvent) {
   if (e.key === 'jdnl_theme' && e.newValue) theme.value = e.newValue;
 }
@@ -733,31 +734,31 @@ function sendCustom() {
   max-width: 360px;
   margin: 0 auto;
 }
-.mirror-trigger-btn {
+.tools-tabs {
   display: flex;
-  align-items: center;
   justify-content: center;
-  gap: 6px;
-  width: 100%;
-  max-width: 280px;
-  margin: 0 auto 8px;
-  padding: 10px 0;
-  background: rgba(201, 169, 110, 0.08);
-  border: 1px dashed rgba(201, 169, 110, 0.25);
-  border-radius: 8px;
-  cursor: pointer;
-  color: var(--c-accent);
-  font-family: '寒蝉全圆体', var(--font-main);
-  font-size: 12px;
-  letter-spacing: 3px;
-  transition: all 0.2s;
-  &:hover {
-    border-style: solid;
-    background: rgba(201, 169, 110, 0.15);
+  gap: 0;
+  margin: 0 auto 12px;
+  max-width: 360px;
+  button {
+    font-family: '寒蝉全圆体', var(--font-main);
+    font-size: 11px;
+    padding: 6px 18px;
+    border: 1px solid rgba(var(--c-accent-rgb, 201, 169, 110), 0.2);
+    background: transparent;
+    color: var(--c-text-dim);
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: all 0.2s;
+    &:first-child { border-radius: 6px 0 0 6px; }
+    &:last-child { border-radius: 0 6px 6px 0; }
+    &.active {
+      background: rgba(var(--c-accent-rgb, 201, 169, 110), 0.15);
+      color: var(--c-accent);
+      border-color: var(--c-accent);
+    }
+    &:hover:not(.active) { color: var(--c-text); background: rgba(var(--c-accent-rgb, 201, 169, 110), 0.05); }
   }
-}
-.mirror-trigger-icon {
-  font-size: 14px;
 }
 .enter-btn {
   display: flex;

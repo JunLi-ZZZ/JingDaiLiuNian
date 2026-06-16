@@ -1,5 +1,5 @@
 <template>
-  <div class="mirror-panel">
+  <div class="theme-mirror">
     <div class="mirror-frame">
       <div class="frame-ring"></div>
       <div class="frame-inset"></div>
@@ -235,6 +235,14 @@ async function sReset() {
 }
 </script>
 <style scoped>
+.theme-mirror {
+  --m-accent: var(--c-accent, #c9a96e);
+  --m-accent-dim: rgba(201, 169, 110, 0.2);
+  --m-surface: var(--c-bg, #f5ede0);
+  --m-text: var(--c-text, #4a4035);
+  --m-muted: var(--c-text-dim, #8a7e6e);
+  margin-bottom: 10px;
+}
 .form-row { margin-bottom: 5px; }
 .form-row-dual { display: flex; gap: 8px; }
 .form-field { flex: 1; display: flex; flex-direction: column; gap: 4px; }
@@ -244,4 +252,6 @@ async function sReset() {
   background: rgba(255,255,255,0.5); color: var(--m-text); font-size: 11px; outline: none; font-family: inherit;
 }
 .form-field select:focus, .form-field input:focus, .form-field textarea:focus, .form-row select:focus, .form-row input:focus { border-color: var(--m-accent); }
+.mirror-surface { max-height: none; overflow: visible; }
+.panel-title { background: linear-gradient(135deg, var(--c-accent, #c9a96e) 0%, color-mix(in srgb, var(--c-accent, #c9a96e) 70%, #fff) 50%, var(--c-accent, #c9a96e) 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 </style>
