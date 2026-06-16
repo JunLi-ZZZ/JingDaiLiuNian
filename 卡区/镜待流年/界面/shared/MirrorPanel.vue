@@ -30,7 +30,7 @@
             <div class="form-row"><label>位面名称</label><input v-model="plForm.name" placeholder="为空则随机生成…" /></div>
             <div class="form-row"><label>位面类型</label><select v-model="plForm.type">
               <option value="">✨ 随机</option><option value="自定义">自定义 ▼</option>
-              <option>仙道</option><option>洪荒</option><option>西幻</option><option>现代都市</option>
+              <option>仙道</option><option>洪荒</option><option>西幻</option><option>古风</option><option>现代都市</option>
               <option>异世界</option><option>深渊魔界</option><option>妖灵</option><option>幽冥</option>
               <option>科幻</option><option>武侠</option><option>神话</option><option>末日废土</option>
               <option>赛博朋克</option><option>蒸汽朋克</option><option>克苏鲁</option><option>魔法学院</option>
@@ -587,7 +587,7 @@ async function mxSaveGenResult() {
     const alias = aliasMatch ? aliasMatch[1].replace(/[（(].*$/, '').trim() : '';
     const keys = [charName]; if (alias) keys.push(alias);
     let wbName: string = TH.getCharLorebooks()?.primary;
-    if (!wbName) { wbName = '镜待流年v71'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
+    if (!wbName) { wbName = '镜待流年v72'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
     const existing = await TH.getLorebookEntries(wbName);
     const genOrders = existing.map((e: any) => e.order ?? 0).filter((o: number) => o >= 4000 && o < 6000);
     const nextOrder = genOrders.length ? Math.max(...genOrders) + 5 : 4000;
@@ -729,7 +729,7 @@ async function plSaveGenResult() {
     const nameMatch = plGenArchive.value.match(/位面名称[：:][^\S\n]*(\S[^\n]*)/);
     const planeName = nameMatch ? nameMatch[1].trim() : '新位面';
     let wbName: string = TH.getCharLorebooks()?.primary;
-    if (!wbName) { wbName = '镜待流年v71'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
+    if (!wbName) { wbName = '镜待流年v72'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
     const existing = await TH.getLorebookEntries(wbName);
     const genOrders = existing.map((e: any) => e.order ?? 0).filter((o: number) => o >= 1000 && o < 3000);
     const nextOrder = genOrders.length ? Math.max(...genOrders) + 5 : 1000;
@@ -738,23 +738,23 @@ async function plSaveGenResult() {
       position: 'before_character_definition', order: nextOrder, probability: 100,
       exclude_recursion: true, prevent_recursion: true, content: plGenArchive.value,
     }]);
-    const typeMatch = plGenArchive.value.match(/位面类型[：:]\s*(\S[^\n]*)/);
-    const planeTypeDesc = typeMatch ? typeMatch[1].trim() : '未知';
+    const overviewMatch = plGenArchive.value.match(/概况:\s*\n\s*- (.+)/);
+    const planeDesc = overviewMatch ? overviewMatch[1].trim() : '未知';
     const listTarget = existing.find((e: any) => e.comment === '生成位面列表');
     if (listTarget) {
-      await TH.setLorebookEntries(wbName, [{ uid: listTarget.uid, content: (listTarget.content || '') + '\n  - ' + planeName + ':\n      类型: ' + planeTypeDesc }]);
+      await TH.setLorebookEntries(wbName, [{ uid: listTarget.uid, content: (listTarget.content || '') + '\n  - ' + planeName + ':\n      ' + planeDesc }]);
     } else {
       await TH.createLorebookEntries(wbName, [{
         comment: '生成位面列表', enabled: true, type: 'selective', keys: ['生成位面列表'],
         position: 'before_character_definition', order: 999, probability: 100,
         exclude_recursion: true, prevent_recursion: true,
-        content: '生成位面列表:\n  - ' + planeName + ':\n      类型: ' + planeTypeDesc,
+        content: '生成位面列表:\n  - ' + planeName + ':\n      ' + planeDesc,
       }]);
     }
     // 追加 const + if 到 EJS 位面控制器
     const ejsTarget = existing.find((e: any) => {
       const n = e.display_name || e.name || e.comment || '';
-      return n.includes('EJS') && n.includes('位面控制器') && !n.includes('生成');
+      return n.includes('EJS') && n.includes('生成位面');
     });
     if (ejsTarget) {
       const safeVar = 'mentioned_' + planeName.replace(/[^a-zA-Z一-鿿]/g, '');
