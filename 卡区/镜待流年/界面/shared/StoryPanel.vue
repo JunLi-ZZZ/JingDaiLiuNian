@@ -188,7 +188,9 @@ async function sSave() {
     if (!wbName) { sError.value = '未找到世界书。'; return; }
     const titleMatch = sGenArchive.value.match(/标题[：:][^\S\n]*(\S[^\n]*)/);
     const storyTitle = titleMatch ? titleMatch[1].trim() : '新剧情';
-    const nextOrder = 6000;
+    const existing = await TH.getLorebookEntries(wbName);
+    const enabledOrders = existing.filter((e: any) => e.enabled !== false && e.order >= 6000 && e.order < 8000).map((e: any) => e.order);
+    const nextOrder = enabledOrders.length ? Math.max(...enabledOrders) + 5 : 6000;
     await TH.createLorebookEntries(wbName, [{
       comment: `镜渡剧情 - ${storyTitle}`, enabled: true, type: 'constant',
       position: 'before_character_definition', order: nextOrder, probability: 100,
@@ -236,7 +238,10 @@ async function sReset() {
 }
 .form-row-dual { display: flex; gap: 8px; }
 .form-row-dual > * { flex: 1; }
-.form-row select, .form-row input, .form-row textarea { background: rgba(255,255,255,0.4); }
+.form-row select, .form-row textarea,
+.form-row input:not(.tag-custom input):not(.tag-pool input) { background: rgba(255,255,255,0.4); }
+.form-row select:focus, .form-row textarea:focus,
+.form-row input:focus:not(.tag-custom input):not(.tag-pool input) { border-color: var(--m-accent); }
 .mirror-surface { max-height: none; overflow: visible; }
 .panel-title { background: linear-gradient(135deg, #6b4a28, #8b5a30 40%, #6b4a28 60%, #8b5a30); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 </style>
