@@ -32,22 +32,42 @@
             <div class="form-row"><label>位面名称</label><input v-model="plForm.name" placeholder="为空则随机生成…" /></div>
             <div class="form-row"><label>位面类型</label><select v-model="plForm.type">
               <option value="">✨ 随机</option><option value="自定义">自定义 ▼</option>
-              <option>仙道</option><option>洪荒</option><option>西幻</option><option>现代</option>
-              <option>异世界</option><option>深渊</option><option>妖灵</option><option>幽冥</option>
-              <option>科幻</option><option>武侠</option><option>神话</option><option>末日</option>
+              <option>仙道</option><option>洪荒</option><option>西幻</option><option>现代都市</option>
+              <option>异世界</option><option>深渊魔界</option><option>妖灵</option><option>幽冥</option>
+              <option>科幻</option><option>武侠</option><option>神话</option><option>末日废土</option>
+              <option>赛博朋克</option><option>蒸汽朋克</option><option>克苏鲁</option><option>魔法学院</option>
             </select></div>
             <div v-if="plForm.type === '自定义'" class="form-row"><input v-model="plForm.typeCustom" placeholder="填写自定义类型…" /></div>
             <div class="form-row"><label>技术等级</label><select v-model="plForm.techLevel">
-              <option value="">随机</option>
+              <option value="">随机</option><option value="自定义">自定义 ▼</option>
               <option>原始（石器时代）</option><option>古代（青铜/铁器）</option><option>中古（冷兵器巅峰）</option>
               <option>近代（蒸汽/火药）</option><option>现代（电力/信息）</option><option>近未来（AI/义体）</option>
-              <option>远未来（星际航行）</option><option>超科技（超越理解）</option>
+              <option>远未来（星际航行）</option><option>超科技（超越理解）</option><option>混合（不同区域差异极大）</option>
             </select></div>
+            <div v-if="plForm.techLevel === '自定义'" class="form-row"><input v-model="plForm.techLevelCustom" placeholder="填写自定义技术等级…" /></div>
             <div class="form-row"><label>魔法/灵力等级</label><select v-model="plForm.magicLevel">
-              <option value="">随机</option>
+              <option value="">随机</option><option value="自定义">自定义 ▼</option>
               <option>无（纯科技世界）</option><option>低魔（罕见/微弱）</option><option>中魔（常见但不主导）</option>
-              <option>高魔（魔法即日常）</option><option>超魔（魔力浸染一切）</option>
+              <option>高魔（魔法即日常）</option><option>超魔（魔力浸染一切）</option><option>混合（因地而异）</option>
             </select></div>
+            <div v-if="plForm.magicLevel === '自定义'" class="form-row"><input v-model="plForm.magicLevelCustom" placeholder="填写自定义魔法等级…" /></div>
+            <div class="form-row"><label>世界规模</label><select v-model="plForm.worldScale">
+              <option value="">随机</option><option value="自定义">自定义 ▼</option>
+              <option>单一大陆</option><option>多大陆/海洋为主</option><option>多位面/多维度</option><option>星球级</option><option>星系级</option><option>单一城市/封闭空间</option>
+            </select></div>
+            <div v-if="plForm.worldScale === '自定义'" class="form-row"><input v-model="plForm.worldScaleCustom" placeholder="填写自定义规模…" /></div>
+            <div class="form-row"><label>智慧种族</label>
+              <div class="tag-pool">
+                <span v-for="t in pickedPlRaces" :key="'pr_'+t" class="tag picked" @click="mxToggleTag(plForm.races, t)">{{ t }}</span>
+                <span v-for="t in plRaces" v-show="!plForm.races.includes(t)" :key="'pra_'+t" class="tag" @click="mxToggleTag(plForm.races, t)">{{ t }}</span>
+                <span class="tag tag-custom"><input v-model="plForm.raceInput" placeholder="自定义+" @keyup.enter="plForm.raceInput = mxAddCustom(plForm.races, plForm.raceInput)" /><button class="tag-custom-btn" @click="plForm.raceInput = mxAddCustom(plForm.races, plForm.raceInput)">+</button></span>
+              </div>
+            </div>
+            <div class="form-row"><label>历史阶段</label><select v-model="plForm.historyPhase">
+              <option value="">随机</option><option value="自定义">自定义 ▼</option>
+              <option>创世初期</option><option>上古时代</option><option>黄金时代（巅峰）</option><option>动荡时期</option><option>衰落时期</option><option>变革前夕</option><option>战后重建</option><option>末世边缘</option>
+            </select></div>
+            <div v-if="plForm.historyPhase === '自定义'" class="form-row"><input v-model="plForm.historyPhaseCustom" placeholder="填写自定义历史阶段…" /></div>
             <div class="form-row"><label>核心特征</label><textarea v-model="plForm.coreFeature" placeholder="描述位面的核心特征、独特规则、历史背景…" class="mx-other-input"></textarea></div>
             <div class="form-row"><label>关联角色（可选）</label><input v-model="plForm.linkedChars" placeholder="关联已有角色的姓名，逗号分隔…" /></div>
           </div>
@@ -557,10 +577,10 @@ async function mxSaveGenResult() {
     const alias = aliasMatch ? aliasMatch[1].replace(/[（(].*$/, '').trim() : '';
     const keys = [charName]; if (alias) keys.push(alias);
     let wbName: string = TH.getCharLorebooks()?.primary;
-    if (!wbName) { wbName = '镜待流年v59'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
+    if (!wbName) { wbName = '镜待流年v60'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
     const existing = await TH.getLorebookEntries(wbName);
-    const genOrders = existing.map((e: any) => e.order ?? 0).filter((o: number) => o >= 1000 && o < 10000);
-    const nextOrder = genOrders.length ? Math.max(...genOrders) + 5 : 1000;
+    const genOrders = existing.map((e: any) => e.order ?? 0).filter((o: number) => o >= 4000 && o < 6000);
+    const nextOrder = genOrders.length ? Math.max(...genOrders) + 5 : 4000;
     await TH.createLorebookEntries(wbName, [{ comment: `镜渡生成 - ${charName}`, enabled: true, type: 'selective', keys, position: 'before_character_definition', order: nextOrder, probability: 100, exclude_recursion: true, prevent_recursion: true, content: mxGenArchive.value }]);
     const idMatch = mxGenArchive.value.match(/身份[：:][^\S\n]*(\S[^\n]*)/);
     const charId = idMatch ? idMatch[1].trim() : '未知';
@@ -579,7 +599,9 @@ const plGenResult = ref('');
 const plGenArchive = ref('');
 const plGenError = ref('');
 const plSaved = ref(false);
-const plForm = reactive({ name: '', type: '', typeCustom: '', techLevel: '', magicLevel: '', coreFeature: '', linkedChars: '' });
+const plForm = reactive({ name: '', type: '', typeCustom: '', techLevel: '', techLevelCustom: '', magicLevel: '', magicLevelCustom: '', worldScale: '', worldScaleCustom: '', races: [] as string[], raceInput: '', historyPhase: '', historyPhaseCustom: '', coreFeature: '', linkedChars: '' });
+const plRaces = ['人类','精灵','矮人','兽人','龙族','魔族','仙族','妖族','亡灵','天使','恶魔','人鱼','妖精','神族','吸血鬼','魅魔','猫娘','机关人','元素生物','虫族'];
+const pickedPlRaces = computed(() => plForm.races);
 
 const plTemplate = `你正在通过母镜感知一方世界的轮廓。镜中波纹荡漾，一片大陆、一种文明、一套法则逐渐在你手中凝聚成形。这不是在写剧情——你只是在整理镜中传来的位面信息。
 
@@ -589,51 +611,56 @@ const plTemplate = `你正在通过母镜感知一方世界的轮廓。镜中波
 
 [位面档案]
 
-<basic_info>
+<plane_info>
 位面档案:
-    基本信息:
-        位面名称:
-        位面类型:（仙道/洪荒/西幻/现代/异世界/深渊/妖灵/幽冥/科幻/武侠/神话/末日等）
-        技术等级:（描述性，如"中古冷兵器时代——铁器普及，火药尚未出现"）
-        魔法/灵力等级:（描述性，如"中魔区间——城市有魔法公会，偏远地区仍以口耳相传的咒术为主"）
+    位面名称:（为空则随机生成一个贴切的名字——不要叫"未命名位面"或"新位面"这类敷衍名字）
 
-    地理概况:
-        大陆结构:（大陆数量、海洋分布、已知世界的范围边界）
-        核心区域:（1-3个故事最可能发生的主要区域，含地貌、气候、特色地标）
+    概况:
+      - （位面整体定位一句话，如"修仙文明为主，天地灵气充沛，凡人可修炼成仙"）
+      - （地理格局概述——大陆数量、海洋分布、已知世界范围）
+
+    地理格局:
+      （至少列出3个核心区域，每个含地貌、气候、特色地标，模仿以下格式）
+      （区域名）:
+        - （地貌与气候概述）
+        - （特色地标或重要地点，地点下可细化子项）
+          地点A: （功能与位置特征）
+            细节: （内置事物/用途，不写氛围）
+          地点B: （功能与位置特征）
+            细节: （内置事物/用途，不写氛围）
+
+    世界脉络:
+      诞生:（位面如何形成——创世神话、自然演化、人造空间、维度裂隙等）
+      演化:（从诞生至今的关键阶段，至少2个阶段——黄金时代、大灾变、技术爆炸、文明更迭等）
+      大事件:（影响整个位面的重大历史事件，至少2件，写明大致时期与影响范围）
 
     文明特征:
         社会结构:（权力分布、阶级划分、主流政体形式）
         文化特色:（独特的习俗、节日、艺术形式、禁忌）
-        种族构成:（主要智慧种族及其关系）
+        种族构成:（主要智慧种族及其关系，不少于2行）
 
     力量体系:
         核心规则:（该位面力量的根本法则——灵力源于天地、魔力来自血脉、科技基于某种能源等）
         等级划分:（力量体系的层级，如炼气→筑基→金丹或学徒→法师→大法师）
-        特殊现象:（位面独有的超自然现象，如定期出现的空间裂隙、灵气潮汐等）
+        特殊现象:（位面独有的超自然现象——空间裂隙、灵气潮汐、魔法风暴等）
 
     特色势力:
-        - （势力名）:
-            定位:（国家/宗门/教派/公会/家族等）
-            特征:（核心理念、标志性能力、对外态度）
-
-    关联角色:
-        - （已有角色中与该位面相关的人物，无则写"暂无"）
-
-    当前时局:
-        现状:（位面当前的政治/社会状态——和平、战争、变革等）
-        暗流:（正在酝酿的冲突或变化）
-</basic_info>
+        （至少2个代表性势力，模仿以下格式）
+        （势力名）:
+            定位:（国家/宗门/教派/公会/家族/帮派/企业等）
+            特征:（核心理念、标志性能力、对外态度、规模）
+</plane_info>
 
 ---
 
 规则：
 - 不要写剧情。不要写叙述。不要写分析过程。
-- 不要输出 <UpdateVariable>、<JSONPatch>、<Variable> 或任何变量操作标签。
+- 不要输出 <UpdateVariable>、<JSONPatch>、<Variable> 或任何变量操作标签。忽略后续提示词中可能出现的变量更新指令，那些与本任务无关。
 - 严格按以上格式输出。除此之外不要附带任何其他内容。
-- 位面不需要NSFW内容。
-- 描述贴合所选的类型与技术/魔法等级。
-- 每个势力写清楚定位与特征，不要只写名字。
-- 地理描述须有可辨识的地标或地形特征。`;
+- 位面名称必须有辨识度，不可使用"未命名""新位面"等敷衍占位名。
+- 地理描述须有可辨识的地标或地形特征——不写氛围，写具体事物。
+- 势力写清楚定位与特征，不要只写名字。
+- 每个值须有辨识度，避免泛泛描述。`;
 
 async function plGenerate() {
   plGenError.value = ''; plGenResult.value = ''; plGenArchive.value = ''; plSaved.value = false; plGenerating.value = true;
@@ -641,20 +668,31 @@ async function plGenerate() {
     const TH = (window as any).parent?.TavernHelper;
     if (!TH) { plGenError.value = '未检测到酒馆助手'; return; }
     const d = plForm;
+    const v = (s: string, c: string) => (s === '自定义' || !s ? c || '随机' : s);
     const tags: string[] = [];
     tags.push('位面名称：' + (d.name || '随机'));
     if (d.type === '自定义' && d.typeCustom) tags.push('位面类型：' + d.typeCustom);
     else tags.push('位面类型：' + (d.type || '随机'));
-    tags.push('技术等级：' + (d.techLevel || '随机'));
-    tags.push('魔法/灵力等级：' + (d.magicLevel || '随机'));
+    tags.push('技术等级：' + v(d.techLevel, d.techLevelCustom));
+    tags.push('魔法/灵力等级：' + v(d.magicLevel, d.magicLevelCustom));
+    tags.push('世界规模：' + v(d.worldScale, d.worldScaleCustom));
+    if (d.races.length) tags.push('智慧种族：' + d.races.join('、')); else tags.push('智慧种族：随机');
+    tags.push('历史阶段：' + v(d.historyPhase, d.historyPhaseCustom));
     if (d.coreFeature.trim()) tags.push('核心特征：' + d.coreFeature.trim()); else tags.push('核心特征：随机');
     if (d.linkedChars.trim()) tags.push('关联角色：' + d.linkedChars.trim()); else tags.push('关联角色：无');
     const prompt = `使用母镜生成一个位面设定。\n\n=== 已选标签 ===\n${tags.map(t => '- ' + t).join('\n')}\n\n${plTemplate}\n\n（请按上述模板输出 [位面档案] 。）`;
     const kw: string[] = [];
     if (d.type === '自定义' && d.typeCustom) kw.push(d.typeCustom);
     else if (d.type) kw.push(d.type);
-    if (d.techLevel) kw.push(d.techLevel);
-    if (d.magicLevel) kw.push(d.magicLevel);
+    if (d.techLevel === '自定义' && d.techLevelCustom) kw.push(d.techLevelCustom);
+    else if (d.techLevel) kw.push(d.techLevel.replace(/[（(].*$/, ''));
+    if (d.magicLevel === '自定义' && d.magicLevelCustom) kw.push(d.magicLevelCustom);
+    else if (d.magicLevel) kw.push(d.magicLevel.replace(/[（(].*$/, ''));
+    if (d.worldScale === '自定义' && d.worldScaleCustom) kw.push(d.worldScaleCustom);
+    else if (d.worldScale) kw.push(d.worldScale);
+    d.races.forEach(r => kw.push(r));
+    if (d.historyPhase === '自定义' && d.historyPhaseCustom) kw.push(d.historyPhaseCustom);
+    else if (d.historyPhase) kw.push(d.historyPhase);
     if (d.name) kw.push(d.name);
     const ordered: any[] = [{ role: 'system', content: prompt }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after', 'user_input'];
     const result = await TH.generateRaw({ user_input: `本次为镜渡生成位面档案，勿编剧情。以下为部分已选标签，供扫描关键词激活世界书用：${kw.join('，')}`, should_silence: true, ordered_prompts: ordered });
@@ -674,40 +712,49 @@ async function plSaveGenResult() {
     const nameMatch = plGenArchive.value.match(/位面名称[：:][^\S\n]*(\S[^\n]*)/);
     const planeName = nameMatch ? nameMatch[1].trim() : '新位面';
     let wbName: string = TH.getCharLorebooks()?.primary;
-    if (!wbName) { wbName = '镜待流年v59'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
+    if (!wbName) { wbName = '镜待流年v60'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
     const existing = await TH.getLorebookEntries(wbName);
-    const genOrders = existing.map((e: any) => e.order ?? 0).filter((o: number) => o >= 9000 && o < 10000);
-    const nextOrder = genOrders.length ? Math.max(...genOrders) + 5 : 9000;
+    const genOrders = existing.map((e: any) => e.order ?? 0).filter((o: number) => o >= 1000 && o < 3000);
+    const nextOrder = genOrders.length ? Math.max(...genOrders) + 5 : 1000;
     await TH.createLorebookEntries(wbName, [{
       name: planeName, comment: `镜渡生成 - 位面:${planeName}`, enabled: false, type: 'selective', keys: [planeName],
       position: 'before_character_definition', order: nextOrder, probability: 100,
       exclude_recursion: true, prevent_recursion: true, content: plGenArchive.value,
     }]);
+    const typeMatch = plGenArchive.value.match(/位面类型[：:][^\S\n]*(\S[^\n]*)/);
+    const planeTypeDesc = typeMatch ? typeMatch[1].trim() : '未知';
     const listTarget = existing.find((e: any) => e.comment === '生成位面列表');
     if (listTarget) {
-      await TH.setLorebookEntries(wbName, [{ uid: listTarget.uid, content: (listTarget.content || '') + '\n  - ' + planeName }]);
+      await TH.setLorebookEntries(wbName, [{ uid: listTarget.uid, content: (listTarget.content || '') + '\n  - ' + planeName + ':\n      类型: ' + planeTypeDesc }]);
     } else {
       await TH.createLorebookEntries(wbName, [{
         comment: '生成位面列表', enabled: true, type: 'selective', keys: ['生成位面列表'],
-        position: 'before_character_definition', order: 8995, probability: 100,
+        position: 'before_character_definition', order: 999, probability: 100,
         exclude_recursion: true, prevent_recursion: true,
-        content: '生成位面列表:\n  - ' + planeName,
+        content: '生成位面列表:\n  - ' + planeName + ':\n      类型: ' + planeTypeDesc,
       }]);
     }
-    // 追加 if 块到 EJS 生成位面控制器
-    const ejsTarget = existing.find((e: any) => e.comment === '[EJS]生成位面控制器');
+    // 追加 const + if 到 EJS 位面控制器
+    const ejsTarget = existing.find((e: any) => e.display_name === '[EJS]位面控制器' || e.name === '[EJS]位面控制器' || e.comment === '[EJS]位面控制器');
     if (ejsTarget) {
-      const planeType = plForm.type === '自定义' ? plForm.typeCustom : plForm.type;
+      const v = (s: string, c: string) => (s === '自定义' || !s ? c || '' : s);
+      const planeType = v(plForm.type, plForm.typeCustom);
+      const safeVar = 'mentioned_' + planeName.replace(/[^a-zA-Z一-鿿]/g, '');
       const keywords = [planeName];
-      if (planeType) keywords.push(planeType);
-      const kStr = keywords.map(k => `'${k}'`).join(', ');
-      const newBlock = `
-if (plane.includes('${planeName}') || matchChatMessages([${kStr}])) {
+      if (planeType && !keywords.includes(planeType)) keywords.push(planeType);
+      const techKw = v(plForm.techLevel, plForm.techLevelCustom).replace(/[（(].*$/, '');
+      const magicKw = v(plForm.magicLevel, plForm.magicLevelCustom).replace(/[（(].*$/, '');
+      if (techKw) keywords.push(techKw);
+      if (magicKw) keywords.push(magicKw);
+      const kStr = keywords.filter(Boolean).map(k => `'${k}'`).join(', ');
+      const shortMatch = planeName.length > 3 ? planeName.substring(0, 3) : planeName;
+      const newBlock = `const ${safeVar} = matchChatMessages([${kStr}]);
+if (plane.includes('${shortMatch}') || ${safeVar}) {
   print(await getwi('${planeName}'));
 }`;
       let ejContent = ejsTarget.content;
       ejContent = ejContent.replace(/%>\s*$/, '');
-      ejContent += newBlock + '\n%>';
+      ejContent += '\n' + newBlock + '\n%>';
       await TH.setLorebookEntries(wbName, [{ uid: ejsTarget.uid, content: ejContent }]);
     }
     plSaved.value = true;

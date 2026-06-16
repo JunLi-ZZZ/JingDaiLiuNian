@@ -70,21 +70,7 @@ const REPLACEMENTS = [
     nw: `镜待流年_${newVersion}`,
     all: true,
   },
-  // 卡片/世界书名称
-  {
-    file: '卡区/镜待流年/界面/状态栏/App.vue',
-    desc: 'wbName fallback（状态栏 卡区）',
-    old: `wbName = '${oldCardName}'`,
-    nw: `wbName = '${newCardName}'`,
-    all: false,
-  },
-  {
-    file: 'src/镜待流年/界面/状态栏/App.vue',
-    desc: 'wbName fallback（状态栏 src）',
-    old: `wbName = '${oldCardName}'`,
-    nw: `wbName = '${newCardName}'`,
-    all: false,
-  },
+  // 卡片/世界书名称（仅 MirrorPanel，状态栏已移除）
   {
     file: '卡区/镜待流年/界面/shared/MirrorPanel.vue',
     desc: 'wbName fallback（MirrorPanel 卡区，2处）',
