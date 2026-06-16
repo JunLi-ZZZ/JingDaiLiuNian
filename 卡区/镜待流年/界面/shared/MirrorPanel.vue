@@ -70,6 +70,19 @@
             <div v-if="plForm.historyPhase === '自定义'" class="form-row"><input v-model="plForm.historyPhaseCustom" placeholder="填写自定义历史阶段…" /></div>
             <div class="form-row"><label>核心特征</label><textarea v-model="plForm.coreFeature" placeholder="描述位面的核心特征、独特规则、历史背景…" class="mx-other-input"></textarea></div>
             <div class="form-row"><label>关联角色（可选）</label><input v-model="plForm.linkedChars" placeholder="关联已有角色的姓名，逗号分隔…" /></div>
+            <div class="form-row"><label>同人作品 <span class="mx-mode-toggle" @click="plFandomMode = !plFandomMode">{{ plFandomMode ? '⟲ 简单' : '⟳ 魔改' }}</span></label>
+              <div v-if="!plFandomMode" class="mx-fandom-simple">
+                <select v-model="plForm.fandom"><option value="">原创</option><option value="自定义">自定义 ▼</option><option v-for="t in mxFandoms" :key="'pf_'+t" :value="t">{{ t }}</option></select>
+                <div v-if="plForm.fandom === '自定义'"><input v-model="plForm.fandomCustom" placeholder="填写作品名…" /></div>
+              </div>
+              <div v-if="plFandomMode" class="mx-fandom-ext">
+                <select v-model="plForm.fandomType"><option value="">魔改向</option><option value="自定义">自定义 ▼</option><option>原作向</option><option>魔改向</option><option>反转向</option></select>
+                <div v-if="plForm.fandomType === '自定义'" class="form-row"><input v-model="plForm.fandomTypeCustom" placeholder="填写类型…" /></div>
+                <select v-model="plForm.fandom"><option value="">选择作品</option><option value="自定义">自定义 ▼</option><option v-for="t in mxFandoms" :key="'pfe_'+t" :value="t">{{ t }}</option></select>
+                <div v-if="plForm.fandom === '自定义'" class="form-row"><input v-model="plForm.fandomCustom" placeholder="填写作品名…" /></div>
+                <input v-model="plForm.fandomDesc" placeholder="描述魔改细节…" />
+              </div>
+            </div>
           </div>
           <div v-if="plGenerating" class="mx-gen-status"><span class="gen-spinner"></span>正在生成位面…</div>
           <div v-if="plGenError" class="mx-gen-status error">{{ plGenError }}</div>
@@ -577,7 +590,7 @@ async function mxSaveGenResult() {
     const alias = aliasMatch ? aliasMatch[1].replace(/[（(].*$/, '').trim() : '';
     const keys = [charName]; if (alias) keys.push(alias);
     let wbName: string = TH.getCharLorebooks()?.primary;
-    if (!wbName) { wbName = '镜待流年v60'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
+    if (!wbName) { wbName = '镜待流年v61'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
     const existing = await TH.getLorebookEntries(wbName);
     const genOrders = existing.map((e: any) => e.order ?? 0).filter((o: number) => o >= 4000 && o < 6000);
     const nextOrder = genOrders.length ? Math.max(...genOrders) + 5 : 4000;
@@ -599,7 +612,8 @@ const plGenResult = ref('');
 const plGenArchive = ref('');
 const plGenError = ref('');
 const plSaved = ref(false);
-const plForm = reactive({ name: '', type: '', typeCustom: '', techLevel: '', techLevelCustom: '', magicLevel: '', magicLevelCustom: '', worldScale: '', worldScaleCustom: '', races: [] as string[], raceInput: '', historyPhase: '', historyPhaseCustom: '', coreFeature: '', linkedChars: '' });
+const plFandomMode = ref(false);
+const plForm = reactive({ name: '', type: '', typeCustom: '', techLevel: '', techLevelCustom: '', magicLevel: '', magicLevelCustom: '', worldScale: '', worldScaleCustom: '', races: [] as string[], raceInput: '', historyPhase: '', historyPhaseCustom: '', coreFeature: '', linkedChars: '', fandom: '', fandomCustom: '', fandomType: '', fandomTypeCustom: '', fandomDesc: '' });
 const plRaces = ['人类','精灵','矮人','兽人','龙族','魔族','仙族','妖族','亡灵','天使','恶魔','人鱼','妖精','神族','吸血鬼','魅魔','猫娘','机关人','元素生物','虫族'];
 const pickedPlRaces = computed(() => plForm.races);
 
@@ -680,20 +694,25 @@ async function plGenerate() {
     tags.push('历史阶段：' + v(d.historyPhase, d.historyPhaseCustom));
     if (d.coreFeature.trim()) tags.push('核心特征：' + d.coreFeature.trim()); else tags.push('核心特征：随机');
     if (d.linkedChars.trim()) tags.push('关联角色：' + d.linkedChars.trim()); else tags.push('关联角色：无');
-    const prompt = `使用母镜生成一个位面设定。\n\n=== 已选标签 ===\n${tags.map(t => '- ' + t).join('\n')}\n\n${plTemplate}\n\n（请按上述模板输出 [位面档案] 。）`;
+    if (plFandomMode.value) {
+      const ftype = d.fandomType === '自定义' ? d.fandomTypeCustom || '魔改向' : d.fandomType || '魔改向';
+      tags.push('同人类型：' + ftype);
+      if (v(d.fandom, d.fandomCustom)) tags.push('同人作品：' + v(d.fandom, d.fandomCustom));
+      if (d.fandomDesc) tags.push('魔改描述：' + d.fandomDesc);
+    } else if (v(d.fandom, d.fandomCustom) && v(d.fandom, d.fandomCustom) !== '原创') {
+      tags.push('同人作品：' + v(d.fandom, d.fandomCustom));
+    }
+    const isFandom = plFandomMode.value || (d.fandom && d.fandom !== '原创');
+    const fandomHint = isFandom ? '（含同人设定，贴合原作世界观或魔改方向）' : '';
+    const prompt = `使用母镜生成一个位面设定。${fandomHint}\n\n=== 已选标签 ===\n${tags.map(t => '- ' + t).join('\n')}\n\n${plTemplate}\n\n（请按上述模板输出 [位面档案] 。）`;
+    // kw 只放会激活特定世界书条目的名称：位面名 + 关联角色名，不放通用类型标签
     const kw: string[] = [];
-    if (d.type === '自定义' && d.typeCustom) kw.push(d.typeCustom);
-    else if (d.type) kw.push(d.type);
-    if (d.techLevel === '自定义' && d.techLevelCustom) kw.push(d.techLevelCustom);
-    else if (d.techLevel) kw.push(d.techLevel.replace(/[（(].*$/, ''));
-    if (d.magicLevel === '自定义' && d.magicLevelCustom) kw.push(d.magicLevelCustom);
-    else if (d.magicLevel) kw.push(d.magicLevel.replace(/[（(].*$/, ''));
-    if (d.worldScale === '自定义' && d.worldScaleCustom) kw.push(d.worldScaleCustom);
-    else if (d.worldScale) kw.push(d.worldScale);
-    d.races.forEach(r => kw.push(r));
-    if (d.historyPhase === '自定义' && d.historyPhaseCustom) kw.push(d.historyPhaseCustom);
-    else if (d.historyPhase) kw.push(d.historyPhase);
     if (d.name) kw.push(d.name);
+    if (d.linkedChars.trim()) d.linkedChars.split(/[,，]/).forEach(c => { const n = c.trim(); if (n) kw.push(n); });
+    if (d.coreFeature.trim()) {
+      const featKw = d.coreFeature.trim().split(/[,，、\s]+/).filter((w: string) => w.length >= 2);
+      featKw.forEach((w: string) => kw.push(w));
+    }
     const ordered: any[] = [{ role: 'system', content: prompt }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after', 'user_input'];
     const result = await TH.generateRaw({ user_input: `本次为镜渡生成位面档案，勿编剧情。以下为部分已选标签，供扫描关键词激活世界书用：${kw.join('，')}`, should_silence: true, ordered_prompts: ordered });
     const text = typeof result === 'string' ? result : result.content || JSON.stringify(result);
@@ -712,7 +731,7 @@ async function plSaveGenResult() {
     const nameMatch = plGenArchive.value.match(/位面名称[：:][^\S\n]*(\S[^\n]*)/);
     const planeName = nameMatch ? nameMatch[1].trim() : '新位面';
     let wbName: string = TH.getCharLorebooks()?.primary;
-    if (!wbName) { wbName = '镜待流年v60'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
+    if (!wbName) { wbName = '镜待流年v61'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
     const existing = await TH.getLorebookEntries(wbName);
     const genOrders = existing.map((e: any) => e.order ?? 0).filter((o: number) => o >= 1000 && o < 3000);
     const nextOrder = genOrders.length ? Math.max(...genOrders) + 5 : 1000;
@@ -735,21 +754,20 @@ async function plSaveGenResult() {
       }]);
     }
     // 追加 const + if 到 EJS 位面控制器
-    const ejsTarget = existing.find((e: any) => e.display_name === '[EJS]位面控制器' || e.name === '[EJS]位面控制器' || e.comment === '[EJS]位面控制器');
+    const ejsTarget = existing.find((e: any) => (e.display_name || e.name || e.comment || '') === '[EJS]位面控制器');
     if (ejsTarget) {
-      const v = (s: string, c: string) => (s === '自定义' || !s ? c || '' : s);
-      const planeType = v(plForm.type, plForm.typeCustom);
       const safeVar = 'mentioned_' + planeName.replace(/[^a-zA-Z一-鿿]/g, '');
       const keywords = [planeName];
-      if (planeType && !keywords.includes(planeType)) keywords.push(planeType);
-      const techKw = v(plForm.techLevel, plForm.techLevelCustom).replace(/[（(].*$/, '');
-      const magicKw = v(plForm.magicLevel, plForm.magicLevelCustom).replace(/[（(].*$/, '');
-      if (techKw) keywords.push(techKw);
-      if (magicKw) keywords.push(magicKw);
+      if (plForm.linkedChars.trim()) {
+        plForm.linkedChars.split(/[,，]/).forEach(c => { const n = c.trim(); if (n && !keywords.includes(n)) keywords.push(n); });
+      }
+      if (plForm.coreFeature.trim()) {
+        const featKw = plForm.coreFeature.trim().split(/[,，、\s]+/).filter((w: string) => w.length >= 2 && !keywords.includes(w));
+        featKw.forEach((w: string) => keywords.push(w));
+      }
       const kStr = keywords.filter(Boolean).map(k => `'${k}'`).join(', ');
-      const shortMatch = planeName.length > 3 ? planeName.substring(0, 3) : planeName;
       const newBlock = `const ${safeVar} = matchChatMessages([${kStr}]);
-if (plane.includes('${shortMatch}') || ${safeVar}) {
+if (plane.includes('${planeName}') || ${safeVar}) {
   print(await getwi('${planeName}'));
 }`;
       let ejContent = ejsTarget.content;

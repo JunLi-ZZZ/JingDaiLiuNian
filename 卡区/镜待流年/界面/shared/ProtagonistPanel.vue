@@ -1,15 +1,11 @@
 <template>
-  <div class="protagonist-area">
-    <div
-      class="protagonist-toggle"
-      :class="{ active: showProtagonist || protagonistActive }"
-      @click="showProtagonist = !showProtagonist"
-    >
-      <span class="protagonist-icon">{{ protagonistActive ? '✦' : '▸' }}</span>
-      <span class="protagonist-label">{{
+  <div class="tool-panel">
+    <div class="tool-panel-header" :class="{ active: showProtagonist || protagonistActive }" @click="showProtagonist = !showProtagonist">
+      <span class="tool-panel-icon">{{ protagonistActive ? '✦' : '▸' }}</span>
+      <span class="tool-panel-label">{{
         protagonistActive ? '自定义主角（已启用）' : '自定义主角（不选则用默认）'
       }}</span>
-      <span class="protagonist-arrow">{{ showProtagonist ? '▾' : '▸' }}</span>
+      <span class="tool-panel-arrow">{{ showProtagonist ? '▾' : '▸' }}</span>
     </div>
     <div v-if="showProtagonist" class="protagonist-form">
       <div class="form-row-dual">
@@ -240,3 +236,32 @@ async function resetProtagonist() {
 
 onMounted(() => { checkProtagonistStatus(); });
 </script>
+<style scoped>
+.tool-panel {
+  --m-accent: #c9a96e;
+  --m-accent-dim: rgba(201, 169, 110, 0.15);
+  --m-surface: rgba(139, 115, 85, 0.04);
+  --m-text: #8a7e6e;
+  border: 1px solid var(--m-accent-dim);
+  border-radius: 10px;
+  padding: 2px;
+  background: linear-gradient(145deg, rgba(139,115,85,0.06), rgba(107,90,72,0.04) 50%, rgba(201,169,110,0.06) 100%);
+  margin-bottom: 8px;
+}
+.tool-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: var(--m-surface);
+  transition: all 0.2s;
+  user-select: none;
+}
+.tool-panel-header:hover { background: rgba(139, 115, 85, 0.08); }
+.tool-panel-header.active { background: var(--m-accent-dim); }
+.tool-panel-icon { font-size: 12px; color: var(--m-accent); }
+.tool-panel-label { font-size: 11px; color: var(--m-text); flex: 1; letter-spacing: 1px; }
+.tool-panel-arrow { font-size: 10px; color: var(--m-accent); }
+</style>

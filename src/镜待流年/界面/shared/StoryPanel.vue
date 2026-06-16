@@ -1,13 +1,13 @@
 <template>
-  <div class="protagonist-area">
+  <div class="tool-panel">
     <div
-      class="protagonist-toggle"
+      class="tool-panel-header"
       :class="{ active: showStory || storyActive }"
       @click="showStory = !showStory"
     >
-      <span class="protagonist-icon">{{ storyActive ? '✦' : '▸' }}</span>
-      <span class="protagonist-label">{{ storyActive ? '自定义剧情（已保存）' : '自定义剧情' }}</span>
-      <span class="protagonist-arrow">{{ showStory ? '▾' : '▸' }}</span>
+      <span class="tool-panel-icon">{{ storyActive ? '✦' : '▸' }}</span>
+      <span class="tool-panel-label">{{ storyActive ? '自定义剧情（已保存）' : '自定义剧情' }}</span>
+      <span class="tool-panel-arrow">{{ showStory ? '▾' : '▸' }}</span>
     </div>
     <div v-if="showStory" class="protagonist-form">
       <div class="form-field">
@@ -239,3 +239,32 @@ async function sReset() {
   } catch (e: any) { sError.value = e?.message || '清除失败'; }
 }
 </script>
+<style scoped>
+.tool-panel {
+  --m-accent: #c9a96e;
+  --m-accent-dim: rgba(201, 169, 110, 0.15);
+  --m-surface: rgba(139, 115, 85, 0.04);
+  --m-text: #8a7e6e;
+  border: 1px solid var(--m-accent-dim);
+  border-radius: 10px;
+  padding: 2px;
+  background: linear-gradient(145deg, rgba(139,115,85,0.06), rgba(107,90,72,0.04) 50%, rgba(201,169,110,0.06) 100%);
+  margin-bottom: 8px;
+}
+.tool-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: var(--m-surface);
+  transition: all 0.2s;
+  user-select: none;
+}
+.tool-panel-header:hover { background: rgba(139, 115, 85, 0.08); }
+.tool-panel-header.active { background: var(--m-accent-dim); }
+.tool-panel-icon { font-size: 12px; color: var(--m-accent); }
+.tool-panel-label { font-size: 11px; color: var(--m-text); flex: 1; letter-spacing: 1px; }
+.tool-panel-arrow { font-size: 10px; color: var(--m-accent); }
+</style>
