@@ -136,7 +136,7 @@
                   <span v-if="name.includes('母镜')" class="mirror-toggle">{{ mirrorOpen ? '▾' : '▸' }}</span>
                 </div>
               </div>
-              <MirrorPanel v-if="mirrorOpen" @close="mirrorOpen = false" />
+              <MirrorPanel v-show="mirrorOpen" @close="mirrorOpen = false" />
                 </div>
               </div>
           <div class="sub-block" :class="{ open: showRelations }">

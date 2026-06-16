@@ -562,6 +562,9 @@ async function mxDoGenerate() {
     if (mxForm.originCustom && mxForm.origin === '自定义') kw.push(mxForm.originCustom);
     if (mxForm.roleCustom && mxForm.role === '自定义') kw.push(mxForm.roleCustom);
     if (mxForm.coreTraitCustom && mxForm.coreTrait === '自定义') kw.push(mxForm.coreTraitCustom);
+    if (mxForm.fandom && mxForm.fandom !== '原创' && mxForm.fandom !== '自定义') kw.push(mxForm.fandom);
+    if (mxForm.fandom === '自定义' && mxForm.fandomCustom) kw.push(mxForm.fandomCustom);
+    if (mxForm.other.trim()) mxForm.other.trim().split(/[,，、\s]+/).filter((w: string) => w.length >= 2).forEach((w: string) => kw.push(w));
     const ordered: any[] = [{ role: 'system', content: prompt }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after'];
     if (mxIncludeChat.value) ordered.push('chat_history');
     ordered.push('user_input');
@@ -590,7 +593,7 @@ async function mxSaveGenResult() {
     const alias = aliasMatch ? aliasMatch[1].replace(/[（(].*$/, '').trim() : '';
     const keys = [charName]; if (alias) keys.push(alias);
     let wbName: string = TH.getCharLorebooks()?.primary;
-    if (!wbName) { wbName = '镜待流年v61'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
+    if (!wbName) { wbName = '镜待流年v62'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
     const existing = await TH.getLorebookEntries(wbName);
     const genOrders = existing.map((e: any) => e.order ?? 0).filter((o: number) => o >= 4000 && o < 6000);
     const nextOrder = genOrders.length ? Math.max(...genOrders) + 5 : 4000;
@@ -705,14 +708,15 @@ async function plGenerate() {
     const isFandom = plFandomMode.value || (d.fandom && d.fandom !== '原创');
     const fandomHint = isFandom ? '（含同人设定，贴合原作世界观或魔改方向）' : '';
     const prompt = `使用母镜生成一个位面设定。${fandomHint}\n\n=== 已选标签 ===\n${tags.map(t => '- ' + t).join('\n')}\n\n${plTemplate}\n\n（请按上述模板输出 [位面档案] 。）`;
-    // kw 只放会激活特定世界书条目的名称：位面名 + 关联角色名，不放通用类型标签
+    // kw 全量：位面名称 + 关联角色 + 核心特征 + 同人作品
     const kw: string[] = [];
     if (d.name) kw.push(d.name);
     if (d.linkedChars.trim()) d.linkedChars.split(/[,，]/).forEach(c => { const n = c.trim(); if (n) kw.push(n); });
     if (d.coreFeature.trim()) {
-      const featKw = d.coreFeature.trim().split(/[,，、\s]+/).filter((w: string) => w.length >= 2);
-      featKw.forEach((w: string) => kw.push(w));
+      d.coreFeature.trim().split(/[,，、\s]+/).filter((w: string) => w.length >= 2).forEach((w: string) => kw.push(w));
     }
+    if (d.fandom && d.fandom !== '原创' && d.fandom !== '自定义') kw.push(d.fandom);
+    if (d.fandom === '自定义' && d.fandomCustom) kw.push(d.fandomCustom);
     const ordered: any[] = [{ role: 'system', content: prompt }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after', 'user_input'];
     const result = await TH.generateRaw({ user_input: `本次为镜渡生成位面档案，勿编剧情。以下为部分已选标签，供扫描关键词激活世界书用：${kw.join('，')}`, should_silence: true, ordered_prompts: ordered });
     const text = typeof result === 'string' ? result : result.content || JSON.stringify(result);
@@ -731,7 +735,7 @@ async function plSaveGenResult() {
     const nameMatch = plGenArchive.value.match(/位面名称[：:][^\S\n]*(\S[^\n]*)/);
     const planeName = nameMatch ? nameMatch[1].trim() : '新位面';
     let wbName: string = TH.getCharLorebooks()?.primary;
-    if (!wbName) { wbName = '镜待流年v61'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
+    if (!wbName) { wbName = '镜待流年v62'; await TH.createLorebook(wbName); await TH.setCurrentCharLorebooks({ primary: wbName }); }
     const existing = await TH.getLorebookEntries(wbName);
     const genOrders = existing.map((e: any) => e.order ?? 0).filter((o: number) => o >= 1000 && o < 3000);
     const nextOrder = genOrders.length ? Math.max(...genOrders) + 5 : 1000;
@@ -740,7 +744,7 @@ async function plSaveGenResult() {
       position: 'before_character_definition', order: nextOrder, probability: 100,
       exclude_recursion: true, prevent_recursion: true, content: plGenArchive.value,
     }]);
-    const typeMatch = plGenArchive.value.match(/位面类型[：:][^\S\n]*(\S[^\n]*)/);
+    const typeMatch = plGenArchive.value.match(/位面类型[：:]\s*(\S[^\n]*)/);
     const planeTypeDesc = typeMatch ? typeMatch[1].trim() : '未知';
     const listTarget = existing.find((e: any) => e.comment === '生成位面列表');
     if (listTarget) {
@@ -754,7 +758,10 @@ async function plSaveGenResult() {
       }]);
     }
     // 追加 const + if 到 EJS 位面控制器
-    const ejsTarget = existing.find((e: any) => (e.display_name || e.name || e.comment || '') === '[EJS]位面控制器');
+    const ejsTarget = existing.find((e: any) => {
+      const n = e.display_name || e.name || e.comment || '';
+      return n.includes('EJS') && n.includes('位面控制器') && !n.includes('生成');
+    });
     if (ejsTarget) {
       const safeVar = 'mentioned_' + planeName.replace(/[^a-zA-Z一-鿿]/g, '');
       const keywords = [planeName];

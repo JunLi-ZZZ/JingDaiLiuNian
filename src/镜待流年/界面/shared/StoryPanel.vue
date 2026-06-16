@@ -198,16 +198,10 @@ async function sSave() {
     const nextOrder = genOrders.length ? Math.max(...genOrders) + 5 : 6000;
     const keys = [storyTitle];
     await TH.createLorebookEntries(wbName, [{
-      comment: `镜渡剧情 - ${storyTitle}`, enabled: false, type: 'selective', keys,
+      comment: `镜渡剧情 - ${storyTitle}`, enabled: true, type: 'constant',
       position: 'before_character_definition', order: nextOrder, probability: 100,
       exclude_recursion: true, prevent_recursion: true, content: sGenArchive.value,
     }]);
-    const typeMatch = sGenArchive.value.match(/类型[：:][^\S\n]*(\S[^\n]*)/);
-    const storyType = typeMatch ? typeMatch[1].trim() : '未知';
-    const listTarget = existing.find((e: any) => e.comment === '生成剧情列表');
-    if (listTarget) {
-      await TH.setLorebookEntries(wbName, [{ uid: listTarget.uid, content: (listTarget.content || '') + '\n  - ' + storyTitle + ':\n      类型: ' + storyType }]);
-    }
     storyActive.value = true;
     sSuccess.value = `已保存：${storyTitle}`;
   } catch (e: any) { sError.value = e?.message || '保存失败'; }
@@ -242,29 +236,70 @@ async function sReset() {
 <style scoped>
 .tool-panel {
   --m-accent: #c9a96e;
-  --m-accent-dim: rgba(201, 169, 110, 0.15);
-  --m-surface: rgba(139, 115, 85, 0.04);
-  --m-text: #8a7e6e;
-  border: 1px solid var(--m-accent-dim);
-  border-radius: 10px;
-  padding: 2px;
-  background: linear-gradient(145deg, rgba(139,115,85,0.06), rgba(107,90,72,0.04) 50%, rgba(201,169,110,0.06) 100%);
-  margin-bottom: 8px;
+  --m-accent-dim: rgba(201, 169, 110, 0.2);
+  --m-surface: #f5ede0;
+  --m-text: #4a4035;
+  --m-muted: #8a7e6e;
+  border-radius: 12px;
+  padding: 4px;
+  background: linear-gradient(145deg, #8b7355, #6b5a48 25%, #c9a96e 50%, #6b5a48 75%, #8b7355);
+  box-shadow: 0 0 12px rgba(201, 169, 110, 0.08);
+  margin-bottom: 10px;
 }
 .tool-panel-header {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 10px;
-  border-radius: 8px;
+  padding: 10px 14px;
+  border-radius: 9px;
   cursor: pointer;
   background: var(--m-surface);
   transition: all 0.2s;
   user-select: none;
 }
-.tool-panel-header:hover { background: rgba(139, 115, 85, 0.08); }
+.tool-panel-header:hover { background: #ede5d8; }
 .tool-panel-header.active { background: var(--m-accent-dim); }
-.tool-panel-icon { font-size: 12px; color: var(--m-accent); }
-.tool-panel-label { font-size: 11px; color: var(--m-text); flex: 1; letter-spacing: 1px; }
+.tool-panel-icon { font-size: 13px; color: var(--m-accent); }
+.tool-panel-label { font-size: 12px; color: var(--m-text); flex: 1; letter-spacing: 2px; }
 .tool-panel-arrow { font-size: 10px; color: var(--m-accent); }
+.protagonist-form {
+  padding: 10px 12px;
+  background: var(--m-surface);
+  border-radius: 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.form-row-dual { display: flex; gap: 8px; }
+.form-row { margin-bottom: 4px; }
+.form-field { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.form-field label, .form-row label { font-size: 10px; color: var(--m-muted); letter-spacing: 1px; }
+.form-field select, .form-field input, .form-field textarea, .form-row select, .form-row input, .form-row textarea {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(139, 115, 85, 0.15);
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--m-text);
+  font-size: 11px;
+  outline: none;
+  font-family: inherit;
+}
+.form-field select:focus, .form-field input:focus, .form-field textarea:focus, .form-row select:focus, .form-row input:focus { border-color: var(--m-accent); }
+.mx-mode-toggle { font-size: 8px; color: var(--m-accent); cursor: pointer; background: var(--m-accent-dim); padding: 1px 6px; border-radius: 8px; margin-left: 4px; }
+.mx-fandom-simple { display: flex; flex-direction: column; gap: 4px; }
+.mx-fandom-simple select, .mx-fandom-simple input { padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(139,115,85,0.15); background: rgba(255,255,255,0.6); color: var(--m-text); font-size: 10px; outline: none; font-family: inherit; }
+.mx-fandom-ext { display: flex; flex-direction: column; gap: 4px; padding: 6px; background: rgba(139,115,85,0.04); border: 1px solid rgba(139,115,85,0.1); border-radius: 6px; }
+.mx-fandom-ext select, .mx-fandom-ext input { padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(139,115,85,0.15); background: rgba(255,255,255,0.6); color: var(--m-text); font-size: 10px; outline: none; font-family: inherit; }
+.protagonist-actions { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+.protagonist-gen, .protagonist-save, .protagonist-reset, .btn-gen-inject, .btn-gen-retry {
+  padding: 6px 12px; border-radius: 6px; border: 1px solid var(--m-accent-dim); cursor: pointer;
+  font-size: 10px; letter-spacing: 1px; background: var(--m-accent-dim); color: var(--m-accent); transition: all 0.2s;
+}
+.protagonist-gen:hover, .protagonist-save:hover, .btn-gen-inject:hover, .btn-gen-retry:hover { background: var(--m-accent); color: #fff; }
+.protagonist-gen:disabled { opacity: 0.4; cursor: not-allowed; }
+.protagonist-reset { background: transparent; border-color: rgba(196,123,139,0.2); color: #c47b8b; }
+.protagonist-result { display: flex; flex-direction: column; gap: 4px; }
+.protagonist-result-text { width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(139,115,85,0.15); font-size: 10px; resize: vertical; background: rgba(255,255,255,0.6); color: var(--m-text); outline: none; font-family: inherit; }
+.protagonist-error { font-size: 10px; color: #c0392b; }
+.protagonist-success { font-size: 10px; color: #27ae60; }
 </style>

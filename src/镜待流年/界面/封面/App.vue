@@ -78,13 +78,14 @@
         <span class="divider-dot"></span>
       </div>
     </div>
+    <p class="tagline">塑造你的故事</p>
     <div class="tools-section">
       <ProtagonistPanel />
     <button class="mirror-trigger-btn" @click="coverMirrorOpen = !coverMirrorOpen">
       <span class="mirror-trigger-icon">🪞</span>
       {{ coverMirrorOpen ? '关闭镜渡' : '打开镜渡' }}
     </button>
-      <MirrorPanel v-if="coverMirrorOpen" @close="coverMirrorOpen = false" />
+      <MirrorPanel v-show="coverMirrorOpen" @close="coverMirrorOpen = false" />
       <StoryPanel />
     </div>
     <button class="enter-btn" @click="page = 'dlc'">
