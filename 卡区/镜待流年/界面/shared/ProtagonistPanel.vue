@@ -254,6 +254,7 @@ onMounted(() => { checkProtagonistStatus(); });
 }
 .form-field select, .form-field input, .form-field textarea { width: 100%; box-sizing: border-box; }
 .form-field select:focus, .form-field input:focus, .form-field textarea:focus { border-color: var(--m-accent); }
+.tag { background: transparent !important; }
 .mirror-surface { max-height: none; overflow: visible; }
 .panel-title { background: linear-gradient(135deg, var(--c-accent, #c9a96e) 0%, color-mix(in srgb, var(--c-accent, #c9a96e) 70%, #fff) 50%, var(--c-accent, #c9a96e) 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 </style>

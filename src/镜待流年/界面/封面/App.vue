@@ -134,6 +134,18 @@
         <span class="scene-arrow"></span>
       </button>
     </div>
+    <div class="scene-card custom-card" :class="{ active: showCustom }" @click="showCustom = !showCustom">
+        <span class="scene-index">✦</span>
+        <div class="scene-body">
+          <span class="scene-char">自由开局</span>
+          <span class="scene-teaser">书写属于你自己的故事开篇</span>
+        </div>
+        <span class="scene-arrow">{{ showCustom ? '▾' : '' }}</span>
+      </div>
+      <div v-if="showCustom" class="custom-area">
+        <textarea v-model="customMsg" class="custom-input" placeholder="写下你想对 AI 说的话，作为故事的开端…" rows="3"></textarea>
+        <button class="custom-send" :disabled="!customMsg.trim()" @click.stop="sendCustom">发送</button>
+      </div>
     <p class="footer-note">更多故事，敬请期待</p>
   </div>
 
@@ -170,24 +182,6 @@
         <span class="scene-arrow"></span>
       </button>
 
-      <!-- 自定义开局 -->
-      <div class="scene-card custom-card" :class="{ active: showCustom }" @click="showCustom = !showCustom">
-        <span class="scene-index">✦</span>
-        <div class="scene-body">
-          <span class="scene-char">自由开局</span>
-          <span class="scene-teaser">书写属于你自己的故事开篇</span>
-        </div>
-        <span class="scene-arrow">{{ showCustom ? '▾' : '' }}</span>
-      </div>
-      <div v-if="showCustom" class="custom-area">
-        <textarea
-          v-model="customMsg"
-          class="custom-input"
-          placeholder="写下你想对 AI 说的话，作为故事的开端…"
-          rows="3"
-        ></textarea>
-        <button class="custom-send" :disabled="!customMsg.trim()" @click.stop="sendCustom">发送</button>
-      </div>
     </div>
 
     <p class="footer-note">选择一幕，开启你的镜中之旅</p>

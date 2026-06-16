@@ -57,7 +57,7 @@
         <label>补充说明</label>
         <textarea v-model="sForm.note" rows="2" placeholder="额外的设定、限制、方向…"></textarea>
       </div>
-      <div class="protagonist-actions">
+      <div class="btn-row">
         <button class="btn-gen" :disabled="sGenerating" @click="sGenerate()">
           {{ sGenerating ? '生成中…' : 'AI 生成剧情' }}
         </button>
@@ -65,7 +65,7 @@
       </div>
       <div v-if="sGenResult" class="protagonist-result">
         <textarea v-model="sGenArchive" class="protagonist-result-text" rows="6" placeholder="（AI 生成的剧情将显示在这里，可手动修改）"></textarea>
-        <div class="protagonist-actions">
+        <div class="btn-row">
           <button class="btn-gen-save" :disabled="!sGenArchive.trim() || sSaving" @click="sSave()">
             {{ sSaving ? '保存中…' : '保存到世界书' }}
           </button>
