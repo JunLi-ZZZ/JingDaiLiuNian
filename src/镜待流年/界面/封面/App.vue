@@ -80,9 +80,9 @@
       <p class="tagline">塑造你的故事</p>
     </div>
     <div class="tools-tabs">
-      <button :class="{ active: toolsTab === 'protag' }" @click="toolsTab = 'protag'">自定义主角</button>
-      <button :class="{ active: toolsTab === 'mirror' }" @click="toolsTab = 'mirror'">镜 渡</button>
-      <button :class="{ active: toolsTab === 'story' }" @click="toolsTab = 'story'">自定义剧情</button>
+      <button :class="{ active: toolsTab === 'protag' }" @click="toolsTab = toolsTab === 'protag' ? '' : 'protag'">自定义主角</button>
+      <button :class="{ active: toolsTab === 'mirror' }" @click="toolsTab = toolsTab === 'mirror' ? '' : 'mirror'">镜 渡</button>
+      <button :class="{ active: toolsTab === 'story' }" @click="toolsTab = toolsTab === 'story' ? '' : 'story'">自定义剧情</button>
     </div>
     <div class="tools-section">
       <ProtagonistPanel v-show="toolsTab === 'protag'" />
@@ -195,7 +195,7 @@ import ProtagonistPanel from '../shared/ProtagonistPanel.vue';
 import StoryPanel from '../shared/StoryPanel.vue';
 
 const theme = ref((typeof localStorage !== 'undefined' && localStorage.getItem('jdnl_theme')) || 'cream');
-const toolsTab = ref<'protag' | 'mirror' | 'story'>('protag');
+const toolsTab = ref('');
 function onStorage(e: StorageEvent) {
   if (e.key === 'jdnl_theme' && e.newValue) theme.value = e.newValue;
 }

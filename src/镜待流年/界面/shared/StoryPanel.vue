@@ -238,10 +238,6 @@ async function sReset() {
 }
 .form-row-dual { display: flex; gap: 8px; }
 .form-row-dual > * { flex: 1; }
-.form-row select, .form-row textarea,
-.form-row input:not(.tag-custom input):not(.tag-pool input) { background: rgba(255,255,255,0.4); }
-.form-row select:focus, .form-row textarea:focus,
-.form-row input:focus:not(.tag-custom input):not(.tag-pool input) { border-color: var(--m-accent); }
 .mirror-surface { max-height: none; overflow: visible; }
 .panel-title { background: linear-gradient(135deg, #6b4a28, #8b5a30 40%, #6b4a28 60%, #8b5a30); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 </style>

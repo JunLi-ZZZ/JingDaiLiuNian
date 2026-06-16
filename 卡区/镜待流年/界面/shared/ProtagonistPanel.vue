@@ -316,10 +316,6 @@ onMounted(() => {
 }
 .form-row-dual { display: flex; gap: 8px; }
 .form-row-dual > * { flex: 1; }
-.form-row select, .form-row textarea,
-.form-row input:not(.tag-custom input):not(.tag-pool input) { background: rgba(255,255,255,0.4); }
-.form-row select:focus, .form-row textarea:focus,
-.form-row input:focus:not(.tag-custom input):not(.tag-pool input) { border-color: var(--m-accent); }
 .tag { background: rgba(139,115,85,0.04) !important; }
 .tag.picked { background: var(--m-accent-dim) !important; border-color: var(--m-accent); color: var(--m-accent); }
 .mirror-surface { max-height: none; overflow: visible; }
