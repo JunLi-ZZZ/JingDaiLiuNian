@@ -255,7 +255,7 @@ async function saveProtagonist() {
           enabled: true,
           type: 'constant',
           position: 'before_character_definition',
-          order: 2996,
+          order: 4999,
           probability: 100,
           exclude_recursion: true,
           prevent_recursion: true,

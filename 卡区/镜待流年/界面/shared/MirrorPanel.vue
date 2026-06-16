@@ -1169,13 +1169,13 @@ async function mxSaveGenResult() {
     if (alias) keys.push(alias);
     let wbName: string = TH.getCharLorebooks()?.primary;
     if (!wbName) {
-      wbName = '镜待流年v73';
+      wbName = '镜待流年v74';
       await TH.createLorebook(wbName);
       await TH.setCurrentCharLorebooks({ primary: wbName });
     }
     const existing = await TH.getLorebookEntries(wbName);
-    const genOrders = existing.map((e: any) => e.order ?? 0).filter((o: number) => o >= 4000 && o < 6000);
-    const nextOrder = genOrders.length ? Math.max(...genOrders) + 5 : 4000;
+    const genOrders = existing.map((e: any) => e.order ?? 0).filter((o: number) => o >= 6000 && o < 9000);
+    const nextOrder = genOrders.length ? Math.max(...genOrders) + 5 : 6000;
     await TH.createLorebookEntries(wbName, [
       {
         comment: `镜渡生成 - ${charName}`,
@@ -1410,12 +1410,12 @@ async function plSaveGenResult() {
     const planeName = nameMatch ? nameMatch[1].trim() : '新位面';
     let wbName: string = TH.getCharLorebooks()?.primary;
     if (!wbName) {
-      wbName = '镜待流年v73';
+      wbName = '镜待流年v74';
       await TH.createLorebook(wbName);
       await TH.setCurrentCharLorebooks({ primary: wbName });
     }
     const existing = await TH.getLorebookEntries(wbName);
-    const genOrders = existing.map((e: any) => e.order ?? 0).filter((o: number) => o >= 1000 && o < 3000);
+    const genOrders = existing.map((e: any) => e.order ?? 0).filter((o: number) => o >= 1000 && o < 4000);
     const nextOrder = genOrders.length ? Math.max(...genOrders) + 5 : 1000;
     await TH.createLorebookEntries(wbName, [
       {
