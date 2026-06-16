@@ -4,7 +4,7 @@
       <div class="frame-ring"></div>
       <div class="frame-inset"></div>
       <div class="mirror-surface">
-        <div class="panel-title">{{ storyActive ? '✦ 自定义剧情' : '自定义剧情' }}</div>
+        <div class="panel-title">自定义剧情</div>
         <div class="section-body" style="padding-top:0">
       <div class="form-row">
         <label>剧情标题</label>
@@ -96,7 +96,7 @@ const sFandomMode = ref(false);
 const sFandoms = ['哥布林杀手','原神','Fate','东方Project','明日方舟','崩坏星穹铁道','蔚蓝档案','葬送的芙莉莲','鬼灭之刃','咒术回战','艾尔登法环','赛马娘','碧蓝航线','崩坏3','少女前线','公主连结','无职转生','Re:从零开始的异世界生活'];
 const sForm = reactive({ title: '', type: '', typeCustom: '', plane: '', chars: '', fandom: '', fandomCustom: '', fandomType: '', fandomTypeCustom: '', fandomDesc: '', note: '' });
 
-const sTemplate = `你正在协助玩家生成一段背景设定。根据以下标签，整理一份记录已发生事件与当前格局的档案。
+const sTemplate = `你正在协助玩家生成一段背景设定。根据以下标签，整理一份记录已发生事件与当前状态的档案。
 
 请将信息整理为以下档案，标记为 [剧情档案]。
 
@@ -107,36 +107,25 @@ const sTemplate = `你正在协助玩家生成一段背景设定。根据以下�
 <story_info>
 背景档案:
     标题:
-    类型:（时局暗流/角色关联/历史事件/冲突爆发/位面交汇/势力博弈等）
-
+    类型:
     关联位面:
     关联角色:（与此背景直接相关的角色，含其立场或动机）
 
-    背景概述:
-      - （当前位面/区域的局势状态——当下的政治格局、势力分布、社会氛围）
-      - （已发生的重大事件与关键转折——只写已经发生过的事，不预设未来走向）
+    事件:
+      - （已发生的核心事件或变化，写清楚发生了什么、为何发生、造成了什么后果）
 
-    事件脉络:
-      （按时间顺序列出已发生的核心事件，模仿以下格式）
-      （事件名）:
-        时期:（距今多久/发生在哪个年代）
-        起因:（事件为何发生）
-        过程:（关键节点与转折，不写结局未定之事）
-        影响:（事件留下的后果、造成的格局变化、仍在持续的余波）
-
-    现存格局:
-      - （当前各方势力的状态——谁在崛起、谁在衰落、哪些矛盾正在酝酿）
-      - （潜在的不稳定因素——已有的紧张关系、悬而未决的冲突、未完成的计划）
+    现状:
+      - （事件之后当前格局的具体状态、各方反应、仍在持续的影响）
 </story_info>
 
 ---
 
 规则：
-- 只写已发生的事和当前状态，不写未来走向、不写剧本式叙述、不写角色具体行动路线。
+- 只写已发生的事件和当前状态，不预设未来走向，不写角色未来行动。
+- 每个条目写具体事实，不写空泛的"可能""或许""将会"。
 - 不要写叙述。不要写分析过程。
 - 不要输出 <UpdateVariable>、<JSONPatch>、<Variable> 或任何变量操作标签。
-- 严格按以上格式输出。除此之外不要附带任何其他内容。
-- 标题简洁有辨识度。`;
+- 严格按以上格式输出。除此之外不要附带任何其他内容。`;
 
 async function sGenerate() {
   sError.value = '';
@@ -199,10 +188,7 @@ async function sSave() {
     if (!wbName) { sError.value = '未找到世界书。'; return; }
     const titleMatch = sGenArchive.value.match(/标题[：:][^\S\n]*(\S[^\n]*)/);
     const storyTitle = titleMatch ? titleMatch[1].trim() : '新剧情';
-    const existing = await TH.getLorebookEntries(wbName);
-    const genOrders = existing.map((e: any) => e.order ?? 0).filter((o: number) => o >= 6000 && o < 8000);
-    const nextOrder = genOrders.length ? Math.max(...genOrders) + 5 : 6000;
-    const keys = [storyTitle];
+    const nextOrder = 6000;
     await TH.createLorebookEntries(wbName, [{
       comment: `镜渡剧情 - ${storyTitle}`, enabled: true, type: 'constant',
       position: 'before_character_definition', order: nextOrder, probability: 100,
@@ -250,6 +236,7 @@ async function sReset() {
 }
 .form-row-dual { display: flex; gap: 8px; }
 .form-row-dual > * { flex: 1; }
+.form-row select, .form-row input, .form-row textarea { background: rgba(255,255,255,0.4); }
 .mirror-surface { max-height: none; overflow: visible; }
 .panel-title { background: linear-gradient(135deg, #6b4a28, #8b5a30 40%, #6b4a28 60%, #8b5a30); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 </style>

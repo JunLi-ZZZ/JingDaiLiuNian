@@ -4,7 +4,7 @@
       <div class="frame-ring"></div>
       <div class="frame-inset"></div>
       <div class="mirror-surface">
-        <div class="panel-title">{{ protagonistActive ? '✦ 自定义主角' : '自定义主角' }}</div>
+        <div class="panel-title">自定义主角</div>
         <div class="section-body" style="padding-top: 0">
           <div class="form-row-dual">
             <div class="form-row">
@@ -316,6 +316,7 @@ onMounted(() => {
 }
 .form-row-dual { display: flex; gap: 8px; }
 .form-row-dual > * { flex: 1; }
+.form-row select, .form-row input, .form-row textarea { background: rgba(255,255,255,0.4); }
 .tag { background: rgba(139,115,85,0.04) !important; }
 .tag.picked { background: var(--m-accent-dim) !important; border-color: var(--m-accent); color: var(--m-accent); }
 .mirror-surface { max-height: none; overflow: visible; }
