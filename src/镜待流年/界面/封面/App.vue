@@ -77,8 +77,8 @@
         <span class="divider-line"></span>
         <span class="divider-dot"></span>
       </div>
+      <p class="tagline">塑造你的故事</p>
     </div>
-    <p class="tagline">塑造你的故事</p>
     <div class="tools-section">
       <ProtagonistPanel />
     <button class="mirror-trigger-btn" @click="coverMirrorOpen = !coverMirrorOpen">

@@ -1,15 +1,14 @@
 <template>
-  <div class="tool-panel">
-    <div
-      class="tool-panel-header"
-      :class="{ active: showStory || storyActive }"
-      @click="showStory = !showStory"
-    >
-      <span class="tool-panel-icon">{{ storyActive ? '✦' : '▸' }}</span>
-      <span class="tool-panel-label">{{ storyActive ? '自定义剧情（已保存）' : '自定义剧情' }}</span>
-      <span class="tool-panel-arrow">{{ showStory ? '▾' : '▸' }}</span>
-    </div>
-    <div v-if="showStory" class="protagonist-form">
+  <div class="mirror-panel">
+    <div class="mirror-frame">
+      <div class="frame-ring"></div>
+      <div class="frame-inset"></div>
+      <div class="mirror-surface">
+        <div class="panel-title">自定义剧情</div>
+        <div class="form-section" @click="showStory = !showStory">
+          <span class="mx-arrow" :class="{ open: showStory }">▸</span> {{ storyActive ? '✦ 已保存' : '展开设定' }}
+        </div>
+        <div v-if="showStory" class="section-body">
       <div class="form-field">
         <label>剧情标题</label>
         <input v-model="sForm.title" placeholder="为空则随机…" />
@@ -62,7 +61,7 @@
         <textarea v-model="sForm.note" rows="2" placeholder="额外的设定、限制、方向…"></textarea>
       </div>
       <div class="protagonist-actions">
-        <button class="protagonist-gen" :disabled="sGenerating" @click="sGenerate()">
+        <button class="btn-gen" :disabled="sGenerating" @click="sGenerate()">
           {{ sGenerating ? '生成中…' : 'AI 生成剧情' }}
         </button>
         <button v-if="storyActive" class="protagonist-reset" @click="sReset()">清除已保存</button>
@@ -70,7 +69,7 @@
       <div v-if="sGenResult" class="protagonist-result">
         <textarea v-model="sGenArchive" class="protagonist-result-text" rows="6" placeholder="（AI 生成的剧情将显示在这里，可手动修改）"></textarea>
         <div class="protagonist-actions">
-          <button class="protagonist-save" :disabled="!sGenArchive.trim() || sSaving" @click="sSave()">
+          <button class="btn-gen-save" :disabled="!sGenArchive.trim() || sSaving" @click="sSave()">
             {{ sSaving ? '保存中…' : '保存到世界书' }}
           </button>
           <button class="btn-gen-inject" @click="sInject()">注入聊天</button>
@@ -79,6 +78,8 @@
       </div>
       <div v-if="sError" class="protagonist-error">{{ sError }}</div>
       <div v-if="sSuccess" class="protagonist-success">{{ sSuccess }}</div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -234,72 +235,13 @@ async function sReset() {
 }
 </script>
 <style scoped>
-.tool-panel {
-  --m-accent: #c9a96e;
-  --m-accent-dim: rgba(201, 169, 110, 0.2);
-  --m-surface: #f5ede0;
-  --m-text: #4a4035;
-  --m-muted: #8a7e6e;
-  border-radius: 12px;
-  padding: 4px;
-  background: linear-gradient(145deg, #8b7355, #6b5a48 25%, #c9a96e 50%, #6b5a48 75%, #8b7355);
-  box-shadow: 0 0 12px rgba(201, 169, 110, 0.08);
-  margin-bottom: 10px;
-}
-.tool-panel-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 14px;
-  border-radius: 9px;
-  cursor: pointer;
-  background: var(--m-surface);
-  transition: all 0.2s;
-  user-select: none;
-}
-.tool-panel-header:hover { background: #ede5d8; }
-.tool-panel-header.active { background: var(--m-accent-dim); }
-.tool-panel-icon { font-size: 13px; color: var(--m-accent); }
-.tool-panel-label { font-size: 12px; color: var(--m-text); flex: 1; letter-spacing: 2px; }
-.tool-panel-arrow { font-size: 10px; color: var(--m-accent); }
-.protagonist-form {
-  padding: 10px 12px;
-  background: var(--m-surface);
-  border-radius: 9px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
+.form-row { margin-bottom: 5px; }
 .form-row-dual { display: flex; gap: 8px; }
-.form-row { margin-bottom: 4px; }
-.form-field { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.form-field { flex: 1; display: flex; flex-direction: column; gap: 4px; }
 .form-field label, .form-row label { font-size: 10px; color: var(--m-muted); letter-spacing: 1px; }
 .form-field select, .form-field input, .form-field textarea, .form-row select, .form-row input, .form-row textarea {
-  padding: 6px 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(139, 115, 85, 0.15);
-  background: rgba(255, 255, 255, 0.6);
-  color: var(--m-text);
-  font-size: 11px;
-  outline: none;
-  font-family: inherit;
+  padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(139,115,85,0.15);
+  background: rgba(255,255,255,0.5); color: var(--m-text); font-size: 11px; outline: none; font-family: inherit;
 }
 .form-field select:focus, .form-field input:focus, .form-field textarea:focus, .form-row select:focus, .form-row input:focus { border-color: var(--m-accent); }
-.mx-mode-toggle { font-size: 8px; color: var(--m-accent); cursor: pointer; background: var(--m-accent-dim); padding: 1px 6px; border-radius: 8px; margin-left: 4px; }
-.mx-fandom-simple { display: flex; flex-direction: column; gap: 4px; }
-.mx-fandom-simple select, .mx-fandom-simple input { padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(139,115,85,0.15); background: rgba(255,255,255,0.6); color: var(--m-text); font-size: 10px; outline: none; font-family: inherit; }
-.mx-fandom-ext { display: flex; flex-direction: column; gap: 4px; padding: 6px; background: rgba(139,115,85,0.04); border: 1px solid rgba(139,115,85,0.1); border-radius: 6px; }
-.mx-fandom-ext select, .mx-fandom-ext input { padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(139,115,85,0.15); background: rgba(255,255,255,0.6); color: var(--m-text); font-size: 10px; outline: none; font-family: inherit; }
-.protagonist-actions { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
-.protagonist-gen, .protagonist-save, .protagonist-reset, .btn-gen-inject, .btn-gen-retry {
-  padding: 6px 12px; border-radius: 6px; border: 1px solid var(--m-accent-dim); cursor: pointer;
-  font-size: 10px; letter-spacing: 1px; background: var(--m-accent-dim); color: var(--m-accent); transition: all 0.2s;
-}
-.protagonist-gen:hover, .protagonist-save:hover, .btn-gen-inject:hover, .btn-gen-retry:hover { background: var(--m-accent); color: #fff; }
-.protagonist-gen:disabled { opacity: 0.4; cursor: not-allowed; }
-.protagonist-reset { background: transparent; border-color: rgba(196,123,139,0.2); color: #c47b8b; }
-.protagonist-result { display: flex; flex-direction: column; gap: 4px; }
-.protagonist-result-text { width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(139,115,85,0.15); font-size: 10px; resize: vertical; background: rgba(255,255,255,0.6); color: var(--m-text); outline: none; font-family: inherit; }
-.protagonist-error { font-size: 10px; color: #c0392b; }
-.protagonist-success { font-size: 10px; color: #27ae60; }
 </style>
