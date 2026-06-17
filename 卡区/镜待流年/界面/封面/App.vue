@@ -120,7 +120,7 @@
       <button class="dlc-card" @click="selectDlc('xianDao')">
         <span class="dlc-index">☯</span>
         <div class="dlc-body">
-          <span class="dlc-name">仙道位面</span>
+          <span class="dlc-name">苍溟界</span>
           <span class="dlc-desc">宗门林立，灵气充沛。画道峰上墨香未散，云烟阁里诗韵正浓</span>
         </div>
         <span class="scene-arrow"></span>
@@ -128,8 +128,8 @@
       <button class="dlc-card" @click="selectDlc('hongHuang')">
         <span class="dlc-index">≋</span>
         <div class="dlc-body">
-          <span class="dlc-name">洪荒位面</span>
-          <span class="dlc-desc">万妖祖地，异兽横行。洪荒与主世界意外接壤，奇珍异兽涌入现代都市</span>
+          <span class="dlc-name">莽苍太古界</span>
+          <span class="dlc-desc">万妖祖地，异兽横行。莽苍太古界与主世界意外接壤，奇珍异兽涌入现代都市</span>
         </div>
         <span class="scene-arrow"></span>
       </button>
@@ -310,7 +310,7 @@ const xianDaoScenes = [
     teaser: '一幅缺了魂的画，一句含了情的诗，误打误撞唤来了画中人',
     message: `根据以下设定构建剧情开头：
 时间：清晨
-地点：画道峰云烟阁（仙道位面）
+地点：画道峰云烟阁（苍溟界）
 出场角色：苏墨染、苏幼清
 剧情大纲：苏墨染按心中所想之人的模样作了一幅画，画完后总觉得有形无神。徒儿苏幼清凑过来看了一眼，喃喃念了一句诗——那声音轻得像梦里念叨过无数遍的句子。话音落下，画上墨迹忽然晕开，子镜与母镜同时嗡鸣，师徒二人的共鸣竟将画中人的本尊从另一个世界唤了过来。`,
   },

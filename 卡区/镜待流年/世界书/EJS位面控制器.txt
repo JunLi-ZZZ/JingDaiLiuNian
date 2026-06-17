@@ -2,16 +2,20 @@
 <%
 const plane = getvar('stat_data.主角.当前地点.位面', { defaults: '' });
 const mentionedMain = matchChatMessages(['主世界']);
-const mentionedXianDao = matchChatMessages(['仙道位面', '仙道']);
-const mentionedHongHuang = matchChatMessages(['洪荒位面', '洪荒']);
+const mentionedCangMing = matchChatMessages(['苍溟界']);
+const mentionedMangCang = matchChatMessages(['莽苍太古界']);
+const mentionedYanYun = matchChatMessages(['晏云界']);
 
 if (plane.includes('主世界') || mentionedMain) {
   print(await getwi('主世界'));
 }
-if (plane.includes('仙道') || mentionedXianDao) {
-  print(await getwi('仙道位面'));
+if (plane.includes('苍溟') || mentionedCangMing) {
+  print(await getwi('苍溟界'));
 }
-if (plane.includes('洪荒') || mentionedHongHuang) {
-  print(await getwi('洪荒位面'));
+if (plane.includes('莽苍太古') || mentionedMangCang) {
+  print(await getwi('莽苍太古界'));
+}
+if (plane.includes('晏云') || mentionedYanYun) {
+  print(await getwi('晏云界'));
 }
 %>
