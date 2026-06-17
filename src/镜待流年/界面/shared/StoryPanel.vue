@@ -166,6 +166,7 @@ async function sGenerate() {
     if (d.chars.trim()) d.chars.split(/[,，]/).forEach(c => { const n = c.trim(); if (n) kw.push(n); });
     if (d.fandom && d.fandom !== '原创' && d.fandom !== '自定义') kw.push(d.fandom);
     if (d.fandom === '自定义' && d.fandomCustom) kw.push(d.fandomCustom);
+    if (d.note.trim()) d.note.trim().split(/[,，、\s]+/).filter((w: string) => w.length >= 2).forEach((w: string) => kw.push(w));
     const result = await TH.generateRaw({
       user_input: `本次为镜渡生成剧情档案，勿编剧情。以下为部分已选标签，供扫描关键词激活世界书用：${kw.join('，')}`,
       should_silence: true,
@@ -193,7 +194,7 @@ async function sSave() {
     const titleMatch = sGenArchive.value.match(/标题[：:][^\S\n]*(\S[^\n]*)/);
     const storyTitle = titleMatch ? titleMatch[1].trim() : '新剧情';
     const existing = await TH.getLorebookEntries(wbName);
-    const enabledOrders = existing.filter((e: any) => e.enabled !== false && e.order >= 4000 && e.order < 5000).map((e: any) => e.order);
+    const enabledOrders = existing.filter((e: any) => e.enabled !== false && e.order >= 4000 && e.order < 4990).map((e: any) => e.order);
     const nextOrder = enabledOrders.length ? Math.max(...enabledOrders) + 5 : 4000;
     await TH.createLorebookEntries(wbName, [{
       comment: `镜渡剧情 - ${storyTitle}`, enabled: true, type: 'constant',

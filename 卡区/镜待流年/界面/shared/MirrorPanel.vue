@@ -1126,7 +1126,7 @@ async function mxDoGenerate() {
     const roleHint = isNPC ? '一位详细角色人设（非红颜，普通人物）。' : '一位详细红颜人设。';
     const prompt = `使用母镜生成${roleHint}\n\n=== 已选标签 ===\n${tagBlock}\n\n${tmpl}\n\n（请按上述模板输出 [世界书档案] 。）`;
     const kw: string[] = [];
-    [mxForm.race, mxForm.origin, mxForm.role, mxForm.coreTrait, mxForm.other].forEach(f => {
+    [mxForm.race, mxForm.origin, mxForm.role, mxForm.coreTrait].forEach(f => {
       const val = typeof f === 'string' ? f : '';
       if (val && val !== '自定义') kw.push(val);
     });
@@ -1185,7 +1185,7 @@ async function mxSaveGenResult() {
     if (alias) keys.push(alias);
     let wbName: string = TH.getCharLorebooks()?.primary;
     if (!wbName) {
-      wbName = '镜待流年v75';
+      wbName = '镜待流年v76';
       await TH.createLorebook(wbName);
       await TH.setCurrentCharLorebooks({ primary: wbName });
     }
@@ -1429,7 +1429,7 @@ async function plSaveGenResult() {
     const planeName = nameMatch ? nameMatch[1].trim() : '新位面';
     let wbName: string = TH.getCharLorebooks()?.primary;
     if (!wbName) {
-      wbName = '镜待流年v75';
+      wbName = '镜待流年v76';
       await TH.createLorebook(wbName);
       await TH.setCurrentCharLorebooks({ primary: wbName });
     }

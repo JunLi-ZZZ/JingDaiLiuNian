@@ -40,10 +40,17 @@
             <label>风格标签</label>
             <div class="tag-pool">
               <span
+                v-for="t in pickedTags"
+                :key="'pt_' + t"
+                class="tag picked"
+                @click="pToggleTag(t)"
+                >{{ t }}</span
+              >
+              <span
                 v-for="t in pTraits"
-                :key="t"
+                v-show="!pForm.traits.includes(t)"
+                :key="'pu_' + t"
                 class="tag"
-                :class="{ picked: pForm.traits.includes(t) }"
                 @click="pToggleTag(t)"
                 >{{ t }}</span
               >
@@ -90,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref, watch } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 
 const showProtagonist = ref(false);
 const protagonistActive = ref(false);
@@ -124,6 +131,7 @@ watch(
   },
   { deep: true },
 );
+const pickedTags = computed(() => pForm.traits);
 const pTagInput = ref('');
 function pToggleTag(t: string) {
   const i = pForm.traits.indexOf(t);
@@ -140,6 +148,7 @@ const pGenPrompt = `你正在协助玩家自定义主角人设。根据以下标
 
 格式要求：
 - 包含：基本信息（年龄/种族/身份/来源世界/境界）、外貌特征（基础体型/整体印象）、性格特点
+- 根据标签独立生成，无需参考或模仿现有角色设定
 - 如果种族、来源世界、境界未指定，根据整体设定合理推断
 - 末尾必须包含 特殊物品 段，内容为母镜（一面古朴铜镜，虞姝昀赠予的护身符，偶尔能在镜中瞥见模糊的红颜特征）
 - 灵活描述，不固化可变细节
@@ -191,8 +200,11 @@ async function pGenerate() {
     if (pForm.备注) tags.push('补充：' + pForm.备注);
     const tagBlock = tags.map(t => '- ' + t).join('\n');
     const prompt = `自定义主角设定：\n${tagBlock}\n\n${pGenPrompt}`;
+    const kw: string[] = [];
+    [pForm.种族, pForm.身份, pForm.来源世界, pForm.境界].forEach(v => { if (v) kw.push(v); });
+    if (pForm.备注.trim()) pForm.备注.trim().split(/[,，、\s]+/).filter((w: string) => w.length >= 2).forEach((w: string) => kw.push(w));
     const result = await TH.generateRaw({
-      user_input: '根据档案模板生成主角人设。',
+      user_input: `根据档案模板生成主角人设。以下为部分已选标签，供扫描关键词激活世界书用：${kw.join('，')}`,
       should_silence: true,
       max_chat_history: 0,
       ordered_prompts: [

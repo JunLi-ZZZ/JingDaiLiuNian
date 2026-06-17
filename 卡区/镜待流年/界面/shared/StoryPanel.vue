@@ -166,6 +166,7 @@ async function sGenerate() {
     if (d.chars.trim()) d.chars.split(/[,，]/).forEach(c => { const n = c.trim(); if (n) kw.push(n); });
     if (d.fandom && d.fandom !== '原创' && d.fandom !== '自定义') kw.push(d.fandom);
     if (d.fandom === '自定义' && d.fandomCustom) kw.push(d.fandomCustom);
+    if (d.note.trim()) d.note.trim().split(/[,，、\s]+/).filter((w: string) => w.length >= 2).forEach((w: string) => kw.push(w));
     const result = await TH.generateRaw({
       user_input: `本次为镜渡生成剧情档案，勿编剧情。以下为部分已选标签，供扫描关键词激活世界书用：${kw.join('，')}`,
       should_silence: true,
