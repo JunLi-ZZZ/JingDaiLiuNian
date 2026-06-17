@@ -145,6 +145,20 @@
               </div>
             </div>
             <div class="form-row">
+              <label>核心特质</label
+              ><select v-model="plForm.planeTrait">
+                <option value="">无</option><option value="自定义">自定义 ▼</option>
+                <option>全女世界</option><option>熟女世界</option><option>萝莉世界</option>
+                <option>兽娘世界</option><option>魔物娘世界</option><option>人外世界</option>
+                <option>无魔世界</option><option>高魔世界</option><option>修仙世界</option>
+                <option>武侠世界</option><option>战争世界</option><option>和平世界</option>
+                <option>母系社会</option><option>女尊世界</option><option>ABO世界</option>
+              </select>
+            </div>
+            <div v-if="plForm.planeTrait === '自定义'" class="form-row">
+              <input v-model="plForm.planeTraitCustom" placeholder="填写自定义特质…" />
+            </div>
+            <div class="form-row">
               <label>历史阶段</label
               ><select v-model="plForm.historyPhase">
                 <option value="">随机</option>
@@ -687,6 +701,8 @@ const mxAbilities = [
   '冰雪',
   '雷电',
   '植物操控',
+  '不死',
+  '永生',
 ];
 const mxRoles = [
   '剑圣',
@@ -1169,7 +1185,7 @@ async function mxSaveGenResult() {
     if (alias) keys.push(alias);
     let wbName: string = TH.getCharLorebooks()?.primary;
     if (!wbName) {
-      wbName = '镜待流年v74';
+      wbName = '镜待流年v75';
       await TH.createLorebook(wbName);
       await TH.setCurrentCharLorebooks({ primary: wbName });
     }
@@ -1224,6 +1240,8 @@ const plForm = reactive({
   worldScaleCustom: '',
   races: [] as string[],
   raceInput: '',
+  planeTrait: '',
+  planeTraitCustom: '',
   historyPhase: '',
   historyPhaseCustom: '',
   coreFeature: '',
@@ -1340,6 +1358,7 @@ async function plGenerate() {
     tags.push('世界规模：' + v(d.worldScale, d.worldScaleCustom));
     if (d.races.length) tags.push('智慧种族：' + d.races.join('、'));
     else tags.push('智慧种族：随机');
+    tags.push('核心特质：' + v(d.planeTrait, d.planeTraitCustom) || '无');
     tags.push('历史阶段：' + v(d.historyPhase, d.historyPhaseCustom));
     if (d.coreFeature.trim()) tags.push('核心特征：' + d.coreFeature.trim());
     else tags.push('核心特征：随机');
@@ -1410,7 +1429,7 @@ async function plSaveGenResult() {
     const planeName = nameMatch ? nameMatch[1].trim() : '新位面';
     let wbName: string = TH.getCharLorebooks()?.primary;
     if (!wbName) {
-      wbName = '镜待流年v74';
+      wbName = '镜待流年v75';
       await TH.createLorebook(wbName);
       await TH.setCurrentCharLorebooks({ primary: wbName });
     }

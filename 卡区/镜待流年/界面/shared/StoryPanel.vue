@@ -193,7 +193,7 @@ async function sSave() {
     const titleMatch = sGenArchive.value.match(/标题[：:][^\S\n]*(\S[^\n]*)/);
     const storyTitle = titleMatch ? titleMatch[1].trim() : '新剧情';
     const existing = await TH.getLorebookEntries(wbName);
-    const enabledOrders = existing.filter((e: any) => e.enabled !== false && e.order >= 4000 && e.order < 5000).map((e: any) => e.order);
+    const enabledOrders = existing.filter((e: any) => e.enabled !== false && e.order >= 4000 && e.order < 4990).map((e: any) => e.order);
     const nextOrder = enabledOrders.length ? Math.max(...enabledOrders) + 5 : 4000;
     await TH.createLorebookEntries(wbName, [{
       comment: `镜渡剧情 - ${storyTitle}`, enabled: true, type: 'constant',
