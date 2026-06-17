@@ -331,9 +331,30 @@ const activeScenes = computed(() =>
   currentDlc.value === 'hongHuang' ? hongHuangScenes : currentDlc.value === 'xianDao' ? xianDaoScenes : mainScenes,
 );
 
-function startScene(i: number) {
+async function startScene(i: number) {
   const $p = (window as any).parent?.$;
   if (!$p) return;
+  const TH = (window as any).parent?.TavernHelper;
+  if (TH) {
+    const wbName = TH.getCharLorebooks()?.primary;
+    if (wbName) {
+      const key = `${currentDlc.value}_${i}`;
+      const map = sceneEntryMap[key as any];
+      if (map) {
+        const entries = await TH.getLorebookEntries(wbName);
+        const ops: { uid: number; enabled: boolean }[] = [];
+        for (const name of map.enable) {
+          const e = entries.find((x: any) => x.comment === name || x.display_name === name || x.name === name);
+          if (e) ops.push({ uid: e.uid, enabled: true });
+        }
+        for (const name of map.disable) {
+          const e = entries.find((x: any) => x.comment === name || x.display_name === name || x.name === name);
+          if (e) ops.push({ uid: e.uid, enabled: false });
+        }
+        if (ops.length) await TH.setLorebookEntries(wbName, ops);
+      }
+    }
+  }
   $p('#send_textarea').val(activeScenes.value[i].message).trigger('input');
   setTimeout(() => $p('#send_but').trigger('click'), 50);
 }
@@ -342,7 +363,11 @@ const dlcSaving = ref(false);
 const dlcEntryMap: Record<string, { enable: string[]; disable: string[] }> = {
   main: { enable: [], disable: ['洪荒入侵'] },
   xianDao: { enable: [], disable: ['洪荒入侵'] },
-  hongHuang: { enable: ['洪荒入侵'], disable: [] },
+  hongHuang: { enable: [], disable: ['洪荒入侵'] },
+};
+
+const sceneEntryMap: Record<string, { enable: string[]; disable: string[] }> = {
+  hongHuang_0: { enable: ['洪荒入侵'], disable: [] },
 };
 
 async function selectDlc(dlc: string) {
