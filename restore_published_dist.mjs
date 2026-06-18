@@ -4,7 +4,7 @@
 
 import { execSync } from 'node:child_process';
 
-const PUBLISHED = ['v55', 'v75', 'v81'];
+const PUBLISHED = ['v55', 'v75', 'v82'];
 
 for (const v of PUBLISHED) {
   const folder = `dist/镜待流年_${v}`;

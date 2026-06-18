@@ -148,7 +148,7 @@
         <span class="scene-arrow"></span>
       </button>
     </div>
-    <div class="scene-card custom-card" :class="{ active: showCustom }" @click="showCustom = !showCustom">
+    <div class="scene-card custom-card" :class="{ active: showCustom }" @click="toggleCustom">
       <span class="scene-index">✦</span>
       <div class="scene-body">
         <span class="scene-char">自由开局</span>
@@ -227,6 +227,11 @@ onUnmounted(() => {
 const page = ref('intro');
 const showCustom = ref(false);
 const customMsg = ref('');
+
+async function toggleCustom() {
+  showCustom.value = !showCustom.value;
+  if (showCustom.value) await selectDlc(currentDlc.value);
+}
 
 function detectExt(name: string): boolean {
   try {
@@ -358,12 +363,12 @@ const yanYunScenes = [
   {
     char: '晏云舒 · 姬望舒',
     location: '太渊城 · 静安王府',
-    teaser: '女扮男装的天子与国师微服登门，一纸密诏将静安王卷入九重宫阙的暗流深处',
+    teaser: '天子与国师微服登门，一道不便明说的托付，将静安王请入九重宫阙',
     message: `根据以下设定构建剧情开头：
 时间：午后
 地点：静安王府（晏云界·太渊城）
 出场角色：晏云舒、姬望舒
-剧情大纲：晏云舒以"晏九渊"的身份与国师姬望舒微服到访静安王府。落座奉茶后，姬望舒将皇室困境和盘托出——天子实为女子之身，皇家男性血脉凋零，朝中催嗣日急，藩王蠢蠢欲动。她们希望静安王{{user}}以皇夫之名入宫，于明面上维持皇室延续。晏云舒坐在一旁，自始至终没有开口，只是偶尔抬眸看{{user}}一眼，又很快移开。姬望舒将话说完了，等他答复。`,
+剧情大纲：晏云舒以"晏九渊"的身份与国师姬望舒微服到访静安王府。落座奉茶后，姬望舒将皇室困境和盘托出——天子实为女子之身，朝中催嗣日急，藩王蠢蠢欲动。她们希望{{user}}以"协理后宫事务"的名义入住宫中。至于入宫后真正需要他做什么，姬望舒没有明说，但话里话外的意思已经再清楚不过，不过是与后宫环肥燕瘦行那夫妻之实、孕以子嗣，以堵住众人之口。晏云舒坐在一旁，自始至终没有开口，只是偶尔抬眸看{{user}}一眼，又很快移开。姬望舒将话说完了，等他答复。`,
   },
   {
     char: '白芙澪',
@@ -373,7 +378,7 @@ const yanYunScenes = [
 时间：清晨
 地点：坠月幽谷听雨竹楼（晏云界）
 出场角色：白芙澪
-剧情大纲：晏云舒曾数次派人入坠月幽谷向白芙澪求药，次次被一句"无缘"挡回。{{user}}听闻此事，亲自策马前往幽谷。竹楼二层，白芙澪照例悬丝垂帘，冷声让来者自报来意。在{{user}}说完来意后，楼上沉默了片刻。悬丝收了，帘子也撩开了。她从竹楼上走下来，虽仍是那副清冷的眉眼，只是眼底多了一份异彩，她径直走到药炉前，美目流转间，亲手为他烹了一壶茶。`,
+剧情大纲：晏云舒曾数次派人入坠月幽谷向白芙澪求药，次次被一句"无缘"挡回。{{user}}听闻此事，亲自策马前往幽谷替晏云舒求药。竹楼二层，白芙澪照例悬丝垂帘，冷声让来者自报来意。在{{user}}说完来意后，楼上沉默了片刻。悬丝收了，帘子也撩开了。她从竹楼上走下来，虽仍是那副清冷的眉眼，只是眼底多了一份异彩，她径直走到药炉前，美目流转间，亲手为他烹了一壶茶。`,
   },
 ];
 const activeScenes = computed(() =>
