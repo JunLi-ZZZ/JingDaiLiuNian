@@ -80,9 +80,15 @@
       <p class="tagline">塑造你的故事</p>
     </div>
     <div class="tools-tabs">
-      <button :class="{ active: toolsTab === 'protag' }" @click="toolsTab = toolsTab === 'protag' ? '' : 'protag'">自定义主角</button>
-      <button :class="{ active: toolsTab === 'mirror' }" @click="toolsTab = toolsTab === 'mirror' ? '' : 'mirror'">镜 渡</button>
-      <button :class="{ active: toolsTab === 'story' }" @click="toolsTab = toolsTab === 'story' ? '' : 'story'">自定义剧情</button>
+      <button :class="{ active: toolsTab === 'protag' }" @click="toolsTab = toolsTab === 'protag' ? '' : 'protag'">
+        自定义主角
+      </button>
+      <button :class="{ active: toolsTab === 'mirror' }" @click="toolsTab = toolsTab === 'mirror' ? '' : 'mirror'">
+        镜 渡
+      </button>
+      <button :class="{ active: toolsTab === 'story' }" @click="toolsTab = toolsTab === 'story' ? '' : 'story'">
+        自定义剧情
+      </button>
     </div>
     <div class="tools-section">
       <ProtagonistPanel v-show="toolsTab === 'protag'" />
@@ -120,7 +126,7 @@
       <button class="dlc-card" @click="selectDlc('xianDao')">
         <span class="dlc-index">☯</span>
         <div class="dlc-body">
-          <span class="dlc-name">苍溟界</span>
+          <span class="dlc-name">苍溟界<span class="dlc-type">[仙道]</span></span>
           <span class="dlc-desc">宗门林立，灵气充沛。画道峰上墨香未散，云烟阁里诗韵正浓</span>
         </div>
         <span class="scene-arrow"></span>
@@ -128,24 +134,37 @@
       <button class="dlc-card" @click="selectDlc('hongHuang')">
         <span class="dlc-index">≋</span>
         <div class="dlc-body">
-          <span class="dlc-name">莽苍太古界</span>
+          <span class="dlc-name">莽苍太古界<span class="dlc-type">[洪荒]</span></span>
           <span class="dlc-desc">万妖祖地，异兽横行。莽苍太古界与主世界意外接壤，奇珍异兽涌入现代都市</span>
+        </div>
+        <span class="scene-arrow"></span>
+      </button>
+      <button class="dlc-card" @click="selectDlc('yanYun')">
+        <span class="dlc-index">✿</span>
+        <div class="dlc-body">
+          <span class="dlc-name">晏云界<span class="dlc-type">[古风唯美]</span></span>
+          <span class="dlc-desc">东方古风画卷，皇权与龙脉交织。宫阙九重深几许，红袖簪花待君来</span>
         </div>
         <span class="scene-arrow"></span>
       </button>
     </div>
     <div class="scene-card custom-card" :class="{ active: showCustom }" @click="showCustom = !showCustom">
-        <span class="scene-index">✦</span>
-        <div class="scene-body">
-          <span class="scene-char">自由开局</span>
-          <span class="scene-teaser">书写属于你自己的故事开篇</span>
-        </div>
-        <span class="scene-arrow">{{ showCustom ? '▾' : '' }}</span>
+      <span class="scene-index">✦</span>
+      <div class="scene-body">
+        <span class="scene-char">自由开局</span>
+        <span class="scene-teaser">书写属于你自己的故事开篇</span>
       </div>
-      <div v-if="showCustom" class="custom-area">
-        <textarea v-model="customMsg" class="custom-input" placeholder="写下你想对 AI 说的话，作为故事的开端…" rows="3"></textarea>
-        <button class="custom-send" :disabled="!customMsg.trim()" @click.stop="sendCustom">发送</button>
-      </div>
+      <span class="scene-arrow">{{ showCustom ? '▾' : '' }}</span>
+    </div>
+    <div v-if="showCustom" class="custom-area">
+      <textarea
+        v-model="customMsg"
+        class="custom-input"
+        placeholder="写下你想对 AI 说的话，作为故事的开端…"
+        rows="3"
+      ></textarea>
+      <button class="custom-send" :disabled="!customMsg.trim()" @click.stop="sendCustom">发送</button>
+    </div>
     <p class="footer-note">更多故事，敬请期待</p>
   </div>
 
@@ -181,7 +200,6 @@
         </div>
         <span class="scene-arrow"></span>
       </button>
-
     </div>
 
     <p class="footer-note">选择一幕，开启你的镜中之旅</p>
@@ -189,7 +207,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import MirrorPanel from '../shared/MirrorPanel.vue';
 import ProtagonistPanel from '../shared/ProtagonistPanel.vue';
 import StoryPanel from '../shared/StoryPanel.vue';
@@ -209,7 +227,6 @@ onUnmounted(() => {
 const page = ref('intro');
 const showCustom = ref(false);
 const customMsg = ref('');
-
 
 function detectExt(name: string): boolean {
   try {
@@ -322,13 +339,51 @@ const hongHuangScenes = [
     teaser: '一只小兔子慌不择路穿过位面裂隙，身后追来一只贪她软毛的饕餮大妖',
     message: `根据以下设定构建剧情开头：
 时间：黄昏
-地点：星见市郊外（东海州，位面裂隙附近）
+地点：星见市郊外（主世界·东海州，位面裂隙附近）
 出场角色：白糯糯、陶冶月
 剧情大纲：洪荒与主世界边界重叠，穿越两个位面的裂隙常年存在……一只垂耳玉兔穿过裂隙，慌不择路撞进了{{user}}怀里，化作一团温香软玉的人形。身后追来的饕餮大妖停在不远处，歪头看着{{user}}把那刚化形未着寸缕的娇软小美人护在身后的样子，饶有兴致地蹲了下来瞪大眼睛看着这一幕。一副跃跃欲试也想要抱抱的模样，可似乎觉得原形不方便，便学着化作人形。`,
   },
 ];
+const yanYunScenes = [
+  {
+    char: '沈晚絮',
+    location: '太渊城 · 沈氏商号书房',
+    teaser: '秉烛夜读，一灯如豆，两人对坐。一人看诗，一人却在看另一人',
+    message: `根据以下设定构建剧情开头：
+时间：深夜
+地点：沈氏商号书房（晏云界·太渊城）
+出场角色：沈晚絮
+剧情大纲：江南微凉的秋夜，书房里一灯如豆。沈晚絮在案前拨着算盘核对账目，{{user}}坐在另一侧执卷读诗。满室只有算珠轻响与翻页声。算珠声渐渐慢了，末了歇了下来。她手边的账本停在同一页许久，目光早已落在{{user}}低眉读诗的侧脸上。烛花轻轻爆了一下，她回过神，垂眸翻过一页账册。`,
+  },
+  {
+    char: '晏云舒 · 姬望舒',
+    location: '太渊城 · 静安王府',
+    teaser: '女扮男装的天子与国师微服登门，一纸密诏将静安王卷入九重宫阙的暗流深处',
+    message: `根据以下设定构建剧情开头：
+时间：午后
+地点：静安王府（晏云界·太渊城）
+出场角色：晏云舒、姬望舒
+剧情大纲：晏云舒以"晏九渊"的身份与国师姬望舒微服到访静安王府。落座奉茶后，姬望舒将皇室困境和盘托出——天子实为女子之身，皇家男性血脉凋零，朝中催嗣日急，藩王蠢蠢欲动。她们希望静安王{{user}}以皇夫之名入宫，于明面上维持皇室延续。晏云舒坐在一旁，自始至终没有开口，只是偶尔抬眸看{{user}}一眼，又很快移开。姬望舒将话说完了，等他答复。`,
+  },
+  {
+    char: '白芙澪',
+    location: '坠月幽谷 · 听雨竹楼',
+    teaser: '皇室数次求药皆被一句"无缘"挡回，静安王亲至幽谷，帘后那位冷面医仙亲自打破了规矩',
+    message: `根据以下设定构建剧情开头：
+时间：清晨
+地点：坠月幽谷听雨竹楼（晏云界）
+出场角色：白芙澪
+剧情大纲：晏云舒曾数次派人入坠月幽谷向白芙澪求药，次次被一句"无缘"挡回。{{user}}听闻此事，亲自策马前往幽谷。竹楼二层，白芙澪照例悬丝垂帘，冷声让来者自报来意。在{{user}}说完来意后，楼上沉默了片刻。悬丝收了，帘子也撩开了。她从竹楼上走下来，虽仍是那副清冷的眉眼，却径直走到药炉前，亲手为他烹了一壶茶。`,
+  },
+];
 const activeScenes = computed(() =>
-  currentDlc.value === 'hongHuang' ? hongHuangScenes : currentDlc.value === 'xianDao' ? xianDaoScenes : mainScenes,
+  currentDlc.value === 'hongHuang'
+    ? hongHuangScenes
+    : currentDlc.value === 'xianDao'
+      ? xianDaoScenes
+      : currentDlc.value === 'yanYun'
+        ? yanYunScenes
+        : mainScenes,
 );
 
 async function startScene(i: number) {
@@ -360,14 +415,25 @@ async function startScene(i: number) {
 }
 
 const dlcSaving = ref(false);
+const dlcResetDisable = ['洪荒入侵', '静安入宫', 'user人设_白衣卿相', 'user人设_静安王爷'];
 const dlcEntryMap: Record<string, { enable: string[]; disable: string[] }> = {
-  main: { enable: [], disable: ['洪荒入侵'] },
-  xianDao: { enable: [], disable: ['洪荒入侵'] },
-  hongHuang: { enable: [], disable: ['洪荒入侵'] },
+  main: { enable: [], disable: dlcResetDisable },
+  xianDao: { enable: [], disable: dlcResetDisable },
+  hongHuang: { enable: [], disable: dlcResetDisable },
+  yanYun: { enable: [], disable: dlcResetDisable },
 };
 
 const sceneEntryMap: Record<string, { enable: string[]; disable: string[] }> = {
   hongHuang_0: { enable: ['洪荒入侵'], disable: [] },
+  yanYun_0: { enable: ['user人设_白衣卿相'], disable: ['user人设', 'user人设_静安王爷', 'user人设(自定义)'] },
+  yanYun_1: {
+    enable: ['静安入宫', 'user人设_静安王爷'],
+    disable: ['user人设', 'user人设_白衣卿相', 'user人设(自定义)'],
+  },
+  yanYun_2: {
+    enable: ['user人设_静安王爷'],
+    disable: ['user人设', 'user人设_白衣卿相', 'user人设(自定义)'],
+  },
 };
 
 async function selectDlc(dlc: string) {
@@ -769,14 +835,21 @@ function sendCustom() {
     cursor: pointer;
     letter-spacing: 2px;
     transition: all 0.2s;
-    &:first-child { border-radius: 6px 0 0 6px; }
-    &:last-child { border-radius: 0 6px 6px 0; }
+    &:first-child {
+      border-radius: 6px 0 0 6px;
+    }
+    &:last-child {
+      border-radius: 0 6px 6px 0;
+    }
     &.active {
       background: rgba(var(--c-accent-rgb, 201, 169, 110), 0.15);
       color: var(--c-accent);
       border-color: var(--c-accent);
     }
-    &:hover:not(.active) { color: var(--c-text); background: rgba(var(--c-accent-rgb, 201, 169, 110), 0.05); }
+    &:hover:not(.active) {
+      color: var(--c-text);
+      background: rgba(var(--c-accent-rgb, 201, 169, 110), 0.05);
+    }
   }
 }
 .enter-btn {
