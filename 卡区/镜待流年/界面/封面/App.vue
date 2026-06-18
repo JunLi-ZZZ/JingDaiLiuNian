@@ -230,7 +230,24 @@ const customMsg = ref('');
 
 async function toggleCustom() {
   showCustom.value = !showCustom.value;
-  if (showCustom.value) await selectDlc(currentDlc.value);
+  if (showCustom.value) {
+    const TH = (window as any).parent?.TavernHelper;
+    if (TH) {
+      const wbName = TH.getCharLorebooks()?.primary;
+      if (wbName) {
+        const entries = await TH.getLorebookEntries(wbName);
+        const ops: { uid: number; enabled: boolean }[] = [];
+        const map = dlcEntryMap[currentDlc.value];
+        if (map) {
+          for (const name of map.disable) {
+            const e = entries.find((x: any) => x.comment === name || x.display_name === name);
+            if (e && e.enabled) ops.push({ uid: e.uid, enabled: false });
+          }
+        }
+        if (ops.length) await TH.setLorebookEntries(wbName, ops);
+      }
+    }
+  }
 }
 
 function detectExt(name: string): boolean {
