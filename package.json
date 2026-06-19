@@ -2,7 +2,10 @@
   "scripts": {
     "build:dev": "webpack --mode development",
     "build": "webpack --mode production",
+<<<<<<< HEAD
     "postbuild": "node -e \"const{cpSync}=require('fs');cpSync('dist/镜待流年','dist/镜待流年_v83',{recursive:true,force:true})\"",
+=======
+>>>>>>> 55b9a5c73448dafe8d865d5c0df9801d4b33774f
     "watch": "webpack --mode development --watch --progress",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,css,scss,html,vue}\" --no-error-on-unmatched-pattern",
     "lint": "eslint",
