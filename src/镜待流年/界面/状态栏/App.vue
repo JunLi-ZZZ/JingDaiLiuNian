@@ -606,18 +606,18 @@ const protagClothing = computed(() => {
 });
 function tierGradient(tier: string): string {
   const map: Record<string, string> = {
-    废品: '#757575,#9e9e9e,#616161',
-    凡品: '#f5f5f5,#e0e0e0,#bdbdbd,#9e9e9e',
-    良品: '#81c784,#66bb6a,#43a047,#2e7d32',
-    精品: '#64b5f6,#42a5f5,#1e88e5,#1565c0',
-    珍品: '#ce93d8,#ab47bc,#8e24aa,#6a1b9a',
-    异品: '#f48fb1,#ec407a,#d81b60,#ad1457',
-    仙品: '#ffe082,#ffd54f,#ffb300,#ff8f00',
-    圣品: '#ffcc80,#ff9800,#f57c00,#e65100',
-    神品: '#ef9a9a,#ef5350,#e53935,#b71c1c',
-    特殊: '#ff6fd8,#fca5f1,#a78bfa,#74c0fc,#4dabf7',
+    废品: '#6d6d6d,#8a8a8a,#757575,#9e9e9e,#757575,#616161,#6d6d6d',
+    凡品: '#cfcfcf,#e8e8e8,#fafafa,#e0e0e0,#c7c7c7,#bdbdbd,#cfcfcf',
+    良品: '#4caf50,#81c784,#a5d6a7,#66bb6a,#43a047,#388e3c,#4caf50',
+    精品: '#1976d2,#42a5f5,#90caf9,#64b5f6,#1e88e5,#1565c0,#1976d2',
+    珍品: '#7b1fa2,#ab47bc,#ce93d8,#e1bee7,#8e24aa,#6a1b9a,#7b1fa2',
+    异品: '#c2185b,#ec407a,#f48fb1,#f8bbd0,#d81b60,#ad1457,#c2185b',
+    仙品: '#f9a825,#ffd54f,#ffe082,#fff8e1,#ffb300,#ff8f00,#f9a825',
+    圣品: '#e65100,#ff9800,#ffcc80,#ffe0b2,#f57c00,#e65100,#e65100',
+    神品: '#b71c1c,#ef5350,#ef9a9a,#ffcdd2,#e53935,#c62828,#b71c1c',
+    特殊: '#e91e63,#ff6fd8,#fca5f1,#a78bfa,#74c0fc,#4dabf7,#e91e63',
   };
-  return map[tier] || '#888,#666,#444';
+  return map[tier] || '#888,#777,#666,#555,#444';
 }
 const expandedItems = ref<Record<string, boolean>>({});
 
