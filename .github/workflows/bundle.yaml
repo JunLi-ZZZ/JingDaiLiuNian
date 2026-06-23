@@ -21,9 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: JesseTG/rm@v1.0.3
-        with:
-          path: dist
+      - name: Remove stale dev output (keep published versioned dists)
+        run: rm -rf dist/镜待流年
 
       - name: Use Node.js
         uses: actions/setup-node@v6
