@@ -1404,6 +1404,7 @@ function getCharRelations(char: NearbyChar): [string, string][] {
 }
 .mirror-toggle {
   font-size: 8px;
+  margin-left: auto;
   background: linear-gradient(135deg, #6b4a28, #8b5a30);
   -webkit-background-clip: text;
   background-clip: text;
