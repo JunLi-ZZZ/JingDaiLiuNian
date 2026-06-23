@@ -359,6 +359,19 @@
       不可激活其他条目: true
     文件: 世界书\系统\角色NSFW准则
 
+  - 名称: 物品格式要求
+    启用: true
+    激活策略:
+      类型: 蓝灯
+    插入位置:
+      类型: 角色定义之前
+      顺序: 204
+    激活概率: 100
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+    文件: 世界书\系统\物品格式要求
+
   - 名称: NSFW场景规则
     启用: false
     激活策略:
@@ -830,7 +843,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v84/界面/状态栏/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v85/界面/状态栏/index.html')
         </script>
         </body>
         ```
@@ -848,7 +861,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v84/界面/封面/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v85/界面/封面/index.html')
         </script>
         </body>
         ```
@@ -881,6 +894,18 @@
         仅格式显示: false
         仅格式提示词: true
 
+    - 正则名称: "[美化]物品获得"
+      启用: true
+      查找表达式: <item>\s*获得者: (.+?)\s*名称: (.+?)\s*数量: (\d+)\s*等级: (.+?)\s*来源: (.+?)\s*描述: (.+?)\s*<\/item>
+      替换为: |-
+        <div class="item-card-inline"><div class="item-head"><span class="item-name tier-$4">$2</span><span class="item-tier-badge">$4</span><span class="item-qty">×$3</span></div><span class="item-foot">$6　·　$5　·　$1</span></div>
+      来源:
+        用户输入: false
+        AI输出: true
+      作用于:
+        仅格式显示: true
+        仅格式提示词: false
+
   酒馆助手:
     脚本库:
       - 名称: mvu
@@ -895,6 +920,6 @@
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v84/脚本/变量结构/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v85/脚本/变量结构/index.js';
 
     变量: {}

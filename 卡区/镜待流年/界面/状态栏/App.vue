@@ -128,13 +128,15 @@
                 <div
                   class="item-card"
                   :class="{ 'mirror-item': name.includes('母镜'), 'mirror-open': name.includes('母镜') && mirrorOpen }"
-                  @click="name.includes('母镜') ? (mirrorOpen = !mirrorOpen) : null"
+                  @click="name.includes('母镜') ? (mirrorOpen = !mirrorOpen) : (expandedItems[name] = !expandedItems[name])"
                 >
-                  <span class="item-name">{{ name }}</span>
-                  <span class="item-desc">{{ item.描述 }}</span>
+                  <span class="item-name" :style="{ background: `linear-gradient(135deg, ${tierGradient(item.等级 || '')})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }">{{ name }}</span>
+                  <span class="item-tier">[{{ item.等级 || '未评级' }}]</span>
                   <span v-if="item.数量" class="item-qty">×{{ item.数量 }}</span>
                   <span v-if="name.includes('母镜')" class="mirror-toggle">{{ mirrorOpen ? '▾' : '▸' }}</span>
+                  <span v-else class="item-expand">{{ expandedItems[name] ? '▾' : '▸' }}</span>
                 </div>
+                <div v-if="expandedItems[name] && item.描述" class="item-detail">{{ item.描述 }}</div>
               </div>
               <MirrorPanel v-show="mirrorOpen" @close="mirrorOpen = false" />
                 </div>
@@ -284,10 +286,14 @@
                 </div>
                 <div v-if="sub(char._key + '-items')" class="sub-body">
                   <div v-if="getCharItems(char).length === 0" class="empty-hint">暂无</div>
-                  <div v-for="[name, item] in getCharItems(char)" :key="name" class="item-card">
-                    <span class="item-name">{{ name }}</span
-                    ><span class="item-desc">{{ item.描述 }}</span
-                    ><span v-if="item.数量" class="item-qty">×{{ item.数量 }}</span>
+                  <div v-for="[name, item] in getCharItems(char)" :key="name">
+                    <div class="item-card" @click="expandedItems[char._key + '-' + name] = !expandedItems[char._key + '-' + name]">
+                      <span class="item-name" :style="{ background: `linear-gradient(135deg, ${tierGradient(item.等级 || '')})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }">{{ name }}</span>
+                      <span class="item-tier">[{{ item.等级 || '未评级' }}]</span>
+                      <span v-if="item.数量" class="item-qty">×{{ item.数量 }}</span>
+                      <span class="item-expand">{{ expandedItems[char._key + '-' + name] ? '▾' : '▸' }}</span>
+                    </div>
+                    <div v-if="expandedItems[char._key + '-' + name] && item.描述" class="item-detail">{{ item.描述 }}</div>
                   </div>
                 </div>
               </div>
@@ -598,8 +604,25 @@ const protagClothing = computed(() => {
     .filter(k => c[k] !== undefined)
     .map(k => ({ key: k, 名称: c[k]?.名称 || '', 描述: c[k]?.描述 || '', 状态: c[k]?.状态 || '' }));
 });
+function tierGradient(tier: string): string {
+  const map: Record<string, string> = {
+    废品: '#757575,#9e9e9e,#616161',
+    凡品: '#f5f5f5,#e0e0e0,#bdbdbd,#9e9e9e',
+    良品: '#81c784,#66bb6a,#43a047,#2e7d32',
+    精品: '#64b5f6,#42a5f5,#1e88e5,#1565c0',
+    珍品: '#ce93d8,#ab47bc,#8e24aa,#6a1b9a',
+    异品: '#f48fb1,#ec407a,#d81b60,#ad1457',
+    仙品: '#ffe082,#ffd54f,#ffb300,#ff8f00',
+    圣品: '#ffcc80,#ff9800,#f57c00,#e65100',
+    神品: '#ef9a9a,#ef5350,#e53935,#b71c1c',
+    特殊: '#ff6fd8,#fca5f1,#a78bfa,#74c0fc,#4dabf7',
+  };
+  return map[tier] || '#888,#666,#444';
+}
+const expandedItems = ref<Record<string, boolean>>({});
+
 const itemEntries = computed(
-  () => Object.entries(data.value.主角.随身物品 || {}) as [string, { 描述?: string; 数量?: number }][],
+  () => Object.entries(data.value.主角.随身物品 || {}) as [string, { 描述?: string; 数量?: number; 等级?: string }][],
 );
 const relationEntries = computed(() => Object.entries(data.value.主角.人际关系 || {}) as [string, string][]);
 
@@ -732,7 +755,7 @@ function getCharClothing(char: NearbyChar): { key: string; 名称: string; 描�
     .filter(k => c[k] !== undefined)
     .map(k => ({ key: k, 名称: c[k]?.名称 || '', 描述: c[k]?.描述 || '', 状态: c[k]?.状态 || '' }));
 }
-function getCharItems(char: NearbyChar): [string, { 描述?: string; 数量?: number }][] {
+function getCharItems(char: NearbyChar): [string, { 描述?: string; 数量?: number; 等级?: string }][] {
   return Object.entries(char.随身物品 || {});
 }
 function getCharRelations(char: NearbyChar): [string, string][] {
@@ -1166,6 +1189,24 @@ function getCharRelations(char: NearbyChar): [string, string][] {
   font-size: 10px;
   color: var(--t-gold);
   font-weight: 600;
+}
+.item-tier {
+  font-size: 9px;
+  color: var(--t-muted);
+  white-space: nowrap;
+}
+.item-expand {
+  font-size: 8px;
+  color: var(--t-muted);
+  cursor: pointer;
+  margin-left: auto;
+}
+.item-detail {
+  font-size: 10px;
+  color: var(--t-muted);
+  padding: 2px 8px 4px 8px;
+  margin-bottom: 3px;
+  line-height: 1.4;
 }
 
 .char-entry {

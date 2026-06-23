@@ -248,6 +248,10 @@
               "数量": {
                 "default": 0,
                 "type": "number"
+              },
+              "等级": {
+                "default": "",
+                "type": "string"
               }
             }
           }
@@ -501,6 +505,10 @@
                 "数量": {
                   "default": 0,
                   "type": "number"
+                },
+                "等级": {
+                  "default": "",
+                  "type": "string"
                 }
               }
             }

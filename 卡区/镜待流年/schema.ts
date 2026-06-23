@@ -42,6 +42,7 @@ export const Schema = z.object({
     随身物品: z.record(z.string(), z.object({
       描述: z.string().prefault(''),
       数量: z.coerce.number().prefault(0).transform(v => _.isNaN(v) || !_.isFinite(v) ? 0 : v),
+      等级: z.string().prefault(''),
     })).prefault({}),
     人际关系: z.record(z.string(), z.string()).prefault({}),
   }).prefault({}),
@@ -83,6 +84,7 @@ export const Schema = z.object({
     随身物品: z.record(z.string(), z.object({
       描述: z.string().prefault(''),
       数量: z.coerce.number().prefault(0).transform(v => _.isNaN(v) || !_.isFinite(v) ? 0 : v),
+      等级: z.string().prefault(''),
     })).prefault({}),
     人际关系: z.record(z.string(), z.string()).prefault({}),
     nsfw档案: z.object({
