@@ -896,7 +896,7 @@
 
     - 正则名称: "[美化]物品获得"
       启用: true
-      查找表达式: <item>\s*获得者: (.+?)\s*名称: (.+?)\s*数量: (\d+)\s*等级: (.+?)\s*来源: (.+?)\s*描述: (.+?)\s*<\/item>
+      查找表达式: '<item>\s*获得者: (.+?)\s*名称: (.+?)\s*数量: (\d+)\s*等级: (.+?)\s*来源: (.+?)\s*描述: (.+?)\s*<\/item>'
       替换为: |-
         <div class="item-card-inline"><div class="item-head"><span class="item-name tier-$4">$2</span><span class="item-tier-badge">$4</span><span class="item-qty">×$3</span></div><span class="item-foot">$6　·　$5　·　$1</span></div>
       来源:
