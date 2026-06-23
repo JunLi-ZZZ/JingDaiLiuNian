@@ -1387,9 +1387,16 @@ function getCharRelations(char: NearbyChar): [string, string][] {
 /* 镜渡面板 */
 .mirror-item {
   cursor: pointer;
+  animation: mirror-glow 3s ease-in-out infinite;
   &:hover {
     border-color: var(--t-accent);
+    animation: none;
+    box-shadow: 0 0 6px rgba(180,140,100,0.4);
   }
+}
+@keyframes mirror-glow {
+  0%, 100% { box-shadow: 0 0 2px rgba(180,140,100,0.15); }
+  50% { box-shadow: 0 0 5px rgba(180,140,100,0.3); }
 }
 .mirror-item .item-name {
   background: linear-gradient(135deg, #6b4a28, #8b5a30, #7a5030, #6b4a28);
