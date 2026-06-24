@@ -136,7 +136,7 @@
                   <span v-if="name.includes('母镜')" class="mirror-toggle">{{ mirrorOpen ? '▾' : '▸' }}</span>
                   <span v-else class="item-expand">{{ expandedItems[name] ? '▾' : '▸' }}</span>
                 </div>
-                <div v-if="expandedItems[name] && item.描述" class="item-detail">{{ item.描述 }}<div v-if="item.能力" style="font-size:.85em;opacity:.75;padding-top:2px">{{ item.能力 }}</div></div>
+                <div v-if="expandedItems[name] && item.描述" class="item-detail">{{ item.描述 }}<div v-if="item.能力 && item.能力 !== '无'" style="font-size:.85em;opacity:.8;padding-top:3px;margin-top:3px;border-top:1px solid var(--t-border)">{{ item.能力 }}</div></div>
               </div>
               <MirrorPanel v-show="mirrorOpen" @close="mirrorOpen = false" />
                 </div>
@@ -293,7 +293,7 @@
                       <span v-if="item.数量" class="item-qty">×{{ item.数量 }}</span>
                       <span class="item-expand">{{ expandedItems[char._key + '-' + name] ? '▾' : '▸' }}</span>
                     </div>
-                    <div v-if="expandedItems[char._key + '-' + name] && item.描述" class="item-detail">{{ item.描述 }}<div v-if="item.能力" style="font-size:.85em;opacity:.75;padding-top:2px">{{ item.能力 }}</div></div>
+                    <div v-if="expandedItems[char._key + '-' + name] && item.描述" class="item-detail">{{ item.描述 }}<div v-if="item.能力 && item.能力 !== '无'" style="font-size:.85em;opacity:.8;padding-top:3px;margin-top:3px;border-top:1px solid var(--t-border)">{{ item.能力 }}</div></div>
                   </div>
                 </div>
               </div>
