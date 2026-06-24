@@ -76,7 +76,7 @@
         - 正文描述到具体衣物时优先填入；未提及则根据场景合理推断
         - 脱衣/裸体/洗澡时对应部位填"无"。每次涉及服装变化时须检查全部六个部位，已不在身上的衣物必须从对应部位清除，不得残留
     随身物品:
-      type: "{ [物品名]: { 描述: string; 数量: number; 等级: string } }"
+      type: "{ [物品名]: { 描述: string; 数量: number; 等级: string; 能力: string } }"
       check:
         - 首次用 replace 更新整个对象，根据角色身份和开场白场景补全随身携带的物品。母镜与各红颜的子镜必须始终在随身物品中、不可遗漏
         - 不要对子项逐个 insert
@@ -127,7 +127,7 @@
         财富: number; 境界: string; 战力: number; 好感度: number;
         当前地点: { 位面: string; 大陆: string; 城市: string; 区域: string; 场景: string; 具体位置: string; };
         服装: { 上衣: { 名称: string; 描述: string; 状态: string; }; 内衣: { 名称: string; 描述: string; 状态: string; }; 下装: { 名称: string; 描述: string; 状态: string; }; 内裤: { 名称: string; 描述: string; 状态: string; }; 袜子: { 名称: string; 描述: string; 状态: string; }; 鞋子: { 名称: string; 描述: string; 状态: string; }; };
-        随身物品: { [物品名]: { 描述: string; 数量: number; 等级: string; } };
+        随身物品: { [物品名]: { 描述: string; 数量: number; 等级: string; 能力: string; } };
         人际关系: { [关系对象]: string; };
         nsfw档案: { 初次存在与否: boolean; 性对象: string; 是否怀孕: boolean; 子嗣列表: string; 三围: { 胸围: number; 腰围: number; 臀围: number; }; 罩杯: string; 胸型: { 名称: string; 描述: string; 状态: string; }; 户型: { 名称: string; 描述: string; 状态: string; }; };
       }}

@@ -39,13 +39,7 @@
           <div class="form-row">
             <label>风格标签</label>
             <div class="tag-pool">
-              <span
-                v-for="t in pickedTags"
-                :key="'pt_' + t"
-                class="tag picked"
-                @click="pToggleTag(t)"
-                >{{ t }}</span
-              >
+              <span v-for="t in pickedTags" :key="'pt_' + t" class="tag picked" @click="pToggleTag(t)">{{ t }}</span>
               <span
                 v-for="t in pTraits"
                 v-show="!pForm.traits.includes(t)"
@@ -57,6 +51,24 @@
               <span class="tag tag-custom">
                 <input v-model="pTagInput" placeholder="自定义+" @keyup.enter="pTagInput = pAddCustom(pTagInput)" />
                 <button class="tag-custom-btn" @click="pTagInput = pAddCustom(pTagInput)">+</button>
+              </span>
+            </div>
+          </div>
+          <div class="form-row">
+            <label>特质</label>
+            <div class="tag-pool">
+              <span v-for="t in pickedPerks" :key="'pk_' + t" class="tag picked" @click="pTogglePerk(t)">{{ t }}</span>
+              <span
+                v-for="t in pPerks"
+                v-show="!pForm.perks.includes(t)"
+                :key="'pu_' + t"
+                class="tag"
+                @click="pTogglePerk(t)"
+                >{{ t }}</span
+              >
+              <span class="tag tag-custom">
+                <input v-model="pPerkInput" placeholder="自定义+" @keyup.enter="pPerkInput = pAddPerk(pPerkInput)" />
+                <button class="tag-custom-btn" @click="pPerkInput = pAddPerk(pPerkInput)">+</button>
               </span>
             </div>
           </div>
@@ -107,6 +119,19 @@ const protagonistSuccess = ref('');
 const pGenerating = ref(false);
 const pGenResult = ref('');
 const pTraits = ['温和', '冷峻', '活泼', '沉稳', '叛逆', '善良', '腹黑', '天然', '孤僻', '热血', '慵懒', '傲娇'];
+const pPerks = ['天道眷顾', '鸿运当头', '位面亲和', '万物有灵', '因果洞悉'];
+const pickedPerks = computed(() => pForm.perks);
+function pTogglePerk(t: string) {
+  const i = pForm.perks.indexOf(t);
+  if (i >= 0) pForm.perks.splice(i, 1);
+  else pForm.perks.push(t);
+}
+const pPerkInput = ref('');
+function pAddPerk(v: string): string {
+  const s = v.trim();
+  if (s && !pForm.perks.includes(s)) pForm.perks.push(s);
+  return '';
+}
 const savedProto = (() => {
   try {
     const r = localStorage.getItem('jdnl_protagonist');
@@ -122,6 +147,7 @@ const pForm = reactive({
   来源世界: (savedProto as any).来源世界 || '',
   境界: (savedProto as any).境界 || '',
   traits: (savedProto as any).traits || ([] as string[]),
+  perks: (savedProto as any).perks || ([] as string[]),
   备注: (savedProto as any).备注 || '',
 });
 watch(
@@ -152,6 +178,14 @@ const pGenPrompt = `你正在协助玩家自定义主角人设。根据以下标
 - 如果种族、来源世界、境界未指定，根据整体设定合理推断
 - 末尾必须包含 特殊物品 段，内容为母镜（一面古朴铜镜，虞姝昀赠予的护身符，偶尔能在镜中瞥见模糊的红颜特征）
 - 灵活描述，不固化可变细节
+- 如果标签中包含"特质"，在性格特点之后写入特质段。每个特质一行，写清该特质为<user>带来的具体效果或能力，不写虚泛的描述
+
+已知特质说明：
+- 天道眷顾：母亲初微会在<user>与红颜关系升温时凭空创造物品赠予<user>，亲密度越高品阶越高。体现为亲密互动后身边凭空出现物品
+- 鸿运当头：<user>意外触发有利事件或获得高品质物品的概率大幅提升。体现为探索或随机事件中更容易遇到好东西
+- 位面亲和：<user>穿梭位面时不受当地规则排斥与压制，能瞬间适应当地语言、气候与环境
+- 万物有灵：初见面时生灵会本能地对<user>产生好感与信任，好感度初始值大幅高于常人
+- 因果洞悉：<user>能清晰分辨他人对自己的善意与恶意，初见红颜时可隐约感知对方的因果重要性
 
 输出格式：
 <protagonist>
@@ -173,6 +207,9 @@ const pGenPrompt = `你正在协助玩家自定义主角人设。根据以下标
         喜好:
         厌恶:
         核心特质:
+
+    特质:
+        特质名: 描述该特质为<user>带来的具体能力或效果
 
     特殊物品:
         母镜:
@@ -197,12 +234,20 @@ async function pGenerate() {
     if (pForm.来源世界) tags.push('来源世界：' + pForm.来源世界);
     if (pForm.境界) tags.push('境界：' + pForm.境界);
     if (pForm.traits.length) tags.push('风格：' + pForm.traits.join('、'));
+    if (pForm.perks.length) tags.push('特质：' + pForm.perks.join('、'));
     if (pForm.备注) tags.push('补充：' + pForm.备注);
     const tagBlock = tags.map(t => '- ' + t).join('\n');
     const prompt = `自定义主角设定：\n${tagBlock}\n\n${pGenPrompt}`;
     const kw: string[] = [];
-    [pForm.种族, pForm.身份, pForm.来源世界, pForm.境界].forEach(v => { if (v) kw.push(v); });
-    if (pForm.备注.trim()) pForm.备注.trim().split(/[,，、\s]+/).filter((w: string) => w.length >= 2).forEach((w: string) => kw.push(w));
+    [pForm.种族, pForm.身份, pForm.来源世界, pForm.境界].forEach(v => {
+      if (v) kw.push(v);
+    });
+    if (pForm.备注.trim())
+      pForm.备注
+        .trim()
+        .split(/[,，、\s]+/)
+        .filter((w: string) => w.length >= 2)
+        .forEach((w: string) => kw.push(w));
     const result = await TH.generateRaw({
       user_input: `根据档案模板生成主角人设。以下为部分已选标签，供扫描关键词激活世界书用：${kw.join('，')}`,
       should_silence: true,
@@ -326,10 +371,29 @@ onMounted(() => {
   --m-muted: #8a7e6e;
   margin-bottom: 10px;
 }
-.form-row-dual { display: flex; gap: 8px; }
-.form-row-dual > * { flex: 1; }
-.tag { background: rgba(139,115,85,0.04) !important; }
-.tag.picked { background: var(--m-accent-dim) !important; border-color: var(--m-accent); color: var(--m-accent); }
-.mirror-surface { max-height: none; overflow: visible; }
-.panel-title { background: linear-gradient(135deg, #6b4a28, #8b5a30 40%, #6b4a28 60%, #8b5a30); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.form-row-dual {
+  display: flex;
+  gap: 8px;
+}
+.form-row-dual > * {
+  flex: 1;
+}
+.tag {
+  background: rgba(139, 115, 85, 0.04) !important;
+}
+.tag.picked {
+  background: var(--m-accent-dim) !important;
+  border-color: var(--m-accent);
+  color: var(--m-accent);
+}
+.mirror-surface {
+  max-height: none;
+  overflow: visible;
+}
+.panel-title {
+  background: linear-gradient(135deg, #6b4a28, #8b5a30 40%, #6b4a28 60%, #8b5a30);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
 </style>

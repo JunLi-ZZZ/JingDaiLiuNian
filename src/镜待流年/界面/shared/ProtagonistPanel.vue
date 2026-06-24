@@ -61,6 +61,30 @@
             </div>
           </div>
           <div class="form-row">
+            <label>特质</label>
+            <div class="tag-pool">
+              <span
+                v-for="t in pickedPerks"
+                :key="'pk_' + t"
+                class="tag picked"
+                @click="pTogglePerk(t)"
+                >{{ t }}</span
+              >
+              <span
+                v-for="t in pPerks"
+                v-show="!pForm.perks.includes(t)"
+                :key="'pu_' + t"
+                class="tag"
+                @click="pTogglePerk(t)"
+                >{{ t }}</span
+              >
+              <span class="tag tag-custom">
+                <input v-model="pPerkInput" placeholder="自定义+" @keyup.enter="pPerkInput = pAddPerk(pPerkInput)" />
+                <button class="tag-custom-btn" @click="pPerkInput = pAddPerk(pPerkInput)">+</button>
+              </span>
+            </div>
+          </div>
+          <div class="form-row">
             <label>补充说明</label>
             <textarea v-model="pForm.备注" rows="2" placeholder="其他想补充的设定、背景、想法…"></textarea>
           </div>
@@ -107,6 +131,19 @@ const protagonistSuccess = ref('');
 const pGenerating = ref(false);
 const pGenResult = ref('');
 const pTraits = ['温和', '冷峻', '活泼', '沉稳', '叛逆', '善良', '腹黑', '天然', '孤僻', '热血', '慵懒', '傲娇'];
+const pPerks = ['天道眷顾', '鸿运当头', '位面亲和', '万物有灵', '因果洞悉'];
+const pickedPerks = computed(() => pForm.perks);
+function pTogglePerk(t: string) {
+  const i = pForm.perks.indexOf(t);
+  if (i >= 0) pForm.perks.splice(i, 1);
+  else pForm.perks.push(t);
+}
+const pPerkInput = ref('');
+function pAddPerk(v: string): string {
+  const s = v.trim();
+  if (s && !pForm.perks.includes(s)) pForm.perks.push(s);
+  return '';
+}
 const savedProto = (() => {
   try {
     const r = localStorage.getItem('jdnl_protagonist');
@@ -122,6 +159,7 @@ const pForm = reactive({
   来源世界: (savedProto as any).来源世界 || '',
   境界: (savedProto as any).境界 || '',
   traits: (savedProto as any).traits || ([] as string[]),
+  perks: (savedProto as any).perks || ([] as string[]),
   备注: (savedProto as any).备注 || '',
 });
 watch(
@@ -152,6 +190,14 @@ const pGenPrompt = `你正在协助玩家自定义主角人设。根据以下标
 - 如果种族、来源世界、境界未指定，根据整体设定合理推断
 - 末尾必须包含 特殊物品 段，内容为母镜（一面古朴铜镜，虞姝昀赠予的护身符，偶尔能在镜中瞥见模糊的红颜特征）
 - 灵活描述，不固化可变细节
+	- 如果标签中包含"特质"，在性格特点之后写入对应的特质条目并描述其效果
+
+	已知特质说明：
+	- 天道眷顾：母亲初微会根据<user>与各位红颜的亲密程度凭空创造物品赠予<user>，亲密度越高品阶越高
+	- 鸿运当头：<user>的运气极佳，逢凶化吉，意外获得珍稀物品的概率大幅提升
+	- 位面亲和：<user>在不同位面间穿梭时不受排斥，能快速适应当地规则与环境
+	- 万物有灵：<user>能与动植物乃至非生命体产生微弱共鸣，感知其情绪与记忆碎片
+	- 因果洞悉：<user>能模糊感知他人与自己的因果关联强度，辨别善意与恶意
 
 输出格式：
 <protagonist>
@@ -197,6 +243,7 @@ async function pGenerate() {
     if (pForm.来源世界) tags.push('来源世界：' + pForm.来源世界);
     if (pForm.境界) tags.push('境界：' + pForm.境界);
     if (pForm.traits.length) tags.push('风格：' + pForm.traits.join('、'));
+    if (pForm.perks.length) tags.push('特质：' + pForm.perks.join('、'));
     if (pForm.备注) tags.push('补充：' + pForm.备注);
     const tagBlock = tags.map(t => '- ' + t).join('\n');
     const prompt = `自定义主角设定：\n${tagBlock}\n\n${pGenPrompt}`;

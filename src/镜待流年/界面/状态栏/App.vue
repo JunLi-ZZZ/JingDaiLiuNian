@@ -136,7 +136,7 @@
                   <span v-if="name.includes('母镜')" class="mirror-toggle">{{ mirrorOpen ? '▾' : '▸' }}</span>
                   <span v-else class="item-expand">{{ expandedItems[name] ? '▾' : '▸' }}</span>
                 </div>
-                <div v-if="expandedItems[name] && item.描述" class="item-detail">{{ item.描述 }}</div>
+                <div v-if="expandedItems[name] && item.描述" class="item-detail">{{ item.描述 }}<div v-if="item.能力" style="font-size:.85em;opacity:.75;padding-top:2px">{{ item.能力 }}</div></div>
               </div>
               <MirrorPanel v-show="mirrorOpen" @close="mirrorOpen = false" />
                 </div>
@@ -293,7 +293,7 @@
                       <span v-if="item.数量" class="item-qty">×{{ item.数量 }}</span>
                       <span class="item-expand">{{ expandedItems[char._key + '-' + name] ? '▾' : '▸' }}</span>
                     </div>
-                    <div v-if="expandedItems[char._key + '-' + name] && item.描述" class="item-detail">{{ item.描述 }}</div>
+                    <div v-if="expandedItems[char._key + '-' + name] && item.描述" class="item-detail">{{ item.描述 }}<div v-if="item.能力" style="font-size:.85em;opacity:.75;padding-top:2px">{{ item.能力 }}</div></div>
                   </div>
                 </div>
               </div>
@@ -621,9 +621,11 @@ function tierGradient(tier: string): string {
 }
 const expandedItems = ref<Record<string, boolean>>({});
 
-const itemEntries = computed(
-  () => Object.entries(data.value.主角.随身物品 || {}) as [string, { 描述?: string; 数量?: number; 等级?: string }][],
-);
+const tierOrder: Record<string, number> = { 特殊: 10, 神品: 9, 圣品: 8, 仙品: 7, 异品: 6, 珍品: 5, 精品: 4, 良品: 3, 凡品: 2, 废品: 1 };
+const itemEntries = computed(() => {
+  const entries = Object.entries(data.value.主角.随身物品 || {}) as [string, { 描述?: string; 数量?: number; 等级?: string; 能力?: string }][];
+  return entries.sort((a, b) => (tierOrder[b[1].等级 || ''] || 0) - (tierOrder[a[1].等级 || ''] || 0));
+});
 const relationEntries = computed(() => Object.entries(data.value.主角.人际关系 || {}) as [string, string][]);
 
 type CharInfo = {
@@ -645,7 +647,7 @@ type CharInfo = {
   战力?: number;
   当前地点?: { 位面?: string; 大陆?: string; 城市?: string; 区域?: string; 场景?: string; 具体位置?: string };
   服装?: Record<string, { 名称?: string; 描述?: string; 状态?: string }>;
-  随身物品?: Record<string, { 描述?: string; 数量?: number }>;
+  随身物品?: Record<string, { 描述?: string; 数量?: number; 等级?: string; 能力?: string }>;
   人际关系?: Record<string, string>;
   nsfw档案?: {
     初次存在与否?: boolean;
@@ -679,7 +681,7 @@ interface NearbyChar {
   战力?: number;
   当前地点?: { 位面?: string; 大陆?: string; 城市?: string; 区域?: string; 场景?: string; 具体位置?: string };
   服装?: Record<string, { 名称?: string; 描述?: string; 状态?: string }>;
-  随身物品?: Record<string, { 描述?: string; 数量?: number }>;
+  随身物品?: Record<string, { 描述?: string; 数量?: number; 等级?: string; 能力?: string }>;
   人际关系?: Record<string, string>;
   nsfw档案?: {
     初次存在与否?: boolean;
@@ -755,8 +757,9 @@ function getCharClothing(char: NearbyChar): { key: string; 名称: string; 描�
     .filter(k => c[k] !== undefined)
     .map(k => ({ key: k, 名称: c[k]?.名称 || '', 描述: c[k]?.描述 || '', 状态: c[k]?.状态 || '' }));
 }
-function getCharItems(char: NearbyChar): [string, { 描述?: string; 数量?: number; 等级?: string }][] {
-  return Object.entries(char.随身物品 || {});
+function getCharItems(char: NearbyChar): [string, { 描述?: string; 数量?: number; 等级?: string; 能力?: string }][] {
+  const entries = Object.entries(char.随身物品 || {});
+  return entries.sort((a, b) => (tierOrder[b[1].等级 || ''] || 0) - (tierOrder[a[1].等级 || ''] || 0));
 }
 function getCharRelations(char: NearbyChar): [string, string][] {
   return Object.entries(char.人际关系 || {});
