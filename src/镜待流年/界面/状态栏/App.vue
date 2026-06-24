@@ -293,7 +293,7 @@
                       <span v-if="item.数量" class="item-qty">×{{ item.数量 }}</span>
                       <span class="item-expand">{{ expandedItems[char._key + '-' + name] ? '▾' : '▸' }}</span>
                     </div>
-                    <div v-if="expandedItems[char._key + '-' + name] && item.描述" class="item-detail">{{ item.描述 }}<div v-if="item.能力 && item.能力 !== '无'" style="font-size:.85em;opacity:.8;padding-top:3px;margin-top:3px;border-top:1px solid var(--t-border)">{{ item.能力 }}</div></div>
+                    <div v-if="expandedItems[char._key + '-' + name] && (item.描述 || (item.能力 && item.能力 !== '无'))" class="item-detail"><div v-if="item.描述">{{ item.描述 }}</div><div v-if="item.能力 && item.能力 !== '无'" style="font-size:.85em;opacity:.8;padding-top:3px;margin-top:3px;border-top:1px solid var(--t-border)">{{ item.能力 }}</div></div>
                   </div>
                 </div>
               </div>
