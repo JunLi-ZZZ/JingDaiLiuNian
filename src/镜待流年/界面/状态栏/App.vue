@@ -136,7 +136,7 @@
                   <span v-if="name.includes('母镜')" class="mirror-toggle">{{ mirrorOpen ? '▾' : '▸' }}</span>
                   <span v-else class="item-expand">{{ expandedItems[name] ? '▾' : '▸' }}</span>
                 </div>
-                <div v-if="expandedItems[name] && (item.描述 || (item.能力 && item.能力 !== '无'))" class="item-detail"><div v-if="item.描述">{{ item.描述 }}</div><div v-if="item.能力 && item.能力 !== '无'" style="font-size:.85em;opacity:.8;padding-top:3px;margin-top:3px;border-top:1px solid var(--t-border)">{{ item.能力 }}</div></div>
+                <div v-if="expandedItems[name] && (item.描述 || (item.能力 && item.能力 !== '无'))" class="item-detail"><div v-if="item.描述"><span class="item-detail-label">描述</span>{{ item.描述 }}</div><div v-if="item.能力 && item.能力 !== '无'" style="padding-top:3px;margin-top:3px;border-top:1px solid var(--t-border)"><span class="item-detail-label">能力</span>{{ item.能力 }}</div></div>
               </div>
               <MirrorPanel v-show="mirrorOpen" @close="mirrorOpen = false" />
                 </div>
@@ -293,7 +293,7 @@
                       <span v-if="item.数量" class="item-qty">×{{ item.数量 }}</span>
                       <span class="item-expand">{{ expandedItems[char._key + '-' + name] ? '▾' : '▸' }}</span>
                     </div>
-                    <div v-if="expandedItems[char._key + '-' + name] && (item.描述 || (item.能力 && item.能力 !== '无'))" class="item-detail"><div v-if="item.描述">{{ item.描述 }}</div><div v-if="item.能力 && item.能力 !== '无'" style="font-size:.85em;opacity:.8;padding-top:3px;margin-top:3px;border-top:1px solid var(--t-border)">{{ item.能力 }}</div></div>
+                    <div v-if="expandedItems[char._key + '-' + name] && (item.描述 || (item.能力 && item.能力 !== '无'))" class="item-detail"><div v-if="item.描述"><span class="item-detail-label">描述</span>{{ item.描述 }}</div><div v-if="item.能力 && item.能力 !== '无'" style="padding-top:3px;margin-top:3px;border-top:1px solid var(--t-border)"><span class="item-detail-label">能力</span>{{ item.能力 }}</div></div>
                   </div>
                 </div>
               </div>
@@ -1212,6 +1212,13 @@ function getCharRelations(char: NearbyChar): [string, string][] {
   padding: 2px 8px 4px 8px;
   margin-bottom: 3px;
   line-height: 1.4;
+}
+.item-detail-label {
+  font-family: '寒蝉全圆体', var(--font-main);
+  font-size: 9px;
+  color: var(--t-dim);
+  margin-right: 6px;
+  letter-spacing: 0.5px;
 }
 
 .char-entry {
