@@ -472,14 +472,19 @@ async function selectDlc(dlc: string) {
       const wbName = TH.getCharLorebooks()?.primary;
       if (wbName) {
         const entries = await TH.getLorebookEntries(wbName);
+        const hasCustomUser = entries.some((x: any) =>
+          (x.comment === 'user人设(自定义)' || x.display_name === 'user人设(自定义)' || x.name === 'user人设(自定义)') && x.enabled,
+        );
         const ops: { uid: number; enabled: boolean }[] = [];
         const map = dlcEntryMap[dlc];
         if (map) {
           for (const name of map.enable) {
+            if (hasCustomUser && name.startsWith('user人设')) continue;
             const e = entries.find((x: any) => x.comment === name || x.display_name === name);
             if (e && !e.enabled) ops.push({ uid: e.uid, enabled: true });
           }
           for (const name of map.disable) {
+            if (hasCustomUser && name.startsWith('user人设')) continue;
             const e = entries.find((x: any) => x.comment === name || x.display_name === name);
             if (e && e.enabled) ops.push({ uid: e.uid, enabled: false });
           }
