@@ -513,6 +513,10 @@
                 "等级": {
                   "default": "",
                   "type": "string"
+                },
+                "能力": {
+                  "default": "",
+                  "type": "string"
                 }
               }
             }
