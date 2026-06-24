@@ -606,16 +606,16 @@ const protagClothing = computed(() => {
 });
 function tierGradient(tier: string): string {
   const map: Record<string, string> = {
-    废品: '#6d6d6d,#8a8a8a,#757575,#9e9e9e,#757575,#616161,#6d6d6d',
-    凡品: '#cfcfcf,#e8e8e8,#fafafa,#e0e0e0,#c7c7c7,#bdbdbd,#cfcfcf',
-    良品: '#4caf50,#81c784,#a5d6a7,#66bb6a,#43a047,#388e3c,#4caf50',
-    精品: '#1976d2,#42a5f5,#90caf9,#64b5f6,#1e88e5,#1565c0,#1976d2',
-    珍品: '#7b1fa2,#ab47bc,#ce93d8,#e1bee7,#8e24aa,#6a1b9a,#7b1fa2',
-    异品: '#c2185b,#ec407a,#f48fb1,#f8bbd0,#d81b60,#ad1457,#c2185b',
-    仙品: '#f9a825,#ffd54f,#ffe082,#fff8e1,#ffb300,#ff8f00,#f9a825',
-    圣品: '#e65100,#ff9800,#ffcc80,#ffe0b2,#f57c00,#e65100,#e65100',
-    神品: '#b71c1c,#ef5350,#ef9a9a,#ffcdd2,#e53935,#c62828,#b71c1c',
-    特殊: '#e91e63,#ff6fd8,#fca5f1,#a78bfa,#74c0fc,#4dabf7,#e91e63',
+    废品: '#444,#666,#555,#777,#666,#555,#444',
+    凡品: '#b0b0b0,#d0d0d0,#c8c8c8,#e0e0e0,#d0d0d0,#c8c8c8,#b0b0b0',
+    良品: '#2e7d32,#4caf50,#43a047,#66bb6a,#4caf50,#43a047,#2e7d32',
+    精品: '#0d47a1,#1976d2,#1565c0,#42a5f5,#1e88e5,#1565c0,#0d47a1',
+    珍品: '#4a148c,#7b1fa2,#6a1b9a,#ab47bc,#8e24aa,#6a1b9a,#4a148c',
+    异品: '#f06292,#f48fb1,#fce4ec,#f8bbd0,#f48fb1,#ec407a,#f06292',
+    仙品: '#fbc02d,#ffee58,#fff9c4,#fff176,#ffee58,#fdd835,#fbc02d',
+    圣品: '#e65100,#ff9800,#ffe0b2,#ffcc80,#ff9800,#f57c00,#e65100',
+    神品: '#7f0000,#c62828,#b71c1c,#f44336,#e53935,#b71c1c,#7f0000',
+    特殊: '#7c4dff,#448aff,#00b0ff,#00e5ff,#76ff03,#ffea00,#ff6d00,#f06292,#ff6d00,#ffea00,#76ff03,#00e5ff,#00b0ff,#448aff,#7c4dff',
   };
   return map[tier] || '#888,#777,#666,#555,#444';
 }
