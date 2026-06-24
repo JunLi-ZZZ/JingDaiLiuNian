@@ -845,7 +845,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v89/界面/状态栏/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v90/界面/状态栏/index.html')
         </script>
         </body>
         ```
@@ -863,7 +863,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v89/界面/封面/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v90/界面/封面/index.html')
         </script>
         </body>
         ```
@@ -898,7 +898,7 @@
 
     - 正则名称: "[美化]物品获得"
       启用: true
-      查找表达式: '<item>\s*获得者: (.+?)\s*名称: (.+?)\s*数量: (\d+)\s*等级: (.+?)\s*来源: (.+?)\s*描述: (.+?)\s*<\/item>'
+      查找表达式: "/<item>\\s*获得者: ([\\s\\S]*?)\\s*名称: ([\\s\\S]*?)\\s*数量: (\\d+)\\s*等级: ([\\s\\S]*?)\\s*来源: ([\\s\\S]*?)\\s*能力: ([\\s\\S]*?)\\s*描述: ([\\s\\S]*?)\\s*<\\/item>/gi "
       文件: 正则/物品获得
       来源:
         用户输入: false
@@ -906,6 +906,7 @@
       作用于:
         仅格式显示: true
         仅格式提示词: false
+      最大深度: 10
 
   酒馆助手:
     脚本库:
@@ -921,6 +922,6 @@
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v89/脚本/变量结构/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v90/脚本/变量结构/index.js';
 
     变量: {}

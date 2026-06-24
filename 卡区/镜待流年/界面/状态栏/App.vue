@@ -130,7 +130,7 @@
                   :class="{ 'mirror-item': name.includes('母镜'), 'mirror-open': name.includes('母镜') && mirrorOpen }"
                   @click="name.includes('母镜') ? (mirrorOpen = !mirrorOpen) : (expandedItems[name] = !expandedItems[name])"
                 >
-                  <span class="item-name" :style="{ background: `linear-gradient(135deg, ${tierGradient(item.等级 || '')})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }">{{ name }}</span>
+                  <span class="item-name item-shimmer" :style="{ background: `linear-gradient(135deg, ${tierGradient(item.等级 || '')})`, backgroundSize: '200% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }">{{ name }}</span>
                   <span class="item-tier">[{{ item.等级 || '未评级' }}]</span>
                   <span v-if="item.数量" class="item-qty">×{{ item.数量 }}</span>
                   <span v-if="name.includes('母镜')" class="mirror-toggle">{{ mirrorOpen ? '▾' : '▸' }}</span>
@@ -288,7 +288,7 @@
                   <div v-if="getCharItems(char).length === 0" class="empty-hint">暂无</div>
                   <div v-for="[name, item] in getCharItems(char)" :key="name">
                     <div class="item-card" @click="expandedItems[char._key + '-' + name] = !expandedItems[char._key + '-' + name]">
-                      <span class="item-name" :style="{ background: `linear-gradient(135deg, ${tierGradient(item.等级 || '')})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }">{{ name }}</span>
+                      <span class="item-name item-shimmer" :style="{ background: `linear-gradient(135deg, ${tierGradient(item.等级 || '')})`, backgroundSize: '200% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }">{{ name }}</span>
                       <span class="item-tier">[{{ item.等级 || '未评级' }}]</span>
                       <span v-if="item.数量" class="item-qty">×{{ item.数量 }}</span>
                       <span class="item-expand">{{ expandedItems[char._key + '-' + name] ? '▾' : '▸' }}</span>
@@ -1178,6 +1178,8 @@ function getCharRelations(char: NearbyChar): [string, string][] {
   color: var(--t-accent);
   white-space: nowrap;
 }
+@keyframes item-shimmer{0%{background-position:0% center}100%{background-position:200% center}}
+.item-shimmer{animation:item-shimmer 4s linear infinite}
 .item-desc {
   font-family: 'DouyinSans', var(--font-main);
   font-size: 10px;

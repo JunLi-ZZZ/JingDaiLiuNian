@@ -419,12 +419,17 @@ async function startScene(i: number) {
       const map = sceneEntryMap[key as any];
       if (map) {
         const entries = await TH.getLorebookEntries(wbName);
+        const hasCustomUser = entries.some((x: any) =>
+          (x.comment === 'user人设(自定义)' || x.display_name === 'user人设(自定义)' || x.name === 'user人设(自定义)') && x.enabled,
+        );
         const ops: { uid: number; enabled: boolean }[] = [];
         for (const name of map.enable) {
+          if (hasCustomUser && name.startsWith('user人设')) continue;
           const e = entries.find((x: any) => x.comment === name || x.display_name === name || x.name === name);
           if (e) ops.push({ uid: e.uid, enabled: true });
         }
         for (const name of map.disable) {
+          if (hasCustomUser && name.startsWith('user人设')) continue;
           const e = entries.find((x: any) => x.comment === name || x.display_name === name || x.name === name);
           if (e) ops.push({ uid: e.uid, enabled: false });
         }
@@ -439,22 +444,22 @@ async function startScene(i: number) {
 const dlcSaving = ref(false);
 const dlcResetDisable = ['洪荒入侵', '静安入宫', 'user人设_白衣卿相', 'user人设_静安王爷'];
 const dlcEntryMap: Record<string, { enable: string[]; disable: string[] }> = {
-  main: { enable: [], disable: dlcResetDisable },
-  xianDao: { enable: [], disable: dlcResetDisable },
-  hongHuang: { enable: [], disable: dlcResetDisable },
+  main: { enable: ['user人设'], disable: dlcResetDisable },
+  xianDao: { enable: ['user人设'], disable: dlcResetDisable },
+  hongHuang: { enable: ['user人设'], disable: dlcResetDisable },
   yanYun: { enable: [], disable: dlcResetDisable },
 };
 
 const sceneEntryMap: Record<string, { enable: string[]; disable: string[] }> = {
   hongHuang_0: { enable: ['洪荒入侵'], disable: [] },
-  yanYun_0: { enable: ['user人设_白衣卿相'], disable: ['user人设', 'user人设_静安王爷', 'user人设(自定义)'] },
+  yanYun_0: { enable: ['user人设_白衣卿相'], disable: ['user人设', 'user人设_静安王爷'] },
   yanYun_1: {
     enable: ['静安入宫', 'user人设_静安王爷'],
-    disable: ['user人设', 'user人设_白衣卿相', 'user人设(自定义)'],
+    disable: ['user人设', 'user人设_白衣卿相'],
   },
   yanYun_2: {
     enable: ['user人设_静安王爷'],
-    disable: ['user人设', 'user人设_白衣卿相', 'user人设(自定义)'],
+    disable: ['user人设', 'user人设_白衣卿相'],
   },
 };
 

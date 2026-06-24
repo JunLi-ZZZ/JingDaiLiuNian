@@ -928,7 +928,7 @@ const ladyTemplate = `你正在通过母镜感知一位红颜的存在。镜中�
         年龄:（描述性，如"外表约20岁"或"实际年龄远超外表"）
         身份:
         与<user>关系:（初次相遇时的关系定位）
-        来源世界:
+        来源世界:（填写具体位面名称，不要填大类别名）
         种族:
         天赋能力:（描述能力的名称、效果与限制，不要只写名字）
 
@@ -1014,7 +1014,7 @@ const npcTemplate = `你正在通过母镜感知一道身影的存在。镜中�
         年龄:（描述性，如"外表约20岁"或"实际年龄远超外表"）
         身份:
         与<user>关系:（初次相遇时的关系定位。此人未必对<user>怀有爱慕，写出真实的关系基调即可）
-        来源世界:
+        来源世界:（填写具体位面名称，不要填大类别名）
         种族:
         天赋能力:（描述能力的名称、效果与限制，不要只写名字）
 
@@ -1185,7 +1185,7 @@ async function mxSaveGenResult() {
     if (alias) keys.push(alias);
     let wbName: string = TH.getCharLorebooks()?.primary;
     if (!wbName) {
-      wbName = '镜待流年v89';
+      wbName = '镜待流年v90';
       await TH.createLorebook(wbName);
       await TH.setCurrentCharLorebooks({ primary: wbName });
     }
@@ -1429,7 +1429,7 @@ async function plSaveGenResult() {
     const planeName = nameMatch ? nameMatch[1].trim() : '新位面';
     let wbName: string = TH.getCharLorebooks()?.primary;
     if (!wbName) {
-      wbName = '镜待流年v89';
+      wbName = '镜待流年v90';
       await TH.createLorebook(wbName);
       await TH.setCurrentCharLorebooks({ primary: wbName });
     }
