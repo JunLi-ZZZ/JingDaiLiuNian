@@ -137,8 +137,8 @@
                   <span v-else class="item-expand">{{ expandedItems[name] ? '▾' : '▸' }}</span>
                 </div>
                 <div v-if="expandedItems[name] && (item.描述 || (item.能力 && item.能力 !== '无'))" class="item-detail"><div v-if="item.描述"><span class="item-detail-label">描述</span>{{ item.描述 }}</div><div v-if="item.能力 && item.能力 !== '无'" style="padding-top:3px;margin-top:3px;border-top:1px solid var(--t-border)"><span class="item-detail-label">能力</span>{{ item.能力 }}</div></div>
+                <MirrorPanel v-if="name.includes('母镜')" v-show="mirrorOpen" @close="mirrorOpen = false" />
               </div>
-              <MirrorPanel v-show="mirrorOpen" @close="mirrorOpen = false" />
                 </div>
               </div>
           <div class="sub-block" :class="{ open: showRelations }">
