@@ -1407,8 +1407,8 @@ function getCharRelations(char: NearbyChar): [string, string][] {
   }
 }
 @keyframes mirror-glow {
-  0%, 100% { box-shadow: 0 0 2px rgba(180,140,100,0.15); }
-  50% { box-shadow: 0 0 5px rgba(180,140,100,0.3); }
+  0%, 100% { box-shadow: 0 0 3px rgba(180,140,100,0.3); border-color: rgba(180,140,100,0.1); }
+  50% { box-shadow: 0 0 14px rgba(180,140,100,0.5), 0 0 28px rgba(180,140,100,0.15); border-color: rgba(180,140,100,0.35); }
 }
 .mirror-item .item-name {
   background: linear-gradient(135deg, #6b4a28, #8b5a30, #7a5030, #6b4a28);
