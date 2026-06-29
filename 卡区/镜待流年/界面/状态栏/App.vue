@@ -127,17 +127,19 @@
               <div v-for="[name, item] in itemEntries" :key="name">
                 <div
                   class="item-card"
-                  :class="{ 'mirror-item': name.includes('母镜'), 'mirror-open': name.includes('母镜') && mirrorOpen }"
-                  @click="name.includes('母镜') ? (mirrorOpen = !mirrorOpen) : (expandedItems[name] = !expandedItems[name])"
+                  :class="{ 'mirror-item': name.includes('母镜'), 'mirror-open': name.includes('母镜') && mirrorOpen, 'bestiary-item': name.includes('万象图鉴') }"
+                  @click="name.includes('母镜') ? (mirrorOpen = !mirrorOpen) : name.includes('万象图鉴') ? (bestiaryOpen = !bestiaryOpen) : (expandedItems[name] = !expandedItems[name])"
                 >
                   <span class="item-name item-shimmer" :style="{ background: `linear-gradient(135deg, ${tierGradient(item.等级 || '')})`, backgroundSize: '200% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }">{{ name }}</span>
                   <span class="item-tier">[{{ item.等级 || '未评级' }}]</span>
                   <span v-if="item.数量" class="item-qty">×{{ item.数量 }}</span>
                   <span v-if="name.includes('母镜')" class="mirror-toggle">{{ mirrorOpen ? '▾' : '▸' }}</span>
+                  <span v-else-if="name.includes('万象图鉴')" class="mirror-toggle">{{ bestiaryOpen ? '▾' : '▸' }}</span>
                   <span v-else class="item-expand">{{ expandedItems[name] ? '▾' : '▸' }}</span>
                 </div>
                 <div v-if="expandedItems[name] && (item.描述 || (item.能力 && item.能力 !== '无'))" class="item-detail"><div v-if="item.描述"><span class="item-detail-label">描述</span>{{ item.描述 }}</div><div v-if="item.能力 && item.能力 !== '无'" style="padding-top:3px;margin-top:3px;border-top:1px solid var(--t-border)"><span class="item-detail-label">能力</span>{{ item.能力 }}</div></div>
                 <MirrorPanel v-if="name.includes('母镜')" v-show="mirrorOpen" @close="mirrorOpen = false" />
+                <BestiaryPanel v-if="name.includes('万象图鉴')" v-show="bestiaryOpen" @close="bestiaryOpen = false" />
               </div>
                 </div>
               </div>
@@ -408,6 +410,7 @@
 import { computed, reactive, ref, watch } from 'vue';
 import { useDataStore } from './store';
 import MirrorPanel from '../shared/MirrorPanel.vue';
+import BestiaryPanel from '../shared/BestiaryPanel.vue';
 
 const store = useDataStore();
 const data = computed(() => store.data);
@@ -501,6 +504,7 @@ function toggleR18() {
   }
 }
 const mirrorOpen = ref(false);
+const bestiaryOpen = ref(false);
 
 const expandedChars = ref(new Set<string>());
 const expandedSubs = ref(new Set<string>());
@@ -623,7 +627,9 @@ const expandedItems = ref<Record<string, boolean>>({});
 
 const tierOrder: Record<string, number> = { 特殊: 10, 神品: 9, 圣品: 8, 仙品: 7, 异品: 6, 珍品: 5, 精品: 4, 良品: 3, 凡品: 2, 废品: 1 };
 const itemEntries = computed(() => {
-  const entries = Object.entries(data.value.主角.随身物品 || {}) as [string, { 描述?: string; 数量?: number; 等级?: string; 能力?: string }][];
+  const items = { ...(data.value.主角.随身物品 || {}) };
+  if (!items['万象图鉴']) items['万象图鉴'] = { 等级: '特殊', 描述: '记录了旅途中所遇生灵', 数量: 1 };
+  const entries = Object.entries(items) as [string, { 描述?: string; 数量?: number; 等级?: string; 能力?: string }][];
   return entries.sort((a, b) => (tierOrder[b[1].等级 || ''] || 0) - (tierOrder[a[1].等级 || ''] || 0));
 });
 const relationEntries = computed(() => Object.entries(data.value.主角.人际关系 || {}) as [string, string][]);
@@ -1429,5 +1435,12 @@ function getCharRelations(char: NearbyChar): [string, string][] {
   background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-left: 4px;
+}
+.bestiary-item {
+  cursor: pointer;
+}
+.bestiary-item:hover {
+  border-color: rgba(100,180,160,0.5);
+  box-shadow: 0 0 6px rgba(100,180,160,0.3);
 }
 </style>
