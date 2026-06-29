@@ -1438,9 +1438,14 @@ function getCharRelations(char: NearbyChar): [string, string][] {
 }
 .bestiary-item {
   cursor: pointer;
+  animation: bestiary-glow 3s ease-in-out infinite;
 }
 .bestiary-item:hover {
   border-color: rgba(100,180,160,0.5);
   box-shadow: 0 0 6px rgba(100,180,160,0.3);
+}
+@keyframes bestiary-glow {
+  0%, 100% { box-shadow: 0 0 3px rgba(100,180,160,0.3); border-color: rgba(100,180,160,0.1); }
+  50% { box-shadow: 0 0 14px rgba(100,180,160,0.5), 0 0 28px rgba(100,180,160,0.15); border-color: rgba(100,180,160,0.35); }
 }
 </style>

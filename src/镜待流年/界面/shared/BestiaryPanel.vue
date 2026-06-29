@@ -62,7 +62,26 @@ const tiers = computed(() => {
   return ALL_TIERS.filter(t => grouped.value[t.key] && grouped.value[t.key].length)
 })
 
+function syncDOM() {
+  const cards = document.querySelectorAll('.bs-card[data-bs]')
+  let changed = false
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    const list = JSON.parse(raw || '[]')
+    cards.forEach(card => {
+      const raw = card.getAttribute('data-bs') || ''
+      const parts = raw.split('|||')
+      if (parts.length < 8) return
+      const d = { n: parts[0], r: parts[1], b: parts[2], t: parts[3], ra: parts[4], ba: parts[5], d: parts[6], l: parts[7] }
+      const dup = list.some(e => e.n === d.n && e.r === d.r)
+      if (!dup) { list.push(d); changed = true }
+    })
+    if (changed) localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
+  } catch(e) {}
+}
+
 function load() {
+  syncDOM()
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     const list = JSON.parse(raw || '[]')
@@ -82,9 +101,11 @@ function load() {
   }
 }
 
+let obs = null
 onMounted(() => {
   load()
-  window.addEventListener('bestiary-updated', load)
+  obs = new MutationObserver(() => { syncDOM(); load() })
+  obs.observe(document.body, { childList: true, subtree: true })
 })
 </script>
 
