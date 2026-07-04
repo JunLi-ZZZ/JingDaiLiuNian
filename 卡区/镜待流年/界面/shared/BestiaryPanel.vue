@@ -63,13 +63,15 @@ const tiers = computed(() => {
 })
 
 function syncDOM() {
-  const cards = document.querySelectorAll('.bs-card[data-bs]')
+  const spans = document.querySelectorAll('.bs-card .bs-data')
+  if (!spans.length) return
   let changed = false
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     const list = JSON.parse(raw || '[]')
-    cards.forEach(card => {
-      const raw = card.getAttribute('data-bs') || ''
+    spans.forEach(span => {
+      const raw = (span.textContent || '').trim()
+      if (!raw) return
       const parts = raw.split('|||')
       if (parts.length < 8) return
       const d = { n: parts[0], r: parts[1], b: parts[2], t: parts[3], ra: parts[4], ba: parts[5], d: parts[6], l: parts[7] }
