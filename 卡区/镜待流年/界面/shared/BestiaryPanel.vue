@@ -16,11 +16,11 @@
       <div class="bs-list" v-if="activeTab && grouped[activeTab]">
         <div v-for="(c, i) in grouped[activeTab]" :key="i" class="bs-entry c-{{c.t}}">
           <div class="bs-ehd">
-            <span class="bs-enm">{{ c.n }}</span>
+            <span class="bs-enm">{{ c.r }}</span>
             <span class="bs-etier tier-{{c.t}}">{{ c.t }}</span>
           </div>
           <div class="bs-ebd">
-            <div class="bs-erow"><span class="bs-elbl">种族</span>{{ c.r }}</div>
+            <div class="bs-erow"><span class="bs-elbl">代表</span>{{ c.n }}</div>
             <div class="bs-erow" v-if="c.b && c.b !== c.r"><span class="bs-elbl">血脉</span>{{ c.b }}</div>
             <div class="bs-erow" v-if="c.ra && c.ra !== '无'"><span class="bs-elbl">种族能力</span>{{ c.ra }}</div>
             <div class="bs-erow" v-if="c.ba && c.ba !== '无'"><span class="bs-elbl">血脉能力</span>{{ c.ba }}</div>
@@ -74,7 +74,7 @@ function syncDOM() {
       const parts = raw.split('|||')
       if (parts.length < 8) return
       const d = { n: parts[0], r: parts[1], b: parts[2], t: parts[3], ra: parts[4], ba: parts[5], d: parts[6], l: parts[7] }
-      const dup = list.some(e => e.n === d.n && e.r === d.r)
+      const dup = list.some(e => e.r === d.r && e.b === d.b)
       if (!dup) { list.push(d); changed = true }
     })
     if (changed) localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
@@ -106,10 +106,12 @@ let timer = null
 onMounted(() => {
   load()
   timer = setInterval(() => { syncDOM(); load() }, 2000)
+  document.documentElement.style.overflow = 'hidden'
   document.body.style.overflow = 'hidden'
 })
 onUnmounted(() => {
   clearInterval(timer)
+  document.documentElement.style.overflow = ''
   document.body.style.overflow = ''
 })
 </script>
