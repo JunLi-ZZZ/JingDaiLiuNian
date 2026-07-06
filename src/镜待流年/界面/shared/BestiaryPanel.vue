@@ -63,12 +63,11 @@ const tiers = computed(() => {
 })
 
 function syncDOM() {
-  const spans = document.querySelectorAll('.bs-card .bs-data')
+  const spans = document.querySelectorAll('[class*="bs-data"]')
   if (!spans.length) return
   let changed = false
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    const list = JSON.parse(raw || '[]')
+    const list = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
     spans.forEach(span => {
       const raw = (span.textContent || '').trim()
       if (!raw) return
@@ -103,12 +102,12 @@ function load() {
   }
 }
 
-let obs = null
+let timer = null
 onMounted(() => {
   load()
-  obs = new MutationObserver(() => { syncDOM(); load() })
-  obs.observe(document.body, { childList: true, subtree: true })
+  timer = setInterval(() => { syncDOM(); load() }, 2000)
 })
+onUnmounted(() => { clearInterval(timer) })
 </script>
 
 <style>
