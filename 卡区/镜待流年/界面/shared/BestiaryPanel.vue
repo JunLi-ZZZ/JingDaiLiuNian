@@ -106,8 +106,12 @@ let timer = null
 onMounted(() => {
   load()
   timer = setInterval(() => { syncDOM(); load() }, 2000)
+  document.body.style.overflow = 'hidden'
 })
-onUnmounted(() => { clearInterval(timer) })
+onUnmounted(() => {
+  clearInterval(timer)
+  document.body.style.overflow = ''
+})
 </script>
 
 <style>
