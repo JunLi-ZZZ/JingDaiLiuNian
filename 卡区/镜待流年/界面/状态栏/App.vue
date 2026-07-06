@@ -142,7 +142,6 @@
               </div>
                 </div>
               </div>
-              <BestiaryPanel v-if="bestiaryOpen" @close="bestiaryOpen = false" />
           <div class="sub-block" :class="{ open: showRelations }">
             <div class="sub-head" @click="showRelations = !showRelations">
               <span>👥 人际关系</span><span class="block-arrow small">{{ showRelations ? '▾' : '▸' }}</span>
@@ -403,6 +402,7 @@
         </div>
       </div>
     </div>
+    <BestiaryPanel v-if="bestiaryOpen" @close="bestiaryOpen = false" />
   </div>
 </template>
 
