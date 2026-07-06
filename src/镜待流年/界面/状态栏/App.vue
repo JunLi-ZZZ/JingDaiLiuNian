@@ -139,10 +139,10 @@
                 </div>
                 <div v-if="expandedItems[name] && (item.描述 || (item.能力 && item.能力 !== '无'))" class="item-detail"><div v-if="item.描述"><span class="item-detail-label">描述</span>{{ item.描述 }}</div><div v-if="item.能力 && item.能力 !== '无'" style="padding-top:3px;margin-top:3px;border-top:1px solid var(--t-border)"><span class="item-detail-label">能力</span>{{ item.能力 }}</div></div>
                 <MirrorPanel v-if="name.includes('母镜')" v-show="mirrorOpen" @close="mirrorOpen = false" />
-                <BestiaryPanel v-if="name.includes('万象图鉴')" v-show="bestiaryOpen" @close="bestiaryOpen = false" />
               </div>
                 </div>
               </div>
+              <BestiaryPanel v-if="bestiaryOpen" @close="bestiaryOpen = false" />
           <div class="sub-block" :class="{ open: showRelations }">
             <div class="sub-head" @click="showRelations = !showRelations">
               <span>👥 人际关系</span><span class="block-arrow small">{{ showRelations ? '▾' : '▸' }}</span>
