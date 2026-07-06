@@ -16,7 +16,7 @@
       <div class="bs-list" v-if="activeTab && grouped[activeTab]">
         <div v-for="(c, i) in grouped[activeTab]" :key="i" class="bs-entry c-{{c.t}}">
           <div class="bs-ehd">
-            <span class="bs-enm">{{ c.r }}</span>
+            <span class="bs-enm">{{ c.r }}{{ c.b && c.b !== c.r ? '·' + c.b : '' }}</span>
             <span class="bs-etier tier-{{c.t}}">{{ c.t }}</span>
           </div>
           <div class="bs-ebd">
@@ -132,7 +132,7 @@ onUnmounted(() => {
 .tier-神种{background:linear-gradient(90deg,#7f0000,#c62828,#b71c1c,#f44336,#e53935,#b71c1c,#7f0000);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .tier-特殊{background:linear-gradient(90deg,#7c4dff,#448aff,#00b0ff,#00e5ff,#76ff03,#ffea00,#ff6d00,#f06292,#ff6d00,#ffea00,#76ff03,#00e5ff,#00b0ff,#448aff,#7c4dff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 
-.bestiary-panel{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);animation:bs-fade .25s ease-out;pointer-events:all}
+.bestiary-panel{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);animation:bs-fade .25s ease-out;pointer-events:all}
 @keyframes bs-fade{0%{opacity:0}100%{opacity:1}}
 
 .bestiary-frame{position:relative;width:90vw;max-width:520px;max-height:85vh;background:linear-gradient(135deg,#1a1814 0%,#231f18 50%,#1a1814 100%);border:1px solid rgba(180,150,110,.15);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.5)}
