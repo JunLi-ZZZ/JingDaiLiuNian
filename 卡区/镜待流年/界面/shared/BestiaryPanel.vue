@@ -1,5 +1,5 @@
 <template>
-  <div class="bestiary-panel">
+  <div class="bestiary-panel" @click.self="$emit('close')">
     <div class="bestiary-frame">
       <button class="bs-close" @click="$emit('close')">
         <svg viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="M140.5 140.5c12.5-12.5 32.8-12.5 45.3 0L320 274.7l134.2-134.2c12.5-12.5 32.8-12.5 45.3 0s12.5 32.8 0 45.3L365.3 320l134.2 134.2c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L320 365.3 185.8 499.5c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L274.7 320 140.5 185.8c-12.5-12.5-12.5-32.8 0-45.3z"/></svg>
@@ -124,7 +124,7 @@ onUnmounted(() => { clearInterval(timer) })
 .tier-神种{background:linear-gradient(90deg,#7f0000,#c62828,#b71c1c,#f44336,#e53935,#b71c1c,#7f0000);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .tier-特殊{background:linear-gradient(90deg,#7c4dff,#448aff,#00b0ff,#00e5ff,#76ff03,#ffea00,#ff6d00,#f06292,#ff6d00,#ffea00,#76ff03,#00e5ff,#00b0ff,#448aff,#7c4dff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 
-.bestiary-panel{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);animation:bs-fade .25s ease-out}
+.bestiary-panel{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);animation:bs-fade .25s ease-out;pointer-events:all}
 @keyframes bs-fade{0%{opacity:0}100%{opacity:1}}
 
 .bestiary-frame{position:relative;width:90vw;max-width:520px;max-height:85vh;background:linear-gradient(135deg,#1a1814 0%,#231f18 50%,#1a1814 100%);border:1px solid rgba(180,150,110,.15);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.5)}
