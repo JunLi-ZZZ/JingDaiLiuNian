@@ -62,8 +62,10 @@ const tiers = computed(() => {
   return ALL_TIERS.filter(t => grouped.value[t.key] && grouped.value[t.key].length)
 })
 
+const doc = window.parent ? window.parent.document : document
+
 function syncDOM() {
-  const spans = document.querySelectorAll('[class*="bs-data"]')
+  const spans = doc.querySelectorAll('[class*="bs-data"]')
   if (!spans.length) return
   let changed = false
   try {
@@ -106,13 +108,13 @@ let timer = null
 onMounted(() => {
   load()
   timer = setInterval(() => { syncDOM(); load() }, 2000)
-  document.documentElement.style.overflow = 'hidden'
-  document.body.style.overflow = 'hidden'
+  doc.documentElement.style.overflow = 'hidden'
+  doc.body.style.overflow = 'hidden'
 })
 onUnmounted(() => {
   clearInterval(timer)
-  document.documentElement.style.overflow = ''
-  document.body.style.overflow = ''
+  doc.documentElement.style.overflow = ''
+  doc.body.style.overflow = ''
 })
 </script>
 
