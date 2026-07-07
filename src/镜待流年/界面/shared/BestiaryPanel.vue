@@ -1,6 +1,7 @@
 <template>
   <div class="bestiary-panel" @click.self="$emit('close')">
     <div class="bestiary-frame">
+      <span class="bs-corner tl"></span><span class="bs-corner tr"></span><span class="bs-corner bl"></span><span class="bs-corner br"></span>
       <button class="bs-close" @click="$emit('close')">
         <svg viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="M140.5 140.5c12.5-12.5 32.8-12.5 45.3 0L320 274.7l134.2-134.2c12.5-12.5 32.8-12.5 45.3 0s12.5 32.8 0 45.3L365.3 320l134.2 134.2c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L320 365.3 185.8 499.5c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L274.7 320 140.5 185.8c-12.5-12.5-12.5-32.8 0-45.3z"/></svg>
       </button>
@@ -29,7 +30,6 @@
             <div class="bs-erow" v-if="c.ra && c.ra !== '无'"><svg class="bs-eico" viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="M184 120c0-30.9 25.1-56 56-56h24c17.7 0 32 14.3 32 32v448c0 17.7-14.3 32-32 32h-32c-29.8 0-54.9-20.4-62-48h-2c-44.2 0-80-35.8-80-80c0-18 6-34.6 16-48c-19.4-14.6-32-37.8-32-64c0-30.9 17.6-57.8 43.2-71.1c-7.1-12-11.2-26-11.2-40.9c0-44.2 35.8-80 80-80z"/></svg><span class="bs-elbl">种族能力</span>{{ c.ra }}</div>
             <div class="bs-erow" v-if="c.ba && c.ba !== '无'"><svg class="bs-eico" viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="M434.8 54.1c11.9 8.6 16.3 24.2 10.9 37.8L367.3 288H512c13.5 0 25.5 8.4 30.1 21.1s.7 26.9-9.6 35.5l-288 240c-11.3 9.4-27.4 9.9-39.3 1.3s-16.3-24.2-10.9-37.8L272.7 352H128c-13.5 0-25.5-8.4-30.1-21.1s-.7-26.9 9.6-35.5l288-240c11.3-9.4 27.4-9.9 39.3-1.3"/></svg><span class="bs-elbl">血脉能力</span>{{ c.ba }}</div>
             <div class="bs-erow"><svg class="bs-eico" viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="M472 216c57.4 0 104 46.6 104 104c0 141.4-114.6 256-256 256c-54.3 0-104.8-17-146.3-45.9c-14.5-10.1-18-30.1-7.9-44.6s30.1-18 44.6-7.9c31.1 21.7 68.9 34.4 109.7 34.4c67.9 0 127.5-35.3 161.7-88.5c-3.2.3-6.4.5-9.7.5c-57.4 0-104-46.6-104-104s46.6-104 104-104zM320 64c54.3 0 104.8 17 146.3 45.9c14.5 10.1 18 30.1 7.9 44.6s-30.1 18-44.6 7.9c-31.1-21.7-68.9-34.4-109.7-34.4c-67.9 0-127.5 35.2-161.7 88.4c3.2-.3 6.4-.4 9.7-.4c57.4 0 104 46.6 104 104S225.4 424 168 424S64 377.4 64 320c0-1.9 0-3.8.1-5.6C67.1 175.6 180.5 64 320 64M168 280c-22.1 0-40 17.9-40 40s17.9 40 40 40s40-17.9 40-40s-17.9-40-40-40m304 0c-22.1 0-40 17.9-40 40s17.9 40 40 40s40-17.9 40-40s-17.9-40-40-40"/></svg><span class="bs-elbl">描述</span>{{ c.d }}</div>
-            <div class="bs-erow" v-if="c.l && c.l !== '无'"><svg class="bs-eico" viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="M172.268 501.674c-17.819 27.135-27.372 59.114-27.372 91.826v33.5h320v-33.5c0-32.712-9.553-64.691-27.372-91.826l-40.628-61.854l-1.085-1.651c-5.768-8.783-8.915-19.079-8.915-29.669V320h-160v88.5c0 10.59-3.147 20.886-8.915 29.669l-1.085 1.651z"/></svg><span class="bs-elbl">遭遇地</span>{{ c.l }}</div>
           </div>
         </div>
       </div>
@@ -188,10 +188,12 @@ onUnmounted(() => {
 .bestiary-panel{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.65);backdrop-filter:blur(5px);animation:bs-fade .25s ease-out;pointer-events:all}
 @keyframes bs-fade{0%{opacity:0}100%{opacity:1}}
 
-.bestiary-frame{position:relative;width:90vw;max-width:540px;max-height:85vh;background:radial-gradient(ellipse at 50% 0%,rgba(196,168,122,.06) 0%,transparent 55%),radial-gradient(ellipse at 50% 100%,rgba(196,168,122,.04) 0%,transparent 55%),linear-gradient(175deg,#131110 0%,#191613 35%,#1c1814 70%,#141110 100%);border:1px solid rgba(180,150,110,.2);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 12px 50px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.04)}
-.bestiary-frame::before,.bestiary-frame::after{content:'';position:absolute;width:26px;height:26px;pointer-events:none;z-index:1;opacity:.5}
-.bestiary-frame::before{top:10px;left:10px;border-top:1px solid #c4a87a;border-left:1px solid #c4a87a;border-radius:8px 0 0 0}
-.bestiary-frame::after{bottom:10px;right:10px;border-bottom:1px solid #c4a87a;border-right:1px solid #c4a87a;border-radius:0 0 8px 0}
+.bestiary-frame{position:relative;width:90vw;max-width:540px;max-height:85vh;background:linear-gradient(175deg,#131110 0%,#191613 50%,#141110 100%);border:1px solid rgba(180,150,110,.2);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 12px 50px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.04)}
+.bs-corner{position:absolute;width:26px;height:26px;pointer-events:none;z-index:1;opacity:.5}
+.bs-corner.tl{top:10px;left:10px;border-top:1px solid #c4a87a;border-left:1px solid #c4a87a;border-radius:8px 0 0 0}
+.bs-corner.tr{top:10px;right:10px;border-top:1px solid #c4a87a;border-right:1px solid #c4a87a;border-radius:0 8px 0 0}
+.bs-corner.bl{bottom:10px;left:10px;border-bottom:1px solid #c4a87a;border-left:1px solid #c4a87a;border-radius:0 0 0 8px}
+.bs-corner.br{bottom:10px;right:10px;border-bottom:1px solid #c4a87a;border-right:1px solid #c4a87a;border-radius:0 0 8px 0}
 
 .bs-close{position:absolute;top:12px;right:12px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.04);border:1px solid rgba(180,150,110,.15);border-radius:6px;color:rgba(200,180,150,.55);cursor:pointer;z-index:3;font-size:12px;transition:all .25s}.bs-close:hover{color:rgba(200,180,150,.9);background:rgba(255,255,255,.08);border-color:rgba(180,150,110,.3)}
 
@@ -213,7 +215,7 @@ onUnmounted(() => {
 .bs-entry.expanded{background:linear-gradient(90deg,rgba(255,255,255,.07) 0%,rgba(255,255,255,.025) 100%);box-shadow:0 4px 16px rgba(0,0,0,.3)}
 .bs-entry .bs-ehd{display:flex;align-items:center;gap:8px;padding:10px 14px;position:relative}
 .bs-entry .bs-enm{font-family:'寒蝉全圆体','DouyinSans',serif;font-weight:700;font-size:1.05em;letter-spacing:.03em;text-shadow:0 0 8px rgba(0,0,0,.3)}
-.bs-entry .bs-etier{font-size:.62em;padding:2px 8px;border:1px solid var(--tc);border-radius:4px;margin-left:auto;letter-spacing:.08em;background:rgba(0,0,0,.25);font-weight:600}
+.bs-entry .bs-etier{font-size:.62em;padding:2px 8px;border:1px solid var(--tc);border-radius:4px;margin-left:auto;letter-spacing:.08em;font-weight:600}
 .bs-entry .bs-ebd{padding:2px 14px 10px;font-size:.8em;line-height:1.7;color:#c0b090;animation:bs-expand .25s ease-out}
 @keyframes bs-expand{0%{opacity:0;transform:translateY(-4px)}100%{opacity:1;transform:translateY(0)}}
 .bs-entry .bs-erow{display:flex;gap:6px;margin-bottom:3px;align-items:baseline}
