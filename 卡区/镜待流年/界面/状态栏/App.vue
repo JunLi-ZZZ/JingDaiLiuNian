@@ -628,7 +628,7 @@ const expandedItems = ref<Record<string, boolean>>({});
 const tierOrder: Record<string, number> = { 唯一: 10, 不朽: 9, 神话: 8, 传说: 7, 史诗: 6, 稀有: 5, 优秀: 4, 精良: 3, 普通: 2, 残破: 1 };
 const itemEntries = computed(() => {
   const items = { ...(data.value.主角.随身物品 || {}) };
-  if (!items['万象图鉴']) items['万象图鉴'] = { 等级: '特殊', 描述: '记录了旅途中所遇生灵', 数量: 1 };
+  if (!items['万象图鉴']) items['万象图鉴'] = { 等级: '唯一', 描述: '记录了旅途中所遇生灵', 数量: 1 };
   const entries = Object.entries(items) as [string, { 描述?: string; 数量?: number; 等级?: string; 能力?: string }][];
   return entries.sort((a, b) => (tierOrder[b[1].等级 || ''] || 0) - (tierOrder[a[1].等级 || ''] || 0));
 });

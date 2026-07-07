@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta charset="UTF-8"><title>图鉴数据写入测试</title>
+<style>
+body{font-family:sans-serif;padding:20px;background:#1a1a1a;color:#ccc}
+.card{border:1px solid #555;padding:10px;margin:10px 0;border-radius:8px;background:#222}
+.result{padding:10px;margin:10px 0;border-radius:4px}
+.pass{background:#1a3a1a;border:1px solid #4a4}
+.fail{background:#3a1a1a;border:1px solid #a44}
+button{padding:8px 16px;margin:4px;cursor:pointer}
+</style>
+</head>
+<body>
+<h3>图鉴数据写入测试</h3>
+<p>下面模拟酒馆中生成两张图鉴卡片</p>
+
+<div id="chat"></div>
+
+<hr>
+<h3>localStorage 状态 <span style="font-size:12px;color:#888">(方案: <span id="method">-</span>)</span></h3>
+<div id="status">等待测试...</div>
+<button onclick="checkLS()">检查 localStorage</button>
+<button onclick="clearLS()">清空重来</button>
+<button onclick="toggleMethod()">切换方案重测</button>
+
+<script>
+// 测试方案A：img onerror（原方案）
+function makeCard_onerror(name, race, bloodline, tier, raceAbi, bloodAbi, desc, loot) {
+  return `<div class="bs-card c-${tier}"><span class="bs-data" style="display:none">${name}|||${race}|||${bloodline}|||${tier}|||${raceAbi}|||${bloodAbi}|||${desc}|||${loot}</span><img src="x" style="display:none" onerror="var d=(this.previousElementSibling.textContent||'').split('|||');if(d.length>7){var k='jdnl_bestiary',l=JSON.parse(localStorage.getItem(k)||'[]');if(!l.some(function(e){return e.n===d[0]&&e.r===d[1]})){l.push({n:d[0],r:d[1],b:d[2],t:d[3],ra:d[4],ba:d[5],d:d[6],l:d[7]});localStorage.setItem(k,JSON.stringify(l))}}this.remove()"><div>🐉 <b>${name}</b> [${tier}]</div><div>种族: ${race} · ${bloodline}</div></div>`;
+}
+// 测试方案B：svg onload（备选方案）
+function makeCard_svg(name, race, bloodline, tier, raceAbi, bloodAbi, desc, loot) {
+  return `<div class="bs-card c-${tier}"><span class="bs-data" style="display:none">${name}|||${race}|||${bloodline}|||${tier}|||${raceAbi}|||${bloodAbi}|||${desc}|||${loot}</span><svg style="display:none" onload="var d=this.parentElement.querySelector('.bs-data').textContent.split('|||');if(d.length>7){var k='jdnl_bestiary',l=JSON.parse(localStorage.getItem(k)||'[]');if(!l.some(function(e){return e.n===d[0]&&e.r===d[1]})){l.push({n:d[0],r:d[1],b:d[2],t:d[3],ra:d[4],ba:d[5],d:d[6],l:d[7]});localStorage.setItem(k,JSON.stringify(l))}}"><rect/></svg><div>🐉 <b>${name}</b> [${tier}]</div><div>种族: ${race} · ${bloodline}</div></div>`;
+}
+var useSvg = true;
+function makeCard(a,b,c,d,e,f,g,h){ return useSvg ? makeCard_svg(a,b,c,d,e,f,g,h) : makeCard_onerror(a,b,c,d,e,f,g,h); }
+function toggleMethod(){ useSvg=!useSvg; clearLS(); updateStatus(); document.getElementById('chat').innerHTML=makeCard('璃缨','真龙','纯血真龙·异色樱粉','神种','龙灵威压、幻化人神','龙息衍化（治愈生机）','樱粉色长发及踝，额生一对晶莹龙角','樱鳞坠')+makeCard('涂山素凝','灵狐','九尾天狐','珍种','魅惑、妖力操控','九尾神通','银白长发九尾狐妖，清艳动人','狐灵玉'); setTimeout(updateStatus,500); document.getElementById('method').textContent=useSvg?'SVG onload':'img onerror'; }
+document.getElementById('method').textContent='SVG onload';
+function clearLS() { localStorage.removeItem('jdnl_bestiary'); updateStatus(); }
+function checkLS() { updateStatus(); }
+
+function updateStatus() {
+  const raw = localStorage.getItem('jdnl_bestiary');
+  const list = JSON.parse(raw || '[]');
+  const spans = document.querySelectorAll('.bs-data');
+  const s = document.getElementById('status');
+  if (list.length > 0) {
+    s.innerHTML = `<div class="result pass">✅ <b>PASS</b> — localStorage 有 ${list.length} 条记录：<br><pre>${JSON.stringify(list, null, 2)}</pre></div>`;
+  } else if (spans.length > 0) {
+    s.innerHTML = `<div class="result fail">❌ <b>FAIL</b> — DOM 有 ${spans.length} 个 .bs-data 元素，但 localStorage 为空。说明 onerror 没执行（CSP/安全策略阻止了内联事件）</div>`;
+  } else {
+    s.innerHTML = `<div class="result fail">❌ <b>FAIL</b> — 没有任何 .bs-data 元素或数据</div>`;
+  }
+}
+
+// 测试1：通过 innerHTML 插入（模拟酒馆）
+document.getElementById('chat').innerHTML =
+  makeCard('璃缨','真龙','纯血真龙·异色樱粉','神种','龙灵威压、幻化人神','龙息衍化（治愈生机）','樱粉色长发及踝，额生一对晶莹龙角','樱鳞坠') +
+  makeCard('涂山素凝','灵狐','九尾天狐','珍种','魅惑、妖力操控','九尾神通','银白长发九尾狐妖，清艳动人','狐灵玉');
+
+// 测试2：检查 onerror 是否触发了
+setTimeout(updateStatus, 500);
+
+// 测试3：暴露函数让浏览器控制台也能调
+window.makeCard = makeCard;
+window.updateStatus = updateStatus;
+window.clearLS = clearLS;
+console.log('测试页面就绪。调用 makeCard() 可手动插入卡片，updateStatus() 查看状态');
+</script>
+</body>
+</html>
