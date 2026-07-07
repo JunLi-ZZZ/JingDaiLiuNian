@@ -160,9 +160,9 @@ onUnmounted(() => {
 .bs-entry .bs-ebd{padding:8px 14px 10px;font-size:.8em;line-height:1.7;background:rgba(0,0,0,.2);color:#c0b090;position:relative;z-index:1}
 .bs-entry .bs-erow{display:flex;gap:6px;margin-bottom:3px}
 .bs-entry .bs-erow:last-child{margin-bottom:0}
-.bs-entry .bs-elbl{color:var(--tc);font-size:.78em;white-space:nowrap;min-width:3.5em;opacity:.6;letter-spacing:.04em}
+.bs-entry .bs-elbl{color:var(--tc);font-size:.78em;white-space:nowrap;min-width:4.5em;display:inline-block;text-align:right;opacity:.6;letter-spacing:.04em;margin-right:4px}
 .bs-entry .bs-eft{display:flex;align-items:center;gap:4px;padding:6px 14px;font-size:.7em;color:#a09080;background:rgba(0,0,0,.15);border-radius:0 0 7px 7px;border-top:1px solid rgba(255,255,255,.04);position:relative;z-index:1}
-.bs-entry .bs-eico{display:inline-block;width:1em;height:1em;vertical-align:-.15em;color:var(--tc);margin-right:2px;opacity:.6}
+.bs-entry .bs-eico{display:inline-block;width:1em;height:1em;vertical-align:middle;color:var(--tc);margin-right:3px;opacity:.7;flex-shrink:0}
 @keyframes bs-shimmer{0%{background-position:0% center}100%{background-position:200% center}}
 
 .c-废种{--tc:#888;--ti:linear-gradient(90deg,#444,#666,#555,#777,#666,#555,#444)}
