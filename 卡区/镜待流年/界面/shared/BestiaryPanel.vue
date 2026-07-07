@@ -43,16 +43,16 @@ defineEmits(['close'])
 const STORAGE_KEY = 'jdnl_bestiary'
 
 const ALL_TIERS = [
-  { key: '废种', label: '废种' },
-  { key: '凡种', label: '凡种' },
-  { key: '良种', label: '良种' },
-  { key: '精种', label: '精种' },
-  { key: '珍种', label: '珍种' },
-  { key: '异种', label: '异种' },
-  { key: '仙种', label: '仙种' },
-  { key: '圣种', label: '圣种' },
-  { key: '神种', label: '神种' },
-  { key: '特殊', label: '特殊' },
+  { key: '残破', label: '残破' },
+  { key: '普通', label: '普通' },
+  { key: '精良', label: '精良' },
+  { key: '优秀', label: '优秀' },
+  { key: '稀有', label: '稀有' },
+  { key: '史诗', label: '史诗' },
+  { key: '传说', label: '传说' },
+  { key: '神话', label: '神话' },
+  { key: '不朽', label: '不朽' },
+  { key: '唯一', label: '唯一' },
 ]
 
 const grouped = ref({})
@@ -121,57 +121,60 @@ onUnmounted(() => {
 <style>
 @import url('https://fontsapi.zeoseven.com/3/main/result.css');
 @import url('https://fontsapi.zeoseven.com/84/main/result.css');
-.tier-废种{background:linear-gradient(90deg,#444,#666,#555,#777,#666,#555,#444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.tier-凡种{background:linear-gradient(90deg,#b0b0b0,#d0d0d0,#c8c8c8,#e0e0e0,#d0d0d0,#c8c8c8,#b0b0b0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.tier-良种{background:linear-gradient(90deg,#2e7d32,#4caf50,#43a047,#66bb6a,#4caf50,#43a047,#2e7d32);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.tier-精种{background:linear-gradient(90deg,#0d47a1,#1976d2,#1565c0,#42a5f5,#1e88e5,#1565c0,#0d47a1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.tier-珍种{background:linear-gradient(90deg,#4a148c,#7b1fa2,#6a1b9a,#ab47bc,#8e24aa,#6a1b9a,#4a148c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.tier-异种{background:linear-gradient(90deg,#f06292,#f48fb1,#fce4ec,#f8bbd0,#f48fb1,#ec407a,#f06292);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.tier-仙种{background:linear-gradient(90deg,#fbc02d,#ffee58,#fff9c4,#fff176,#ffee58,#fdd835,#fbc02d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.tier-圣种{background:linear-gradient(90deg,#e65100,#ff9800,#ffe0b2,#ffcc80,#ff9800,#f57c00,#e65100);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.tier-神种{background:linear-gradient(90deg,#7f0000,#c62828,#b71c1c,#f44336,#e53935,#b71c1c,#7f0000);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.tier-特殊{background:linear-gradient(90deg,#7c4dff,#448aff,#00b0ff,#00e5ff,#76ff03,#ffea00,#ff6d00,#f06292,#ff6d00,#ffea00,#76ff03,#00e5ff,#00b0ff,#448aff,#7c4dff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.tier-残破{background:linear-gradient(90deg,#444,#666,#555,#777,#666,#555,#444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.tier-普通{background:linear-gradient(90deg,#b0b0b0,#d0d0d0,#c8c8c8,#e0e0e0,#d0d0d0,#c8c8c8,#b0b0b0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.tier-精良{background:linear-gradient(90deg,#2e7d32,#4caf50,#43a047,#66bb6a,#4caf50,#43a047,#2e7d32);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.tier-优秀{background:linear-gradient(90deg,#0d47a1,#1976d2,#1565c0,#42a5f5,#1e88e5,#1565c0,#0d47a1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.tier-稀有{background:linear-gradient(90deg,#4a148c,#7b1fa2,#6a1b9a,#ab47bc,#8e24aa,#6a1b9a,#4a148c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.tier-史诗{background:linear-gradient(90deg,#f06292,#f48fb1,#fce4ec,#f8bbd0,#f48fb1,#ec407a,#f06292);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.tier-传说{background:linear-gradient(90deg,#fbc02d,#ffee58,#fff9c4,#fff176,#ffee58,#fdd835,#fbc02d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.tier-神话{background:linear-gradient(90deg,#e65100,#ff9800,#ffe0b2,#ffcc80,#ff9800,#f57c00,#e65100);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.tier-不朽{background:linear-gradient(90deg,#7f0000,#c62828,#b71c1c,#f44336,#e53935,#b71c1c,#7f0000);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.tier-唯一{background:linear-gradient(90deg,#7c4dff,#448aff,#00b0ff,#00e5ff,#76ff03,#ffea00,#ff6d00,#f06292,#ff6d00,#ffea00,#76ff03,#00e5ff,#00b0ff,#448aff,#7c4dff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 
-.bestiary-panel{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);animation:bs-fade .25s ease-out;pointer-events:all}
+.bestiary-panel{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.65);backdrop-filter:blur(5px);animation:bs-fade .25s ease-out;pointer-events:all}
 @keyframes bs-fade{0%{opacity:0}100%{opacity:1}}
 
-.bestiary-frame{position:relative;width:90vw;max-width:520px;max-height:85vh;background:linear-gradient(175deg,#141210 0%,#1a1714 30%,#1d1915 70%,#151310 100%),repeating-linear-gradient(0deg,transparent 0px,transparent 8px,rgba(180,150,110,.02) 8px,rgba(180,150,110,.02) 9px),repeating-linear-gradient(90deg,transparent 0px,transparent 30px,rgba(180,150,110,.015) 30px,rgba(180,150,110,.015) 32px);border:1px solid rgba(180,150,110,.18);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+.bestiary-frame{position:relative;width:90vw;max-width:540px;max-height:85vh;background:radial-gradient(ellipse at 50% 0%,rgba(196,168,122,.06) 0%,transparent 55%),radial-gradient(ellipse at 50% 100%,rgba(196,168,122,.04) 0%,transparent 55%),linear-gradient(175deg,#131110 0%,#191613 35%,#1c1814 70%,#141110 100%);border:1px solid rgba(180,150,110,.2);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 12px 50px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.04)}
+.bestiary-frame::before,.bestiary-frame::after{content:'';position:absolute;width:26px;height:26px;pointer-events:none;z-index:1;opacity:.5}
+.bestiary-frame::before{top:10px;left:10px;border-top:1px solid #c4a87a;border-left:1px solid #c4a87a;border-radius:8px 0 0 0}
+.bestiary-frame::after{bottom:10px;right:10px;border-bottom:1px solid #c4a87a;border-right:1px solid #c4a87a;border-radius:0 0 8px 0}
 
-.bs-close{position:absolute;top:10px;right:10px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.04);border:1px solid rgba(180,150,110,.12);border-radius:6px;color:rgba(200,180,150,.5);cursor:pointer;z-index:2;font-size:12px}.bs-close:hover{color:rgba(200,180,150,.85);background:rgba(255,255,255,.08)}
+.bs-close{position:absolute;top:12px;right:12px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.04);border:1px solid rgba(180,150,110,.15);border-radius:6px;color:rgba(200,180,150,.55);cursor:pointer;z-index:3;font-size:12px;transition:all .25s}.bs-close:hover{color:rgba(200,180,150,.9);background:rgba(255,255,255,.08);border-color:rgba(180,150,110,.3)}
 
-.bs-panel-title{text-align:center;padding:18px 16px 4px;font-family:'寒蝉全圆体','DouyinSans',serif;font-size:1.4em;letter-spacing:.15em;color:#c4a87a;position:relative;z-index:1}
+.bs-panel-title{text-align:center;padding:22px 16px 8px;font-family:'寒蝉全圆体','DouyinSans',serif;font-size:1.45em;letter-spacing:.18em;color:#c4a87a;position:relative;z-index:1;text-shadow:0 0 12px rgba(196,168,122,.15)}
+.bs-panel-title::before,.bs-panel-title::after{content:'◆';color:rgba(196,168,122,.45);font-size:.55em;margin:0 14px;vertical-align:.25em}
 
-.bs-tabs{display:flex;gap:3px;padding:12px 12px 4px;overflow-x:auto;flex-shrink:0;scrollbar-width:none;border-bottom:1px solid rgba(180,150,110,.06)}.bs-tabs::-webkit-scrollbar{display:none}
-.bs-tabs button{flex-shrink:0;padding:7px 14px;font-family:'寒蝉全圆体','DouyinSans',serif;font-size:.7em;letter-spacing:.08em;color:rgba(180,160,130,.4);background:rgba(255,255,255,.01);border:1px solid transparent;border-bottom:2px solid transparent;border-radius:6px 6px 0 0;cursor:pointer;transition:all .25s;white-space:nowrap;position:relative;margin-bottom:-1px}
-.bs-tabs button:hover{color:rgba(200,180,150,.7);background:rgba(180,150,110,.04)}
-.bs-tabs button.active{color:#c4a87a;background:rgba(180,150,110,.06);border-color:rgba(180,150,110,.15);border-bottom-color:var(--tc,#c4a87a)}
+.bs-tabs{display:flex;gap:2px;padding:14px 14px 0;overflow-x:auto;flex-shrink:0;scrollbar-width:none;border-bottom:1px solid rgba(180,150,110,.08)}.bs-tabs::-webkit-scrollbar{display:none}
+.bs-tabs button{flex-shrink:0;padding:6px 13px;font-family:'寒蝉全圆体','DouyinSans',serif;font-size:.7em;letter-spacing:.08em;color:rgba(180,160,130,.42);background:transparent;border:1px solid transparent;border-bottom:2px solid transparent;border-radius:6px 6px 0 0;cursor:pointer;transition:all .25s;white-space:nowrap;position:relative;margin-bottom:-1px}
+.bs-tabs button:hover{color:rgba(200,180,150,.75);background:rgba(180,150,110,.04)}
+.bs-tabs button.active{color:#c4a87a;background:rgba(180,150,110,.06);border-color:rgba(180,150,110,.18);border-bottom-color:var(--tc,#c4a87a);text-shadow:0 0 8px rgba(196,168,122,.2)}
 
-.bs-empty{text-align:center;padding:40px 16px;color:rgba(180,160,130,.3);font-size:.85em}
+.bs-empty{text-align:center;padding:50px 16px;color:rgba(180,160,130,.32);font-size:.85em;letter-spacing:.06em}
 
-.bs-list{flex:1;overflow-y:auto;padding:4px 12px 16px;scrollbar-width:thin;scrollbar-color:rgba(180,150,110,.1) transparent}
+.bs-list{flex:1;overflow-y:auto;padding:8px 14px 16px;scrollbar-width:thin;scrollbar-color:rgba(180,150,110,.12) transparent}
 .bs-list::-webkit-scrollbar{width:4px}.bs-list::-webkit-scrollbar-track{background:transparent}.bs-list::-webkit-scrollbar-thumb{background:rgba(180,150,110,.15);border-radius:2px}
 
-.bs-entry{margin:8px 0;border-radius:8px;padding:1px;background:var(--ti,linear-gradient(90deg,#444,#666));background-size:200% auto;animation:bs-shimmer 4s linear infinite;position:relative}
-.bs-entry::after{content:'';position:absolute;inset:0;border-radius:8px;background-image:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxkZWZzPjxwYXR0ZXJuIGlkPSJlIiB3aWR0aD0iMjUiIGhlaWdodD0iMTMiIHBhdHRlcm5UcmFuc2Zvcm09InNjYWxlKDEpIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJub25lIi8+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iLjMiIG9wYWNpdHk9Ii4xNSIgZD0iTTE1IDIyLjNhMi41IDIuNSAwIDAgMS0yLjUgMi41IDIuNSAyLjUgMCAwIDEtMi41LTIuNSAyLjUgMi41IDAgMCAxIDIuNS0yLjUgMi41IDIuNSAwIDAgMSAyLjUgMi41bTIuNSAwYTUgNSAwIDAgMS01IDUgNSA1IDAgMCAxLTUtNSA1IDUgMCAwIDEgNS01IDUgNSAwIDAgMSA1IDVtMi41IDBhNy41IDcuNSAwIDAgMS03LjUgNy41IDcuNSA3LjUgMCAwIDEtNy41LTcuNSA3LjUgNy41IDAgMCAxIDcuNS03LjUgNy41IDcuNSAwIDAgMSA3LjUgNy41Ii8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2UpIi8+PC9zdmc+);opacity:.15;pointer-events:none}
-.bs-entry .bs-ehd{display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(255,255,255,.04);border-radius:7px 7px 0 0;position:relative;z-index:1}
-.bs-entry .bs-enm{font-family:'寒蝉全圆体','DouyinSans',serif;font-weight:700;font-size:1.05em;letter-spacing:.03em;background:var(--ti);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.bs-entry .bs-etier{font-size:.65em;padding:3px 7px;border:1px solid var(--tc);border-radius:4px;color:var(--tc);margin-left:auto;letter-spacing:.06em;position:relative;z-index:1}
-.bs-entry .bs-ebd{padding:8px 14px 10px;font-size:.8em;line-height:1.7;background:rgba(0,0,0,.2);color:#c0b090;position:relative;z-index:1}
-.bs-entry .bs-erow{display:flex;gap:6px;margin-bottom:3px}
+.bs-entry{margin:7px 0;border-radius:0 8px 8px 0;background:linear-gradient(90deg,rgba(255,255,255,.035) 0%,rgba(255,255,255,.015) 100%);border-left:3px solid var(--tc,#c4a87a);position:relative;transition:background .25s,transform .25s,box-shadow .25s}
+.bs-entry:hover{background:linear-gradient(90deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.02) 100%);transform:translateX(2px);box-shadow:0 2px 12px rgba(0,0,0,.2)}
+.bs-entry .bs-ehd{display:flex;align-items:center;gap:8px;padding:10px 14px 6px;position:relative}
+.bs-entry .bs-enm{font-family:'寒蝉全圆体','DouyinSans',serif;font-weight:700;font-size:1.05em;letter-spacing:.03em;color:var(--tc,#c4a87a);text-shadow:0 0 8px rgba(0,0,0,.3)}
+.bs-entry .bs-etier{font-size:.62em;padding:2px 8px;border:1px solid var(--tc);border-radius:4px;color:var(--tc);margin-left:auto;letter-spacing:.08em;background:rgba(0,0,0,.25);font-weight:600}
+.bs-entry .bs-ebd{padding:4px 14px 9px;font-size:.8em;line-height:1.7;color:#c0b090}
+.bs-entry .bs-erow{display:flex;gap:6px;margin-bottom:3px;align-items:baseline}
 .bs-entry .bs-erow:last-child{margin-bottom:0}
-.bs-entry .bs-elbl{color:var(--tc);font-size:.78em;white-space:nowrap;min-width:4.5em;display:inline-block;text-align:right;opacity:.6;letter-spacing:.04em;margin-right:4px}
-.bs-entry .bs-eft{display:flex;align-items:center;gap:4px;padding:6px 14px;font-size:.7em;color:#a09080;background:rgba(0,0,0,.15);border-radius:0 0 7px 7px;border-top:1px solid rgba(255,255,255,.04);position:relative;z-index:1}
-.bs-entry .bs-eico{display:inline-block;width:1em;height:1em;vertical-align:middle;color:var(--tc);margin-right:3px;opacity:.7;flex-shrink:0}
-@keyframes bs-shimmer{0%{background-position:0% center}100%{background-position:200% center}}
+.bs-entry .bs-elbl{color:var(--tc);font-size:.76em;white-space:nowrap;min-width:4.5em;display:inline-block;text-align:right;opacity:.55;letter-spacing:.05em;margin-right:4px;flex-shrink:0}
+.bs-entry .bs-eft{display:flex;align-items:center;gap:4px;padding:6px 14px 7px;font-size:.7em;color:#a09080;background:rgba(0,0,0,.18);border-top:1px solid rgba(255,255,255,.05);border-radius:0 0 8px 0;margin-left:-3px}
+.bs-entry .bs-eico{display:inline-block;width:1em;height:1em;vertical-align:middle;color:var(--tc);margin-right:3px;opacity:.65;flex-shrink:0}
 
-.c-废种{--tc:#888;--ti:linear-gradient(90deg,#444,#666,#555,#777,#666,#555,#444)}
-.c-凡种{--tc:#c0c0c0;--ti:linear-gradient(90deg,#b0b0b0,#d0d0d0,#c8c8c8,#e0e0e0,#d0d0d0,#c8c8c8,#b0b0b0)}
-.c-良种{--tc:#4caf50;--ti:linear-gradient(90deg,#2e7d32,#4caf50,#43a047,#66bb6a,#4caf50,#43a047,#2e7d32)}
-.c-精种{--tc:#2196f3;--ti:linear-gradient(90deg,#0d47a1,#1976d2,#1565c0,#42a5f5,#1e88e5,#1565c0,#0d47a1)}
-.c-珍种{--tc:#9c27b0;--ti:linear-gradient(90deg,#4a148c,#7b1fa2,#6a1b9a,#ab47bc,#8e24aa,#6a1b9a,#4a148c)}
-.c-异种{--tc:#f06292;--ti:linear-gradient(90deg,#f06292,#f48fb1,#fce4ec,#f8bbd0,#f48fb1,#ec407a,#f06292)}
-.c-仙种{--tc:#fbc02d;--ti:linear-gradient(90deg,#fbc02d,#ffee58,#fff9c4,#fff176,#ffee58,#fdd835,#fbc02d)}
-.c-圣种{--tc:#ff6d00;--ti:linear-gradient(90deg,#e65100,#ff9800,#ffe0b2,#ffcc80,#ff9800,#f57c00,#e65100)}
-.c-神种{--tc:#e53935;--ti:linear-gradient(90deg,#7f0000,#c62828,#b71c1c,#f44336,#e53935,#b71c1c,#7f0000)}
-.c-特殊{--tc:#81d8d0;--ti:linear-gradient(90deg,#00695c,#26a69a,#80cbc4,#b2dfdb,#80cbc4,#26a69a,#00695c)}
+.c-残破{--tc:#888;--ti:linear-gradient(90deg,#444,#666,#555,#777,#666,#555,#444)}
+.c-普通{--tc:#c0c0c0;--ti:linear-gradient(90deg,#b0b0b0,#d0d0d0,#c8c8c8,#e0e0e0,#d0d0d0,#c8c8c8,#b0b0b0)}
+.c-精良{--tc:#4caf50;--ti:linear-gradient(90deg,#2e7d32,#4caf50,#43a047,#66bb6a,#4caf50,#43a047,#2e7d32)}
+.c-优秀{--tc:#2196f3;--ti:linear-gradient(90deg,#0d47a1,#1976d2,#1565c0,#42a5f5,#1e88e5,#1565c0,#0d47a1)}
+.c-稀有{--tc:#9c27b0;--ti:linear-gradient(90deg,#4a148c,#7b1fa2,#6a1b9a,#ab47bc,#8e24aa,#6a1b9a,#4a148c)}
+.c-史诗{--tc:#f06292;--ti:linear-gradient(90deg,#f06292,#f48fb1,#fce4ec,#f8bbd0,#f48fb1,#ec407a,#f06292)}
+.c-传说{--tc:#fbc02d;--ti:linear-gradient(90deg,#fbc02d,#ffee58,#fff9c4,#fff176,#ffee58,#fdd835,#fbc02d)}
+.c-神话{--tc:#ff6d00;--ti:linear-gradient(90deg,#e65100,#ff9800,#ffe0b2,#ffcc80,#ff9800,#f57c00,#e65100)}
+.c-不朽{--tc:#e53935;--ti:linear-gradient(90deg,#7f0000,#c62828,#b71c1c,#f44336,#e53935,#b71c1c,#7f0000)}
+.c-唯一{--tc:#81d8d0;--ti:linear-gradient(90deg,#00695c,#26a69a,#80cbc4,#b2dfdb,#80cbc4,#26a69a,#00695c)}
 </style>

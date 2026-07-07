@@ -359,6 +359,21 @@
       不可激活其他条目: true
     文件: 世界书\系统\角色NSFW准则
 
+  - 名称: 品阶体系
+    启用: true
+    激活策略:
+      类型: 蓝灯
+    插入位置:
+      类型: 指定深度
+      角色: 系统
+      深度: 0
+      顺序: 14716
+    激活概率: 100
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+    文件: 世界书\系统\品阶体系
+
   - 名称: 物品格式要求
     启用: true
     激活策略:
@@ -860,7 +875,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v122/界面/状态栏/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v123/界面/状态栏/index.html')
         </script>
         </body>
         ```
@@ -878,7 +893,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v122/界面/封面/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v123/界面/封面/index.html')
         </script>
         </body>
         ```
@@ -949,6 +964,6 @@
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v122/脚本/变量结构/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v123/脚本/变量结构/index.js';
 
     变量: {}

@@ -610,22 +610,22 @@ const protagClothing = computed(() => {
 });
 function tierGradient(tier: string): string {
   const map: Record<string, string> = {
-    废品: '#444,#666,#555,#777,#666,#555,#444',
-    凡品: '#b0b0b0,#d0d0d0,#c8c8c8,#e0e0e0,#d0d0d0,#c8c8c8,#b0b0b0',
-    良品: '#2e7d32,#4caf50,#43a047,#66bb6a,#4caf50,#43a047,#2e7d32',
-    精品: '#0d47a1,#1976d2,#1565c0,#42a5f5,#1e88e5,#1565c0,#0d47a1',
-    珍品: '#4a148c,#7b1fa2,#6a1b9a,#ab47bc,#8e24aa,#6a1b9a,#4a148c',
-    异品: '#f06292,#f48fb1,#fce4ec,#f8bbd0,#f48fb1,#ec407a,#f06292',
-    仙品: '#fbc02d,#ffee58,#fff9c4,#fff176,#ffee58,#fdd835,#fbc02d',
-    圣品: '#e65100,#ff9800,#ffe0b2,#ffcc80,#ff9800,#f57c00,#e65100',
-    神品: '#7f0000,#c62828,#b71c1c,#f44336,#e53935,#b71c1c,#7f0000',
-    特殊: '#7c4dff,#448aff,#00b0ff,#00e5ff,#76ff03,#ffea00,#ff6d00,#f06292,#ff6d00,#ffea00,#76ff03,#00e5ff,#00b0ff,#448aff,#7c4dff',
+    残破: '#444,#666,#555,#777,#666,#555,#444',
+    普通: '#b0b0b0,#d0d0d0,#c8c8c8,#e0e0e0,#d0d0d0,#c8c8c8,#b0b0b0',
+    精良: '#2e7d32,#4caf50,#43a047,#66bb6a,#4caf50,#43a047,#2e7d32',
+    优秀: '#0d47a1,#1976d2,#1565c0,#42a5f5,#1e88e5,#1565c0,#0d47a1',
+    稀有: '#4a148c,#7b1fa2,#6a1b9a,#ab47bc,#8e24aa,#6a1b9a,#4a148c',
+    史诗: '#f06292,#f48fb1,#fce4ec,#f8bbd0,#f48fb1,#ec407a,#f06292',
+    传说: '#fbc02d,#ffee58,#fff9c4,#fff176,#ffee58,#fdd835,#fbc02d',
+    神话: '#e65100,#ff9800,#ffe0b2,#ffcc80,#ff9800,#f57c00,#e65100',
+    不朽: '#7f0000,#c62828,#b71c1c,#f44336,#e53935,#b71c1c,#7f0000',
+    唯一: '#7c4dff,#448aff,#00b0ff,#00e5ff,#76ff03,#ffea00,#ff6d00,#f06292,#ff6d00,#ffea00,#76ff03,#00e5ff,#00b0ff,#448aff,#7c4dff',
   };
   return map[tier] || '#888,#777,#666,#555,#444';
 }
 const expandedItems = ref<Record<string, boolean>>({});
 
-const tierOrder: Record<string, number> = { 特殊: 10, 神品: 9, 圣品: 8, 仙品: 7, 异品: 6, 珍品: 5, 精品: 4, 良品: 3, 凡品: 2, 废品: 1 };
+const tierOrder: Record<string, number> = { 唯一: 10, 不朽: 9, 神话: 8, 传说: 7, 史诗: 6, 稀有: 5, 优秀: 4, 精良: 3, 普通: 2, 残破: 1 };
 const itemEntries = computed(() => {
   const items = { ...(data.value.主角.随身物品 || {}) };
   if (!items['万象图鉴']) items['万象图鉴'] = { 等级: '特殊', 描述: '记录了旅途中所遇生灵', 数量: 1 };
