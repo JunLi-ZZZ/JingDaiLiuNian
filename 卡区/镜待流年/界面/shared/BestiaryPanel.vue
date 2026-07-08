@@ -5,7 +5,8 @@
       <button class="bs-close" @click="$emit('close')">
         <svg viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="M140.5 140.5c12.5-12.5 32.8-12.5 45.3 0L320 274.7l134.2-134.2c12.5-12.5 32.8-12.5 45.3 0s12.5 32.8 0 45.3L365.3 320l134.2 134.2c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L320 365.3 185.8 499.5c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L274.7 320 140.5 185.8c-12.5-12.5-12.5-32.8 0-45.3z"/></svg>
       </button>
-      <div class="bs-panel-title">万象图鉴</div>
+      <div class="bs-panel-title"><span class="bs-dia">◆</span>万象图鉴<span class="bs-dia">◆</span></div>
+      <div class="bs-title-line"></div>
 
       <div class="bs-mode-tabs">
         <button :class="['bs-mode', { active: mode === 'bio' }]" @click="switchMode('bio')">生物</button>
@@ -15,7 +16,7 @@
       <div class="bs-tabs" v-if="tiers.length">
         <button v-for="t in tiers" :key="t.key"
                 :class="['bs-tab', 'c-' + t.key, { active: activeTab === t.key }]"
-                @click="activeTab = t.key; expandedName = ''">
+                @click="activeTab = t.key; expandedNames = []">
           {{ t.label }}
         </button>
       </div>
@@ -23,13 +24,13 @@
 
       <div class="bs-list" v-if="activeTab && grouped[activeTab]">
         <div v-for="c in grouped[activeTab]" :key="c.n"
-             :class="['bs-entry', 'c-' + c.t, { expanded: expandedName === c.n }]"
+             :class="['bs-entry', 'c-' + c.t, { expanded: expandedNames.includes(c.n) }]"
              @click="toggleExpand(c.n)">
           <div class="bs-ehd">
             <span :class="['bs-enm', 'tier-' + c.t]">{{ c.dispName }}</span>
             <span :class="['bs-etier', 'tier-' + c.t]">{{ c.t }}</span>
           </div>
-          <div class="bs-ebd" v-show="expandedName === c.n">
+          <div class="bs-ebd" v-show="expandedNames.includes(c.n)">
             <template v-if="mode === 'bio'">
               <div class="bs-erow"><svg class="bs-eico" viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="M320 312c66.3 0 120-53.7 120-120S386.3 72 320 72s-120 53.7-120 120s53.7 120 120 120m-29.7 56C191.8 368 112 447.8 112 546.3c0 16.4 13.3 29.7 29.7 29.7h356.6c16.4 0 29.7-13.3 29.7-29.7c0-98.5-79.8-178.3-178.3-178.3z"/></svg><span class="bs-elbl">代表</span>{{ c.n }}</div>
               <div class="bs-erow" v-if="c.b && c.b !== c.r"><svg class="bs-eico" viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="M112 320c0-114.9 93.1-208 208-208c63.1 0 119.6 28.1 157.8 72.5c8.6 10.1 23.8 11.2 33.8 2.6s11.2-23.8 2.6-33.8C467.3 98.6 397.7 64 320 64C178.6 64 64 178.6 64 320v40c0 13.3 10.7 24 24 24s24-10.7 24-24z"/></svg><span class="bs-elbl">血脉</span>{{ c.b }}</div>
@@ -73,7 +74,7 @@ const ALL_TIERS = [
 const mode = ref('bio')
 const grouped = ref({})
 const activeTab = ref('')
-const expandedName = ref('')
+const expandedNames = ref([])
 
 const tiers = computed(() => ALL_TIERS.filter(t => grouped.value[t.key] && grouped.value[t.key].length))
 
@@ -98,7 +99,7 @@ function checkChatChange() {
     localStorage.removeItem(BIO_KEY)
     localStorage.removeItem(ITEM_KEY)
     grouped.value = {}
-    expandedName.value = ''
+    expandedNames.value = []
     activeTab.value = ''
     localStorage.setItem(CHAT_ID_KEY, cur)
     return true
@@ -166,13 +167,15 @@ function load() {
 
 function switchMode(m) {
   mode.value = m
-  expandedName.value = ''
+  expandedNames.value = []
   activeTab.value = ''
   load()
 }
 
 function toggleExpand(name) {
-  expandedName.value = expandedName.value === name ? '' : name
+  const i = expandedNames.value.indexOf(name)
+  if (i >= 0) expandedNames.value.splice(i, 1)
+  else expandedNames.value.push(name)
 }
 
 let timer = null
@@ -230,8 +233,8 @@ onUnmounted(() => {
 .bs-close{position:absolute;top:12px;right:12px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.04);border:1px solid rgba(180,150,110,.15);border-radius:6px;color:rgba(200,180,150,.55);cursor:pointer;z-index:3;font-size:12px;transition:all .25s}.bs-close:hover{color:rgba(200,180,150,.9);background:rgba(255,255,255,.08);border-color:rgba(180,150,110,.3)}
 
 .bs-panel-title{text-align:center;padding:24px 16px 10px;font-family:'寒蝉全圆体','DouyinSans',serif;font-size:1.5em;letter-spacing:.2em;color:#c4a87a;position:relative;z-index:1;text-shadow:0 0 12px rgba(196,168,122,.18)}
-.bs-panel-title::before,.bs-panel-title::after{content:'◆';color:rgba(196,168,122,.5);font-size:.55em;margin:0 14px;vertical-align:.25em}
-.bs-panel-title::after{content:'';display:block;position:relative;width:60%;height:1px;margin:8px auto 0;background:linear-gradient(90deg,transparent,rgba(196,168,122,.4),transparent)}
+.bs-panel-title .bs-dia{color:rgba(196,168,122,.5);font-size:.55em;margin:0 14px;vertical-align:.25em}
+.bs-title-line{width:60%;height:1px;margin:8px auto 0;background:linear-gradient(90deg,transparent,rgba(196,168,122,.4),transparent);position:relative;z-index:1}
 
 .bs-mode-tabs{display:flex;gap:8px;padding:10px 14px 0;position:relative;z-index:1}
 .bs-mode{flex:1;padding:7px 12px;font-family:'寒蝉全圆体','DouyinSans',serif;font-size:.78em;letter-spacing:.1em;color:rgba(180,160,130,.5);background:rgba(255,255,255,.02);border:1px solid rgba(180,150,110,.12);border-radius:6px;cursor:pointer;transition:all .25s}

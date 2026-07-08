@@ -130,8 +130,8 @@
                   :class="{ 'mirror-item': name.includes('母镜'), 'mirror-open': name.includes('母镜') && mirrorOpen, 'bestiary-item': name.includes('万象图鉴') }"
                   @click="name.includes('母镜') ? (mirrorOpen = !mirrorOpen) : name.includes('万象图鉴') ? (bestiaryOpen = !bestiaryOpen) : (expandedItems[name] = !expandedItems[name])"
                 >
-                  <span class="item-name item-shimmer" :style="{ background: `linear-gradient(135deg, ${tierGradient(item.等级 || '')})`, backgroundSize: '200% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }">{{ name }}</span>
-                  <span class="item-tier">[{{ item.等级 || '未评级' }}]</span>
+                  <span class="item-name item-shimmer" :style="{ background: `linear-gradient(135deg, ${tierGradient(item.品阶 || '')})`, backgroundSize: '200% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }">{{ name }}</span>
+                  <span class="item-tier">[{{ item.品阶 || '未评级' }}]</span>
                   <span v-if="item.数量" class="item-qty">×{{ item.数量 }}</span>
                   <span v-if="name.includes('母镜')" class="mirror-toggle">{{ mirrorOpen ? '▾' : '▸' }}</span>
                   <span v-else-if="name.includes('万象图鉴')" class="mirror-toggle">{{ bestiaryOpen ? '▾' : '▸' }}</span>
@@ -289,8 +289,8 @@
                   <div v-if="getCharItems(char).length === 0" class="empty-hint">暂无</div>
                   <div v-for="[name, item] in getCharItems(char)" :key="name">
                     <div class="item-card" @click="expandedItems[char._key + '-' + name] = !expandedItems[char._key + '-' + name]">
-                      <span class="item-name item-shimmer" :style="{ background: `linear-gradient(135deg, ${tierGradient(item.等级 || '')})`, backgroundSize: '200% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }">{{ name }}</span>
-                      <span class="item-tier">[{{ item.等级 || '未评级' }}]</span>
+                      <span class="item-name item-shimmer" :style="{ background: `linear-gradient(135deg, ${tierGradient(item.品阶 || '')})`, backgroundSize: '200% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }">{{ name }}</span>
+                      <span class="item-tier">[{{ item.品阶 || '未评级' }}]</span>
                       <span v-if="item.数量" class="item-qty">×{{ item.数量 }}</span>
                       <span class="item-expand">{{ expandedItems[char._key + '-' + name] ? '▾' : '▸' }}</span>
                     </div>
@@ -628,9 +628,9 @@ const expandedItems = ref<Record<string, boolean>>({});
 const tierOrder: Record<string, number> = { 唯一: 10, 不朽: 9, 神话: 8, 传说: 7, 史诗: 6, 稀有: 5, 优秀: 4, 精良: 3, 普通: 2, 残破: 1 };
 const itemEntries = computed(() => {
   const items = { ...(data.value.主角.随身物品 || {}) };
-  if (!items['万象图鉴']) items['万象图鉴'] = { 等级: '唯一', 描述: '记录了旅途中所遇生灵', 数量: 1 };
-  const entries = Object.entries(items) as [string, { 描述?: string; 数量?: number; 等级?: string; 能力?: string }][];
-  return entries.sort((a, b) => (tierOrder[b[1].等级 || ''] || 0) - (tierOrder[a[1].等级 || ''] || 0));
+  if (!items['万象图鉴']) items['万象图鉴'] = { 品阶: '唯一', 描述: '记录了旅途中所遇生灵', 数量: 1 };
+  const entries = Object.entries(items) as [string, { 描述?: string; 数量?: number; 品阶?: string; 能力?: string }][];
+  return entries.sort((a, b) => (tierOrder[b[1].品阶 || ''] || 0) - (tierOrder[a[1].品阶 || ''] || 0));
 });
 const relationEntries = computed(() => Object.entries(data.value.主角.人际关系 || {}) as [string, string][]);
 
@@ -653,7 +653,7 @@ type CharInfo = {
   战力?: number;
   当前地点?: { 位面?: string; 大陆?: string; 城市?: string; 区域?: string; 场景?: string; 具体位置?: string };
   服装?: Record<string, { 名称?: string; 描述?: string; 状态?: string }>;
-  随身物品?: Record<string, { 描述?: string; 数量?: number; 等级?: string; 能力?: string }>;
+  随身物品?: Record<string, { 描述?: string; 数量?: number; 品阶?: string; 能力?: string }>;
   人际关系?: Record<string, string>;
   nsfw档案?: {
     初次存在与否?: boolean;
@@ -687,7 +687,7 @@ interface NearbyChar {
   战力?: number;
   当前地点?: { 位面?: string; 大陆?: string; 城市?: string; 区域?: string; 场景?: string; 具体位置?: string };
   服装?: Record<string, { 名称?: string; 描述?: string; 状态?: string }>;
-  随身物品?: Record<string, { 描述?: string; 数量?: number; 等级?: string; 能力?: string }>;
+  随身物品?: Record<string, { 描述?: string; 数量?: number; 品阶?: string; 能力?: string }>;
   人际关系?: Record<string, string>;
   nsfw档案?: {
     初次存在与否?: boolean;
@@ -763,9 +763,9 @@ function getCharClothing(char: NearbyChar): { key: string; 名称: string; 描�
     .filter(k => c[k] !== undefined)
     .map(k => ({ key: k, 名称: c[k]?.名称 || '', 描述: c[k]?.描述 || '', 状态: c[k]?.状态 || '' }));
 }
-function getCharItems(char: NearbyChar): [string, { 描述?: string; 数量?: number; 等级?: string; 能力?: string }][] {
+function getCharItems(char: NearbyChar): [string, { 描述?: string; 数量?: number; 品阶?: string; 能力?: string }][] {
   const entries = Object.entries(char.随身物品 || {});
-  return entries.sort((a, b) => (tierOrder[b[1].等级 || ''] || 0) - (tierOrder[a[1].等级 || ''] || 0));
+  return entries.sort((a, b) => (tierOrder[b[1].品阶 || ''] || 0) - (tierOrder[a[1].品阶 || ''] || 0));
 }
 function getCharRelations(char: NearbyChar): [string, string][] {
   return Object.entries(char.人际关系 || {});

@@ -58,7 +58,7 @@
         <div class="notice-item">请勿在墙内社区、QQ群传播、讨论相关内容</div>
       </div>
     </div>
-    <button class="enter-btn" @click="page = 'tools'">
+    <button class="enter-btn" @click="enterFromIntro">
       进入
       <span class="enter-arrow">→</span>
     </button>
@@ -463,9 +463,12 @@ const sceneEntryMap: Record<string, { enable: string[]; disable: string[] }> = {
   },
 };
 
-async function selectDlc(dlc: string) {
-  if (dlcSaving.value) return;
-  dlcSaving.value = true;
+async function enterFromIntro() {
+  await restoreWorldbook();
+  page.value = 'tools';
+}
+
+async function restoreWorldbook() {
   try {
     const TH = (window as any).parent?.TavernHelper;
     if (TH) {
@@ -476,18 +479,16 @@ async function selectDlc(dlc: string) {
           (x.comment === 'user人设(自定义)' || x.display_name === 'user人设(自定义)' || x.name === 'user人设(自定义)') && x.enabled,
         );
         const ops: { uid: number; enabled: boolean }[] = [];
-        const map = dlcEntryMap[dlc];
-        if (map) {
-          for (const name of map.enable) {
-            if (hasCustomUser && name.startsWith('user人设')) continue;
-            const e = entries.find((x: any) => x.comment === name || x.display_name === name);
-            if (e && !e.enabled) ops.push({ uid: e.uid, enabled: true });
-          }
-          for (const name of map.disable) {
-            if (hasCustomUser && name.startsWith('user人设')) continue;
-            const e = entries.find((x: any) => x.comment === name || x.display_name === name);
-            if (e && e.enabled) ops.push({ uid: e.uid, enabled: false });
-          }
+        const map = dlcEntryMap.main;
+        for (const name of map.enable) {
+          if (hasCustomUser && name.startsWith('user人设')) continue;
+          const e = entries.find((x: any) => x.comment === name || x.display_name === name);
+          if (e && !e.enabled) ops.push({ uid: e.uid, enabled: true });
+        }
+        for (const name of map.disable) {
+          if (hasCustomUser && name.startsWith('user人设')) continue;
+          const e = entries.find((x: any) => x.comment === name || x.display_name === name);
+          if (e && e.enabled) ops.push({ uid: e.uid, enabled: false });
         }
         if (ops.length) await TH.setLorebookEntries(wbName, ops);
       }
@@ -495,6 +496,11 @@ async function selectDlc(dlc: string) {
   } catch {
     /* silent */
   }
+}
+
+async function selectDlc(dlc: string) {
+  if (dlcSaving.value) return;
+  dlcSaving.value = true;
   dlcSaving.value = false;
   currentDlc.value = dlc;
   page.value = 'scenes';
