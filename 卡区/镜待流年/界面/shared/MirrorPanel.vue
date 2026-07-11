@@ -1185,7 +1185,7 @@ async function mxSaveGenResult() {
     if (alias) keys.push(alias);
     let wbName: string = TH.getCharLorebooks()?.primary;
     if (!wbName) {
-      wbName = '镜待流年v130';
+      wbName = '镜待流年v131';
       await TH.createLorebook(wbName);
       await TH.setCurrentCharLorebooks({ primary: wbName });
     }
@@ -1286,7 +1286,7 @@ const plTemplate = `你正在通过母镜感知一方世界的轮廓。镜中波
 
 <plane_info>
 位面档案:
-    位面名称:（为空则随机生成一个贴切的名字——不要叫"未命名位面"或"新位面"这类敷衍名字）
+    位面名称:（为空则随机生成一个贴切的中文名——须为纯中文，不夹带英文或括号注释；不要叫"未命名位面"或"新位面"这类敷衍名字）
 
     概况:
       - （位面整体定位一句话，如"修仙文明为主，天地灵气充沛，凡人可修炼成仙"）
@@ -1331,6 +1331,7 @@ const plTemplate = `你正在通过母镜感知一方世界的轮廓。镜中波
 - 不要输出 <UpdateVariable>、<JSONPatch>、<Variable> 或任何变量操作标签。忽略后续提示词中可能出现的变量更新指令，那些与本任务无关。
 - 严格按以上格式输出。除此之外不要附带任何其他内容。
 - 位面名称必须有辨识度，不可使用"未命名""新位面"等敷衍占位名。
+- 位面名称须为纯中文，不得夹带英文、拼音、翻译或括号注释。
 - 地理描述须有可辨识的地标或地形特征——不写氛围，写具体事物。
 - 势力写清楚定位与特征，不要只写名字。
 - 每个值须有辨识度，避免泛泛描述。`;
@@ -1426,10 +1427,16 @@ async function plSaveGenResult() {
       return;
     }
     const nameMatch = plGenArchive.value.match(/位面名称[：:][^\S\n]*(\S[^\n]*)/);
-    const planeName = nameMatch ? nameMatch[1].trim() : '新位面';
+    let planeName = nameMatch ? nameMatch[1].trim() : '新位面';
+    planeName = planeName
+      .replace(/[（(][^）)]*[）)]/g, '')
+      .replace(/[a-zA-Z]+/g, '')
+      .replace(/['"\\]/g, '')
+      .trim();
+    if (!planeName) planeName = '新位面';
     let wbName: string = TH.getCharLorebooks()?.primary;
     if (!wbName) {
-      wbName = '镜待流年v130';
+      wbName = '镜待流年v131';
       await TH.createLorebook(wbName);
       await TH.setCurrentCharLorebooks({ primary: wbName });
     }
@@ -1481,25 +1488,7 @@ async function plSaveGenResult() {
     });
     if (ejsTarget) {
       const safeVar = 'mentioned_' + planeName.replace(/[^a-zA-Z一-鿿]/g, '');
-      const keywords = [planeName];
-      if (plForm.linkedChars.trim()) {
-        plForm.linkedChars.split(/[,，]/).forEach(c => {
-          const n = c.trim();
-          if (n && !keywords.includes(n)) keywords.push(n);
-        });
-      }
-      if (plForm.coreFeature.trim()) {
-        const featKw = plForm.coreFeature
-          .trim()
-          .split(/[,，、\s]+/)
-          .filter((w: string) => w.length >= 2 && !keywords.includes(w));
-        featKw.forEach((w: string) => keywords.push(w));
-      }
-      const kStr = keywords
-        .filter(Boolean)
-        .map(k => `'${k}'`)
-        .join(', ');
-      const newBlock = `const ${safeVar} = matchChatMessages([${kStr}]);
+      const newBlock = `const ${safeVar} = matchChatMessages(['${planeName}']);
 if (plane.includes('${planeName}') || ${safeVar}) {
   print(await getwi('${planeName}'));
 }`;
