@@ -147,6 +147,14 @@
         </div>
         <span class="scene-arrow"></span>
       </button>
+      <button class="dlc-card" @click="selectDlc('xiGuang')">
+        <span class="dlc-index">⚜</span>
+        <div class="dlc-body">
+          <span class="dlc-name">曦光穹界<span class="dlc-type">[西幻]</span></span>
+          <span class="dlc-desc">剑与魔法的高塔之国，星脉流转，极光为幕。一纸婚约未及相见，佳人已循镜而至</span>
+        </div>
+        <span class="scene-arrow"></span>
+      </button>
     </div>
     <div class="scene-card custom-card" :class="{ active: showCustom }" @click="toggleCustom">
       <span class="scene-index">✦</span>
@@ -194,9 +202,9 @@
       >
         <span class="scene-index">{{ i + 1 }}</span>
         <div class="scene-body">
-          <span class="scene-char">{{ scene.char }}</span>
-          <span class="scene-location">{{ scene.location }}</span>
-          <span class="scene-teaser">{{ scene.teaser }}</span>
+          <span class="scene-char" :class="{ 'scene-title': scene.title }">{{ scene.title || scene.char }}</span>
+          <span v-if="scene.location" class="scene-location">{{ scene.location }}</span>
+          <span class="scene-teaser">{{ scene.intro || scene.teaser }}</span>
         </div>
         <span class="scene-arrow"></span>
       </button>
@@ -290,7 +298,15 @@ const extensions = computed(() => [
 const allOk = computed(() => extensions.value.every(e => e.ok));
 
 const currentDlc = ref('main');
-const mainScenes = [
+interface Scene {
+  char?: string;
+  title?: string;
+  location?: string;
+  teaser?: string;
+  intro?: string;
+  message: string;
+}
+const mainScenes: Scene[] = [
   {
     char: '虞姝昀',
     location: '新湖区 · {{user}}的公寓',
@@ -342,7 +358,7 @@ const mainScenes = [
 剧情大纲：初冬的第一场小雪悄无声息地落下来时，{{user}}刚从外面回到家，还没来得及开灯。客厅里有一团微弱的金色光芒在闪烁——那是子镜的波纹。光芒消散后，一个金发垂落、双眼蒙着黑色布条的女子踉跄着跌坐在地板上，半透的白袍因身形而紧贴在身上，手中那柄天秤剑磕在地砖上发出清脆的声响。她抬起头，无法聚焦的眼眸朝着门口的方向望过来，用带着异域口音的轻柔嗓音试探着问这里是不是她镜中看到的那个人的住处。`,
   },
 ];
-const xianDaoScenes = [
+const xianDaoScenes: Scene[] = [
   {
     char: '苏墨染 · 苏幼清',
     location: '画道峰 · 云烟阁',
@@ -354,7 +370,7 @@ const xianDaoScenes = [
 剧情大纲：苏墨染按心中所想之人的模样作了一幅画，画完后总觉得有形无神。徒儿苏幼清凑过来看了一眼，喃喃念了一句诗——那声音轻得像梦里念叨过无数遍的句子。话音落下，画上墨迹忽然晕开，子镜与母镜同时嗡鸣，师徒二人的共鸣竟将画中人的本尊从另一个世界唤了过来。`,
   },
 ];
-const hongHuangScenes = [
+const hongHuangScenes: Scene[] = [
   {
     char: '白糯糯 · 陶冶月',
     location: '东海州 · 位面裂隙附近',
@@ -366,7 +382,7 @@ const hongHuangScenes = [
 剧情大纲：洪荒与主世界边界重叠，穿越两个位面的裂隙常年存在……一只垂耳玉兔穿过裂隙，慌不择路撞进了{{user}}怀里，化作一团温香软玉的人形。身后追来的饕餮大妖停在不远处，歪头看着{{user}}把那刚化形未着寸缕的娇软小美人护在身后的样子，饶有兴致地蹲了下来瞪大眼睛看着这一幕。一副跃跃欲试也想要抱抱的模样，可似乎觉得原形不方便，便学着化作人形。`,
   },
 ];
-const yanYunScenes = [
+const yanYunScenes: Scene[] = [
   {
     char: '沈晚絮',
     location: '太渊城 · 沈氏商号书房',
@@ -398,6 +414,17 @@ const yanYunScenes = [
 剧情大纲：晏云舒曾数次派人入坠月幽谷向白芙澪求药，次次被一句"无缘"挡回。{{user}}听闻此事，亲自策马前往幽谷替晏云舒求药。竹楼二层，白芙澪照例悬丝垂帘，冷声让来者自报来意。在{{user}}说完来意后，楼上沉默了片刻。悬丝收了，帘子也撩开了。她从竹楼上走下来，虽仍是那副清冷的眉眼，只是眼底多了一份异彩，她径直走到药炉前，美目流转间，亲手为他烹了一壶茶。`,
   },
 ];
+const xiGuangScenes: Scene[] = [
+  {
+    title: '《身材巨好的矜贵未婚妻伪装成我的贴身女仆》',
+    intro: '婚约既定，相见却遥遥无期。她扮成贴身女仆住进我的宅邸，只为看清未来的丈夫。这个清晨，她拉开窗帘，决定尽一尽女仆的本分',
+    message: `根据以下设定构建剧情开头：
+时间：清晨
+地点：晨星公爵宅邸 · {{user}}的卧房（曦光穹界·圣芒大陆）
+出场角色：伊莲（真实身份塞西莉亚）
+剧情大纲：晨星公爵宅邸新来的贴身女仆「伊莲」，真实身份是{{user}}素未谋面的未婚妻，阿斯特雷亚大公爵之女塞西莉亚。按两大世家婚约后的惯例，正式相见前女方会先遣女仆住进未婚夫的宅邸照料起居；塞西莉亚压下魔力波动、隐去身份，亲自扮作女仆，想贴身看清这个将来要嫁的男人是何心性。这天清晨，伊莲照例进{{user}}的卧房伺候，拉开窗帘放进晨光，回身要唤主人起身时，一眼瞥见薄被下被悄然撑起的一处。服侍主人梳洗、打理身体的每一处本是贴身女仆的分内之事，她垂下眼睫，神色训练有素地平静，正要上前尽职；可指尖却几不可察地顿了顿。那点属于未婚妻的、连她自己都不肯承认的好奇，也在这一刻悄悄浮了上来，她想知道，自己未来的丈夫究竟会是什么模样。{{user}}尚在半梦半醒之间，并不知这名无可挑剔的女仆究竟是谁。`,
+  },
+];
 const activeScenes = computed(() =>
   currentDlc.value === 'hongHuang'
     ? hongHuangScenes
@@ -405,7 +432,9 @@ const activeScenes = computed(() =>
       ? xianDaoScenes
       : currentDlc.value === 'yanYun'
         ? yanYunScenes
-        : mainScenes,
+        : currentDlc.value === 'xiGuang'
+          ? xiGuangScenes
+          : mainScenes,
 );
 
 async function startScene(i: number) {
@@ -442,7 +471,7 @@ async function startScene(i: number) {
 }
 
 const dlcSaving = ref(false);
-const dlcResetDisable = ['洪荒入侵', '静安入宫', 'user人设_白衣卿相', 'user人设_静安王爷'];
+const dlcResetDisable = ['洪荒入侵', '静安入宫', '女仆伊莲', 'user人设_白衣卿相', 'user人设_静安王爷', 'user人设_晨星公爵之子', 'user人设_曦光穹界'];
 const dlcEntryMap: Record<string, { enable: string[]; disable: string[] }> = {
   main: { enable: ['user人设'], disable: dlcResetDisable },
   xianDao: { enable: ['user人设'], disable: dlcResetDisable },
@@ -460,6 +489,10 @@ const sceneEntryMap: Record<string, { enable: string[]; disable: string[] }> = {
   yanYun_2: {
     enable: ['user人设_静安王爷'],
     disable: ['user人设', 'user人设_白衣卿相'],
+  },
+  xiGuang_0: {
+    enable: ['女仆伊莲', 'user人设_晨星公爵之子'],
+    disable: ['user人设'],
   },
 };
 
@@ -1332,6 +1365,11 @@ function sendCustom() {
   font-weight: 600;
   color: var(--c-text);
   letter-spacing: 1px;
+}
+.scene-title {
+  font-size: 12px;
+  line-height: 1.5;
+  letter-spacing: 0.3px;
 }
 .scene-location {
   font-family: 'DouyinSans', var(--font-main);

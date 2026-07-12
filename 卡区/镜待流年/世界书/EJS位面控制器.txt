@@ -5,6 +5,7 @@ const mentionedMain = matchChatMessages(['主世界']);
 const mentionedCangMing = matchChatMessages(['苍溟界']);
 const mentionedMangCang = matchChatMessages(['莽苍太古界']);
 const mentionedYanYun = matchChatMessages(['晏云界']);
+const mentionedXiGuang = matchChatMessages(['曦光穹界']);
 
 if (plane.includes('主世界') || mentionedMain) {
   print(await getwi('主世界'));
@@ -17,5 +18,8 @@ if (plane.includes('莽苍太古') || mentionedMangCang) {
 }
 if (plane.includes('晏云') || mentionedYanYun) {
   print(await getwi('晏云界'));
+}
+if (plane.includes('曦光') || mentionedXiGuang) {
+  print(await getwi('曦光穹界'));
 }
 %>
