@@ -101,17 +101,19 @@
         <template v-else>
           <div class="mp-wx-head">
             <span class="mp-wx-title">{{ tabTitle }}</span>
-            <span class="mp-wx-acts"><span class="mp-wx-act"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m18.031 16.617l4.283 4.282l-1.415 1.415l-4.282-4.283A8.96 8.96 0 0 1 11 20c-4.968 0-9-4.032-9-9s4.032-9 9-9s9 4.032 9 9a8.96 8.96 0 0 1-1.969 5.617m-2.006-.742A6.98 6.98 0 0 0 18 11c0-3.867-3.133-7-7-7s-7 3.133-7 7s3.133 7 7 7a6.98 6.98 0 0 0 4.875-1.975z"/></svg></span><span v-if="wxTab==='chats'||wxTab==='contacts'" class="mp-wx-act"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></svg></span></span>
+            <span class="mp-wx-acts"><span v-if="wxTab==='chats'||wxTab==='contacts'" :class="['mp-wx-act',{on:showSearch&&wxTab==='chats'}]" @click="toggleSearch"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m18.031 16.617l4.283 4.282l-1.415 1.415l-4.282-4.283A8.96 8.96 0 0 1 11 20c-4.968 0-9-4.032-9-9s4.032-9 9-9s9 4.032 9 9a8.96 8.96 0 0 1-1.969 5.617m-2.006-.742A6.98 6.98 0 0 0 18 11c0-3.867-3.133-7-7-7s-7 3.133-7 7s3.133 7 7 7a6.98 6.98 0 0 0 4.875-1.975z"/></svg></span><span v-if="wxTab==='chats'" :class="['mp-wx-act',{on:showNew}]" @click="toggleNew"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></svg></span></span>
           </div>
           <div class="mp-wx-body">
             <!-- 聊天 -->
             <template v-if="wxTab === 'chats'">
-              <div class="mp-newchat">
+              <div v-if="showSearch" class="mp-search"><span class="mp-search-box"><svg viewBox="0 0 24 24" class="mp-search-ico"><path fill="currentColor" d="m18.031 16.617l4.283 4.282l-1.415 1.415l-4.282-4.283A8.96 8.96 0 0 1 11 20c-4.968 0-9-4.032-9-9s4.032-9 9-9s9 4.032 9 9a8.96 8.96 0 0 1-1.969 5.617m-2.006-.742A6.98 6.98 0 0 0 18 11c0-3.867-3.133-7-7-7s-7 3.133-7 7s3.133 7 7 7a6.98 6.98 0 0 0 4.875-1.975z"/></svg><input v-model="searchQuery" class="mp-search-inp" placeholder="搜索" /></span></div>
+              <div v-if="showNew" class="mp-newchat">
                 <input v-model="newContact" class="mp-nc-in" placeholder="输入联系人名开始对话" @keydown.enter="startChat" />
                 <button class="mp-nc-btn" @click="startChat">发起</button>
               </div>
-              <div v-if="!contacts.length" class="mp-hint">还没有对话</div>
-              <div v-for="c in contacts" :key="c" class="mp-cell" @click="openContact(c)">
+              <div v-if="!contacts.length" class="mp-hint">还没有对话，点右上角 + 发起</div>
+              <div v-else-if="!shownContacts.length" class="mp-hint">无匹配联系人</div>
+              <div v-for="c in shownContacts" :key="c" class="mp-cell" @click="openContact(c)">
                 <div class="mp-ava lg">{{ initial(c) }}<span v-if="unread[c]" class="mp-badge sm">{{ unread[c] > 99 ? '99+' : unread[c] }}</span></div>
                 <div class="mp-cell-mid"><div class="mp-cell-nm">{{ c }}</div><div class="mp-cell-sub">{{ lastPreview(c) }}</div></div>
                 <div class="mp-cell-rt"><div class="mp-cell-tm">{{ lastTime(c) }}</div></div>
@@ -119,12 +121,12 @@
             </template>
             <!-- 通讯录 -->
             <template v-else-if="wxTab === 'contacts'">
-              <div class="mp-search"><span class="mp-search-in"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m18.031 16.617l4.283 4.282l-1.415 1.415l-4.282-4.283A8.96 8.96 0 0 1 11 20c-4.968 0-9-4.032-9-9s4.032-9 9-9s9 4.032 9 9a8.96 8.96 0 0 1-1.969 5.617m-2.006-.742A6.98 6.98 0 0 0 18 11c0-3.867-3.133-7-7-7s-7 3.133-7 7s3.133 7 7 7a6.98 6.98 0 0 0 4.875-1.975z"/></svg>搜索</span></div>
-              <div class="mp-cx-special">
+              <div class="mp-search"><span class="mp-search-box"><svg viewBox="0 0 24 24" class="mp-search-ico"><path fill="currentColor" d="m18.031 16.617l4.283 4.282l-1.415 1.415l-4.282-4.283A8.96 8.96 0 0 1 11 20c-4.968 0-9-4.032-9-9s4.032-9 9-9s9 4.032 9 9a8.96 8.96 0 0 1-1.969 5.617m-2.006-.742A6.98 6.98 0 0 0 18 11c0-3.867-3.133-7-7-7s-7 3.133-7 7s3.133 7 7 7a6.98 6.98 0 0 0 4.875-1.975z"/></svg><input v-model="searchQuery" class="mp-search-inp" placeholder="搜索" /></span></div>
+              <div v-if="!searchQuery" class="mp-cx-special">
                 <div v-for="r in cxSpecial" :key="r.k" class="mp-cx-row"><span class="mp-cx-ico" :style="{ background: r.bg }" v-html="ic[r.k]"></span><span class="mp-cx-lbl">{{ r.l }}</span></div>
               </div>
               <div v-if="contacts.length" class="mp-cx-idx">联系人</div>
-              <div v-for="c in contacts" :key="c" class="mp-cx-item" @click="openContact(c)">
+              <div v-for="c in shownContacts" :key="c" class="mp-cx-item" @click="openContact(c)">
                 <div class="mp-ava sm2">{{ initial(c) }}</div><div class="mp-cx-name">{{ c }}</div>
               </div>
               <div class="mp-cx-count">{{ contacts.length }} 位联系人</div>
@@ -155,7 +157,7 @@
           </div>
           <!-- 底部 tab 栏 -->
           <div class="mp-tabbar">
-            <button v-for="t in tabs" :key="t.k" :class="['mp-tab', { on: wxTab === t.k }]" @click="wxTab = t.k; discoverView = 'list'">
+            <button v-for="t in tabs" :key="t.k" :class="['mp-tab', { on: wxTab === t.k }]" @click="wxTab = t.k; discoverView = 'list'; showSearch = false; showNew = false; searchQuery = ''">
               <span class="mp-tab-ico" v-html="wxTab === t.k ? t.icoOn : t.ico"></span><span class="mp-tab-lbl">{{ t.l }}</span>
               <span v-if="t.k === 'chats' && totalUnread" class="mp-badge tb">{{ totalUnread > 99 ? '99+' : totalUnread }}</span>
             </button>
@@ -185,6 +187,9 @@ const discoverView = ref('list')
 const activeContact = ref('')
 const draft = ref('')
 const newContact = ref('')
+const showSearch = ref(false)
+const showNew = ref(false)
+const searchQuery = ref('')
 const sendingContact = ref('')
 const clock = ref('')
 const dateLabel = ref('')
@@ -283,6 +288,7 @@ const meGroups = [
 ]
 
 const contacts = computed(() => Object.keys(logs.value))
+const shownContacts = computed(() => { const q = searchQuery.value.trim(); const all = Object.keys(logs.value); return q ? all.filter(c => c.includes(q)) : all })
 const messages = computed(() => logs.value[activeContact.value] || [])
 const totalUnread = computed(() => Object.values(unread.value).reduce((a, b) => a + (b || 0), 0))
 
@@ -357,6 +363,8 @@ function parseReplyBlocks(raw, fallbackTime) {
 }
 
 function openWeChat() { view.value = 'wechat'; wxTab.value = 'chats'; activeContact.value = ''; discoverView.value = 'list' }
+function toggleSearch() { showSearch.value = !showSearch.value; showNew.value = false; if (!showSearch.value) searchQuery.value = '' }
+function toggleNew() { showNew.value = !showNew.value; showSearch.value = false }
 function goHome() { if (activeContact.value) closeContact(); else view.value = 'home' }
 function openContact(c) { activeContact.value = c; unread.value[c] = 0; showEmoji.value = false; scrollDown() }
 function closeContact() { activeContact.value = ''; showEmoji.value = false; voiceMode.value = false }
@@ -475,14 +483,17 @@ onUnmounted(() => {
 .mp-wx-acts{position:absolute;right:16px;top:2px;display:flex;gap:14px}
 .mp-wx-act{font-size:21px;color:#0d0d0d;font-weight:300;line-height:1;display:flex;align-items:center}
 .mp-wx-act svg{width:21px;height:21px}
+.mp-wx-act.on{color:#07c160}
 .mp-wx-body{flex:1;overflow-y:auto;background:#ededed;-webkit-overflow-scrolling:touch}
 .mp-hint{text-align:center;color:#9a9a9a;font-size:13px;padding:36px 16px}
 .mp-search{padding:8px 12px;background:#ededed}
-.mp-search-in{display:flex;align-items:center;justify-content:center;gap:5px;height:32px;background:#fff;border-radius:6px;color:#9a9a9a;font-size:13.5px}
-.mp-search-in svg{width:15px;height:15px}
+.mp-search-box{display:flex;align-items:center;gap:5px;height:34px;padding:0 9px;background:#fff;border-radius:6px}
+.mp-search-ico{width:15px;height:15px;color:#9a9a9a;flex-shrink:0}
+.mp-overlay .mp-search-inp{flex:1;min-width:0;height:100%;border:none!important;background:transparent!important;color:#0d0d0d!important;font-size:14px;outline:none;font-family:inherit}
+.mp-overlay .mp-search-inp::placeholder{color:#9a9a9a!important}
 .mp-newchat{display:flex;gap:6px;padding:6px 12px 8px;background:#ededed}
-.mp-nc-in{flex:1;min-width:0;padding:8px 11px;border:none!important;border-radius:7px;background:#fff!important;font-size:13px;color:#222!important;outline:none;box-shadow:none!important}
-.mp-nc-in::placeholder{color:#b0b0b0!important}
+.mp-overlay .mp-nc-in{flex:1;min-width:0;padding:8px 11px;border:none!important;border-radius:7px;background:#fff!important;font-size:13px;color:#222!important;outline:none;box-shadow:none!important}
+.mp-overlay .mp-nc-in::placeholder{color:#b0b0b0!important}
 .mp-nc-btn{flex-shrink:0;padding:0 14px;border:none;border-radius:7px;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer}
 .mp-cell{display:flex;align-items:center;gap:12px;padding:10px 14px;background:#fff;cursor:pointer;position:relative}
 .mp-cell::after{content:'';position:absolute;left:66px;right:0;bottom:0;height:1px;background:#f0f0f0}
@@ -577,8 +588,8 @@ onUnmounted(() => {
 .mp-inbar{display:flex;gap:8px;align-items:center;padding:7px 10px 15px;background:#f7f7f7;border-top:1px solid rgba(0,0,0,.06);flex-shrink:0}
 .mp-in-ico{flex-shrink:0;width:30px;height:30px;padding:0;background:none;border:none;cursor:pointer;color:#5a5a5a;display:flex;align-items:center;justify-content:center}
 .mp-in-ico svg{width:27px;height:27px}
-.mp-ta{flex:1;min-width:0;max-height:80px;padding:7px 10px;border:none!important;border-radius:5px;background:#fff!important;font-size:15px;color:#0d0d0d!important;resize:none;outline:none;font-family:inherit;line-height:1.4;box-shadow:none!important}
-.mp-ta::placeholder{color:#b0b0b0!important}
+.mp-overlay .mp-ta{flex:1;min-width:0;max-height:80px;padding:7px 10px;border:none!important;border-radius:5px;background:#fff!important;font-size:15px;color:#0d0d0d!important;resize:none;outline:none;font-family:inherit;line-height:1.4;box-shadow:none!important}
+.mp-overlay .mp-ta::placeholder{color:#b0b0b0!important}
 .mp-in-voicebtn{flex:1;min-width:0;height:34px;border:none;border-radius:5px;background:#fff;font-size:15px;color:#0d0d0d;cursor:pointer;font-family:inherit}
 .mp-in-voicebtn:active{background:#e0e0e0}
 .mp-send{flex-shrink:0;padding:7px 15px;border:none;border-radius:5px;background:#07c160;color:#fff;font-size:14.5px;font-weight:500;cursor:pointer}
