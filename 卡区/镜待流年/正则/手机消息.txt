@@ -22,17 +22,22 @@
 .ph-wrap.dir-发出 .ph-bubble{background:#95ec69}
 .ph-wrap.dir-发出 .ph-bubble::before{right:-11px;border-left-color:#95ec69}
 .ph-time{font-size:10.5px;color:#b0b0b0;margin:5px 4px 0}
+.ph-mt::before{content:'';color:#8a8a8a;font-size:.85em;margin-right:3px}
+.ph-wrap.type-图片 .ph-mt::before{content:'[图片]'}
+.ph-wrap.type-语音 .ph-mt::before{content:'[语音]'}
+.ph-wrap.type-视频 .ph-mt::before{content:'[视频]'}
+.ph-wrap.type-表情 .ph-mt::before{content:'[表情]'}
 </style>
-<div class="ph-wrap dir-$2">
-<i class="phone-data" style="font-size:0;line-height:0;float:left;opacity:0">$1|||$2|||$3|||$4</i>
+<div class="ph-wrap dir-$2 type-$3">
+<i class="phone-data" style="font-size:0;line-height:0;float:left;opacity:0">$1|||$2|||$3|||$4|||$5</i>
 <div class="ph-bar"><svg class="ph-ico" viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="M224 64c-53 0-96 43-96 96v320c0 53 43 96 96 96h192c53 0 96-43 96-96V160c0-53-43-96-96-96zm-32 96c0-17.7 14.3-32 32-32h192c17.7 0 32 14.3 32 32v320c0 17.7-14.3 32-32 32H224c-17.7 0-32-14.3-32-32zm96 336c0-13.3 10.7-24 24-24h48c13.3 0 24 10.7 24 24s-10.7 24-24 24h-48c-13.3 0-24-10.7-24-24"/></svg>手机 · <span class="ph-peer">$1</span><span class="ph-dot"></span></div>
 <div class="ph-body">
 <div class="ph-line">
 <div class="ph-av"><svg class="ph-ico" viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="M320 312c66.3 0 120-53.7 120-120S386.3 72 320 72s-120 53.7-120 120s53.7 120 120 120m-29.7 56C191.8 368 112 447.8 112 546.3c0 16.4 13.3 29.7 29.7 29.7h356.6c16.4 0 29.7-13.3 29.7-29.7c0-98.5-79.8-178.3-178.3-178.3z"/></svg></div>
 <div class="ph-col">
 <div class="ph-nm">$1</div>
-<div class="ph-bubble">$3</div>
-<div class="ph-time">$4</div>
+<div class="ph-bubble"><span class="ph-mt"></span>$4</div>
+<div class="ph-time">$5</div>
 </div>
 </div>
 </div>
