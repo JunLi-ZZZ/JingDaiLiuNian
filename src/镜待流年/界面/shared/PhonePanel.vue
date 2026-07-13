@@ -121,10 +121,7 @@
             <template v-else-if="wxTab === 'contacts'">
               <div class="mp-search"><span class="mp-search-in"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m18.031 16.617l4.283 4.282l-1.415 1.415l-4.282-4.283A8.96 8.96 0 0 1 11 20c-4.968 0-9-4.032-9-9s4.032-9 9-9s9 4.032 9 9a8.96 8.96 0 0 1-1.969 5.617m-2.006-.742A6.98 6.98 0 0 0 18 11c0-3.867-3.133-7-7-7s-7 3.133-7 7s3.133 7 7 7a6.98 6.98 0 0 0 4.875-1.975z"/></svg>搜索</span></div>
               <div class="mp-cx-special">
-                <div class="mp-cx-row"><span class="mp-cx-ico" style="background:#fa9d3b">👥</span><span class="mp-cx-lbl">新的朋友</span></div>
-                <div class="mp-cx-row"><span class="mp-cx-ico" style="background:#3ab449">💬</span><span class="mp-cx-lbl">群聊</span></div>
-                <div class="mp-cx-row"><span class="mp-cx-ico" style="background:#3b7cff">🏷</span><span class="mp-cx-lbl">标签</span></div>
-                <div class="mp-cx-row"><span class="mp-cx-ico" style="background:#3b7cff">📣</span><span class="mp-cx-lbl">公众号</span></div>
+                <div v-for="r in cxSpecial" :key="r.k" class="mp-cx-row"><span class="mp-cx-ico" :style="{ background: r.bg }" v-html="ic[r.k]"></span><span class="mp-cx-lbl">{{ r.l }}</span></div>
               </div>
               <div v-if="contacts.length" class="mp-cx-idx">联系人</div>
               <div v-for="c in contacts" :key="c" class="mp-cx-item" @click="openContact(c)">
@@ -139,20 +136,8 @@
                 <div class="mp-hint" style="margin-top:60px">朋友圈内容即将上线</div>
               </template>
               <template v-else>
-                <div class="mp-disc-group">
-                  <div class="mp-disc-row" @click="discoverView = 'moments'"><span class="mp-disc-ico" style="background:linear-gradient(135deg,#3b7cff,#2b5bd0)">📷</span><span class="mp-disc-lbl">朋友圈</span><span class="mp-disc-arrow">›</span></div>
-                </div>
-                <div class="mp-disc-group">
-                  <div class="mp-disc-row dim"><span class="mp-disc-ico" style="background:#f0483e">▶</span><span class="mp-disc-lbl">视频号</span><span class="mp-disc-arrow">›</span></div>
-                  <div class="mp-disc-row dim"><span class="mp-disc-ico" style="background:#f5813a">🎬</span><span class="mp-disc-lbl">直播</span><span class="mp-disc-arrow">›</span></div>
-                </div>
-                <div class="mp-disc-group">
-                  <div class="mp-disc-row dim"><span class="mp-disc-ico" style="background:#2f9cf4">⊹</span><span class="mp-disc-lbl">扫一扫</span><span class="mp-disc-arrow">›</span></div>
-                  <div class="mp-disc-row dim"><span class="mp-disc-ico" style="background:#2f9cf4">♪</span><span class="mp-disc-lbl">摇一摇</span><span class="mp-disc-arrow">›</span></div>
-                </div>
-                <div class="mp-disc-group">
-                  <div class="mp-disc-row dim"><span class="mp-disc-ico" style="background:#f5813a">👀</span><span class="mp-disc-lbl">看一看</span><span class="mp-disc-arrow">›</span></div>
-                  <div class="mp-disc-row dim"><span class="mp-disc-ico" style="background:#f0483e">🔍</span><span class="mp-disc-lbl">搜一搜</span><span class="mp-disc-arrow">›</span></div>
+                <div v-for="(g, gi) in discGroups" :key="gi" class="mp-disc-group">
+                  <div v-for="r in g" :key="r.k" class="mp-disc-row" :class="{ dim: !r.go }" @click="r.go && (discoverView = r.go)"><span class="mp-disc-ico" :style="{ background: r.bg }" v-html="ic[r.k]"></span><span class="mp-disc-lbl">{{ r.l }}</span><span class="mp-disc-arrow">›</span></div>
                 </div>
               </template>
             </template>
@@ -163,17 +148,8 @@
                 <div class="mp-me-info"><div class="mp-me-nm">{{ meName }}</div><div class="mp-me-id">微信号：{{ meId }}</div></div>
                 <span class="mp-me-qr">▤ ›</span>
               </div>
-              <div class="mp-disc-group">
-                <div class="mp-disc-row dim"><span class="mp-disc-ico" style="background:#3b7cff">＋</span><span class="mp-disc-lbl">服务</span><span class="mp-disc-arrow">›</span></div>
-              </div>
-              <div class="mp-disc-group">
-                <div class="mp-disc-row dim"><span class="mp-disc-ico" style="background:#3b7cff">★</span><span class="mp-disc-lbl">收藏</span><span class="mp-disc-arrow">›</span></div>
-                <div class="mp-disc-row dim"><span class="mp-disc-ico" style="background:#3ab449">🖼</span><span class="mp-disc-lbl">朋友圈</span><span class="mp-disc-arrow">›</span></div>
-                <div class="mp-disc-row dim"><span class="mp-disc-ico" style="background:#f5813a">🎴</span><span class="mp-disc-lbl">卡包</span><span class="mp-disc-arrow">›</span></div>
-                <div class="mp-disc-row dim"><span class="mp-disc-ico" style="background:#f5b53a">😊</span><span class="mp-disc-lbl">表情</span><span class="mp-disc-arrow">›</span></div>
-              </div>
-              <div class="mp-disc-group">
-                <div class="mp-disc-row dim"><span class="mp-disc-ico" style="background:#3b7cff">⚙</span><span class="mp-disc-lbl">设置</span><span class="mp-disc-arrow">›</span></div>
+              <div v-for="(g, gi) in meGroups" :key="gi" class="mp-disc-group">
+                <div v-for="r in g" :key="r.k" class="mp-disc-row dim"><span class="mp-disc-ico" :style="{ background: r.bg }" v-html="ic[r.k]"></span><span class="mp-disc-lbl">{{ r.l }}</span><span class="mp-disc-arrow">›</span></div>
               </div>
             </template>
           </div>
@@ -267,6 +243,42 @@ const tabs = [
     icoOn: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M20 22H4v-2a5 5 0 0 1 5-5h6a5 5 0 0 1 5 5zm-8-9a6 6 0 1 1 0-12a6 6 0 0 1 0 12"/></svg>' },
 ]
 const tabTitle = computed(() => ({ chats: '微信', contacts: '通讯录', discover: '发现', me: '我' }[wxTab.value]))
+
+const ic = {
+  moments: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M9 3h6l2 2h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h4zm3 16a6 6 0 1 0 0-12a6 6 0 0 0 0 12m0-2a4 4 0 1 1 0-8a4 4 0 0 1 0 8"/></svg>',
+  video: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10s-4.477 10-10 10M10.622 8.415a.4.4 0 0 0-.622.332v6.506a.4.4 0 0 0 .622.332l4.879-3.252a.4.4 0 0 0 0-.666z"/></svg>',
+  live: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M16 4a1 1 0 0 1 1 1v4.2l5.213-3.65a.5.5 0 0 1 .787.41v12.08a.5.5 0 0 1-.787.41L17 14.8V19a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM7.4 8.829a.4.4 0 0 0-.392.32L7 9.228v5.542a.4.4 0 0 0 .542.374l.073-.036l4.355-2.771a.4.4 0 0 0 .063-.625l-.063-.05L7.615 8.89a.4.4 0 0 0-.215-.06"/></svg>',
+  scan: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M15 3h6v5h-2V5h-4zM9 3v2H5v3H3V3zm6 18v-2h4v-3h2v5zm-6 0H3v-5h2v3h4zM3 11h18v2H3z"/></svg>',
+  shake: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 2h12a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1m6 15a1 1 0 1 0 0 2a1 1 0 0 0 0-2"/></svg>',
+  look: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M1.182 12C2.122 6.88 6.608 3 12 3s9.878 3.88 10.819 9c-.94 5.12-5.427 9-10.819 9s-9.878-3.88-10.818-9M12 17a5 5 0 1 0 0-10a5 5 0 0 0 0 10m0-2a3 3 0 1 1 0-6a3 3 0 0 1 0 6"/></svg>',
+  searchapp: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M11 2c4.968 0 9 4.032 9 9s-4.032 9-9 9s-9-4.032-9-9s4.032-9 9-9m0 16c3.867 0 7-3.133 7-7s-3.133-7-7-7s-7 3.133-7 7s3.133 7 7 7m8.485.071l2.829 2.828l-1.415 1.415l-2.828-2.829z"/></svg>',
+  newfriend: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M14 14.252V22H4a8 8 0 0 1 10-7.748M12 13c-3.315 0-6-2.685-6-6s2.685-6 6-6s6 2.685 6 6s-2.685 6-6 6m6 4v-3h2v3h3v2h-3v3h-2v-3h-3v-2z"/></svg>',
+  group: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M2 22a8 8 0 1 1 16 0zm8-9c-3.315 0-6-2.685-6-6s2.685-6 6-6s6 2.685 6 6s-2.685 6-6 6m7.363 2.233A7.505 7.505 0 0 1 22.983 22H20c0-2.61-1-4.986-2.637-6.767m-2.023-2.276A7.98 7.98 0 0 0 18 7a7.96 7.96 0 0 0-1.015-3.903A5 5 0 0 1 21 8a5 5 0 0 1-5.66 4.957"/></svg>',
+  tag: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.904 2.1l9.9 1.414l1.414 9.9l-9.192 9.192a1 1 0 0 1-1.415 0l-9.9-9.9a1 1 0 0 1 0-1.413zm2.829 8.486a2 2 0 1 0 2.828-2.829a2 2 0 0 0-2.828 2.829"/></svg>',
+  official: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="m4.929 2.929l1.414 1.414A7.98 7.98 0 0 0 4 10c0 2.21.895 4.21 2.343 5.657L4.93 17.07A9.97 9.97 0 0 1 2 10a9.97 9.97 0 0 1 2.929-7.071m14.142 0A9.97 9.97 0 0 1 22 10a9.97 9.97 0 0 1-2.929 7.071l-1.414-1.414A7.98 7.98 0 0 0 20 10c0-2.21-.895-4.21-2.343-5.657zM7.757 5.757l1.415 1.415A4 4 0 0 0 8 10c0 1.105.448 2.105 1.172 2.829l-1.415 1.414A5.98 5.98 0 0 1 6 10c0-1.657.672-3.157 1.757-4.243m8.486 0A5.98 5.98 0 0 1 18 10a5.98 5.98 0 0 1-1.757 4.243l-1.415-1.415A4 4 0 0 0 16 10a4 4 0 0 0-1.172-2.828zM12 12a2 2 0 1 1 0-4a2 2 0 0 1 0 4m0 2c.58 0 1.077.413 1.184.983L14.5 22h-5l1.316-7.017c.107-.57.604-.983 1.184-.983"/></svg>',
+  service: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M22.005 6h-7a6 6 0 0 0 0 12h7v2a1 1 0 0 1-1 1h-18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h18a1 1 0 0 1 1 1zm-7 2h8v8h-8a4 4 0 1 1 0-8m0 3v2h3v-2z"/></svg>',
+  star: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="m12 18.26l-7.053 3.948l1.575-7.928L.588 8.792l8.027-.952L12 .5l3.385 7.34l8.027.952l-5.934 5.488l1.575 7.928z"/></svg>',
+  card: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M22.005 10v10a1 1 0 0 1-1 1h-18a1 1 0 0 1-1-1V10zm0-2h-20V4a1 1 0 0 1 1-1h18a1 1 0 0 1 1 1zm-7 8v2h4v-2z"/></svg>',
+  emoji: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10s-4.477 10-10 10m-4-9a4 4 0 0 0 8 0zm0-2a1.5 1.5 0 1 0 0-3a1.5 1.5 0 0 0 0 3m8 0a1.5 1.5 0 1 0 0-3a1.5 1.5 0 0 0 0 3"/></svg>',
+  settings: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.954 2.21a10 10 0 0 1 4.09-.002A4 4 0 0 0 16 5.07a4 4 0 0 0 3.457.261A10 10 0 0 1 21.5 8.877a4 4 0 0 0-1.5 3.122c0 1.264.586 2.391 1.501 3.124a10 10 0 0 1-2.045 3.543a4 4 0 0 0-3.456.261a4 4 0 0 0-1.955 2.86a10 10 0 0 1-4.09.004A4 4 0 0 0 8 18.927a4 4 0 0 0-3.457-.26A10 10 0 0 1 2.5 15.121A4 4 0 0 0 4 11.999c0-1.264-.587-2.39-1.502-3.124a10 10 0 0 1 2.045-3.542A4 4 0 0 0 8 5.07a4 4 0 0 0 1.954-2.86M12 15a3 3 0 1 0 0-6a3 3 0 0 0 0 6"/></svg>',
+}
+const cxSpecial = [
+  { k: 'newfriend', l: '新的朋友', bg: '#fa9d3b' },
+  { k: 'group', l: '群聊', bg: '#07c160' },
+  { k: 'tag', l: '标签', bg: '#3b7cff' },
+  { k: 'official', l: '公众号', bg: '#3b7cff' },
+]
+const discGroups = [
+  [{ k: 'moments', l: '朋友圈', bg: 'linear-gradient(135deg,#4a94ff,#2b6fe0)', go: 'moments' }],
+  [{ k: 'video', l: '视频号', bg: '#f5813a' }, { k: 'live', l: '直播', bg: '#f0483e' }],
+  [{ k: 'scan', l: '扫一扫', bg: '#2f9cf4' }, { k: 'shake', l: '摇一摇', bg: '#2f9cf4' }],
+  [{ k: 'look', l: '看一看', bg: '#f5813a' }, { k: 'searchapp', l: '搜一搜', bg: '#f0483e' }],
+]
+const meGroups = [
+  [{ k: 'service', l: '服务', bg: '#07c160' }],
+  [{ k: 'star', l: '收藏', bg: '#3b7cff' }, { k: 'moments', l: '朋友圈', bg: '#07c160' }, { k: 'card', l: '卡包', bg: '#f5813a' }, { k: 'emoji', l: '表情', bg: '#f5b53a' }],
+  [{ k: 'settings', l: '设置', bg: '#7a8b9a' }],
+]
 
 const contacts = computed(() => Object.keys(logs.value))
 const messages = computed(() => logs.value[activeContact.value] || [])
@@ -385,12 +397,24 @@ function tick() {
   dateLabel.value = (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + '周' + '日一二三四五六'[d.getDay()]
 }
 let timer = null
+let frameOrig = null
+const FRAME_CSS = 'position:fixed;inset:0;width:100vw;height:100vh;max-width:none;max-height:none;z-index:2147483646;border:none;margin:0;padding:0;background:transparent'
+function keepFrame() {
+  try {
+    const fe = window.frameElement
+    if (fe && fe.style.position !== 'fixed') { if (frameOrig === null) frameOrig = fe.getAttribute('style') || ''; fe.style.cssText = FRAME_CSS }
+  } catch (e) {}
+}
 onMounted(() => {
+  keepFrame()
   tick(); loadLogs(); syncScrape()
-  timer = setInterval(() => { tick(); loadLogs(); syncScrape() }, 2000)
+  timer = setInterval(() => { keepFrame(); tick(); loadLogs(); syncScrape() }, 2000)
   doc.documentElement.style.overflow = 'hidden'; doc.body.style.overflow = 'hidden'
 })
-onUnmounted(() => { clearInterval(timer); doc.documentElement.style.overflow = ''; doc.body.style.overflow = '' })
+onUnmounted(() => {
+  try { const fe = window.frameElement; if (fe && frameOrig !== null) fe.setAttribute('style', frameOrig) } catch (e) {}
+  clearInterval(timer); doc.documentElement.style.overflow = ''; doc.body.style.overflow = ''
+})
 </script>
 
 <style>
@@ -398,11 +422,11 @@ onUnmounted(() => { clearInterval(timer); doc.documentElement.style.overflow = '
 @import url('https://fontsapi.zeoseven.com/84/main/result.css');
 .mp-overlay{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.66);backdrop-filter:blur(6px);animation:mp-fade .25s ease-out;pointer-events:all;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif}
 @keyframes mp-fade{0%{opacity:0}100%{opacity:1}}
-.mp-phone{position:relative;height:min(96vh,900px);aspect-ratio:390/844;max-width:94vw;background:#000;border-radius:54px;padding:10px 9px 10px;box-shadow:0 30px 80px rgba(0,0,0,.65),0 6px 18px rgba(0,0,0,.4),inset 0 0 0 2px rgba(120,120,130,.35);display:flex;flex-direction:column;overflow:hidden;animation:mp-pop .32s cubic-bezier(.2,.9,.3,1.2)}
+.mp-phone{position:relative;height:min(92vh,812px);aspect-ratio:9/19;max-width:96vw;background:#050505;border-radius:40px;padding:7px;box-shadow:0 24px 70px rgba(0,0,0,.6),0 4px 14px rgba(0,0,0,.4),inset 0 0 0 2px rgba(120,120,130,.3);display:flex;flex-direction:column;overflow:hidden;animation:mp-pop .32s cubic-bezier(.2,.9,.3,1.2)}
 @keyframes mp-pop{0%{opacity:0;transform:scale(.93) translateY(14px)}100%{opacity:1;transform:scale(1) translateY(0)}}
 .mp-power{position:absolute;right:-3px;top:180px;width:3px;height:74px;border:none;background:linear-gradient(180deg,#3a3a40,#141416);border-radius:3px;cursor:pointer;z-index:9}
 .mp-phone > *:not(.mp-power):not(.mp-island){position:relative;z-index:2}
-.mp-island{position:absolute;left:50%;top:20px;transform:translateX(-50%);width:112px;height:30px;background:#000;border-radius:16px;z-index:8}
+.mp-island{position:absolute;left:50%;top:14px;transform:translateX(-50%);width:96px;height:26px;background:#000;border-radius:13px;z-index:8}
 
 /* 状态栏 */
 .mp-status{display:flex;align-items:center;justify-content:space-between;padding:8px 34px 6px;font-size:14px;font-weight:600;color:#111;flex-shrink:0}
@@ -414,7 +438,7 @@ onUnmounted(() => { clearInterval(timer); doc.documentElement.style.overflow = '
 .mp-st-bat::after{content:'';position:absolute;inset:1.5px;right:6px;background:currentColor;border-radius:1px}
 .mp-st-bat::before{content:'';position:absolute;right:-3px;top:3.5px;width:2px;height:4px;background:currentColor;border-radius:0 1px 1px 0}
 
-.mp-screen{flex:1;display:flex;flex-direction:column;min-height:0;border-radius:44px;overflow:hidden;background:#ededed}
+.mp-screen{flex:1;display:flex;flex-direction:column;min-height:0;border-radius:33px;overflow:hidden;background:#ededed}
 .st-light .mp-screen{background:radial-gradient(130% 90% at 50% 0%,#4a5b7d 0%,#2c3b54 45%,#161d2b 100%)}
 
 /* 主屏 */
@@ -459,7 +483,7 @@ onUnmounted(() => { clearInterval(timer); doc.documentElement.style.overflow = '
 .mp-ava.sm2{width:38px;height:38px;font-size:17px}
 .mp-ava.xl{width:62px;height:62px;font-size:28px;border-radius:8px}
 .mp-cell-mid{flex:1;min-width:0}
-.mp-cell-nm{font-size:16px;color:#0d0d0d;font-weight:400}
+.mp-cell-nm{font-size:16px;color:#0d0d0d;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mp-cell-sub{font-size:13px;color:#9a9a9a;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:190px}
 .mp-cell-rt{display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;align-self:flex-start;padding-top:4px}
 .mp-cell-tm{font-size:11.5px;color:#b2b2b2}
@@ -468,7 +492,8 @@ onUnmounted(() => { clearInterval(timer); doc.documentElement.style.overflow = '
 .mp-cx-special{background:#fff}
 .mp-cx-row{display:flex;align-items:center;gap:12px;padding:9px 14px;cursor:default;position:relative}
 .mp-cx-row::after{content:'';position:absolute;left:52px;right:0;bottom:0;height:1px;background:#f0f0f0}
-.mp-cx-ico{width:38px;height:38px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.mp-cx-ico{width:38px;height:38px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mp-cx-ico svg{width:20px;height:20px;color:#fff}
 .mp-cx-lbl{font-size:15.5px;color:#0d0d0d}
 .mp-cx-idx{padding:4px 14px;font-size:12px;color:#9a9a9a;background:#ededed}
 .mp-cx-item{display:flex;align-items:center;gap:12px;padding:8px 14px;background:#fff;cursor:pointer;position:relative}
@@ -484,7 +509,8 @@ onUnmounted(() => { clearInterval(timer); doc.documentElement.style.overflow = '
 .mp-disc-row:last-child::after{display:none}
 .mp-disc-row:active{background:#e6e6e6}
 .mp-disc-row.dim{cursor:default}
-.mp-disc-ico{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;flex-shrink:0}
+.mp-disc-ico{width:29px;height:29px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
+.mp-disc-ico svg{width:18px;height:18px;color:#fff}
 .mp-disc-lbl{flex:1;font-size:15.5px;color:#0d0d0d}
 .mp-disc-arrow{color:#c8c8c8;font-size:17px}
 .mp-me-card{display:flex;align-items:center;gap:14px;padding:26px 16px 22px;background:#fff;margin-top:8px}
