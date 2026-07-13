@@ -1,4 +1,5 @@
 <template>
+  <Teleport :to="tpTarget" :disabled="!tpTarget">
   <div class="mp-overlay" @click.self="$emit('close')">
     <div class="mp-phone" :class="{ 'st-light': view === 'home' }">
       <button class="mp-power" @click="$emit('close')" title="关闭"></button>
@@ -168,6 +169,7 @@
       <div class="mp-homebar" @click="goHome"></div>
     </div>
   </div>
+  </Teleport>
 </template>
 
 <script setup>
@@ -194,6 +196,7 @@ const voiceMode = ref(false)
 
 const doc = window.parent ? window.parent.document : document
 function TH() { return window.parent && window.parent.TavernHelper }
+const tpTarget = (() => { try { return (window.parent && window.parent.document && window.parent.document.body) || null } catch (e) { return null } })()
 
 const meName = computed(() => {
   try {
@@ -397,22 +400,27 @@ function tick() {
   dateLabel.value = (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + '周' + '日一二三四五六'[d.getDay()]
 }
 let timer = null
-let frameOrig = null
-const FRAME_CSS = 'position:fixed;inset:0;width:100vw;height:100vh;max-width:none;max-height:none;z-index:2147483646;border:none;margin:0;padding:0;background:transparent'
-function keepFrame() {
+let tpStyle = null
+function copyStyles() {
   try {
-    const fe = window.frameElement
-    if (fe && fe.style.position !== 'fixed') { if (frameOrig === null) frameOrig = fe.getAttribute('style') || ''; fe.style.cssText = FRAME_CSS }
+    if (!tpTarget) return
+    const pdoc = window.parent.document
+    if (pdoc.head.querySelector('style[data-mp-phone]')) return
+    let css = ''
+    document.querySelectorAll('style').forEach(s => { const t = s.textContent || ''; if (t.includes('.mp-overlay')) css += t + '\n' })
+    if (!css) return
+    tpStyle = pdoc.createElement('style'); tpStyle.setAttribute('data-mp-phone', ''); tpStyle.textContent = css
+    pdoc.head.appendChild(tpStyle)
   } catch (e) {}
 }
 onMounted(() => {
-  keepFrame()
+  copyStyles()
   tick(); loadLogs(); syncScrape()
-  timer = setInterval(() => { keepFrame(); tick(); loadLogs(); syncScrape() }, 2000)
+  timer = setInterval(() => { tick(); loadLogs(); syncScrape() }, 2000)
   doc.documentElement.style.overflow = 'hidden'; doc.body.style.overflow = 'hidden'
 })
 onUnmounted(() => {
-  try { const fe = window.frameElement; if (fe && frameOrig !== null) fe.setAttribute('style', frameOrig) } catch (e) {}
+  try { if (tpStyle && tpStyle.parentNode) tpStyle.parentNode.removeChild(tpStyle); tpStyle = null } catch (e) {}
   clearInterval(timer); doc.documentElement.style.overflow = ''; doc.body.style.overflow = ''
 })
 </script>
@@ -420,7 +428,7 @@ onUnmounted(() => {
 <style>
 @import url('https://fontsapi.zeoseven.com/3/main/result.css');
 @import url('https://fontsapi.zeoseven.com/84/main/result.css');
-.mp-overlay{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.66);backdrop-filter:blur(6px);animation:mp-fade .25s ease-out;pointer-events:all;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif}
+.mp-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:2147483646;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.66);backdrop-filter:blur(6px);animation:mp-fade .25s ease-out;pointer-events:all;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif}
 @keyframes mp-fade{0%{opacity:0}100%{opacity:1}}
 .mp-phone{position:relative;height:min(92vh,812px);aspect-ratio:9/19;max-width:96vw;background:#050505;border-radius:40px;padding:7px;box-shadow:0 24px 70px rgba(0,0,0,.6),0 4px 14px rgba(0,0,0,.4),inset 0 0 0 2px rgba(120,120,130,.3);display:flex;flex-direction:column;overflow:hidden;animation:mp-pop .32s cubic-bezier(.2,.9,.3,1.2)}
 @keyframes mp-pop{0%{opacity:0;transform:scale(.93) translateY(14px)}100%{opacity:1;transform:scale(1) translateY(0)}}
