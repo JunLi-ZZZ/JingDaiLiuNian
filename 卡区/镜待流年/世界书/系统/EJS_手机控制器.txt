@@ -1,0 +1,8 @@
+@@preprocessing
+<%
+const items = getvar('stat_data.主角.随身物品', { defaults: {} });
+const hasPhone = Object.keys(items || {}).some(k => /手机|手环|电话|通讯/.test(k));
+if (hasPhone || matchChatMessages(['手机', '微信', '短信', '来电', '发消息'])) {
+  print(await getwi('手机消息格式'));
+}
+%>

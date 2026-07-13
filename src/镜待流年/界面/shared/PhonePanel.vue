@@ -58,7 +58,6 @@
                 </div>
               </div>
             </template>
-            <div v-if="sendingContact === activeContact" class="mp-row in"><div class="mp-ava">{{ initial(activeContact) }}</div><div class="mp-bub mp-typing"><span></span><span></span><span></span></div></div>
           </div>
           <div class="mp-inbar">
             <button class="mp-in-ico" @click="voiceMode = !voiceMode" title="语音">
@@ -73,7 +72,7 @@
             <button v-if="!draft.trim()" class="mp-in-ico" title="更多">
               <svg viewBox="0 0 24 24"><path fill="currentColor" d="M11 11V7h2v4h4v2h-4v4h-2v-4H7v-2zm1 11C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10s-4.477 10-10 10m0-2a8 8 0 1 0 0-16a8 8 0 0 0 0 16"/></svg>
             </button>
-            <button v-else class="mp-send" :disabled="sendingContact === activeContact" @click="send">发送</button>
+            <button v-else class="mp-send" @click="send">发送</button>
           </div>
           <!-- 表情面板 -->
           <div v-if="showEmoji" class="mp-emoji">
@@ -190,7 +189,6 @@ const newContact = ref('')
 const showSearch = ref(false)
 const showNew = ref(false)
 const searchQuery = ref('')
-const sendingContact = ref('')
 const clock = ref('')
 const dateLabel = ref('')
 const scrollEl = ref(null)
@@ -335,31 +333,26 @@ function syncScrape() {
   let changed = false
   spans.forEach(span => {
     const raw = (span.textContent || '').trim(); if (!raw) return
-    const p = raw.split('|||'); if (p.length < 5) return
-    const contact = p[0].trim(), dir = p[1].trim(), type = (p[2] || '文字').trim() || '文字', text = p[3].trim(), time = p[4].trim()
-    if (!contact || !text) return
+    const head = raw.split('|||')          // 联系人|||时间|||体行blob
+    if (head.length < 3) return
+    const contact = head[0].trim(), time = head[1].trim(), blob = head.slice(2).join('|||')
+    if (!contact) return
     if (!logs.value[contact]) logs.value[contact] = []
-    const sig = dir + '|' + type + '|' + text + '|' + time
-    if (!logs.value[contact].some(m => (m.dir + '|' + (m.type || '文字') + '|' + m.text + '|' + m.time) === sig)) {
-      logs.value[contact].push({ dir, type, text, time })
-      if (dir === '收到' && activeContact.value !== contact) unread.value[contact] = (unread.value[contact] || 0) + 1
-      changed = true
-    }
+    blob.split(/(?=(?:发出|收到)\|)/).forEach(line => {   // 在发出|/收到|前断开，兼容换行被吃成<br>的情况
+      const ln = line.trim(); if (!ln) return
+      const f = ln.split('|')              // 方向|类型|内容
+      if (f.length < 3) return
+      const dir = f[0].trim(), type = (f[1] || '文字').trim() || '文字', text = f.slice(2).join('|').trim()
+      if (!dir || !text) return
+      const sig = dir + '|' + type + '|' + text   // 忽略时间去重，避免与乐观写的发出重复
+      if (!logs.value[contact].some(m => (m.dir + '|' + (m.type || '文字') + '|' + m.text) === sig)) {
+        logs.value[contact].push({ dir, type, text, time })
+        if (dir === '收到' && activeContact.value !== contact) unread.value[contact] = (unread.value[contact] || 0) + 1
+        changed = true
+      }
+    })
   })
   if (changed) saveLogs()
-}
-
-function parseReplyBlocks(raw, fallbackTime) {
-  const out = []; const re = /<手机>([\s\S]*?)<\/手机>/g; let m
-  while ((m = re.exec(raw))) {
-    const b = m[1]
-    const type = ((b.match(/类型:\s*([^\n]*)/) || [])[1] || '文字').trim() || '文字'
-    const text = ((b.match(/内容:\s*([\s\S]*?)\s*(?:时间:|$)/) || [])[1] || '').trim()
-    const time = ((b.match(/时间:\s*([^\n]*)/) || [])[1] || '').trim() || fallbackTime
-    if (text) out.push({ type, text, time })
-  }
-  if (!out.length) out.push({ type: '文字', text: raw.replace(/<\/?手机>/g, '').trim() || '……', time: fallbackTime })
-  return out
 }
 
 function openWeChat() { view.value = 'wechat'; wxTab.value = 'chats'; activeContact.value = ''; discoverView.value = 'list' }
@@ -375,30 +368,22 @@ function toggleEmoji() { showEmoji.value = !showEmoji.value; if (showEmoji.value
 function insertEmoji(ch) { draft.value += ch }
 function backspaceEmoji() { draft.value = Array.from(draft.value).slice(0, -1).join('') }
 
-async function send() {
-  const th = TH(); const text = draft.value.trim(); const contact = activeContact.value
-  if (!text || !contact || sendingContact.value === contact) return
-  if (!th || !th.generateRaw) { appendMsg(contact, { dir: '收到', type: '文字', text: '（未检测到酒馆助手，无法送达）', time: '' }); draft.value = ''; return }
+function send() {
+  const text = draft.value.trim(); const contact = activeContact.value
+  if (!text || !contact) return
   const time = storyTime()
-  appendMsg(contact, { dir: '发出', type: '文字', text, time }); draft.value = ''; sendingContact.value = contact; scrollDown()
+  appendMsg(contact, { dir: '发出', type: '文字', text, time }); draft.value = ''; scrollDown()
+  // 不自行生成回复：把发出内容追加进酒馆主输入框，由 <user> 照常发送，AI 在正文里回 <手机> 块
   try {
-    const outBlock = `<手机>\n联系人: ${contact}\n方向: 发出\n类型: 文字\n内容: ${text}\n时间: ${time}\n</手机>`
-    const prompt =
-      `<user>刚通过手机给「${contact}」发送了一条消息：「${text}」。\n` +
-      `请以「${contact}」的身份，依据其人设、与<user>的关系及当前处境，回复<user>的手机消息。\n` +
-      `可连发多条；每条消息输出一个 <手机> 标签，方向填"收到"，类型据实填写（文字/图片/语音/表情/视频）。不要输出任何叙事正文。`
-    const ordered = [{ role: 'system', content: prompt }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after', 'chat_history', 'user_input']
-    const result = await th.generateRaw({ user_input: `（生成「${contact}」的手机回复，仅输出 <手机> 标签，可多条）`, should_silence: true, max_chat_history: 6, ordered_prompts: ordered })
-    const raw = typeof result === 'string' ? result : (result && result.content) || ''
-    const replies = parseReplyBlocks(raw, time)
-    const replyText = replies.map(r => `<手机>\n联系人: ${contact}\n方向: 收到\n类型: ${r.type}\n内容: ${r.text}\n时间: ${r.time}\n</手机>`).join('\n')
-    if (th.createChatMessages) {
-      try { await th.createChatMessages([{ role: 'assistant', message: outBlock + '\n' + replyText, data: { is_phone_record: true, phone_contact: contact } }], { insert_before: 'end' }) } catch (e) {}
+    const ta = doc.querySelector('#send_textarea')
+    if (ta) {
+      const line = `（我通过手机给${contact}发：${text}）`
+      const cur = (ta.value || '').replace(/\s+$/, '')
+      ta.value = cur ? cur + '\n\n' + line : line
+      ta.dispatchEvent(new Event('input', { bubbles: true }))
+      try { ta.focus() } catch (e) {}
     }
-    for (const r of replies) appendMsg(contact, { dir: '收到', type: r.type, text: r.text, time: r.time })
-  } catch (e) {
-    appendMsg(contact, { dir: '收到', type: '文字', text: '（发送失败：' + ((e && e.message) || e) + '）', time: '' })
-  } finally { sendingContact.value = ''; scrollDown() }
+  } catch (e) {}
 }
 
 function tick() {
@@ -579,10 +564,6 @@ onUnmounted(() => {
 .mp-sticker-img{max-width:110px;max-height:110px;display:block}
 .mp-bub.mt-表情{background:transparent!important;padding:2px}
 .mp-bub.mt-表情::before{display:none}
-.mp-typing{display:flex;gap:4px;align-items:center;padding:13px 15px;min-width:auto}
-.mp-typing span{width:6px;height:6px;border-radius:50%;background:#bbb;animation:mp-bnc 1.2s infinite}
-.mp-typing span:nth-child(2){animation-delay:.2s}.mp-typing span:nth-child(3){animation-delay:.4s}
-@keyframes mp-bnc{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-5px);opacity:1}}
 
 /* 输入栏 */
 .mp-inbar{display:flex;gap:8px;align-items:center;padding:7px 10px 15px;background:#f7f7f7;border-top:1px solid rgba(0,0,0,.06);flex-shrink:0}
