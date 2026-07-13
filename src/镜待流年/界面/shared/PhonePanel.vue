@@ -6,6 +6,7 @@
       <!-- 灵动岛 -->
       <div class="mp-island"></div>
 
+      <div class="mp-screen">
       <!-- 状态栏 -->
       <div class="mp-status">
         <span class="mp-st-time">{{ clock }}</span>
@@ -22,7 +23,7 @@
         <div class="mp-home-date">{{ dateLabel }}</div>
         <div class="mp-apps">
           <button class="mp-app" @click="openWeChat">
-            <span class="mp-app-ico ico-wx"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M256 128C150 128 64 200 64 288c0 48 26 91 67 120l-14 52 61-33c22 6 45 9 69 9h6c-3-12-5-25-5-38 0-83 82-149 183-149h6c-16-75-96-133-186-133m-64 96a24 24 0 110 48 24 24 0 010-48m128 0a24 24 0 110 48 24 24 0 010-48"/><path fill="currentColor" d="M448 288c-88 0-160 59-160 132s72 132 160 132c19 0 38-3 55-8l50 27-12-44c34-24 55-59 55-99 0-73-72-132-148-140m-52 88a20 20 0 110 40 20 20 0 010-40m104 0a20 20 0 110 40 20 20 0 010-40"/></svg></span>
+            <span class="mp-app-ico ico-wx"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M18.575 13.711a.91.91 0 0 0 .898-.898a.895.895 0 0 0-.898-.898a.894.894 0 0 0-.898.898c0 .5.4.898.898.898m-4.425 0a.91.91 0 0 0 .898-.898c0-.498-.4-.898-.898-.898a.894.894 0 0 0-.898.898c0 .5.399.898.898.898m6.567 5.04a.35.35 0 0 0-.172.37c0 .048 0 .098.025.147c.098.417.294 1.081.294 1.106c0 .073.025.122.025.172a.22.22 0 0 1-.221.22c-.05 0-.074-.024-.123-.048l-1.449-.836a.8.8 0 0 0-.344-.098c-.073 0-.147 0-.196.024c-.688.197-1.4.295-2.161.295c-3.66 0-6.607-2.457-6.607-5.505s2.947-5.505 6.607-5.505c3.659 0 6.606 2.458 6.606 5.505c0 1.647-.884 3.146-2.284 4.154M16.674 8.099a9 9 0 0 0-.28-.005c-4.174 0-7.606 2.86-7.606 6.505c0 .554.08 1.09.228 1.6h-.089a10 10 0 0 1-2.584-.368c-.074-.025-.148-.025-.222-.025a.83.83 0 0 0-.419.123l-1.747 1.005a.35.35 0 0 1-.148.05a.273.273 0 0 1-.27-.27c0-.074.024-.123.049-.197c.024-.024.246-.834.369-1.324c0-.05.024-.123.024-.172a.56.56 0 0 0-.221-.441C2.059 13.376 1 11.586 1 9.599C1.001 5.944 4.571 3 8.951 3c3.765 0 6.93 2.169 7.723 5.098m-5.154.418c.573 0 1.026-.477 1.026-1.026c0-.573-.453-1.026-1.026-1.026s-1.026.453-1.026 1.026s.453 1.026 1.026 1.026m-5.26 0c.573 0 1.027-.477 1.027-1.026c0-.573-.454-1.026-1.027-1.026c-.572 0-1.026.453-1.026 1.026s.454 1.026 1.026 1.026"/></svg></span>
             <span class="mp-app-lbl">微信</span>
             <span v-if="totalUnread" class="mp-badge">{{ totalUnread > 99 ? '99+' : totalUnread }}</span>
           </button>
@@ -37,7 +38,7 @@
         <!-- 单聊视图 -->
         <template v-if="activeContact">
           <div class="mp-wx-nav">
-            <button class="mp-nav-back" @click="closeContact"><svg viewBox="0 0 640 640"><path fill="none" stroke="currentColor" stroke-width="56" stroke-linecap="round" stroke-linejoin="round" d="M400 128L208 320l192 192"/></svg><span v-if="totalUnread" class="mp-nav-back-n">{{ totalUnread > 99 ? '99+' : totalUnread }}</span></button>
+            <button class="mp-nav-back" @click="closeContact"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg><span v-if="totalUnread" class="mp-nav-back-n">{{ totalUnread > 99 ? '99+' : totalUnread }}</span></button>
             <span class="mp-nav-title">{{ activeContact }}</span>
             <span class="mp-nav-more">···</span>
           </div>
@@ -56,22 +57,22 @@
                 </div>
               </div>
             </template>
-            <div v-if="sending" class="mp-row in"><div class="mp-ava">{{ initial(activeContact) }}</div><div class="mp-bub mp-typing"><span></span><span></span><span></span></div></div>
+            <div v-if="sendingContact === activeContact" class="mp-row in"><div class="mp-ava">{{ initial(activeContact) }}</div><div class="mp-bub mp-typing"><span></span><span></span><span></span></div></div>
           </div>
           <div class="mp-inbar">
             <button class="mp-in-ico" @click="voiceMode = !voiceMode" title="语音">
-              <svg v-if="!voiceMode" viewBox="0 0 640 640"><path fill="currentColor" d="M320 96c-40 0-72 32-72 72v144c0 40 32 72 72 72s72-32 72-72V168c0-40-32-72-72-72"/><path fill="none" stroke="currentColor" stroke-width="36" stroke-linecap="round" d="M176 300c0 80 64 144 144 144s144-64 144-144M320 444v56"/></svg>
+              <svg v-if="!voiceMode" viewBox="0 0 24 24"><path fill="currentColor" d="M12 3a3 3 0 0 0-3 3v4a3 3 0 1 0 6 0V6a3 3 0 0 0-3-3m0-2a5 5 0 0 1 5 5v4a5 5 0 0 1-10 0V6a5 5 0 0 1 5-5M3.055 11H5.07a7.002 7.002 0 0 0 13.858 0h2.016A9.004 9.004 0 0 1 13 18.945V23h-2v-4.055A9.004 9.004 0 0 1 3.055 11"/></svg>
               <svg v-else viewBox="0 0 640 640"><path fill="none" stroke="currentColor" stroke-width="40" stroke-linecap="round" stroke-linejoin="round" d="M160 224h320v192H160zM224 160h192"/></svg>
             </button>
             <button v-if="voiceMode" class="mp-in-voicebtn">按住 说话</button>
             <textarea v-else v-model="draft" class="mp-ta" rows="1" @focus="showEmoji = false" @keydown.enter.exact.prevent="send"></textarea>
             <button class="mp-in-ico" @click="toggleEmoji" title="表情">
-              <svg viewBox="0 0 640 640"><path fill="none" stroke="currentColor" stroke-width="36" d="M320 96a224 224 0 100 448 224 224 0 000-448"/><circle cx="240" cy="272" r="26" fill="currentColor"/><circle cx="400" cy="272" r="26" fill="currentColor"/><path fill="none" stroke="currentColor" stroke-width="34" stroke-linecap="round" d="M232 384c22 26 54 42 88 42s66-16 88-42"/></svg>
+              <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10s-4.477 10-10 10m0-2a8 8 0 1 0 0-16a8 8 0 0 0 0 16m-4-7h8a4 4 0 0 1-8 0m0-2a1.5 1.5 0 1 1 0-3a1.5 1.5 0 0 1 0 3m8 0a1.5 1.5 0 1 1 0-3a1.5 1.5 0 0 1 0 3"/></svg>
             </button>
             <button v-if="!draft.trim()" class="mp-in-ico" title="更多">
-              <svg viewBox="0 0 640 640"><path fill="none" stroke="currentColor" stroke-width="36" stroke-linecap="round" d="M320 200v240M200 320h240"/><circle cx="320" cy="320" r="212" fill="none" stroke="currentColor" stroke-width="36"/></svg>
+              <svg viewBox="0 0 24 24"><path fill="currentColor" d="M11 11V7h2v4h4v2h-4v4h-2v-4H7v-2zm1 11C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10s-4.477 10-10 10m0-2a8 8 0 1 0 0-16a8 8 0 0 0 0 16"/></svg>
             </button>
-            <button v-else class="mp-send" :disabled="sending" @click="send">发送</button>
+            <button v-else class="mp-send" :disabled="sendingContact === activeContact" @click="send">发送</button>
           </div>
           <!-- 表情面板 -->
           <div v-if="showEmoji" class="mp-emoji">
@@ -104,7 +105,7 @@
           <div class="mp-wx-body">
             <!-- 聊天 -->
             <template v-if="wxTab === 'chats'">
-              <div class="mp-search"><span class="mp-search-in"><svg viewBox="0 0 640 640"><path fill="none" stroke="currentColor" stroke-width="44" d="M288 128a160 160 0 100 320 160 160 0 000-320M416 416l96 96"/></svg>搜索</span></div>
+              <div class="mp-search"><span class="mp-search-in"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m18.031 16.617l4.283 4.282l-1.415 1.415l-4.282-4.283A8.96 8.96 0 0 1 11 20c-4.968 0-9-4.032-9-9s4.032-9 9-9s9 4.032 9 9a8.96 8.96 0 0 1-1.969 5.617m-2.006-.742A6.98 6.98 0 0 0 18 11c0-3.867-3.133-7-7-7s-7 3.133-7 7s3.133 7 7 7a6.98 6.98 0 0 0 4.875-1.975z"/></svg>搜索</span></div>
               <div class="mp-newchat">
                 <input v-model="newContact" class="mp-nc-in" placeholder="输入联系人名开始对话" @keydown.enter="startChat" />
                 <button class="mp-nc-btn" @click="startChat">发起</button>
@@ -118,7 +119,7 @@
             </template>
             <!-- 通讯录 -->
             <template v-else-if="wxTab === 'contacts'">
-              <div class="mp-search"><span class="mp-search-in"><svg viewBox="0 0 640 640"><path fill="none" stroke="currentColor" stroke-width="44" d="M288 128a160 160 0 100 320 160 160 0 000-320M416 416l96 96"/></svg>搜索</span></div>
+              <div class="mp-search"><span class="mp-search-in"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m18.031 16.617l4.283 4.282l-1.415 1.415l-4.282-4.283A8.96 8.96 0 0 1 11 20c-4.968 0-9-4.032-9-9s4.032-9 9-9s9 4.032 9 9a8.96 8.96 0 0 1-1.969 5.617m-2.006-.742A6.98 6.98 0 0 0 18 11c0-3.867-3.133-7-7-7s-7 3.133-7 7s3.133 7 7 7a6.98 6.98 0 0 0 4.875-1.975z"/></svg>搜索</span></div>
               <div class="mp-cx-special">
                 <div class="mp-cx-row"><span class="mp-cx-ico" style="background:#fa9d3b">👥</span><span class="mp-cx-lbl">新的朋友</span></div>
                 <div class="mp-cx-row"><span class="mp-cx-ico" style="background:#3ab449">💬</span><span class="mp-cx-lbl">群聊</span></div>
@@ -185,6 +186,7 @@
           </div>
         </template>
       </div>
+      </div>
 
       <!-- home 指示条 -->
       <div class="mp-homebar" @click="goHome"></div>
@@ -206,7 +208,7 @@ const discoverView = ref('list')
 const activeContact = ref('')
 const draft = ref('')
 const newContact = ref('')
-const sending = ref(false)
+const sendingContact = ref('')
 const clock = ref('')
 const dateLabel = ref('')
 const scrollEl = ref(null)
@@ -252,17 +254,17 @@ const kaomoji = ['(๑•̀ㅂ•́)و✧','(≧▽≦)','(╯°□°）╯','(�
 
 const tabs = [
   { k: 'chats', l: '微信',
-    ico: '<svg viewBox="0 0 640 640"><path fill="none" stroke="currentColor" stroke-width="40" d="M256 136C150 136 72 204 72 288c0 46 24 87 63 115l-14 50 57-31c24 8 50 12 78 12 106 0 184-68 184-146S362 136 256 136Z"/></svg>',
-    icoOn: '<svg viewBox="0 0 640 640"><path fill="currentColor" d="M256 128C150 128 64 200 64 288c0 48 26 91 67 120l-14 52 61-33c22 6 45 9 69 9 106 0 192-72 192-160S362 128 256 128"/></svg>' },
+    ico: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M8.667 11.511a1.276 1.276 0 0 1-1.285-1.285c0-.718.568-1.286 1.285-1.286c.718 0 1.285.568 1.285 1.286c0 .717-.567 1.285-1.285 1.285m6.667 0a1.276 1.276 0 0 1-1.285-1.285c0-.718.568-1.286 1.285-1.286s1.285.568 1.285 1.286c0 .717-.568 1.285-1.285 1.285m-8.511 7.704l.715-.436a4 4 0 0 1 2.706-.536q.317.05.52.076q.61.081 1.237.081c4.42 0 7.9-3.022 7.9-6.6S16.42 5.2 12 5.2c-4.421 0-7.9 3.022-7.9 6.6c0 1.365.5 2.673 1.431 3.78q.073.088.215.236a4 4 0 0 1 1.1 3.102zm-.63 2.727a1 1 0 0 1-1.527-.93l.189-2.26a2 2 0 0 0-.55-1.551a7 7 0 0 1-.303-.333C2.806 15.447 2.1 13.695 2.1 11.8c0-4.75 4.432-8.6 9.9-8.6c5.467 0 9.9 3.85 9.9 8.6s-4.433 8.6-9.9 8.6q-.765-.001-1.5-.098q-.229-.03-.568-.084a2 2 0 0 0-1.353.268z"/></svg>',
+    icoOn: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M5.458 18.185C3.359 16.677 2 14.4 2 11.908C2 7.323 6.475 3.6 12 3.6s10 3.723 10 8.308c0 4.584-4.475 8.308-10 8.308a11.4 11.4 0 0 1-3.272-.462c-.092-.03-.216-.03-.308-.03c-.185 0-.37.06-.525.153l-2.191 1.262c-.062.03-.124.061-.186.061a.34.34 0 0 1-.339-.338c0-.093.03-.154.062-.246c.03-.031.308-1.047.463-1.662c0-.062.03-.154.03-.215q0-.37-.277-.554m3.21-7.673c.717 0 1.285-.569 1.285-1.286S9.385 7.94 8.668 7.94s-1.285.568-1.285 1.286c0 .717.567 1.285 1.285 1.285m6.666 0c.718 0 1.285-.569 1.285-1.286s-.567-1.286-1.285-1.286c-.717 0-1.285.568-1.285 1.286c0 .717.568 1.285 1.285 1.285"/></svg>' },
   { k: 'contacts', l: '通讯录',
-    ico: '<svg viewBox="0 0 640 640"><path fill="none" stroke="currentColor" stroke-width="40" d="M320 320a104 104 0 100-208 104 104 0 000 208m0 32c-88 0-200 44-200 132v28h400v-28c0-88-112-132-200-132"/></svg>',
-    icoOn: '<svg viewBox="0 0 640 640"><path fill="currentColor" d="M320 320a112 112 0 100-224 112 112 0 000 224m0 48c-97 0-224 49-224 146v46h448v-46c0-97-127-146-224-146"/></svg>' },
+    ico: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M20 22H6a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3h14a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1m-1-2v-2H6a1 1 0 1 0 0 2zM5 16.17c.313-.11.65-.17 1-.17h13V4H6a1 1 0 0 0-1 1zM12 10a2 2 0 1 1 0-4a2 2 0 0 1 0 4m-3 4a3 3 0 1 1 6 0z"/></svg>',
+    icoOn: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M20 22H6a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3h14a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1m-1-2v-2H6a1 1 0 1 0 0 2zm-7-10a2 2 0 1 0 0-4a2 2 0 0 0 0 4m-3 4h6a3 3 0 1 0-6 0"/></svg>' },
   { k: 'discover', l: '发现',
-    ico: '<svg viewBox="0 0 640 640"><path fill="none" stroke="currentColor" stroke-width="40" d="M320 96a224 224 0 100 448 224 224 0 000-448"/><path fill="none" stroke="currentColor" stroke-width="34" stroke-linejoin="round" d="M420 220l-56 144-144 56 56-144z"/></svg>',
-    icoOn: '<svg viewBox="0 0 640 640"><path fill="none" stroke="currentColor" stroke-width="40" d="M320 96a224 224 0 100 448 224 224 0 000-448"/><path fill="currentColor" d="M420 220l-56 144-144 56 56-144z"/></svg>' },
+    ico: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10s-4.477 10-10 10m0-2a8 8 0 1 0 0-16a8 8 0 0 0 0 16m4.5-12.5L14 14l-6.5 2.5L10 10zM12 13a1 1 0 1 0 0-2a1 1 0 0 0 0 2"/></svg>',
+    icoOn: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10s-4.477 10-10 10m4.5-14.5L10 10l-2.5 6.5L14 14zM12 13a1 1 0 1 1 0-2a1 1 0 0 1 0 2"/></svg>' },
   { k: 'me', l: '我',
-    ico: '<svg viewBox="0 0 640 640"><path fill="none" stroke="currentColor" stroke-width="40" d="M320 320a104 104 0 100-208 104 104 0 000 208m0 32c-88 0-200 44-200 132v28h400v-28c0-88-112-132-200-132"/></svg>',
-    icoOn: '<svg viewBox="0 0 640 640"><path fill="currentColor" d="M320 320a112 112 0 100-224 112 112 0 000 224m0 48c-97 0-224 49-224 146v46h448v-46c0-97-127-146-224-146"/></svg>' },
+    ico: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M20 22h-2v-2a3 3 0 0 0-3-3H9a3 3 0 0 0-3 3v2H4v-2a5 5 0 0 1 5-5h6a5 5 0 0 1 5 5zm-8-9a6 6 0 1 1 0-12a6 6 0 0 1 0 12m0-2a4 4 0 1 0 0-8a4 4 0 0 0 0 8"/></svg>',
+    icoOn: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M20 22H4v-2a5 5 0 0 1 5-5h6a5 5 0 0 1 5 5zm-8-9a6 6 0 1 1 0-12a6 6 0 0 1 0 12"/></svg>' },
 ]
 const tabTitle = computed(() => ({ chats: '微信', contacts: '通讯录', discover: '发现', me: '我' }[wxTab.value]))
 
@@ -353,10 +355,10 @@ function backspaceEmoji() { draft.value = Array.from(draft.value).slice(0, -1).j
 
 async function send() {
   const th = TH(); const text = draft.value.trim(); const contact = activeContact.value
-  if (!text || !contact || sending.value) return
+  if (!text || !contact || sendingContact.value === contact) return
   if (!th || !th.generateRaw) { appendMsg(contact, { dir: '收到', type: '文字', text: '（未检测到酒馆助手，无法送达）', time: '' }); draft.value = ''; return }
   const time = storyTime()
-  appendMsg(contact, { dir: '发出', type: '文字', text, time }); draft.value = ''; sending.value = true; scrollDown()
+  appendMsg(contact, { dir: '发出', type: '文字', text, time }); draft.value = ''; sendingContact.value = contact; scrollDown()
   try {
     const outBlock = `<手机>\n联系人: ${contact}\n方向: 发出\n类型: 文字\n内容: ${text}\n时间: ${time}\n</手机>`
     const prompt =
@@ -374,7 +376,7 @@ async function send() {
     for (const r of replies) appendMsg(contact, { dir: '收到', type: r.type, text: r.text, time: r.time })
   } catch (e) {
     appendMsg(contact, { dir: '收到', type: '文字', text: '（发送失败：' + ((e && e.message) || e) + '）', time: '' })
-  } finally { sending.value = false; scrollDown() }
+  } finally { sendingContact.value = ''; scrollDown() }
 }
 
 function tick() {
@@ -396,7 +398,7 @@ onUnmounted(() => { clearInterval(timer); doc.documentElement.style.overflow = '
 @import url('https://fontsapi.zeoseven.com/84/main/result.css');
 .mp-overlay{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.66);backdrop-filter:blur(6px);animation:mp-fade .25s ease-out;pointer-events:all;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif}
 @keyframes mp-fade{0%{opacity:0}100%{opacity:1}}
-.mp-phone{position:relative;width:min(90vw,392px);height:min(92vh,844px);aspect-ratio:392/844;background:#000;border-radius:52px;padding:11px 10px 9px;box-shadow:0 30px 80px rgba(0,0,0,.65),0 6px 18px rgba(0,0,0,.4),inset 0 0 0 2px rgba(120,120,130,.35);display:flex;flex-direction:column;overflow:hidden;animation:mp-pop .32s cubic-bezier(.2,.9,.3,1.2)}
+.mp-phone{position:relative;height:min(96vh,900px);aspect-ratio:390/844;max-width:94vw;background:#000;border-radius:54px;padding:10px 9px 10px;box-shadow:0 30px 80px rgba(0,0,0,.65),0 6px 18px rgba(0,0,0,.4),inset 0 0 0 2px rgba(120,120,130,.35);display:flex;flex-direction:column;overflow:hidden;animation:mp-pop .32s cubic-bezier(.2,.9,.3,1.2)}
 @keyframes mp-pop{0%{opacity:0;transform:scale(.93) translateY(14px)}100%{opacity:1;transform:scale(1) translateY(0)}}
 .mp-power{position:absolute;right:-3px;top:180px;width:3px;height:74px;border:none;background:linear-gradient(180deg,#3a3a40,#141416);border-radius:3px;cursor:pointer;z-index:9}
 .mp-phone > *:not(.mp-power):not(.mp-island){position:relative;z-index:2}
@@ -412,8 +414,11 @@ onUnmounted(() => { clearInterval(timer); doc.documentElement.style.overflow = '
 .mp-st-bat::after{content:'';position:absolute;inset:1.5px;right:6px;background:currentColor;border-radius:1px}
 .mp-st-bat::before{content:'';position:absolute;right:-3px;top:3.5px;width:2px;height:4px;background:currentColor;border-radius:0 1px 1px 0}
 
+.mp-screen{flex:1;display:flex;flex-direction:column;min-height:0;border-radius:44px;overflow:hidden;background:#ededed}
+.st-light .mp-screen{background:radial-gradient(130% 90% at 50% 0%,#4a5b7d 0%,#2c3b54 45%,#161d2b 100%)}
+
 /* 主屏 */
-.mp-home{flex:1;display:flex;flex-direction:column;align-items:center;border-radius:42px;background:radial-gradient(130% 90% at 50% 0%,#4a5b7d 0%,#2c3b54 45%,#161d2b 100%)}
+.mp-home{flex:1;display:flex;flex-direction:column;align-items:center}
 .mp-home-clock{margin-top:13%;font-family:'寒蝉全圆体','DouyinSans',serif;font-size:64px;font-weight:300;color:#fff;letter-spacing:.02em;text-shadow:0 2px 24px rgba(0,0,0,.4)}
 .mp-home-date{font-size:15px;color:rgba(255,255,255,.78);margin-top:-6px;text-shadow:0 1px 8px rgba(0,0,0,.3)}
 .mp-apps{margin-top:auto;margin-bottom:8%;display:grid;grid-template-columns:repeat(4,1fr);gap:20px 6px;width:100%;padding:0 20px}
@@ -433,7 +438,7 @@ onUnmounted(() => { clearInterval(timer); doc.documentElement.style.overflow = '
 .mp-badge.tb{top:1px;right:22%;border-color:#f7f7f7}
 
 /* 微信 */
-.mp-wx{flex:1;display:flex;flex-direction:column;border-radius:0 0 42px 42px;background:#ededed;overflow:hidden;min-height:0}
+.mp-wx{flex:1;display:flex;flex-direction:column;background:#ededed;overflow:hidden;min-height:0}
 .mp-wx-head{display:flex;align-items:center;justify-content:center;position:relative;padding:6px 16px 12px;background:#ededed}
 .mp-wx-title{font-size:17px;font-weight:600;color:#0d0d0d;letter-spacing:.3px}
 .mp-wx-acts{position:absolute;right:16px;top:2px;display:flex;gap:14px}
