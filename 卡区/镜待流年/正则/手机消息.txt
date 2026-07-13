@@ -1,0 +1,39 @@
+<style>
+@import url('https://fontsapi.zeoseven.com/3/main/result.css');
+@import url('https://fontsapi.zeoseven.com/84/main/result.css');
+@keyframes ph-ent{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}
+.ph-wrap{display:block;width:100%;max-width:420px;margin:10px auto;border-radius:14px;overflow:hidden;background:#ededed;box-shadow:0 4px 18px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.5);font-family:'DouyinSans','PingFang SC','Microsoft YaHei',sans-serif;animation:ph-ent .4s ease-out;border:1px solid rgba(0,0,0,.06)}
+.ph-bar{display:flex;align-items:center;gap:6px;padding:7px 14px;background:linear-gradient(180deg,#f7f7f7,#ededed);border-bottom:1px solid rgba(0,0,0,.07);font-size:13px;color:#5a5a5a;letter-spacing:.02em}
+.ph-bar .ph-ico{width:1.05em;height:1.05em;color:#7a7a7a;flex-shrink:0}
+.ph-bar .ph-peer{font-family:'寒蝉全圆体','DouyinSans',sans-serif;font-weight:700;color:#2b2b2b}
+.ph-bar .ph-dot{width:5px;height:5px;border-radius:50%;background:#07c160;margin-left:auto;box-shadow:0 0 6px rgba(7,193,96,.6)}
+.ph-body{padding:14px 14px 16px;background:#ededed}
+.ph-line{display:flex;align-items:flex-start;gap:9px}
+.ph-wrap.dir-发出 .ph-line{flex-direction:row-reverse}
+.ph-av{width:36px;height:36px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#c8a86a,#a8895a);color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.ph-wrap.dir-发出 .ph-av{background:linear-gradient(135deg,#5bd07a,#07c160)}
+.ph-av .ph-ico{width:20px;height:20px}
+.ph-col{display:flex;flex-direction:column;max-width:74%;min-width:0}
+.ph-wrap.dir-发出 .ph-col{align-items:flex-end}
+.ph-nm{font-size:11px;color:#9a9a9a;margin:1px 4px 4px;letter-spacing:.02em}
+.ph-bubble{position:relative;padding:9px 13px;border-radius:8px;font-size:14.5px;line-height:1.5;color:#1a1a1a;word-break:break-word;white-space:pre-wrap;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.ph-bubble::before{content:'';position:absolute;top:12px;width:0;height:0;border:6px solid transparent}
+.ph-wrap.dir-收到 .ph-bubble::before{left:-11px;border-right-color:#fff}
+.ph-wrap.dir-发出 .ph-bubble{background:#95ec69}
+.ph-wrap.dir-发出 .ph-bubble::before{right:-11px;border-left-color:#95ec69}
+.ph-time{font-size:10.5px;color:#b0b0b0;margin:5px 4px 0}
+</style>
+<div class="ph-wrap dir-$2">
+<i class="phone-data" style="font-size:0;line-height:0;float:left;opacity:0">$1|||$2|||$3|||$4</i>
+<div class="ph-bar"><svg class="ph-ico" viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="M224 64c-53 0-96 43-96 96v320c0 53 43 96 96 96h192c53 0 96-43 96-96V160c0-53-43-96-96-96zm-32 96c0-17.7 14.3-32 32-32h192c17.7 0 32 14.3 32 32v320c0 17.7-14.3 32-32 32H224c-17.7 0-32-14.3-32-32zm96 336c0-13.3 10.7-24 24-24h48c13.3 0 24 10.7 24 24s-10.7 24-24 24h-48c-13.3 0-24-10.7-24-24"/></svg>手机 · <span class="ph-peer">$1</span><span class="ph-dot"></span></div>
+<div class="ph-body">
+<div class="ph-line">
+<div class="ph-av"><svg class="ph-ico" viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="M320 312c66.3 0 120-53.7 120-120S386.3 72 320 72s-120 53.7-120 120s53.7 120 120 120m-29.7 56C191.8 368 112 447.8 112 546.3c0 16.4 13.3 29.7 29.7 29.7h356.6c16.4 0 29.7-13.3 29.7-29.7c0-98.5-79.8-178.3-178.3-178.3z"/></svg></div>
+<div class="ph-col">
+<div class="ph-nm">$1</div>
+<div class="ph-bubble">$3</div>
+<div class="ph-time">$4</div>
+</div>
+</div>
+</div>
+</div>

@@ -127,14 +127,15 @@
               <div v-for="[name, item] in itemEntries" :key="name">
                 <div
                   class="item-card"
-                  :class="{ 'mirror-item': name.includes('母镜'), 'mirror-open': name.includes('母镜') && mirrorOpen, 'bestiary-item': name.includes('万象图鉴') }"
-                  @click="name.includes('母镜') ? (mirrorOpen = !mirrorOpen) : name.includes('万象图鉴') ? (bestiaryOpen = !bestiaryOpen) : (expandedItems[name] = !expandedItems[name])"
+                  :class="{ 'mirror-item': name.includes('母镜'), 'mirror-open': name.includes('母镜') && mirrorOpen, 'bestiary-item': name.includes('万象图鉴') || name.includes('手机') }"
+                  @click="name.includes('母镜') ? (mirrorOpen = !mirrorOpen) : name.includes('万象图鉴') ? (bestiaryOpen = !bestiaryOpen) : name.includes('手机') ? (phoneOpen = !phoneOpen) : (expandedItems[name] = !expandedItems[name])"
                 >
                   <span class="item-name item-shimmer" :style="{ background: `linear-gradient(135deg, ${tierGradient(item.品阶 || '')})`, backgroundSize: '200% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }">{{ name }}</span>
                   <span class="item-tier">[{{ item.品阶 || '未评级' }}]</span>
                   <span v-if="item.数量" class="item-qty">×{{ item.数量 }}</span>
                   <span v-if="name.includes('母镜')" class="mirror-toggle">{{ mirrorOpen ? '▾' : '▸' }}</span>
                   <span v-else-if="name.includes('万象图鉴')" class="mirror-toggle">{{ bestiaryOpen ? '▾' : '▸' }}</span>
+                  <span v-else-if="name.includes('手机')" class="mirror-toggle">{{ phoneOpen ? '▾' : '▸' }}</span>
                   <span v-else class="item-expand">{{ expandedItems[name] ? '▾' : '▸' }}</span>
                 </div>
                 <div v-if="expandedItems[name] && (item.描述 || (item.能力 && item.能力 !== '无'))" class="item-detail"><div v-if="item.描述"><span class="item-detail-label">描述</span>{{ item.描述 }}</div><div v-if="item.能力 && item.能力 !== '无'" style="padding-top:3px;margin-top:3px;border-top:1px solid var(--t-border)"><span class="item-detail-label">能力</span>{{ item.能力 }}</div></div>
@@ -403,6 +404,7 @@
       </div>
     </div>
     <BestiaryPanel v-if="bestiaryOpen" @close="bestiaryOpen = false" />
+    <PhonePanel v-if="phoneOpen" @close="phoneOpen = false" />
   </div>
 </template>
 
@@ -411,6 +413,7 @@ import { computed, reactive, ref, watch } from 'vue';
 import { useDataStore } from './store';
 import MirrorPanel from '../shared/MirrorPanel.vue';
 import BestiaryPanel from '../shared/BestiaryPanel.vue';
+import PhonePanel from '../shared/PhonePanel.vue';
 
 const store = useDataStore();
 const data = computed(() => store.data);
@@ -505,6 +508,7 @@ function toggleR18() {
 }
 const mirrorOpen = ref(false);
 const bestiaryOpen = ref(false);
+const phoneOpen = ref(false);
 
 const expandedChars = ref(new Set<string>());
 const expandedSubs = ref(new Set<string>());
