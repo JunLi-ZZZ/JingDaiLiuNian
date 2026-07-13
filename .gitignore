@@ -11,6 +11,9 @@ pnpm-debug.log*
 
 auto-imports.d.ts
 components.d.ts
+<<<<<<< HEAD
 
 # 参考卡（他人卡的提取源码，仅本地借鉴，勿入库）
 卡区/一些卡的参考/
+=======
+>>>>>>> 563a54227d547b8c7ade58fb3242b38f89cefd18
