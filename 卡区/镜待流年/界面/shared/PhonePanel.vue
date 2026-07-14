@@ -1,7 +1,7 @@
 <template>
   <Teleport :to="tpTarget" :disabled="!tpTarget">
-  <div class="mp-overlay" @click.self="$emit('close')">
-    <div class="mp-phone" :class="{ 'st-light': view === 'home' }">
+  <div class="mp-overlay" :style="overlayStyle" @click.self="$emit('close')">
+    <div ref="phoneEl" class="mp-phone" :class="{ 'st-light': view === 'home' }" :style="phoneStyle">
       <button class="mp-power" @click="$emit('close')" title="关闭"></button>
 
       <!-- 灵动岛 -->
@@ -58,7 +58,9 @@
                 </div>
               </div>
             </template>
+            <div v-if="sendingContact === activeContact" class="mp-row in"><div class="mp-ava">{{ initial(activeContact) }}</div><div class="mp-bub mp-typing"><span></span><span></span><span></span></div></div>
           </div>
+          <div v-if="sendError" class="mp-toast">{{ sendError }}</div>
           <div class="mp-inbar">
             <button class="mp-in-ico" @click="voiceMode = !voiceMode" title="语音">
               <svg v-if="!voiceMode" viewBox="0 0 24 24"><path fill="currentColor" d="M12 3a3 3 0 0 0-3 3v4a3 3 0 1 0 6 0V6a3 3 0 0 0-3-3m0-2a5 5 0 0 1 5 5v4a5 5 0 0 1-10 0V6a5 5 0 0 1 5-5M3.055 11H5.07a7.002 7.002 0 0 0 13.858 0h2.016A9.004 9.004 0 0 1 13 18.945V23h-2v-4.055A9.004 9.004 0 0 1 3.055 11"/></svg>
@@ -72,7 +74,7 @@
             <button v-if="!draft.trim()" class="mp-in-ico" title="更多">
               <svg viewBox="0 0 24 24"><path fill="currentColor" d="M11 11V7h2v4h4v2h-4v4h-2v-4H7v-2zm1 11C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10s-4.477 10-10 10m0-2a8 8 0 1 0 0-16a8 8 0 0 0 0 16"/></svg>
             </button>
-            <button v-else class="mp-send" @click="send">发送</button>
+            <button v-else class="mp-send" :disabled="!!sendingContact" @click="send">发送</button>
           </div>
           <!-- 表情面板 -->
           <div v-if="showEmoji" class="mp-emoji">
@@ -195,6 +197,11 @@ const scrollEl = ref(null)
 const showEmoji = ref(false)
 const emojiTab = ref('emoji')
 const voiceMode = ref(false)
+const sendingContact = ref('')
+const sendError = ref('')
+const overlayStyle = ref(null)
+const phoneStyle = ref(null)
+const phoneEl = ref(null)
 
 const doc = window.parent ? window.parent.document : document
 function TH() { return window.parent && window.parent.TavernHelper }
@@ -370,10 +377,11 @@ function backspaceEmoji() { draft.value = Array.from(draft.value).slice(0, -1).j
 
 function send() {
   const text = draft.value.trim(); const contact = activeContact.value
-  if (!text || !contact) return
+  if (!text || !contact || sendingContact.value) return
   const time = storyTime()
   appendMsg(contact, { dir: '发出', type: '文字', text, time }); draft.value = ''; scrollDown()
-  // 不自行生成回复：把发出内容追加进酒馆主输入框，由 <user> 照常发送，AI 在正文里回 <手机> 块
+  // 把发出内容追加进酒馆主输入框并自动发送，AI 在正文里回 <手机> 块，syncScrape 再拉回收到
+  let sent = false
   try {
     const ta = doc.querySelector('#send_textarea')
     if (ta) {
@@ -381,9 +389,17 @@ function send() {
       const cur = (ta.value || '').replace(/\s+$/, '')
       ta.value = cur ? cur + '\n\n' + line : line
       ta.dispatchEvent(new Event('input', { bubbles: true }))
-      try { ta.focus() } catch (e) {}
+      const btn = doc.querySelector('#send_but')
+      if (btn) { btn.click(); sent = true }
     }
   } catch (e) {}
+  if (sent) {
+    sendingContact.value = contact
+    clearTimeout(sendTimer)
+    sendTimer = setTimeout(() => { if (sendingContact.value === contact) { sendingContact.value = ''; showToast('等待回复超时') } }, 90000)
+  } else {
+    showToast('未能自动发送，请在输入框手动发送')
+  }
 }
 
 function tick() {
@@ -393,6 +409,59 @@ function tick() {
 }
 let timer = null
 let tpStyle = null
+let sendTimer = null
+let errTimer = null
+let lockedW = 0
+let vvRef = null
+let vvHandler = null
+let genCtx = null
+let onGenEnded = null
+let onGenStopped = null
+
+function showToast(msg) {
+  sendError.value = msg
+  clearTimeout(errTimer)
+  errTimer = setTimeout(() => { sendError.value = '' }, 4000)
+}
+function hookGen() {
+  try {
+    const ctx = window.parent && window.parent.SillyTavern && window.parent.SillyTavern.getContext()
+    if (!ctx || !ctx.eventSource || !ctx.eventTypes) return
+    genCtx = ctx
+    onGenEnded = () => {
+      if (!sendingContact.value) return
+      setTimeout(() => { loadLogs(); syncScrape(); sendingContact.value = ''; clearTimeout(sendTimer) }, 250)
+    }
+    onGenStopped = () => {
+      if (!sendingContact.value) return
+      sendingContact.value = ''; clearTimeout(sendTimer); showToast('消息发送失败，请重试')
+    }
+    ctx.eventSource.on(ctx.eventTypes.GENERATION_ENDED, onGenEnded)
+    ctx.eventSource.on(ctx.eventTypes.GENERATION_STOPPED, onGenStopped)
+  } catch (e) {}
+}
+function unhookGen() {
+  try {
+    if (genCtx && genCtx.eventSource && genCtx.eventSource.removeListener) {
+      if (onGenEnded) genCtx.eventSource.removeListener(genCtx.eventTypes.GENERATION_ENDED, onGenEnded)
+      if (onGenStopped) genCtx.eventSource.removeListener(genCtx.eventTypes.GENERATION_STOPPED, onGenStopped)
+    }
+  } catch (e) {}
+}
+function applyVV() {
+  try {
+    const vv = window.parent && window.parent.visualViewport
+    if (!vv) { overlayStyle.value = null; phoneStyle.value = null; return }
+    overlayStyle.value = { position: 'fixed', left: vv.offsetLeft + 'px', top: vv.offsetTop + 'px', width: vv.width + 'px', height: vv.height + 'px' }
+    const layoutH = (window.parent && window.parent.innerHeight) || vv.height
+    if (layoutH - vv.height > 140) {   // 软键盘顶起：只缩高度、锁住宽度，让聊天区上滑而非整机缩小
+      if (!lockedW && phoneEl.value) lockedW = phoneEl.value.offsetWidth
+      phoneStyle.value = { height: Math.round(vv.height * 0.98) + 'px', width: (lockedW || Math.round(vv.width * 0.94)) + 'px', maxWidth: 'none', aspectRatio: 'auto' }
+    } else {
+      lockedW = 0; phoneStyle.value = null
+    }
+  } catch (e) {}
+}
 function copyStyles() {
   try {
     if (!tpTarget) return
@@ -410,10 +479,18 @@ onMounted(() => {
   tick(); loadLogs(); syncScrape()
   timer = setInterval(() => { tick(); loadLogs(); syncScrape() }, 2000)
   doc.documentElement.style.overflow = 'hidden'; doc.body.style.overflow = 'hidden'
+  hookGen()
+  try {
+    vvRef = window.parent && window.parent.visualViewport
+    if (vvRef) { vvHandler = () => applyVV(); vvRef.addEventListener('resize', vvHandler); vvRef.addEventListener('scroll', vvHandler); applyVV() }
+  } catch (e) {}
 })
 onUnmounted(() => {
   try { if (tpStyle && tpStyle.parentNode) tpStyle.parentNode.removeChild(tpStyle); tpStyle = null } catch (e) {}
-  clearInterval(timer); doc.documentElement.style.overflow = ''; doc.body.style.overflow = ''
+  clearInterval(timer); clearTimeout(sendTimer); clearTimeout(errTimer)
+  doc.documentElement.style.overflow = ''; doc.body.style.overflow = ''
+  unhookGen()
+  try { if (vvRef && vvHandler) { vvRef.removeEventListener('resize', vvHandler); vvRef.removeEventListener('scroll', vvHandler) } } catch (e) {}
 })
 </script>
 
@@ -564,6 +641,11 @@ onUnmounted(() => {
 .mp-sticker-img{max-width:110px;max-height:110px;display:block}
 .mp-bub.mt-表情{background:transparent!important;padding:2px}
 .mp-bub.mt-表情::before{display:none}
+.mp-typing{display:flex;gap:4px;align-items:center;padding:13px 15px;min-width:auto}
+.mp-typing span{width:6px;height:6px;border-radius:50%;background:#bbb;animation:mp-bnc 1.2s infinite}
+.mp-typing span:nth-child(2){animation-delay:.2s}.mp-typing span:nth-child(3){animation-delay:.4s}
+@keyframes mp-bnc{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-5px);opacity:1}}
+.mp-toast{position:absolute;left:50%;bottom:64px;transform:translateX(-50%);background:rgba(0,0,0,.78);color:#fff;font-size:12.5px;padding:7px 14px;border-radius:8px;z-index:10;white-space:nowrap;animation:mp-fade .2s ease-out;pointer-events:none}
 
 /* 输入栏 */
 .mp-inbar{display:flex;gap:8px;align-items:center;padding:7px 10px 15px;background:#f7f7f7;border-top:1px solid rgba(0,0,0,.06);flex-shrink:0}
