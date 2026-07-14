@@ -70,7 +70,7 @@ function storyNow(): PT | null {
   return null;
 }
 
-function buildBubble(dir: string, type: string, text: string, contact: string): HTMLElement {
+function buildBubble(dir: string, type: string, text: string, contact: string, owner: string): HTMLElement {
   const d = pdoc();
   const out = dir === '发出';
   const row = d.createElement('div');
@@ -80,7 +80,7 @@ function buildBubble(dir: string, type: string, text: string, contact: string): 
   av.style.cssText =
     'width:36px;height:36px;border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;font-weight:500;background:' +
     (out ? 'linear-gradient(135deg,#63d383,#07c160)' : 'linear-gradient(135deg,#8fb0d6,#6a91bd)');
-  av.textContent = initial(out ? meName() : contact);
+  av.textContent = initial(out ? owner : contact);   // 发出=机主，收到=联系人
 
   const bub = d.createElement('div');
   const isSticker = type === '表情';
@@ -154,14 +154,26 @@ function renderCard(card: Element, now: PT | null): void {
     return;
   }
   const raw = (dataEl.textContent || '').trim();
-  const head = raw.split('|||'); // 联系人|||时间|||体行blob
-  if (head.length < 3) {
+  const head = raw.split('|||');
+  let owner: string, contact: string, time: string, blob: string;
+  if (head.length >= 4) {                 // 新格式 机主|||联系人|||时间|||blob（机主空=自己）
+    owner = head[0].trim() || meName();
+    contact = head[1].trim();
+    time = head[2].trim();
+    blob = head.slice(3).join('|||');
+  } else if (head.length === 3) {         // 旧格式 联系人|||时间|||blob（隐含机主=自己）
+    owner = meName();
+    contact = head[0].trim();
+    time = head[1].trim();
+    blob = head.slice(2).join('|||');
+  } else {
     card.setAttribute('data-rendered', '1');
     return;
   }
-  const contact = head[0].trim();
-  const time = head[1].trim();
-  const blob = head.slice(2).join('|||');
+
+  // 卡片头：机主非本人时显示「X的微信 · 联系人」，本人则「微信 · 联系人」
+  const peer = card.querySelector('[class*="pm-peer"]') as HTMLElement | null;
+  if (peer) peer.textContent = (owner && owner !== meName() ? owner + '的微信 · ' : '微信 · ') + contact;
 
   const d = pdoc();
   const frag = d.createDocumentFragment();
@@ -181,7 +193,7 @@ function renderCard(card: Element, now: PT | null): void {
     const type = (f[1] || '文字').trim() || '文字';
     const text = f.slice(2).join('|').trim();
     if (!text) return;
-    frag.appendChild(buildBubble(dir, type, text, contact));
+    frag.appendChild(buildBubble(dir, type, text, owner, contact));
   });
 
   bubbles.innerHTML = '';

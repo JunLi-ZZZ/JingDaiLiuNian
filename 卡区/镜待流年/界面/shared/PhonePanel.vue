@@ -40,15 +40,15 @@
         <template v-if="activeContact">
           <div class="mp-wx-nav">
             <button class="mp-nav-back" @click="closeContact"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg><span v-if="totalUnread" class="mp-nav-back-n">{{ totalUnread > 99 ? '99+' : totalUnread }}</span></button>
-            <span class="mp-nav-title">{{ activeContact }}</span>
-            <span class="mp-nav-more">···</span>
+            <span class="mp-nav-title">{{ displayName(activeContact) }}</span>
+            <span class="mp-nav-more" @click="openProfile(activeContact)">···</span>
           </div>
           <div ref="scrollEl" class="mp-chat" @click="showEmoji = false">
             <div v-if="!messages.length" class="mp-chat-empty"></div>
             <template v-for="(m, i) in messages" :key="i">
               <div v-if="showSep(i)" class="mp-timesep"><span>{{ fmtTime(m.time) }}</span></div>
               <div :class="['mp-row', m.dir === '发出' ? 'out' : 'in']">
-                <div class="mp-ava">{{ initial(m.dir === '发出' ? meName : activeContact) }}</div>
+                <div class="mp-ava">{{ initial(m.dir === '发出' ? curOwner : activeContact) }}</div>
                 <div :class="['mp-bub', 'mt-' + (m.type || '文字')]">
                   <template v-if="m.type === '语音'"><span class="mp-voice" :style="{ width: voiceWidth(m.text) }"><span class="mp-voice-ico"><i></i><i></i><i></i></span><span class="mp-voice-len">{{ voiceLen(m.text) }}″</span></span><span class="mp-vtext">{{ m.text }}</span></template>
                   <template v-else-if="m.type === '图片'"><span class="mp-media"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M128 128c-35 0-64 29-64 64v256c0 35 29 64 64 64h384c35 0 64-29 64-64V192c0-35-29-64-64-64zm80 80a48 48 0 110 96 48 48 0 010-96m304 240H128l96-128 64 80 80-112z"/></svg></span><span class="mp-cap">{{ m.text }}</span></template>
@@ -102,8 +102,13 @@
         <template v-else>
           <div class="mp-wx-head">
             <span class="mp-wx-title">{{ tabTitle }}</span>
-            <span class="mp-wx-acts"><span v-if="wxTab==='chats'||wxTab==='contacts'" :class="['mp-wx-act',{on:showSearch&&wxTab==='chats'}]" @click="toggleSearch"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m18.031 16.617l4.283 4.282l-1.415 1.415l-4.282-4.283A8.96 8.96 0 0 1 11 20c-4.968 0-9-4.032-9-9s4.032-9 9-9s9 4.032 9 9a8.96 8.96 0 0 1-1.969 5.617m-2.006-.742A6.98 6.98 0 0 0 18 11c0-3.867-3.133-7-7-7s-7 3.133-7 7s3.133 7 7 7a6.98 6.98 0 0 0 4.875-1.975z"/></svg></span><span v-if="wxTab==='chats'" :class="['mp-wx-act',{on:showNew}]" @click="toggleNew"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></svg></span></span>
+            <span class="mp-wx-acts"><span v-if="wxTab==='chats'||wxTab==='contacts'" :class="['mp-wx-act',{on:showSearch&&wxTab==='chats'}]" @click="toggleSearch"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m18.031 16.617l4.283 4.282l-1.415 1.415l-4.282-4.283A8.96 8.96 0 0 1 11 20c-4.968 0-9-4.032-9-9s4.032-9 9-9s9 4.032 9 9a8.96 8.96 0 0 1-1.969 5.617m-2.006-.742A6.98 6.98 0 0 0 18 11c0-3.867-3.133-7-7-7s-7 3.133-7 7s3.133 7 7 7a6.98 6.98 0 0 0 4.875-1.975z"/></svg></span><span v-if="wxTab==='chats'" :class="['mp-wx-act',{on:showPlus}]" @click="togglePlus"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></svg></span></span>
+            <div v-if="showPlus" class="mp-plus-menu">
+              <button class="mp-plus-item" @click="startAddFriend"><span class="mp-plus-ico" v-html="ic.newfriend"></span>添加朋友</button>
+              <button class="mp-plus-item dim" @click="showToast('群聊功能即将上线')"><span class="mp-plus-ico" v-html="ic.group"></span>发起群聊</button>
+            </div>
           </div>
+          <div v-if="viewingOther" class="mp-owner-banner">正在查看 {{ curOwner }} 的手机 · <button @click="switchOwner(meName)">返回我的</button></div>
           <div class="mp-wx-body">
             <!-- 聊天 -->
             <template v-if="wxTab === 'chats'">
@@ -115,8 +120,8 @@
               <div v-if="!contacts.length" class="mp-hint">还没有对话，点右上角 + 发起</div>
               <div v-else-if="!shownContacts.length" class="mp-hint">无匹配联系人</div>
               <div v-for="c in shownContacts" :key="c" class="mp-cell" @click="openContact(c)">
-                <div class="mp-ava lg">{{ initial(c) }}<span v-if="unread[c]" class="mp-badge sm">{{ unread[c] > 99 ? '99+' : unread[c] }}</span></div>
-                <div class="mp-cell-mid"><div class="mp-cell-nm">{{ c }}</div><div class="mp-cell-sub">{{ lastPreview(c) }}</div></div>
+                <div class="mp-ava lg">{{ initial(displayName(c)) }}<span v-if="unreadOf(c)" class="mp-badge sm">{{ unreadOf(c) > 99 ? '99+' : unreadOf(c) }}</span></div>
+                <div class="mp-cell-mid"><div class="mp-cell-nm">{{ displayName(c) }}</div><div class="mp-cell-sub">{{ lastPreview(c) }}</div></div>
                 <div class="mp-cell-rt"><div class="mp-cell-tm">{{ lastTime(c) }}</div></div>
               </div>
             </template>
@@ -127,8 +132,8 @@
                 <div v-for="r in cxSpecial" :key="r.k" class="mp-cx-row"><span class="mp-cx-ico" :style="{ background: r.bg }" v-html="ic[r.k]"></span><span class="mp-cx-lbl">{{ r.l }}</span></div>
               </div>
               <div v-if="contacts.length" class="mp-cx-idx">联系人</div>
-              <div v-for="c in shownContacts" :key="c" class="mp-cx-item" @click="openContact(c)">
-                <div class="mp-ava sm2">{{ initial(c) }}</div><div class="mp-cx-name">{{ c }}</div>
+              <div v-for="c in shownContacts" :key="c" class="mp-cx-item" @click="openProfile(c)">
+                <div class="mp-ava sm2">{{ initial(displayName(c)) }}</div><div class="mp-cx-name">{{ displayName(c) }}</div>
               </div>
               <div class="mp-cx-count">{{ contacts.length }} 位联系人</div>
             </template>
@@ -147,9 +152,17 @@
             <!-- 我 -->
             <template v-else>
               <div class="mp-me-card">
-                <div class="mp-ava xl">{{ initial(meName) }}</div>
-                <div class="mp-me-info"><div class="mp-me-nm">{{ meName }}</div><div class="mp-me-id">微信号：{{ meId }}</div></div>
+                <div class="mp-ava xl">{{ initial(curOwner) }}</div>
+                <div class="mp-me-info"><div class="mp-me-nm">{{ curOwner }}</div><div class="mp-me-id">微信号：{{ ownerId(curOwner) }}</div></div>
                 <span class="mp-me-qr">▤ ›</span>
+              </div>
+              <div v-if="owners.length > 1" class="mp-disc-group">
+                <div class="mp-owner-hd">切换手机（谁的微信）</div>
+                <div v-for="o in owners" :key="o" class="mp-disc-row" @click="switchOwner(o)">
+                  <div class="mp-ava sm2" style="width:29px;height:29px;font-size:14px;border-radius:7px">{{ initial(o) }}</div>
+                  <span class="mp-disc-lbl">{{ o }}{{ o === meName ? '（我）' : '' }}</span>
+                  <span class="mp-disc-arrow">{{ o === curOwner ? '✓' : '›' }}</span>
+                </div>
               </div>
               <div v-for="(g, gi) in meGroups" :key="gi" class="mp-disc-group">
                 <div v-for="r in g" :key="r.k" class="mp-disc-row dim"><span class="mp-disc-ico" :style="{ background: r.bg }" v-html="ic[r.k]"></span><span class="mp-disc-lbl">{{ r.l }}</span><span class="mp-disc-arrow">›</span></div>
@@ -164,6 +177,30 @@
             </button>
           </div>
         </template>
+
+        <!-- 好友资料页（轻量）：通讯录点联系人 / 单聊右上 ··· 打开 -->
+        <div v-if="profileContact" class="mp-profile">
+          <div class="mp-prof-nav"><button class="mp-nav-back" @click="closeProfile"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button></div>
+          <div class="mp-prof-hd">
+            <div class="mp-ava xl">{{ initial(displayName(profileContact)) }}</div>
+            <div class="mp-prof-info"><div class="mp-prof-nm">{{ displayName(profileContact) }}</div><div class="mp-prof-id">微信号：{{ ownerId(profileContact) }}</div></div>
+          </div>
+          <div class="mp-prof-grp">
+            <div class="mp-prof-row"><span class="mp-prof-lbl">备注</span><input class="mp-prof-rmk" :value="remarks[curOwner] && remarks[curOwner][profileContact] || ''" @change="e => setRemark(profileContact, e.target.value)" placeholder="添加备注" /></div>
+            <div class="mp-prof-row"><span class="mp-prof-lbl">本名</span><span class="mp-prof-val">{{ profileContact }}</span></div>
+          </div>
+          <div class="mp-prof-grp">
+            <button class="mp-prof-act" @click="openContact(profileContact)"><span class="mp-prof-act-ico" style="background:#07c160" v-html="tabs[0].icoOn"></span>发消息</button>
+          </div>
+          <div class="mp-prof-grp">
+            <button v-if="!confirmDel" class="mp-prof-act del" @click="confirmDel = true">删除好友</button>
+            <template v-else>
+              <div class="mp-prof-confirm">删除后将清空与 {{ displayName(profileContact) }} 的聊天记录，确定？</div>
+              <button class="mp-prof-act del" @click="deleteContact(profileContact)">确定删除</button>
+              <button class="mp-prof-act" @click="confirmDel = false">取消</button>
+            </template>
+          </div>
+        </div>
       </div>
       </div>
 
@@ -180,6 +217,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 defineEmits(['close'])
 
 const VAR_KEY = 'phone_logs'
+const REMARK_KEY = 'phone_remarks'
 const logs = ref({})
 const unread = ref({})
 const view = ref('home')
@@ -203,6 +241,11 @@ const overlayStyle = ref(null)
 const phoneStyle = ref(null)
 const phoneEl = ref(null)
 const storyNow = ref(null)
+const activeOwner = ref('')            // 当前查看的手机机主，空=<user>自己
+const profileContact = ref('')         // 打开的好友资料页对象
+const showPlus = ref(false)            // 右上角 + 菜单
+const remarks = ref({})                // { 机主: { 联系人: 备注 } }
+const confirmDel = ref(false)          // 删除好友二次确认
 
 const doc = window.parent ? window.parent.document : document
 function TH() { return window.parent && window.parent.TavernHelper }
@@ -214,11 +257,12 @@ const meName = computed(() => {
     return (ctx && ctx.name1) || '我'
   } catch (e) { return '我' }
 })
-const meId = computed(() => {
-  const n = meName.value
+function ownerId(name) {
+  const n = name || '?'
   let h = 0; for (let i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) >>> 0
   return 'wxid_' + h.toString(36).slice(0, 8)
-})
+}
+const meId = computed(() => ownerId(meName.value))
 
 // 表情贴纸脚手架：名称→URL（暂空，等真图接入）；内联 [表情:名称] token
 const STICKERS = {}
@@ -293,13 +337,19 @@ const meGroups = [
   [{ k: 'settings', l: '设置', bg: '#7a8b9a' }],
 ]
 
-const contacts = computed(() => Object.keys(logs.value))
-const shownContacts = computed(() => { const q = searchQuery.value.trim(); const all = Object.keys(logs.value); return q ? all.filter(c => c.includes(q)) : all })
-const messages = computed(() => logs.value[activeContact.value] || [])
-const totalUnread = computed(() => Object.values(unread.value).reduce((a, b) => a + (b || 0), 0))
+const curOwner = computed(() => activeOwner.value || meName.value)      // 当前机主
+const owners = computed(() => Object.keys(logs.value))                  // 存在的机主列表
+const ownerLogs = computed(() => logs.value[curOwner.value] || {})      // 当前机主的会话表
+const viewingOther = computed(() => curOwner.value !== meName.value)    // 是否在看别人的手机
+const contacts = computed(() => Object.keys(ownerLogs.value))
+const shownContacts = computed(() => { const q = searchQuery.value.trim(); const all = Object.keys(ownerLogs.value); return q ? all.filter(c => displayName(c).includes(q) || c.includes(q)) : all })
+const messages = computed(() => ownerLogs.value[activeContact.value] || [])
+const ownerUnread = computed(() => unread.value[curOwner.value] || {})
+const totalUnread = computed(() => Object.values(ownerUnread.value).reduce((a, b) => a + (b || 0), 0))
+function unreadOf(c) { return ownerUnread.value[c] || 0 }
 
 function initial(n) { return (n || '?').trim().slice(0, 1) }
-function lastMsg(c) { const l = logs.value[c]; return l && l.length ? l[l.length - 1] : null }
+function lastMsg(c) { const l = ownerLogs.value[c]; return l && l.length ? l[l.length - 1] : null }
 function lastTime(c) { const m = lastMsg(c); return m ? fmtWeChat(parseTime(m.time), storyNow.value) : '' }
 function lastPreview(c) {
   const m = lastMsg(c); if (!m) return ''
@@ -370,41 +420,86 @@ function storyTime() {                         // 剧情当前时间原始串（
   } catch (e) {}
   return ''
 }
+function displayName(c) {                       // 备注优先，无则本名
+  const r = remarks.value[curOwner.value]
+  return (r && r[c]) || c
+}
+function setRemark(c, name) {
+  const o = curOwner.value
+  if (!remarks.value[o]) remarks.value[o] = {}
+  const v = (name || '').trim()
+  if (v) remarks.value[o][c] = v; else delete remarks.value[o][c]
+  saveRemarks()
+}
+function loadRemarks() {
+  const th = TH(); if (!th || !th.getVariables) return
+  try { const v = th.getVariables({ type: 'chat' }) || {}; if (v[REMARK_KEY] && typeof v[REMARK_KEY] === 'object') remarks.value = v[REMARK_KEY] } catch (e) {}
+}
+function saveRemarks() {
+  const th = TH(); if (!th || !th.insertOrAssignVariables) return
+  try { th.insertOrAssignVariables({ [REMARK_KEY]: remarks.value }, { type: 'chat' }) } catch (e) {}
+}
 
 function loadLogs() {
   const th = TH(); if (!th || !th.getVariables) return
-  try { const v = th.getVariables({ type: 'chat' }) || {}; if (v[VAR_KEY] && typeof v[VAR_KEY] === 'object') logs.value = v[VAR_KEY] } catch (e) {}
+  try {
+    const v = th.getVariables({ type: 'chat' }) || {}
+    if (v[VAR_KEY] && typeof v[VAR_KEY] === 'object') logs.value = migrate(v[VAR_KEY])
+  } catch (e) {}
+}
+function migrate(data) {                         // 旧格式 {联系人:[消息]} → 新格式 {机主:{联系人:[消息]}}
+  const isOld = Object.values(data).some(v => Array.isArray(v))
+  if (!isOld) return data
+  const me = meName.value
+  const moved = {}
+  Object.keys(data).forEach(k => { if (Array.isArray(data[k])) moved[k] = data[k] })
+  const rest = {}
+  Object.keys(data).forEach(k => { if (!Array.isArray(data[k])) rest[k] = data[k] })
+  const out = { ...rest }
+  out[me] = { ...(out[me] || {}), ...moved }
+  return out
 }
 function saveLogs() {
   const th = TH(); if (!th || !th.insertOrAssignVariables) return
   try { th.insertOrAssignVariables({ [VAR_KEY]: logs.value }, { type: 'chat' }) } catch (e) {}
 }
-function appendMsg(contact, msg) {
-  if (!logs.value[contact]) logs.value[contact] = []
-  logs.value[contact].push(msg); saveLogs(); scrollDown()
+function appendMsg(owner, contact, msg) {
+  if (!logs.value[owner]) logs.value[owner] = {}
+  if (!logs.value[owner][contact]) logs.value[owner][contact] = []
+  logs.value[owner][contact].push(msg); saveLogs(); scrollDown()
 }
 
 function syncScrape() {
   const spans = doc.querySelectorAll('[class*="phone-data"]')
   if (!spans.length) return
+  const me = meName.value
   let changed = false
   spans.forEach(span => {
     const raw = (span.textContent || '').trim(); if (!raw) return
-    const head = raw.split('|||')          // 联系人|||时间|||体行blob
-    if (head.length < 3) return
-    const contact = head[0].trim(), time = head[1].trim(), blob = head.slice(2).join('|||')
+    const head = raw.split('|||')
+    let owner, contact, time, blob
+    if (head.length >= 4) {              // 新格式 机主|||联系人|||时间|||体行blob（机主为空=自己）
+      owner = head[0].trim() || me; contact = head[1].trim(); time = head[2].trim(); blob = head.slice(3).join('|||')
+    } else if (head.length === 3) {      // 旧格式 联系人|||时间|||blob（隐含机主=自己）
+      owner = me; contact = head[0].trim(); time = head[1].trim(); blob = head[2]
+    } else return
     if (!contact) return
-    if (!logs.value[contact]) logs.value[contact] = []
+    if (!logs.value[owner]) logs.value[owner] = {}
+    if (!logs.value[owner][contact]) logs.value[owner][contact] = []
+    const arr = logs.value[owner][contact]
     blob.split(/(?=(?:发出|收到)\|)/).forEach(line => {   // 在发出|/收到|前断开，兼容换行被吃成<br>的情况
       const ln = line.trim(); if (!ln) return
-      const f = ln.split('|')              // 方向|类型|内容
+      const f = ln.split('|')              // 方向|类型|内容（方向相对机主）
       if (f.length < 3) return
       const dir = f[0].trim(), type = (f[1] || '文字').trim() || '文字', text = f.slice(2).join('|').trim()
       if (!dir || !text) return
       const sig = dir + '|' + type + '|' + text   // 忽略时间去重，避免与乐观写的发出重复
-      if (!logs.value[contact].some(m => (m.dir + '|' + (m.type || '文字') + '|' + m.text) === sig)) {
-        logs.value[contact].push({ dir, type, text, time })
-        if (dir === '收到' && activeContact.value !== contact) unread.value[contact] = (unread.value[contact] || 0) + 1
+      if (!arr.some(m => (m.dir + '|' + (m.type || '文字') + '|' + m.text) === sig)) {
+        arr.push({ dir, type, text, time })
+        if (dir === '收到' && owner === me && activeContact.value !== contact) {   // 仅自己手机计未读
+          if (!unread.value[owner]) unread.value[owner] = {}
+          unread.value[owner][contact] = (unread.value[owner][contact] || 0) + 1
+        }
         changed = true
       }
     })
@@ -414,11 +509,22 @@ function syncScrape() {
 
 function openWeChat() { view.value = 'wechat'; wxTab.value = 'chats'; activeContact.value = ''; discoverView.value = 'list' }
 function toggleSearch() { showSearch.value = !showSearch.value; showNew.value = false; if (!showSearch.value) searchQuery.value = '' }
-function toggleNew() { showNew.value = !showNew.value; showSearch.value = false }
+function togglePlus() { showPlus.value = !showPlus.value; showSearch.value = false }
+function startAddFriend() { showPlus.value = false; showNew.value = true; showSearch.value = false }
 function goHome() { if (activeContact.value) closeContact(); else view.value = 'home' }
-function openContact(c) { activeContact.value = c; unread.value[c] = 0; showEmoji.value = false; scrollDown() }
+function openContact(c) { activeContact.value = c; const o = curOwner.value; if (unread.value[o]) unread.value[o][c] = 0; showEmoji.value = false; profileContact.value = ''; scrollDown() }
 function closeContact() { activeContact.value = ''; showEmoji.value = false; voiceMode.value = false }
-function startChat() { const n = newContact.value.trim(); if (!n) return; if (!logs.value[n]) { logs.value[n] = []; saveLogs() } newContact.value = ''; openContact(n) }
+function startChat() { const n = newContact.value.trim(); if (!n) return; const o = curOwner.value; if (!logs.value[o]) logs.value[o] = {}; if (!logs.value[o][n]) { logs.value[o][n] = []; saveLogs() } newContact.value = ''; showNew.value = false; openContact(n) }
+function switchOwner(o) { activeOwner.value = o; activeContact.value = ''; wxTab.value = 'chats'; profileContact.value = '' }
+function openProfile(c) { profileContact.value = c }
+function closeProfile() { profileContact.value = '' }
+function deleteContact(c) {
+  const o = curOwner.value
+  if (logs.value[o]) delete logs.value[o][c]
+  if (unread.value[o]) delete unread.value[o][c]
+  if (remarks.value[o]) { delete remarks.value[o][c]; saveRemarks() }
+  saveLogs(); profileContact.value = ''; activeContact.value = ''; confirmDel.value = false
+}
 function scrollDown() { nextTick(() => { if (scrollEl.value) scrollEl.value.scrollTop = scrollEl.value.scrollHeight }) }
 
 function toggleEmoji() { showEmoji.value = !showEmoji.value; if (showEmoji.value) { voiceMode.value = false; scrollDown() } }
@@ -426,16 +532,16 @@ function insertEmoji(ch) { draft.value += ch }
 function backspaceEmoji() { draft.value = Array.from(draft.value).slice(0, -1).join('') }
 
 function send() {
-  const text = draft.value.trim(); const contact = activeContact.value
+  const text = draft.value.trim(); const contact = activeContact.value; const owner = curOwner.value
   if (!text || !contact || sendingContact.value) return
   const time = storyTime()
-  appendMsg(contact, { dir: '发出', type: '文字', text, time }); draft.value = ''; scrollDown()
+  appendMsg(owner, contact, { dir: '发出', type: '文字', text, time }); draft.value = ''; scrollDown()
   // 把发出内容追加进酒馆主输入框并自动发送，AI 在正文里回 <手机> 块，syncScrape 再拉回收到
   let sent = false
   try {
     const ta = doc.querySelector('#send_textarea')
     if (ta) {
-      const line = `（我通过手机给${contact}发：${text}）`
+      const line = owner === meName.value ? `（我通过手机给${contact}发：${text}）` : `（我用${owner}的手机给${contact}发：${text}）`
       const cur = (ta.value || '').replace(/\s+$/, '')
       ta.value = cur ? cur + '\n\n' + line : line
       ta.dispatchEvent(new Event('input', { bubbles: true }))
@@ -529,8 +635,8 @@ function copyStyles() {
 }
 onMounted(() => {
   copyStyles()
-  tick(); loadLogs(); syncScrape()
-  timer = setInterval(() => { tick(); loadLogs(); syncScrape() }, 2000)
+  tick(); loadLogs(); loadRemarks(); syncScrape()
+  timer = setInterval(() => { tick(); loadLogs(); loadRemarks(); syncScrape() }, 2000)
   doc.documentElement.style.overflow = 'hidden'; doc.body.style.overflow = 'hidden'
   hookGen()
   try {
@@ -741,4 +847,48 @@ onUnmounted(() => {
 .mp-homebar{position:absolute;left:50%;bottom:9px;transform:translateX(-50%);height:5px;width:36%;background:rgba(0,0,0,.32);border-radius:3px;cursor:pointer;z-index:6}
 .st-light .mp-homebar{background:rgba(255,255,255,.72)}
 .mp-wx-body::-webkit-scrollbar,.mp-chat::-webkit-scrollbar,.mp-emoji-body::-webkit-scrollbar{width:0}
+
+/* +菜单 */
+.mp-plus-menu{position:absolute;right:12px;top:40px;background:#4c4c4c;border-radius:8px;padding:4px 0;z-index:20;box-shadow:0 4px 16px rgba(0,0,0,.3);min-width:130px}
+.mp-plus-menu::before{content:'';position:absolute;right:14px;top:-5px;width:10px;height:10px;background:#4c4c4c;transform:rotate(45deg)}
+.mp-plus-item{display:flex;align-items:center;gap:9px;width:100%;padding:9px 15px;background:none;border:none;color:#f0f0f0;font-size:14px;cursor:pointer;font-family:inherit}
+.mp-plus-item:active{background:rgba(255,255,255,.08)}
+.mp-plus-item.dim{opacity:.5}
+.mp-plus-ico{width:19px;height:19px;display:flex;align-items:center;justify-content:center}
+.mp-plus-ico svg{width:19px;height:19px;color:#f0f0f0}
+
+/* 看别人手机横幅 */
+.mp-owner-banner{display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 12px;background:#faf0d7;color:#8a6d1f;font-size:12.5px;flex-shrink:0}
+.mp-owner-banner button{background:none;border:none;color:#576b95;font-size:12.5px;cursor:pointer;padding:0;font-family:inherit}
+.mp-owner-hd{padding:8px 14px 4px;font-size:12px;color:#9a9a9a;background:#ededed}
+
+/* 好友资料页 */
+.mp-profile{position:absolute;inset:0;background:#ededed;z-index:15;display:flex;flex-direction:column;animation:mp-slideL .25s ease-out}
+@keyframes mp-slideL{0%{transform:translateX(100%)}100%{transform:translateX(0)}}
+.mp-prof-nav{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#ededed;flex-shrink:0}
+.mp-prof-nav button{width:26px;height:26px;background:none;border:none;cursor:pointer;color:#0d0d0d;padding:0}
+.mp-prof-nav svg{width:22px;height:22px}
+.mp-prof-nav span{flex:1;text-align:center;font-size:16.5px;font-weight:600;color:#0d0d0d;margin-left:-26px}
+.mp-prof-body{flex:1;overflow-y:auto}
+.mp-prof-card{display:flex;align-items:center;gap:15px;padding:22px 18px;background:#fff}
+.mp-prof-info{flex:1;min-width:0}
+.mp-prof-nm{font-size:20px;font-weight:500;color:#0d0d0d}
+.mp-prof-id{font-size:13px;color:#9a9a9a;margin-top:7px}
+.mp-prof-sec{margin-top:8px;background:#fff}
+.mp-prof-row{display:flex;align-items:center;padding:12px 16px;position:relative;font-size:15px;color:#0d0d0d}
+.mp-prof-row::after{content:'';position:absolute;left:16px;right:0;bottom:0;height:1px;background:#f0f0f0}
+.mp-prof-row:last-child::after{display:none}
+.mp-prof-lbl{color:#0d0d0d}
+.mp-overlay .mp-prof-rmk{flex:1;margin-left:12px;border:none!important;background:transparent!important;color:#0d0d0d!important;font-size:15px;text-align:right;outline:none;font-family:inherit}
+.mp-overlay .mp-prof-rmk::placeholder{color:#b0b0b0!important}
+.mp-prof-act{margin-top:8px;background:#fff}
+.mp-prof-btn{width:100%;padding:14px;background:#fff;border:none;font-size:16px;color:#07c160;cursor:pointer;font-family:inherit}
+.mp-prof-btn.del{color:#fa5151}
+.mp-prof-btn:active{background:#e6e6e6}
+.mp-prof-confirm{padding:14px 16px;background:#fff;text-align:center}
+.mp-prof-confirm p{font-size:14px;color:#0d0d0d;margin:0 0 12px}
+.mp-prof-confirm-row{display:flex;gap:10px}
+.mp-prof-confirm button{flex:1;padding:9px;border:none;border-radius:6px;font-size:14px;cursor:pointer;font-family:inherit}
+.mp-prof-cancel{background:#e6e6e6;color:#0d0d0d}
+.mp-prof-del{background:#fa5151;color:#fff}
 </style>
