@@ -29,6 +29,47 @@ function voiceLen(t: string): number {
   return Math.min(60, Math.max(1, Math.round((t || '').length / 3)));
 }
 
+interface PT { y: number | null; mo: number | null; d: number | null; h: number | null; mi: number | null; raw: string }
+function pad2(n: number): string { return (n < 10 ? '0' : '') + n; }
+function parseTime(s: string): PT | null {
+  if (!s) return null;
+  s = String(s).trim();
+  let y: number | null = null, mo: number | null = null, d: number | null = null, h: number | null = null, mi: number | null = null;
+  const dm = s.match(/(\d{2,4})\s*[年\/\-]\s*(\d{1,2})\s*[月\/\-]\s*(\d{1,2})/);
+  if (dm) { y = +dm[1]; mo = +dm[2]; d = +dm[3]; }
+  const tm = s.match(/(\d{1,2})\s*[:：]\s*(\d{2})/);
+  if (tm) { h = +tm[1]; mi = +tm[2]; }
+  if (y === null && h === null) return null;
+  return { y, mo, d, h, mi, raw: s };
+}
+function hm(t: PT): string { return t.h != null ? pad2(t.h) + ':' + pad2(t.mi as number) : ''; }
+function dayNum(t: PT): number | null { return t.y != null ? Date.UTC(t.y, (t.mo || 1) - 1, t.d || 1) : null; }
+function fmtWeChat(t: PT | null, now: PT | null): string {
+  if (!t) return '';
+  if (t.y == null) return hm(t) || t.raw;
+  const md = dayNum(t) as number, h = hm(t);
+  if (now && now.y != null) {
+    const days = Math.round(((dayNum(now) as number) - md) / 86400000);
+    if (days <= 0) return h || (t.mo + '月' + t.d + '日');
+    if (days === 1) return '昨天' + (h ? ' ' + h : '');
+    if (days < 7) return '周' + '日一二三四五六'[new Date(md).getUTCDay()] + (h ? ' ' + h : '');
+    if (t.y === now.y) return t.mo + '月' + t.d + '日';
+    return t.y + '年' + t.mo + '月' + t.d + '日';
+  }
+  return t.mo + '月' + t.d + '日' + (h ? ' ' + h : '');
+}
+function storyNow(): PT | null {
+  try {
+    const w = window.parent as any;
+    if (w && w.Mvu && w.Mvu.getMvuData) {
+      const v = w.Mvu.getMvuData({ type: 'chat' });
+      const t = v && v.stat_data && v.stat_data.世界 && v.stat_data.世界.当前时间;
+      if (t) return parseTime(String(t));
+    }
+  } catch (e) { /* ignore */ }
+  return null;
+}
+
 function buildBubble(dir: string, type: string, text: string, contact: string): HTMLElement {
   const d = pdoc();
   const out = dir === '发出';
@@ -105,7 +146,7 @@ function buildBubble(dir: string, type: string, text: string, contact: string): 
   return row;
 }
 
-function renderCard(card: Element): void {
+function renderCard(card: Element, now: PT | null): void {
   const dataEl = card.querySelector('[class*="phone-data"]');
   const bubbles = card.querySelector('[class*="pm-bubbles"]') as HTMLElement | null;
   if (!dataEl || !bubbles) {
@@ -127,7 +168,7 @@ function renderCard(card: Element): void {
   if (time) {
     const t = d.createElement('div');
     t.style.cssText = 'align-self:center;font-size:11.5px;color:#fff;background:rgba(0,0,0,.12);padding:2px 8px;border-radius:4px';
-    t.textContent = time;
+    t.textContent = fmtWeChat(parseTime(time), now) || time;
     frag.appendChild(t);
   }
   // 在每个「发出|」「收到|」前断开：换行若被 markdown 吃成 <br>（textContent 丢换行）也能切对
@@ -149,9 +190,10 @@ function renderCard(card: Element): void {
 }
 
 function renderAll(): void {
+  const now = storyNow();
   pdoc()
     .querySelectorAll('[class*="pm-card"]:not([data-rendered])')
-    .forEach(renderCard);
+    .forEach(c => renderCard(c, now));
 }
 
 $(() => {

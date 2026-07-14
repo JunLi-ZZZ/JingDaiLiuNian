@@ -46,7 +46,7 @@
           <div ref="scrollEl" class="mp-chat" @click="showEmoji = false">
             <div v-if="!messages.length" class="mp-chat-empty"></div>
             <template v-for="(m, i) in messages" :key="i">
-              <div v-if="showSep(i)" class="mp-timesep"><span>{{ m.time }}</span></div>
+              <div v-if="showSep(i)" class="mp-timesep"><span>{{ fmtTime(m.time) }}</span></div>
               <div :class="['mp-row', m.dir === '发出' ? 'out' : 'in']">
                 <div class="mp-ava">{{ initial(m.dir === '发出' ? meName : activeContact) }}</div>
                 <div :class="['mp-bub', 'mt-' + (m.type || '文字')]">
@@ -202,6 +202,7 @@ const sendError = ref('')
 const overlayStyle = ref(null)
 const phoneStyle = ref(null)
 const phoneEl = ref(null)
+const storyNow = ref(null)
 
 const doc = window.parent ? window.parent.document : document
 function TH() { return window.parent && window.parent.TavernHelper }
@@ -299,7 +300,7 @@ const totalUnread = computed(() => Object.values(unread.value).reduce((a, b) => 
 
 function initial(n) { return (n || '?').trim().slice(0, 1) }
 function lastMsg(c) { const l = logs.value[c]; return l && l.length ? l[l.length - 1] : null }
-function lastTime(c) { const m = lastMsg(c); return m ? m.time : '' }
+function lastTime(c) { const m = lastMsg(c); return m ? fmtWeChat(parseTime(m.time), storyNow.value) : '' }
 function lastPreview(c) {
   const m = lastMsg(c); if (!m) return ''
   const pfx = m.type && m.type !== '文字' ? '[' + m.type + '] ' : ''
@@ -307,18 +308,67 @@ function lastPreview(c) {
 }
 function voiceLen(t) { return Math.min(60, Math.max(1, Math.round((t || '').length / 3))) }
 function voiceWidth(t) { return Math.min(160, 56 + voiceLen(t) * 3) + 'px' }
-function showSep(i) {
+function showSep(i) {                          // 首条、跨天、或距上条超5分钟才显示时间条
   const arr = messages.value
-  if (!i) return !!(arr[0] && arr[0].time)
-  return arr[i] && arr[i].time && arr[i].time !== arr[i - 1].time
+  const cur = parseTime(arr[i] && arr[i].time)
+  if (!cur) return false
+  if (!i) return true
+  const prev = parseTime(arr[i - 1].time)
+  if (!prev) return true
+  const dc = dayNum(cur), dp = dayNum(prev)
+  if (dc != null && dp != null && dc !== dp) return true
+  const a = absMin(cur), b = absMin(prev)
+  if (a != null && b != null) return Math.abs(a - b) > 5
+  return (arr[i].time || '') !== (arr[i - 1].time || '')
 }
 
-function storyTime() {
+function pad2(n) { return (n < 10 ? '0' : '') + n }
+function parseTime(s) {                       // 兼容「2024年03月05日 20:15」「2024-3-5 20:15」「20:15」等
+  if (!s) return null
+  s = String(s).trim()
+  let y = null, mo = null, d = null, h = null, mi = null
+  const dm = s.match(/(\d{2,4})\s*[年\/\-]\s*(\d{1,2})\s*[月\/\-]\s*(\d{1,2})/)
+  if (dm) { y = +dm[1]; mo = +dm[2]; d = +dm[3] }
+  const tm = s.match(/(\d{1,2})\s*[:：]\s*(\d{2})/)
+  if (tm) { h = +tm[1]; mi = +tm[2] }
+  if (y === null && h === null) return null
+  return { y, mo, d, h, mi, raw: s }
+}
+function hm(t) { return (t && t.h != null) ? pad2(t.h) + ':' + pad2(t.mi) : '' }
+function dayNum(t) { return (t && t.y != null) ? Date.UTC(t.y, (t.mo || 1) - 1, t.d || 1) : null }
+function absMin(t) { if (!t) return null; const dn = dayNum(t); if (dn != null) return dn / 60000 + (t.h || 0) * 60 + (t.mi || 0); return t.h != null ? t.h * 60 + t.mi : null }
+function fmtWeChat(t, now) {                   // 微信式相对时间
+  if (!t) return ''
+  if (t.y == null) return hm(t) || t.raw
+  const md = dayNum(t), h = hm(t)
+  if (now && now.y != null) {
+    const days = Math.round((dayNum(now) - md) / 86400000)
+    if (days <= 0) return h || (t.mo + '月' + t.d + '日')
+    if (days === 1) return '昨天' + (h ? ' ' + h : '')
+    if (days < 7) return '周' + '日一二三四五六'[new Date(md).getUTCDay()] + (h ? ' ' + h : '')
+    if (t.y === now.y) return t.mo + '月' + t.d + '日'
+    return t.y + '年' + t.mo + '月' + t.d + '日'
+  }
+  return t.mo + '月' + t.d + '日' + (h ? ' ' + h : '')
+}
+function fmtTime(s) { return fmtWeChat(parseTime(s), storyNow.value) }
+function storyTime() {                         // 剧情当前时间原始串（无真实时间回退，取不到返回空）
   try {
-    const p = window.parent
-    if (p && typeof p.getvar === 'function') { const t = p.getvar('世界.当前时间') || p.getvar('当前时间'); if (t) return String(t) }
+    const w = window.parent
+    if (w && w.Mvu && w.Mvu.getMvuData) {
+      let v = null
+      try { v = w.Mvu.getMvuData({ type: 'chat' }) } catch (e) {}
+      const t = v && v.stat_data && v.stat_data.世界 && v.stat_data.世界.当前时间
+      if (t) return String(t)
+    }
+    const th = TH()
+    if (th && th.getVariables) {
+      const gv = th.getVariables({ type: 'chat' }) || {}
+      const t2 = gv.stat_data && gv.stat_data.世界 && gv.stat_data.世界.当前时间
+      if (t2) return String(t2)
+    }
   } catch (e) {}
-  const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
+  return ''
 }
 
 function loadLogs() {
@@ -402,10 +452,13 @@ function send() {
   }
 }
 
-function tick() {
-  const d = new Date()
-  clock.value = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
-  dateLabel.value = (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + '周' + '日一二三四五六'[d.getDay()]
+function tick() {                              // 时钟/日期一律取剧情时间，取不到留空（不显示真实时间）
+  const now = parseTime(storyTime())
+  storyNow.value = now
+  clock.value = (now && now.h != null) ? hm(now) : ''
+  dateLabel.value = (now && now.y != null)
+    ? now.mo + '月' + now.d + '日 周' + '日一二三四五六'[new Date(dayNum(now)).getUTCDay()]
+    : ''
 }
 let timer = null
 let tpStyle = null
