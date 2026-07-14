@@ -178,27 +178,45 @@
           </div>
         </template>
 
-        <!-- 好友资料页（轻量）：通讯录点联系人 / 单聊右上 ··· 打开 -->
+        <!-- 好友资料页（拟真微信）：通讯录点联系人 / 单聊右上 ··· 打开 -->
         <div v-if="profileContact" class="mp-profile">
-          <div class="mp-prof-nav"><button class="mp-nav-back" @click="closeProfile"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button></div>
-          <div class="mp-prof-hd">
-            <div class="mp-ava xl">{{ initial(displayName(profileContact)) }}</div>
-            <div class="mp-prof-info"><div class="mp-prof-nm">{{ displayName(profileContact) }}</div><div class="mp-prof-id">微信号：{{ ownerId(profileContact) }}</div></div>
+          <div class="mp-prof-nav">
+            <button class="mp-nav-back" @click="closeProfile"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
+            <span class="mp-prof-more">···</span>
           </div>
-          <div class="mp-prof-grp">
-            <div class="mp-prof-row"><span class="mp-prof-lbl">备注</span><input class="mp-prof-rmk" :value="remarks[curOwner] && remarks[curOwner][profileContact] || ''" @change="e => setRemark(profileContact, e.target.value)" placeholder="添加备注" /></div>
-            <div class="mp-prof-row"><span class="mp-prof-lbl">本名</span><span class="mp-prof-val">{{ profileContact }}</span></div>
-          </div>
-          <div class="mp-prof-grp">
-            <button class="mp-prof-act" @click="openContact(profileContact)"><span class="mp-prof-act-ico" style="background:#07c160" v-html="tabs[0].icoOn"></span>发消息</button>
-          </div>
-          <div class="mp-prof-grp">
-            <button v-if="!confirmDel" class="mp-prof-act del" @click="confirmDel = true">删除好友</button>
-            <template v-else>
-              <div class="mp-prof-confirm">删除后将清空与 {{ displayName(profileContact) }} 的聊天记录，确定？</div>
-              <button class="mp-prof-act del" @click="deleteContact(profileContact)">确定删除</button>
-              <button class="mp-prof-act" @click="confirmDel = false">取消</button>
-            </template>
+          <div class="mp-prof-body">
+            <div class="mp-prof-card">
+              <div class="mp-ava xl">{{ initial(displayName(profileContact)) }}</div>
+              <div class="mp-prof-info">
+                <div class="mp-prof-nm">{{ displayName(profileContact) }}<span v-if="remarkDraft" class="mp-prof-alias">昵称：{{ profileContact }}</span></div>
+                <div class="mp-prof-id">微信号：{{ ownerId(profileContact) }}</div>
+                <div v-if="roleInfo(profileContact)" class="mp-prof-region">{{ roleInfo(profileContact) }}</div>
+              </div>
+            </div>
+            <div class="mp-prof-sec">
+              <label class="mp-prof-row">
+                <span class="mp-prof-lbl">备注名</span>
+                <input class="mp-prof-rmk" v-model="remarkDraft" @blur="saveRemarkDraft" @keydown.enter="e => e.target.blur()" placeholder="未设置" />
+                <span class="mp-prof-arrow">›</span>
+              </label>
+              <div class="mp-prof-row"><span class="mp-prof-lbl">标签</span><span class="mp-prof-val ph">未设置</span><span class="mp-prof-arrow">›</span></div>
+            </div>
+            <div class="mp-prof-sec">
+              <div class="mp-prof-row"><span class="mp-prof-lbl">朋友圈</span><span class="mp-prof-val ph"></span><span class="mp-prof-arrow">›</span></div>
+              <div class="mp-prof-row"><span class="mp-prof-lbl">朋友权限</span><span class="mp-prof-val ph">全部</span><span class="mp-prof-arrow">›</span></div>
+            </div>
+            <div class="mp-prof-btns">
+              <button class="mp-prof-msg" @click="openContact(profileContact)"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 3c5.5 0 10 3.6 10 8s-4.5 8-10 8a11 11 0 0 1-3-.4L4 20l1.3-3.3A7.4 7.4 0 0 1 2 11c0-4.4 4.5-8 10-8"/></svg>发消息</button>
+              <button class="mp-prof-call"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M17 15.5l-2.3-.5a1 1 0 0 0-1 .3l-1 1a12 12 0 0 1-5.3-5.3l1-1a1 1 0 0 0 .3-1L7.7 6.5a1 1 0 0 0-1-.8H5a1 1 0 0 0-1 1.1A15 15 0 0 0 17.2 20a1 1 0 0 0 1.1-1v-1.7a1 1 0 0 0-.8-1z"/></svg>音视频通话</button>
+            </div>
+            <div class="mp-prof-sec">
+              <button v-if="!confirmDel" class="mp-prof-del" @click="confirmDel = true">删除联系人</button>
+              <template v-else>
+                <div class="mp-prof-confirm">删除后将同时清空与「{{ displayName(profileContact) }}」的聊天记录</div>
+                <button class="mp-prof-del" @click="deleteContact(profileContact)">确定删除</button>
+                <button class="mp-prof-cancel" @click="confirmDel = false">取消</button>
+              </template>
+            </div>
           </div>
         </div>
       </div>
@@ -246,6 +264,7 @@ const profileContact = ref('')         // 打开的好友资料页对象
 const showPlus = ref(false)            // 右上角 + 菜单
 const remarks = ref({})                // { 机主: { 联系人: 备注 } }
 const confirmDel = ref(false)          // 删除好友二次确认
+const remarkDraft = ref('')            // 资料页备注本地草稿(避免轮询覆盖输入)
 
 const doc = window.parent ? window.parent.document : document
 function TH() { return window.parent && window.parent.TavernHelper }
@@ -516,8 +535,24 @@ function openContact(c) { activeContact.value = c; const o = curOwner.value; if 
 function closeContact() { activeContact.value = ''; showEmoji.value = false; voiceMode.value = false }
 function startChat() { const n = newContact.value.trim(); if (!n) return; const o = curOwner.value; if (!logs.value[o]) logs.value[o] = {}; if (!logs.value[o][n]) { logs.value[o][n] = []; saveLogs() } newContact.value = ''; showNew.value = false; openContact(n) }
 function switchOwner(o) { activeOwner.value = o; activeContact.value = ''; wxTab.value = 'chats'; profileContact.value = '' }
-function openProfile(c) { profileContact.value = c }
-function closeProfile() { profileContact.value = '' }
+function openProfile(c) {
+  profileContact.value = c; confirmDel.value = false
+  const r = remarks.value[curOwner.value]
+  remarkDraft.value = (r && r[c]) || ''      // 打开时快照进本地 draft，轮询不再冲掉输入
+}
+function closeProfile() { profileContact.value = ''; confirmDel.value = false }
+function saveRemarkDraft() { if (profileContact.value) setRemark(profileContact.value, remarkDraft.value) }
+function roleInfo(name) {                     // 从名录读身份/来源世界丰富资料页，读不到返回空
+  try {
+    const w = window.parent
+    let sd = null
+    if (w && w.Mvu && w.Mvu.getMvuData) { const v = w.Mvu.getMvuData({ type: 'chat' }); sd = v && v.stat_data }
+    if (!sd) { const th = TH(); if (th && th.getVariables) sd = (th.getVariables({ type: 'chat' }) || {}).stat_data }
+    const rec = sd && sd.角色名录 && sd.角色名录[name]
+    if (rec) return [rec.来源世界, rec.身份].filter(Boolean).join(' · ')   // 「来源世界 · 身份」，读不到留空
+  } catch (e) {}
+  return ''
+}
 function deleteContact(c) {
   const o = curOwner.value
   if (logs.value[o]) delete logs.value[o][c]
@@ -862,33 +897,41 @@ onUnmounted(() => {
 .mp-owner-banner button{background:none;border:none;color:#576b95;font-size:12.5px;cursor:pointer;padding:0;font-family:inherit}
 .mp-owner-hd{padding:8px 14px 4px;font-size:12px;color:#9a9a9a;background:#ededed}
 
-/* 好友资料页 */
+/* 好友资料页（拟真微信） */
 .mp-profile{position:absolute;inset:0;background:#ededed;z-index:15;display:flex;flex-direction:column;animation:mp-slideL .25s ease-out}
 @keyframes mp-slideL{0%{transform:translateX(100%)}100%{transform:translateX(0)}}
-.mp-prof-nav{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#ededed;flex-shrink:0}
-.mp-prof-nav button{width:26px;height:26px;background:none;border:none;cursor:pointer;color:#0d0d0d;padding:0}
-.mp-prof-nav svg{width:22px;height:22px}
-.mp-prof-nav span{flex:1;text-align:center;font-size:16.5px;font-weight:600;color:#0d0d0d;margin-left:-26px}
-.mp-prof-body{flex:1;overflow-y:auto}
-.mp-prof-card{display:flex;align-items:center;gap:15px;padding:22px 18px;background:#fff}
-.mp-prof-info{flex:1;min-width:0}
-.mp-prof-nm{font-size:20px;font-weight:500;color:#0d0d0d}
-.mp-prof-id{font-size:13px;color:#9a9a9a;margin-top:7px}
-.mp-prof-sec{margin-top:8px;background:#fff}
-.mp-prof-row{display:flex;align-items:center;padding:12px 16px;position:relative;font-size:15px;color:#0d0d0d}
-.mp-prof-row::after{content:'';position:absolute;left:16px;right:0;bottom:0;height:1px;background:#f0f0f0}
+.mp-prof-nav{display:flex;align-items:center;justify-content:space-between;padding:8px 14px 6px;background:#ededed;flex-shrink:0}
+.mp-prof-nav .mp-nav-back{width:26px;height:26px;background:none;border:none;cursor:pointer;color:#0d0d0d;padding:0}
+.mp-prof-nav .mp-nav-back svg{width:22px;height:22px}
+.mp-prof-more{color:#0d0d0d;font-weight:700;letter-spacing:1px;font-size:17px}
+.mp-prof-body{flex:1;overflow-y:auto;background:#ededed}
+.mp-prof-body::-webkit-scrollbar{width:0}
+.mp-prof-card{display:flex;align-items:flex-start;gap:15px;padding:22px 18px 26px;background:#fff}
+.mp-prof-card .mp-ava.xl{border-radius:8px}
+.mp-prof-info{flex:1;min-width:0;padding-top:2px}
+.mp-prof-nm{font-size:21px;font-weight:600;color:#0d0d0d;display:flex;flex-direction:column;gap:3px}
+.mp-prof-alias{font-size:12.5px;color:#9a9a9a;font-weight:400}
+.mp-prof-id{font-size:13px;color:#9a9a9a;margin-top:8px}
+.mp-prof-region{font-size:13px;color:#9a9a9a;margin-top:4px}
+.mp-prof-sec{margin-top:9px;background:#fff}
+.mp-prof-row{display:flex;align-items:center;padding:13px 15px;position:relative;font-size:15.5px;color:#0d0d0d}
+.mp-prof-row::after{content:'';position:absolute;left:15px;right:0;bottom:0;height:1px;background:#f2f2f2}
 .mp-prof-row:last-child::after{display:none}
-.mp-prof-lbl{color:#0d0d0d}
-.mp-overlay .mp-prof-rmk{flex:1;margin-left:12px;border:none!important;background:transparent!important;color:#0d0d0d!important;font-size:15px;text-align:right;outline:none;font-family:inherit}
-.mp-overlay .mp-prof-rmk::placeholder{color:#b0b0b0!important}
-.mp-prof-act{margin-top:8px;background:#fff}
-.mp-prof-btn{width:100%;padding:14px;background:#fff;border:none;font-size:16px;color:#07c160;cursor:pointer;font-family:inherit}
-.mp-prof-btn.del{color:#fa5151}
-.mp-prof-btn:active{background:#e6e6e6}
-.mp-prof-confirm{padding:14px 16px;background:#fff;text-align:center}
-.mp-prof-confirm p{font-size:14px;color:#0d0d0d;margin:0 0 12px}
-.mp-prof-confirm-row{display:flex;gap:10px}
-.mp-prof-confirm button{flex:1;padding:9px;border:none;border-radius:6px;font-size:14px;cursor:pointer;font-family:inherit}
-.mp-prof-cancel{background:#e6e6e6;color:#0d0d0d}
-.mp-prof-del{background:#fa5151;color:#fff}
+.mp-prof-lbl{color:#0d0d0d;flex-shrink:0}
+.mp-overlay .mp-prof-rmk{flex:1;margin:0 8px;border:none!important;background:transparent!important;color:#0d0d0d!important;font-size:15.5px;text-align:right;outline:none;font-family:inherit;box-shadow:none!important}
+.mp-overlay .mp-prof-rmk::placeholder{color:#c4c4c4!important}
+.mp-prof-val{flex:1;text-align:right;color:#0d0d0d;margin:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mp-prof-val.ph{color:#c4c4c4}
+.mp-prof-arrow{color:#c8c8c8;font-size:16px;flex-shrink:0}
+.mp-prof-btns{margin-top:9px;background:#fff}
+.mp-prof-msg,.mp-prof-call{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;background:#fff;border:none;font-size:16px;color:#07c160;cursor:pointer;font-family:inherit;position:relative}
+.mp-prof-msg::after{content:'';position:absolute;left:15px;right:0;bottom:0;height:1px;background:#f2f2f2}
+.mp-prof-msg svg,.mp-prof-call svg{width:21px;height:21px}
+.mp-prof-call{color:#07c160}
+.mp-prof-msg:active,.mp-prof-call:active{background:#e9e9e9}
+.mp-prof-del{width:100%;padding:14px;background:#fff;border:none;font-size:16px;color:#fa5151;cursor:pointer;font-family:inherit}
+.mp-prof-del:active{background:#e9e9e9}
+.mp-prof-confirm{padding:14px 16px 10px;background:#fff;text-align:center;font-size:13.5px;color:#9a9a9a}
+.mp-prof-cancel{width:100%;padding:14px;background:#fff;border:none;border-top:1px solid #f2f2f2;font-size:16px;color:#0d0d0d;cursor:pointer;font-family:inherit}
+.mp-prof-cancel:active{background:#e9e9e9}
 </style>

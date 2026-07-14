@@ -171,9 +171,9 @@ function renderCard(card: Element, now: PT | null): void {
     return;
   }
 
-  // 卡片头：机主非本人时显示「X的微信 · 联系人」，本人则「微信 · 联系人」
+  // 卡片头永远显示机主：「机主的微信 · 联系人」（机主是本人也照显）
   const peer = card.querySelector('[class*="pm-peer"]') as HTMLElement | null;
-  if (peer) peer.textContent = (owner && owner !== meName() ? owner + '的微信 · ' : '微信 · ') + contact;
+  if (peer) peer.textContent = (owner || meName()) + '的微信 · ' + contact;
 
   const d = pdoc();
   const frag = d.createDocumentFragment();
