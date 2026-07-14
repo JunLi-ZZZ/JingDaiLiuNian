@@ -53,6 +53,7 @@
                   <template v-if="m.type === '语音'"><span class="mp-voice" :style="{ width: voiceWidth(m.text) }"><span class="mp-voice-ico"><i></i><i></i><i></i></span><span class="mp-voice-len">{{ voiceLen(m.text) }}″</span></span><span class="mp-vtext">{{ m.text }}</span></template>
                   <template v-else-if="m.type === '图片'"><span class="mp-media"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M128 128c-35 0-64 29-64 64v256c0 35 29 64 64 64h384c35 0 64-29 64-64V192c0-35-29-64-64-64zm80 80a48 48 0 110 96 48 48 0 010-96m304 240H128l96-128 64 80 80-112z"/></svg></span><span class="mp-cap">{{ m.text }}</span></template>
                   <template v-else-if="m.type === '视频'"><span class="mp-media mp-video"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M320 128a192 192 0 100 384 192 192 0 000-384m-40 120l112 72-112 72z"/></svg></span><span class="mp-cap">{{ m.text }}</span></template>
+                  <template v-else-if="m.type === '红包'"><span class="mp-rp-top"><span class="mp-rp-ico"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2m0 2v5h12V4zm6 9a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2"/></svg></span><span class="mp-rp-txt">{{ m.text || '恭喜发财，大吉大利' }}</span></span><span class="mp-rp-tag">微信红包</span></template>
                   <template v-else-if="m.type === '表情'"><img v-if="stickerUrl(m.text)" class="mp-sticker-img" :src="stickerUrl(m.text)" :alt="m.text" /><span v-else class="mp-sticker">{{ stickerFallback(m.text) }}</span></template>
                   <template v-else><span v-html="renderText(m.text)"></span></template>
                 </div>
@@ -233,6 +234,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 
 defineEmits(['close'])
+const props = defineProps({ owner: { type: String, default: '' } })   // 指定机主（状态栏点某角色手机时传入），空=看<user>自己
 
 const VAR_KEY = 'phone_logs'
 const REMARK_KEY = 'phone_remarks'
@@ -669,6 +671,7 @@ function copyStyles() {
   } catch (e) {}
 }
 onMounted(() => {
+  if (props.owner) activeOwner.value = props.owner   // 状态栏点某角色手机 → 直接定位到该机主
   copyStyles()
   tick(); loadLogs(); loadRemarks(); syncScrape()
   timer = setInterval(() => { tick(); loadLogs(); loadRemarks(); syncScrape() }, 2000)
@@ -835,6 +838,13 @@ onUnmounted(() => {
 .mp-sticker-img{max-width:110px;max-height:110px;display:block}
 .mp-bub.mt-表情{background:transparent!important;padding:2px}
 .mp-bub.mt-表情::before{display:none}
+.mp-bub.mt-红包{background:linear-gradient(160deg,#f7a34e,#f2653a)!important;padding:0!important;min-width:180px;overflow:hidden}
+.mp-bub.mt-红包::before{border-right-color:#f7a34e!important;border-left-color:#f2653a!important}
+.mp-rp-top{display:flex;align-items:center;gap:9px;padding:12px 14px}
+.mp-rp-ico{width:30px;height:30px;border-radius:50%;background:#ffdca8;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mp-rp-ico svg{width:18px;height:18px;color:#e8542f}
+.mp-rp-txt{color:#fff;font-size:14.5px;line-height:1.35}
+.mp-rp-tag{display:block;padding:5px 14px;background:rgba(0,0,0,.06);color:#ffe6c8;font-size:11px}
 .mp-typing{display:flex;gap:4px;align-items:center;padding:13px 15px;min-width:auto}
 .mp-typing span{width:6px;height:6px;border-radius:50%;background:#bbb;animation:mp-bnc 1.2s infinite}
 .mp-typing span:nth-child(2){animation-delay:.2s}.mp-typing span:nth-child(3){animation-delay:.4s}

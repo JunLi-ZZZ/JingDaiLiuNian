@@ -84,19 +84,25 @@ function buildBubble(dir: string, type: string, text: string, contact: string, o
 
   const bub = d.createElement('div');
   const isSticker = type === '表情';
-  const bg = isSticker ? 'transparent' : out ? '#95ec69' : '#fff';
-  bub.style.cssText =
-    'position:relative;max-width:66%;padding:' +
-    (isSticker ? '2px' : '9px 13px') +
-    ';border-radius:6px;font-size:15px;line-height:1.5;color:' +
-    (isSticker ? '#576b95' : '#1a1a1a') +
-    ';background:' +
-    bg +
-    ';word-break:break-word;white-space:pre-wrap;' +
-    (isSticker ? '' : 'box-shadow:0 1px 1.5px rgba(0,0,0,.08)');
+  const isPacket = type === '红包';
+  const bg = isSticker ? 'transparent' : isPacket ? '' : out ? '#95ec69' : '#fff';
+  if (isPacket) {
+    bub.style.cssText =
+      'position:relative;width:210px;border-radius:6px;overflow:hidden;background:linear-gradient(160deg,#f6ad55,#e8503a);box-shadow:0 1px 2px rgba(0,0,0,.12)';
+  } else {
+    bub.style.cssText =
+      'position:relative;max-width:66%;padding:' +
+      (isSticker ? '2px' : '9px 13px') +
+      ';border-radius:6px;font-size:15px;line-height:1.5;color:' +
+      (isSticker ? '#576b95' : '#1a1a1a') +
+      ';background:' +
+      bg +
+      ';word-break:break-word;white-space:pre-wrap;' +
+      (isSticker ? '' : 'box-shadow:0 1px 1.5px rgba(0,0,0,.08)');
+  }
 
-  // 小尾巴（表情气泡无尾巴）
-  if (!isSticker) {
+  // 小尾巴（表情/红包气泡无尾巴）
+  if (!isSticker && !isPacket) {
     const tail = d.createElement('span');
     tail.style.cssText = out
       ? 'position:absolute;top:12px;right:-10px;width:0;height:0;border:5px solid transparent;border-left-color:#95ec69'
@@ -134,6 +140,23 @@ function buildBubble(dir: string, type: string, text: string, contact: string, o
     cap.textContent = text;
     bub.appendChild(box);
     bub.appendChild(cap);
+  } else if (type === '红包') {
+    bub.style.padding = '0';
+    const top = d.createElement('span');
+    top.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px 14px 11px';
+    const coin = d.createElement('span');
+    coin.style.cssText = 'width:30px;height:30px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:5px;background:#fbe0b6';
+    coin.innerHTML = '<svg viewBox="0 0 24 24" style="width:20px;height:20px"><path fill="#f5c164" d="M12 2a10 10 0 1 0 0 20a10 10 0 0 0 0-20"/><path fill="#e8a838" d="M12 5.5c.4 0 .7.2.9.6l.9 2h1.9c.9 0 1.2 1 .5 1.5l-1.6 1.2l.6 2c.3.9-.7 1.5-1.4 1l-1.8-1.2l-1.8 1.2c-.7.5-1.7-.1-1.4-1l.6-2l-1.6-1.2c-.7-.5-.4-1.5.5-1.5h1.9l.9-2c.2-.4.5-.6.9-.6"/></svg>';
+    const cap = d.createElement('span');
+    cap.style.cssText = 'font-size:14.5px;color:#fff;line-height:1.35;word-break:break-word';
+    cap.textContent = text || '恭喜发财，大吉大利';
+    top.appendChild(coin);
+    top.appendChild(cap);
+    const foot = d.createElement('span');
+    foot.style.cssText = 'display:block;font-size:11px;color:rgba(255,255,255,.7);padding:5px 14px;border-top:1px solid rgba(255,255,255,.18)';
+    foot.textContent = '微信红包';
+    bub.appendChild(top);
+    bub.appendChild(foot);
   } else if (isSticker) {
     const m = text.match(/\[表情[：:]\s*(.*?)\]/);
     bub.appendChild(d.createTextNode(m ? '[' + m[1].trim() + ']' : text));
@@ -193,7 +216,7 @@ function renderCard(card: Element, now: PT | null): void {
     const type = (f[1] || '文字').trim() || '文字';
     const text = f.slice(2).join('|').trim();
     if (!text) return;
-    frag.appendChild(buildBubble(dir, type, text, owner, contact));
+    frag.appendChild(buildBubble(dir, type, text, contact, owner));
   });
 
   bubbles.innerHTML = '';
@@ -206,6 +229,58 @@ function renderAll(): void {
   pdoc()
     .querySelectorAll('[class*="pm-card"]:not([data-rendered])')
     .forEach(c => renderCard(c, now));
+}
+
+// 收集页面上所有卡片的参与者（机主+联系人），用于确认谁该拥有手机
+function collectParticipants(): string[] {
+  const set = new Set<string>();
+  pdoc()
+    .querySelectorAll('[class*="phone-data"]')
+    .forEach(el => {
+      const head = (el.textContent || '').trim().split('|||');
+      let owner = '', contact = '';
+      if (head.length >= 4) { owner = head[0].trim() || meName(); contact = head[1].trim(); }
+      else if (head.length === 3) { owner = meName(); contact = head[0].trim(); }
+      if (owner) set.add(owner);
+      if (contact) set.add(contact);
+    });
+  return Array.from(set);
+}
+
+// 点2c-A：参与过手机往来的角色，把「手机」补进其随身物品（幂等）。
+// 铁律：只对主角 + 已在名录的角色补写；绝不为不在名录的角色新建条目（远程只在电话那头的人就跳过）。
+function ensurePhones(): void {
+  try {
+    const w = window.parent as any;
+    if (!w || !w.Mvu || !w.Mvu.getMvuData || !w.Mvu.replaceMvuData || !w._) return;
+    const ctx = w.SillyTavern && w.SillyTavern.getContext();
+    if (!ctx || !ctx.chat || !ctx.chat.length) return;
+    const parts = collectParticipants();
+    if (!parts.length) return;
+    const mid = ctx.chat.length - 1;
+    const vars = w.Mvu.getMvuData({ type: 'message', message_id: mid });
+    if (!vars || !vars.stat_data) return;
+    const sd = vars.stat_data;
+    const me = meName();
+    const hasPhone = (items: any) => Object.keys(items || {}).some(k => /手机|手环|电话|通讯/.test(k));
+    const phoneItem = { 描述: '可收发消息的随身通讯设备', 数量: 1, 品阶: '凡品', 能力: '即时通讯' };
+    let changed = false;
+    parts.forEach(name => {
+      if (name === me) {
+        if (sd.主角 && !hasPhone(sd.主角.随身物品)) {
+          w._.set(vars, 'stat_data.主角.随身物品.手机', phoneItem);
+          changed = true;
+        }
+      } else {
+        const rec = sd.角色名录 && sd.角色名录[name];   // 只补已在名录者，不新建
+        if (rec && !hasPhone(rec.随身物品)) {
+          w._.set(vars, 'stat_data.角色名录.' + name + '.随身物品.手机', phoneItem);
+          changed = true;
+        }
+      }
+    });
+    if (changed) w.Mvu.replaceMvuData(vars, { type: 'message', message_id: mid });
+  } catch (e) { /* ignore */ }
 }
 
 $(() => {
@@ -226,6 +301,13 @@ $(() => {
       /* ignore */
     }
   });
+
+  // 生成结束后，给参与手机对话的「主角+已在名录者」补写手机进随身物品（幂等，绝不新建名录条目）
+  try {
+    eventOn(tavern_events.CHARACTER_MESSAGE_RENDERED, () => setTimeout(ensurePhones, 400));
+  } catch (err) {
+    /* ignore */
+  }
 
   const timer = setInterval(renderAll, 1200);
 

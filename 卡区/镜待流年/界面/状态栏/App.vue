@@ -128,7 +128,7 @@
                 <div
                   class="item-card"
                   :class="{ 'mirror-item': name.includes('母镜'), 'mirror-open': name.includes('母镜') && mirrorOpen, 'bestiary-item': name.includes('万象图鉴') || name.includes('手机') }"
-                  @click="name.includes('母镜') ? (mirrorOpen = !mirrorOpen) : name.includes('万象图鉴') ? (bestiaryOpen = !bestiaryOpen) : name.includes('手机') ? (phoneOpen = !phoneOpen) : (expandedItems[name] = !expandedItems[name])"
+                  @click="name.includes('母镜') ? (mirrorOpen = !mirrorOpen) : name.includes('万象图鉴') ? (bestiaryOpen = !bestiaryOpen) : name.includes('手机') ? openPhone('') : (expandedItems[name] = !expandedItems[name])"
                 >
                   <span class="item-name item-shimmer" :style="{ background: `linear-gradient(135deg, ${tierGradient(item.品阶 || '')})`, backgroundSize: '200% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }">{{ name }}</span>
                   <span class="item-tier">[{{ item.品阶 || '未评级' }}]</span>
@@ -289,11 +289,12 @@
                 <div v-if="sub(char._key + '-items')" class="sub-body">
                   <div v-if="getCharItems(char).length === 0" class="empty-hint">暂无</div>
                   <div v-for="[name, item] in getCharItems(char)" :key="name">
-                    <div class="item-card" @click="expandedItems[char._key + '-' + name] = !expandedItems[char._key + '-' + name]">
+                    <div class="item-card" :class="{ 'bestiary-item': name.includes('手机') }" @click="name.includes('手机') ? openPhone(char._key) : (expandedItems[char._key + '-' + name] = !expandedItems[char._key + '-' + name])">
                       <span class="item-name item-shimmer" :style="{ background: `linear-gradient(135deg, ${tierGradient(item.品阶 || '')})`, backgroundSize: '200% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }">{{ name }}</span>
                       <span class="item-tier">[{{ item.品阶 || '未评级' }}]</span>
                       <span v-if="item.数量" class="item-qty">×{{ item.数量 }}</span>
-                      <span class="item-expand">{{ expandedItems[char._key + '-' + name] ? '▾' : '▸' }}</span>
+                      <span v-if="name.includes('手机')" class="mirror-toggle">▸</span>
+                      <span v-else class="item-expand">{{ expandedItems[char._key + '-' + name] ? '▾' : '▸' }}</span>
                     </div>
                     <div v-if="expandedItems[char._key + '-' + name] && (item.描述 || (item.能力 && item.能力 !== '无'))" class="item-detail"><div v-if="item.描述"><span class="item-detail-label">描述</span>{{ item.描述 }}</div><div v-if="item.能力 && item.能力 !== '无'" style="padding-top:3px;margin-top:3px;border-top:1px solid var(--t-border)"><span class="item-detail-label">能力</span>{{ item.能力 }}</div></div>
                   </div>
@@ -404,7 +405,7 @@
       </div>
     </div>
     <BestiaryPanel v-if="bestiaryOpen" @close="bestiaryOpen = false" />
-    <PhonePanel v-if="phoneOpen" @close="phoneOpen = false" />
+    <PhonePanel v-if="phoneOpen" :key="phoneOwner || '__me__'" :owner="phoneOwner" @close="phoneOpen = false" />
   </div>
 </template>
 
@@ -509,6 +510,11 @@ function toggleR18() {
 const mirrorOpen = ref(false);
 const bestiaryOpen = ref(false);
 const phoneOpen = ref(false);
+const phoneOwner = ref(''); // 打开哪部手机：''=主角自己，否则为该角色名
+function openPhone(owner: string) {
+  phoneOwner.value = owner || '';
+  phoneOpen.value = true;
+}
 
 const expandedChars = ref(new Set<string>());
 const expandedSubs = ref(new Set<string>());
