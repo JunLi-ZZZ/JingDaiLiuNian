@@ -30,7 +30,7 @@
           </button>
           <button class="mp-app mp-app-dim" disabled><span class="mp-app-ico ico-cam"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M256 128l-32 48h-96c-35 0-64 29-64 64v224c0 35 29 64 64 64h384c35 0 64-29 64-64V240c0-35-29-64-64-64h-96l-32-48zm64 128a112 112 0 110 224 112 112 0 010-224"/></svg></span><span class="mp-app-lbl">相机</span></button>
           <button class="mp-app mp-app-dim" disabled><span class="mp-app-ico ico-note"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M160 64c-35 0-64 29-64 64v384c0 35 29 64 64 64h320c35 0 64-29 64-64V128c0-35-29-64-64-64zm64 128h192v48H224zm0 112h192v48H224zm0 112h128v48H224z"/></svg></span><span class="mp-app-lbl">备忘</span></button>
-          <button class="mp-app mp-app-dim" disabled><span class="mp-app-ico ico-set"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M320 208a112 112 0 100 224 112 112 0 000-224m0 64a48 48 0 110 96 48 48 0 010-96"/></svg><svg class="ico-set-gear" viewBox="0 0 640 640"><path fill="currentColor" d="M320 128l24 56 60-16 4 62 58 22-36 50 36 50-58 22-4 62-60-16-24 56-24-56-60 16-4-62-58-22 36-50-36-50 58-22 4-62 60 16z"/></svg></span><span class="mp-app-lbl">设置</span></button>
+          <button class="mp-app" @click="showPhoneSettings = true"><span class="mp-app-ico ico-set"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M320 208a112 112 0 100 224 112 112 0 000-224m0 64a48 48 0 110 96 48 48 0 010-96"/></svg><svg class="ico-set-gear" viewBox="0 0 640 640"><path fill="currentColor" d="M320 128l24 56 60-16 4 62 58 22-36 50 36 50-58 22-4 62-60-16-24 56-24-56-60 16-4-62-58-22 36-50-36-50 58-22 4-62 60 16z"/></svg></span><span class="mp-app-lbl">设置</span></button>
         </div>
       </div>
 
@@ -240,6 +240,35 @@
       </div>
       </div>
 
+      <!-- 设置总控（主屏设置 app）：各 app 纯手机模式开关集合，覆盖全屏 -->
+      <div v-if="showPhoneSettings" class="mp-setapp">
+        <div class="mp-status mp-setapp-status">
+          <span class="mp-st-time">{{ clock }}</span>
+          <span class="mp-st-ico">
+            <svg class="mp-st-sig" viewBox="0 0 640 640"><path fill="currentColor" d="M112 400h56v96h-56zm120-64h56v160h-56zm120-80h56v240h-56zm120-96h56v336h-56z"/></svg>
+            <svg class="mp-st-wifi" viewBox="0 0 640 640"><path fill="currentColor" d="M320 160c116 0 221 45 298 118l-52 54c-64-60-151-96-246-96S138 272 74 332l-52-54C99 205 204 160 320 160m0 152c58 0 111 22 150 59l-53 55c-26-24-60-38-97-38s-71 14-97 38l-53-55c39-37 92-59 150-59m0 152c20 0 38 8 51 22l-51 53l-51-53c13-14 31-22 51-22"/></svg>
+            <span class="mp-st-bat"></span>
+          </span>
+        </div>
+        <div class="mp-setapp-nav">
+          <button class="mp-nav-back" @click="showPhoneSettings = false"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
+          <span class="mp-setapp-title">设置</span>
+        </div>
+        <div class="mp-setapp-body">
+          <div class="mp-setapp-hd">纯手机模式</div>
+          <div class="mp-setapp-desc">开启后，在该应用里发消息只在手机内往来、不写进正文，AI 只以聊天对象的身份在手机里回你。适合单独把玩手机、补写消息。</div>
+          <div class="mp-setapp-sec">
+            <div v-for="a in silentApps" :key="a.k" class="mp-setapp-row" :class="{ dim: !a.ready }">
+              <span class="mp-setapp-ico" :style="{ background: a.bg }">{{ a.l.slice(0, 1) }}</span>
+              <span class="mp-setapp-lbl">{{ a.l }}<span v-if="!a.ready" class="mp-setapp-soon">未上线</span></span>
+              <button v-if="a.ready" class="mp-switch" :class="{ on: silentMap[a.k] }" @click="toggleSilentApp(a.k)"><span class="mp-switch-dot"></span></button>
+              <span v-else class="mp-setapp-arrow">›</span>
+            </div>
+          </div>
+          <div class="mp-setapp-note">后续会往手机里加入更多应用（QQ、微博、抖音等），届时都能在这里各自开关。</div>
+        </div>
+      </div>
+
       <!-- home 指示条 -->
       <div class="mp-homebar" @click="goHome"></div>
     </div>
@@ -256,12 +285,15 @@ const props = defineProps({ owner: { type: String, default: '' } })   // 指定�
 const VAR_KEY = 'phone_logs'
 const REMARK_KEY = 'phone_remarks'
 const DELETED_KEY = 'phone_deleted'    // 墓碑：{ 机主: { 联系人: true } }，删除后不被 DOM 卡片扒回
-const SILENT_KEY = 'phone_silent'      // 纯手机模式：发消息不发往正文
+const SILENT_KEY = 'phone_silent'      // 纯手机模式开关，按 app 存：{ 微信: true, QQ: false, ... }
+const CUR_APP = '微信'                  // 目前只有微信 app，将来加 QQ/B站等在此扩展
 const logs = ref({})
 const unread = ref({})
 const deleted = ref({})
-const silent = ref(false)
-const showSettings = ref(false)
+const silentMap = ref({})              // { app名: bool }
+const silent = computed(() => !!silentMap.value[CUR_APP])   // 当前微信 app 的纯手机模式
+const showSettings = ref(false)        // 微信内设置页
+const showPhoneSettings = ref(false)   // 主屏设置 app（各 app 总控）
 const view = ref('home')
 const wxTab = ref('chats')
 const discoverView = ref('list')
@@ -380,6 +412,13 @@ const meGroups = [
   [{ k: 'star', l: '收藏', bg: '#3b7cff' }, { k: 'moments', l: '朋友圈', bg: '#07c160' }, { k: 'card', l: '卡包', bg: '#f5813a' }, { k: 'emoji', l: '表情', bg: '#f5b53a' }],
   [{ k: 'settings', l: '设置', bg: '#7a8b9a' }],
 ]
+// 主屏「设置」总控里可切纯手机模式的 app（将来加 QQ/B站/微博等在此登记；ready:false 为占位未上线）
+const silentApps = [
+  { k: '微信', l: '微信', bg: 'linear-gradient(160deg,#4ade80,#07c160)', ready: true },
+  { k: 'QQ', l: 'QQ', bg: 'linear-gradient(160deg,#4aa3ff,#0a72e6)', ready: false },
+  { k: '微博', l: '微博', bg: 'linear-gradient(160deg,#ff9a3d,#e6482e)', ready: false },
+  { k: '抖音', l: '抖音', bg: 'linear-gradient(160deg,#333,#000)', ready: false },
+]
 
 const curOwner = computed(() => activeOwner.value || meName.value)      // 当前机主
 const owners = computed(() => Object.keys(logs.value))                  // 存在的机主列表
@@ -487,7 +526,9 @@ function loadLogs() {
     const v = th.getVariables({ type: 'chat' }) || {}
     if (v[VAR_KEY] && typeof v[VAR_KEY] === 'object') logs.value = migrate(v[VAR_KEY])
     if (v[DELETED_KEY] && typeof v[DELETED_KEY] === 'object') deleted.value = v[DELETED_KEY]
-    if (typeof v[SILENT_KEY] === 'boolean') silent.value = v[SILENT_KEY]
+    const sv = v[SILENT_KEY]
+    if (typeof sv === 'boolean') silentMap.value = { [CUR_APP]: sv }        // 旧布尔 → 迁移成按 app
+    else if (sv && typeof sv === 'object') silentMap.value = sv
   } catch (e) {}
 }
 function migrate(data) {                         // 旧格式 {联系人:[消息]} → 新格式 {机主:{联系人:[消息]}}
@@ -517,7 +558,7 @@ function putVar(key, val) {
 }
 function saveLogs() { putVar(VAR_KEY, logs.value) }
 function saveDeleted() { putVar(DELETED_KEY, deleted.value) }
-function saveSilent() { putVar(SILENT_KEY, silent.value) }
+function saveSilent() { putVar(SILENT_KEY, silentMap.value) }
 function delKey(o, c) { return o + '→' + c } //+ '' + c }
 function isDeleted(o, c) { return !!deleted.value[delKey(o, c)] }
 const swapDir = d => (d === '发出' ? '收到' : d === '收到' ? '发出' : d)
@@ -575,7 +616,7 @@ function openWeChat() { view.value = 'wechat'; wxTab.value = 'chats'; activeCont
 function toggleSearch() { showSearch.value = !showSearch.value; showNew.value = false; if (!showSearch.value) searchQuery.value = '' }
 function togglePlus() { showPlus.value = !showPlus.value; showSearch.value = false }
 function startAddFriend() { showPlus.value = false; showNew.value = true; showSearch.value = false }
-function goHome() { if (activeContact.value) closeContact(); else view.value = 'home' }
+function goHome() { if (showPhoneSettings.value) { showPhoneSettings.value = false; return } if (activeContact.value) closeContact(); else view.value = 'home' }
 function openContact(c) { activeContact.value = c; const o = curOwner.value; if (unread.value[o]) unread.value[o][c] = 0; showEmoji.value = false; profileContact.value = ''; scrollDown() }
 function closeContact() { activeContact.value = ''; showEmoji.value = false; voiceMode.value = false }
 function startChat() {
@@ -676,6 +717,36 @@ function ingestPhoneReply(replyText, owner, contact, time) {
   return n
 }
 
+// 手机一条消息转成给 AI 看的文字：非文字类型标注出来
+function msgToLine(m) {
+  const t = m.type && m.type !== '文字' ? `[${m.type}]` : ''
+  return t + (m.type === '表情' ? stickerFallback(m.text) : (m.text || ''))
+}
+// 纯手机模式上下文：当前联系人的手机对话（近若干条）+ 少量正文楼层背景，转成 chat_history prompts
+function buildSilentHistory(owner, contact) {
+  const prompts = []
+  // 少量正文楼层作背景（取最近 3 楼可见消息），让 AI 知道当前剧情处境
+  try {
+    const th = TH()
+    if (th && th.getChatMessages) {
+      const msgs = th.getChatMessages('-3--1', { hide_state: 'unhidden' }) || []
+      msgs.forEach(mm => {
+        const body = String(mm.message || '').replace(/<[^>]+>[\s\S]*?<\/[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 600)
+        if (body) prompts.push({ role: mm.role === 'user' ? 'user' : 'assistant', content: body })
+      })
+    }
+  } catch (e) {}
+  if (prompts.length) prompts.unshift({ role: 'system', content: `以下几条是「${contact}」相关的当前剧情正文背景，仅供了解处境，回复时不要复述：` })
+  // 手机对话历史：发出=owner(user)、收到=contact(assistant)，取最近 24 条
+  const arr = (logs.value[owner] && logs.value[owner][contact]) || []
+  const recent = arr.slice(-24)
+  if (recent.length) {
+    prompts.push({ role: 'system', content: `以下是「${owner === meName.value ? meName.value : owner}」与「${contact}」的手机聊天记录：` })
+    recent.forEach(m => prompts.push({ role: m.dir === '发出' ? 'user' : 'assistant', content: msgToLine(m) }))
+  }
+  return prompts
+}
+
 async function silentReply(owner, contact, myText) {
   const th = TH()
   if (!th || !th.generate) { showToast('当前环境不支持纯手机模式生成'); return }
@@ -687,13 +758,14 @@ async function silentReply(owner, contact, myText) {
   const instruction =
     `【纯手机模式·仅手机回复】现在只模拟一次手机聊天，不要输出任何正文、旁白、场景或动作描写。` +
     `${ownerLabel}刚用手机给「${contact}」发送了：「${myText}」。` +
-    `请以「${contact}」的身份、按其性格与当前处境，回复这条手机消息。` +
+    `请以「${contact}」的身份、结合上面的手机聊天记录与其性格、当前处境，回复这条手机消息。` +
     `只输出一个 <手机> 块，联系人写「${contact}」，块内体行格式为「方向|类型|内容」，方向用“收到”表示${contact}发来的、“发出”表示${ownerLabel}发出的，类型取 文字/语音/图片/表情/红包 之一。除这个块外不要输出任何其它文字。`
   try {
+    const history = buildSilentHistory(owner, contact)
     const result = await th.generate({
       user_input: instruction,
       should_silence: true,
-      injects: [{ role: 'system', content: instruction, position: 'in_chat', depth: 0, should_scan: true }],
+      overrides: { chat_history: { with_depth_entries: true, prompts: history } },
     })
     const replyText = typeof result === 'string' ? result : (result && result.content) || ''
     const got = ingestPhoneReply(replyText, owner, contact, storyTime())
@@ -706,7 +778,8 @@ async function silentReply(owner, contact, myText) {
     silentBusy.value = false
   }
 }
-function toggleSilent() { silent.value = !silent.value; saveSilent() }
+function toggleSilentApp(app) { silentMap.value = { ...silentMap.value, [app]: !silentMap.value[app] }; saveSilent() }
+function toggleSilent() { toggleSilentApp(CUR_APP) }
 
 function tick() {                              // 时钟/日期一律取剧情时间，取不到留空（不显示真实时间）
   const now = parseTime(storyTime())
@@ -1069,4 +1142,24 @@ onUnmounted(() => {
 .mp-switch-dot{position:absolute;top:2px;left:2px;width:23px;height:23px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:left .2s}
 .mp-switch.on .mp-switch-dot{left:21px}
 .mp-set-note{padding:14px 18px;font-size:12px;color:#9a9a9a;line-height:1.6}
+
+/* 设置总控（主屏设置 app），iOS 风格 */
+.mp-setapp{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;background:#efeff4;border-radius:33px;overflow:hidden;animation:mp-slidein .28s ease-out}
+@keyframes mp-slidein{0%{transform:translateX(24px);opacity:.4}100%{transform:translateX(0);opacity:1}}
+.mp-setapp-status{color:#111}
+.mp-setapp-nav{display:flex;align-items:center;position:relative;padding:4px 12px 12px;background:#efeff4}
+.mp-setapp-title{flex:1;text-align:center;font-size:17px;font-weight:600;color:#0d0d0d;margin-left:-26px}
+.mp-setapp-body{flex:1;overflow-y:auto;padding-bottom:20px}
+.mp-setapp-body::-webkit-scrollbar{width:0}
+.mp-setapp-hd{padding:16px 18px 8px;font-size:13px;color:#8a8a8e;letter-spacing:.3px}
+.mp-setapp-desc{padding:0 18px 14px;font-size:12.5px;color:#8a8a8e;line-height:1.65}
+.mp-setapp-sec{background:#fff;border-top:1px solid #e2e2e6;border-bottom:1px solid #e2e2e6}
+.mp-setapp-row{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid #f0f0f2}
+.mp-setapp-row:last-child{border-bottom:none}
+.mp-setapp-row.dim{opacity:.6}
+.mp-setapp-ico{flex-shrink:0;width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.mp-setapp-lbl{flex:1;font-size:15.5px;color:#0d0d0d;display:flex;align-items:center;gap:8px}
+.mp-setapp-soon{font-size:11px;color:#b0b0b4;background:#f0f0f2;border-radius:4px;padding:1px 6px}
+.mp-setapp-arrow{color:#c4c4c8;font-size:19px}
+.mp-setapp-note{padding:16px 18px;font-size:12px;color:#a0a0a4;line-height:1.6}
 </style>
