@@ -166,7 +166,7 @@
                 </div>
               </div>
               <div v-for="(g, gi) in meGroups" :key="gi" class="mp-disc-group">
-                <div v-for="r in g" :key="r.k" class="mp-disc-row dim"><span class="mp-disc-ico" :style="{ background: r.bg }" v-html="ic[r.k]"></span><span class="mp-disc-lbl">{{ r.l }}</span><span class="mp-disc-arrow">›</span></div>
+                <div v-for="r in g" :key="r.k" class="mp-disc-row" :class="{ dim: r.k !== 'settings' }" @click="r.k === 'settings' && (showSettings = true)"><span class="mp-disc-ico" :style="{ background: r.bg }" v-html="ic[r.k]"></span><span class="mp-disc-lbl">{{ r.l }}</span><span class="mp-disc-arrow">›</span></div>
               </div>
             </template>
           </div>
@@ -220,6 +220,23 @@
             </div>
           </div>
         </div>
+
+        <!-- 设置页：我tab点设置打开 -->
+        <div v-if="showSettings" class="mp-profile">
+          <div class="mp-prof-nav">
+            <button class="mp-nav-back" @click="showSettings = false"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
+            <span class="mp-set-title">设置</span>
+          </div>
+          <div class="mp-prof-body">
+            <div class="mp-prof-sec">
+              <div class="mp-set-row">
+                <div class="mp-set-txt"><div class="mp-set-lbl">纯手机模式</div><div class="mp-set-sub">开启后在手机里发消息只留痕、不发往正文，也不触发回复</div></div>
+                <button class="mp-switch" :class="{ on: silent }" @click="toggleSilent"><span class="mp-switch-dot"></span></button>
+              </div>
+            </div>
+            <div class="mp-set-note">纯手机模式适合单纯把玩手机、补写历史消息；关闭后恢复正常（发消息会推进剧情）。</div>
+          </div>
+        </div>
       </div>
       </div>
 
@@ -238,8 +255,13 @@ const props = defineProps({ owner: { type: String, default: '' } })   // 指定�
 
 const VAR_KEY = 'phone_logs'
 const REMARK_KEY = 'phone_remarks'
+const DELETED_KEY = 'phone_deleted'    // 墓碑：{ 机主: { 联系人: true } }，删除后不被 DOM 卡片扒回
+const SILENT_KEY = 'phone_silent'      // 纯手机模式：发消息不发往正文
 const logs = ref({})
 const unread = ref({})
+const deleted = ref({})
+const silent = ref(false)
+const showSettings = ref(false)
 const view = ref('home')
 const wxTab = ref('chats')
 const discoverView = ref('list')
@@ -466,6 +488,8 @@ function loadLogs() {
   try {
     const v = th.getVariables({ type: 'chat' }) || {}
     if (v[VAR_KEY] && typeof v[VAR_KEY] === 'object') logs.value = migrate(v[VAR_KEY])
+    if (v[DELETED_KEY] && typeof v[DELETED_KEY] === 'object') deleted.value = v[DELETED_KEY]
+    if (typeof v[SILENT_KEY] === 'boolean') silent.value = v[SILENT_KEY]
   } catch (e) {}
 }
 function migrate(data) {                         // 旧格式 {联系人:[消息]} → 新格式 {机主:{联系人:[消息]}}
@@ -484,10 +508,38 @@ function saveLogs() {
   const th = TH(); if (!th || !th.insertOrAssignVariables) return
   try { th.insertOrAssignVariables({ [VAR_KEY]: logs.value }, { type: 'chat' }) } catch (e) {}
 }
-function appendMsg(owner, contact, msg) {
+function saveDeleted() {
+  const th = TH(); if (!th || !th.insertOrAssignVariables) return
+  try { th.insertOrAssignVariables({ [DELETED_KEY]: deleted.value }, { type: 'chat' }) } catch (e) {}
+}
+function saveSilent() {
+  const th = TH(); if (!th || !th.insertOrAssignVariables) return
+  try { th.insertOrAssignVariables({ [SILENT_KEY]: silent.value }, { type: 'chat' }) } catch (e) {}
+}
+function delKey(o, c) { return [o, c].join(String.fromCharCode(1)) } //+ '' + c }
+function isDeleted(o, c) { return !!deleted.value[delKey(o, c)] }
+const swapDir = d => (d === '发出' ? '收到' : d === '收到' ? '发出' : d)
+
+// 往 logs[owner][contact] 写一条（墓碑跳过、按内容去重、仅自己手机计未读）。返回是否有变化。
+function putMsg(owner, contact, msg, countUnread) {
+  if (!owner || !contact || isDeleted(owner, contact)) return false
   if (!logs.value[owner]) logs.value[owner] = {}
   if (!logs.value[owner][contact]) logs.value[owner][contact] = []
-  logs.value[owner][contact].push(msg); saveLogs(); scrollDown()
+  const arr = logs.value[owner][contact]
+  const sig = msg.dir + '|' + (msg.type || '文字') + '|' + msg.text   // 忽略时间去重，兼容乐观写/镜像重复
+  if (arr.some(m => (m.dir + '|' + (m.type || '文字') + '|' + m.text) === sig)) return false
+  arr.push(msg)
+  if (countUnread && msg.dir === '收到' && owner === meName.value && activeContact.value !== contact) {
+    if (!unread.value[owner]) unread.value[owner] = {}
+    unread.value[owner][contact] = (unread.value[owner][contact] || 0) + 1
+  }
+  return true
+}
+// 双向写入：一次往来同时落在机主与联系人两部手机上，方向对调（点1）
+function putBoth(owner, contact, msg) {
+  let ch = putMsg(owner, contact, msg, true)
+  ch = putMsg(contact, owner, { ...msg, dir: swapDir(msg.dir) }, true) || ch
+  return ch
 }
 
 function syncScrape() {
@@ -505,24 +557,13 @@ function syncScrape() {
       owner = me; contact = head[0].trim(); time = head[1].trim(); blob = head[2]
     } else return
     if (!contact) return
-    if (!logs.value[owner]) logs.value[owner] = {}
-    if (!logs.value[owner][contact]) logs.value[owner][contact] = []
-    const arr = logs.value[owner][contact]
     blob.split(/(?=(?:发出|收到)\|)/).forEach(line => {   // 在发出|/收到|前断开，兼容换行被吃成<br>的情况
       const ln = line.trim(); if (!ln) return
       const f = ln.split('|')              // 方向|类型|内容（方向相对机主）
       if (f.length < 3) return
       const dir = f[0].trim(), type = (f[1] || '文字').trim() || '文字', text = f.slice(2).join('|').trim()
       if (!dir || !text) return
-      const sig = dir + '|' + type + '|' + text   // 忽略时间去重，避免与乐观写的发出重复
-      if (!arr.some(m => (m.dir + '|' + (m.type || '文字') + '|' + m.text) === sig)) {
-        arr.push({ dir, type, text, time })
-        if (dir === '收到' && owner === me && activeContact.value !== contact) {   // 仅自己手机计未读
-          if (!unread.value[owner]) unread.value[owner] = {}
-          unread.value[owner][contact] = (unread.value[owner][contact] || 0) + 1
-        }
-        changed = true
-      }
+      if (putBoth(owner, contact, { dir, type, text, time })) changed = true
     })
   })
   if (changed) saveLogs()
@@ -535,7 +576,14 @@ function startAddFriend() { showPlus.value = false; showNew.value = true; showSe
 function goHome() { if (activeContact.value) closeContact(); else view.value = 'home' }
 function openContact(c) { activeContact.value = c; const o = curOwner.value; if (unread.value[o]) unread.value[o][c] = 0; showEmoji.value = false; profileContact.value = ''; scrollDown() }
 function closeContact() { activeContact.value = ''; showEmoji.value = false; voiceMode.value = false }
-function startChat() { const n = newContact.value.trim(); if (!n) return; const o = curOwner.value; if (!logs.value[o]) logs.value[o] = {}; if (!logs.value[o][n]) { logs.value[o][n] = []; saveLogs() } newContact.value = ''; showNew.value = false; openContact(n) }
+function startChat() {
+  const n = newContact.value.trim(); if (!n) return
+  const o = curOwner.value
+  delete deleted.value[delKey(o, n)]; delete deleted.value[delKey(n, o)]; saveDeleted()   // 重新发起→清墓碑
+  if (!logs.value[o]) logs.value[o] = {}
+  if (!logs.value[o][n]) { logs.value[o][n] = []; saveLogs() }
+  newContact.value = ''; showNew.value = false; openContact(n)
+}
 function switchOwner(o) { activeOwner.value = o; activeContact.value = ''; wxTab.value = 'chats'; profileContact.value = '' }
 function openProfile(c) {
   profileContact.value = c; confirmDel.value = false
@@ -558,9 +606,11 @@ function roleInfo(name) {                     // 从名录读身份/来源世界
 function deleteContact(c) {
   const o = curOwner.value
   if (logs.value[o]) delete logs.value[o][c]
+  if (logs.value[c]) delete logs.value[c][o]            // 连镜像一并删
   if (unread.value[o]) delete unread.value[o][c]
   if (remarks.value[o]) { delete remarks.value[o][c]; saveRemarks() }
-  saveLogs(); profileContact.value = ''; activeContact.value = ''; confirmDel.value = false
+  deleted.value[delKey(o, c)] = 1; deleted.value[delKey(c, o)] = 1   // 双向墓碑，syncScrape 不再从卡片复活
+  saveDeleted(); saveLogs(); profileContact.value = ''; activeContact.value = ''; confirmDel.value = false
 }
 function scrollDown() { nextTick(() => { if (scrollEl.value) scrollEl.value.scrollTop = scrollEl.value.scrollHeight }) }
 
@@ -572,8 +622,10 @@ function send() {
   const text = draft.value.trim(); const contact = activeContact.value; const owner = curOwner.value
   if (!text || !contact || sendingContact.value) return
   const time = storyTime()
-  appendMsg(owner, contact, { dir: '发出', type: '文字', text, time }); draft.value = ''; scrollDown()
-  // 把发出内容追加进酒馆主输入框并自动发送，AI 在正文里回 <手机> 块，syncScrape 再拉回收到
+  putBoth(owner, contact, { dir: '发出', type: '文字', text, time }); saveLogs(); draft.value = ''; scrollDown()
+  // 纯手机模式：只在手机里留痕，不追加进正文、不触发生成（相当于单纯把玩手机）
+  if (silent.value) return
+  // 常规：把发出内容追加进酒馆主输入框并自动发送，AI 在正文里回 <手机> 块，syncScrape 再拉回收到
   let sent = false
   try {
     const ta = doc.querySelector('#send_textarea')
@@ -594,6 +646,7 @@ function send() {
     showToast('未能自动发送，请在输入框手动发送')
   }
 }
+function toggleSilent() { silent.value = !silent.value; saveSilent() }
 
 function tick() {                              // 时钟/日期一律取剧情时间，取不到留空（不显示真实时间）
   const now = parseTime(storyTime())
@@ -944,4 +997,16 @@ onUnmounted(() => {
 .mp-prof-confirm{padding:14px 16px 10px;background:#fff;text-align:center;font-size:13.5px;color:#9a9a9a}
 .mp-prof-cancel{width:100%;padding:14px;background:#fff;border:none;border-top:1px solid #f2f2f2;font-size:16px;color:#0d0d0d;cursor:pointer;font-family:inherit}
 .mp-prof-cancel:active{background:#e9e9e9}
+
+/* 设置页 */
+.mp-set-title{flex:1;text-align:center;font-size:16.5px;font-weight:600;color:#0d0d0d;margin-left:-26px}
+.mp-set-row{display:flex;align-items:center;gap:12px;padding:13px 16px}
+.mp-set-txt{flex:1;min-width:0}
+.mp-set-lbl{font-size:15.5px;color:#0d0d0d}
+.mp-set-sub{font-size:12px;color:#9a9a9a;margin-top:4px;line-height:1.4}
+.mp-switch{flex-shrink:0;width:46px;height:27px;border:none;border-radius:14px;background:#c8c8ca;cursor:pointer;padding:0;position:relative;transition:background .2s}
+.mp-switch.on{background:#07c160}
+.mp-switch-dot{position:absolute;top:2px;left:2px;width:23px;height:23px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:left .2s}
+.mp-switch.on .mp-switch-dot{left:21px}
+.mp-set-note{padding:14px 18px;font-size:12px;color:#9a9a9a;line-height:1.6}
 </style>
