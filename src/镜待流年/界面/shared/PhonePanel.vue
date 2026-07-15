@@ -289,6 +289,7 @@ const showPlus = ref(false)            // 右上角 + 菜单
 const remarks = ref({})                // { 机主: { 联系人: 备注 } }
 const confirmDel = ref(false)          // 删除好友二次确认
 const remarkDraft = ref('')            // 资料页备注本地草稿(避免轮询覆盖输入)
+const silentBusy = ref(false)          // 纯手机模式生成中，抑制 onGenEnded 通用回收
 
 const doc = window.parent ? window.parent.document : document
 function TH() { return window.parent && window.parent.TavernHelper }
@@ -478,10 +479,7 @@ function loadRemarks() {
   const th = TH(); if (!th || !th.getVariables) return
   try { const v = th.getVariables({ type: 'chat' }) || {}; if (v[REMARK_KEY] && typeof v[REMARK_KEY] === 'object') remarks.value = v[REMARK_KEY] } catch (e) {}
 }
-function saveRemarks() {
-  const th = TH(); if (!th || !th.insertOrAssignVariables) return
-  try { th.insertOrAssignVariables({ [REMARK_KEY]: remarks.value }, { type: 'chat' }) } catch (e) {}
-}
+function saveRemarks() { putVar(REMARK_KEY, remarks.value) }
 
 function loadLogs() {
   const th = TH(); if (!th || !th.getVariables) return
@@ -504,19 +502,23 @@ function migrate(data) {                         // 旧格式 {联系人:[消息
   out[me] = { ...(out[me] || {}), ...moved }
   return out
 }
-function saveLogs() {
-  const th = TH(); if (!th || !th.insertOrAssignVariables) return
-  try { th.insertOrAssignVariables({ [VAR_KEY]: logs.value }, { type: 'chat' }) } catch (e) {}
+// 用 replaceVariables 整体覆盖该 key，避免 insertOrAssign 深合并导致删除的联系人被旧值复活
+function putVar(key, val) {
+  const th = TH(); if (!th) return
+  try {
+    if (th.replaceVariables && th.getVariables) {
+      const all = th.getVariables({ type: 'chat' }) || {}
+      all[key] = val
+      th.replaceVariables(all, { type: 'chat' })
+    } else if (th.insertOrAssignVariables) {
+      th.insertOrAssignVariables({ [key]: val }, { type: 'chat' })
+    }
+  } catch (e) {}
 }
-function saveDeleted() {
-  const th = TH(); if (!th || !th.insertOrAssignVariables) return
-  try { th.insertOrAssignVariables({ [DELETED_KEY]: deleted.value }, { type: 'chat' }) } catch (e) {}
-}
-function saveSilent() {
-  const th = TH(); if (!th || !th.insertOrAssignVariables) return
-  try { th.insertOrAssignVariables({ [SILENT_KEY]: silent.value }, { type: 'chat' }) } catch (e) {}
-}
-function delKey(o, c) { return [o, c].join(String.fromCharCode(1)) } //+ '' + c }
+function saveLogs() { putVar(VAR_KEY, logs.value) }
+function saveDeleted() { putVar(DELETED_KEY, deleted.value) }
+function saveSilent() { putVar(SILENT_KEY, silent.value) }
+function delKey(o, c) { return o + '→' + c } //+ '' + c }
 function isDeleted(o, c) { return !!deleted.value[delKey(o, c)] }
 const swapDir = d => (d === '发出' ? '收到' : d === '收到' ? '发出' : d)
 
@@ -623,8 +625,8 @@ function send() {
   if (!text || !contact || sendingContact.value) return
   const time = storyTime()
   putBoth(owner, contact, { dir: '发出', type: '文字', text, time }); saveLogs(); draft.value = ''; scrollDown()
-  // 纯手机模式：只在手机里留痕，不追加进正文、不触发生成（相当于单纯把玩手机）
-  if (silent.value) return
+  // 纯手机模式：不进正文楼层，静默让 AI 只在手机里回一段 <手机> 块（类似镜渡生成）
+  if (silent.value) { silentReply(owner, contact, text); return }
   // 常规：把发出内容追加进酒馆主输入框并自动发送，AI 在正文里回 <手机> 块，syncScrape 再拉回收到
   let sent = false
   try {
@@ -644,6 +646,64 @@ function send() {
     sendTimer = setTimeout(() => { if (sendingContact.value === contact) { sendingContact.value = ''; showToast('等待回复超时') } }, 90000)
   } else {
     showToast('未能自动发送，请在输入框手动发送')
+  }
+}
+
+// 从 AI 回复文本里抽取 <手机> 块的体行，写进双方手机；返回落库消息数
+function ingestPhoneReply(replyText, owner, contact, time) {
+  const blocks = String(replyText).match(/<手机>([\s\S]*?)<\/手机>/gi) || []
+  let n = 0
+  const handle = blob => {
+    blob.split(/(?=(?:发出|收到)\|)/).forEach(line => {
+      const ln = line.trim(); if (!ln) return
+      const f = ln.split('|'); if (f.length < 3) return
+      const dir = f[0].trim(), type = (f[1] || '文字').trim() || '文字', tx = f.slice(2).join('|').trim()
+      if (!dir || !tx) return
+      if (putBoth(owner, contact, { dir, type, text: tx, time })) n++
+    })
+  }
+  if (blocks.length) {
+    blocks.forEach(b => {
+      const inner = b.replace(/<\/?手机>/gi, '')
+      const bodyStart = inner.search(/(?:发出|收到)\|/)
+      handle(bodyStart >= 0 ? inner.slice(bodyStart) : inner)   // 跳过块内的 机主:/联系人:/时间: 头
+    })
+  } else {
+    // AI 没按格式包块：把整段回复当作对方发来的一条文字
+    const clean = String(replyText).replace(/<[^>]+>/g, '').trim()
+    if (clean) { if (putBoth(owner, contact, { dir: '收到', type: '文字', text: clean, time })) n++ }
+  }
+  return n
+}
+
+async function silentReply(owner, contact, myText) {
+  const th = TH()
+  if (!th || !th.generate) { showToast('当前环境不支持纯手机模式生成'); return }
+  silentBusy.value = true
+  sendingContact.value = contact
+  clearTimeout(sendTimer)
+  sendTimer = setTimeout(() => { if (sendingContact.value === contact) { sendingContact.value = ''; showToast('等待回复超时') } }, 90000)
+  const ownerLabel = owner === meName.value ? `${meName.value}（我）` : owner
+  const instruction =
+    `【纯手机模式·仅手机回复】现在只模拟一次手机聊天，不要输出任何正文、旁白、场景或动作描写。` +
+    `${ownerLabel}刚用手机给「${contact}」发送了：「${myText}」。` +
+    `请以「${contact}」的身份、按其性格与当前处境，回复这条手机消息。` +
+    `只输出一个 <手机> 块，联系人写「${contact}」，块内体行格式为「方向|类型|内容」，方向用“收到”表示${contact}发来的、“发出”表示${ownerLabel}发出的，类型取 文字/语音/图片/表情/红包 之一。除这个块外不要输出任何其它文字。`
+  try {
+    const result = await th.generate({
+      user_input: instruction,
+      should_silence: true,
+      injects: [{ role: 'system', content: instruction, position: 'in_chat', depth: 0, should_scan: true }],
+    })
+    const replyText = typeof result === 'string' ? result : (result && result.content) || ''
+    const got = ingestPhoneReply(replyText, owner, contact, storyTime())
+    saveLogs(); scrollDown()
+    if (!got) showToast('未能解析到手机回复')
+  } catch (e) {
+    showToast('生成失败：' + ((e && e.message) || e))
+  } finally {
+    if (sendingContact.value === contact) { sendingContact.value = ''; clearTimeout(sendTimer) }
+    silentBusy.value = false
   }
 }
 function toggleSilent() { silent.value = !silent.value; saveSilent() }
@@ -678,11 +738,11 @@ function hookGen() {
     if (!ctx || !ctx.eventSource || !ctx.eventTypes) return
     genCtx = ctx
     onGenEnded = () => {
-      if (!sendingContact.value) return
+      if (silentBusy.value || !sendingContact.value) return   // 纯手机模式由 silentReply 自行落库/清态
       setTimeout(() => { loadLogs(); syncScrape(); sendingContact.value = ''; clearTimeout(sendTimer) }, 250)
     }
     onGenStopped = () => {
-      if (!sendingContact.value) return
+      if (silentBusy.value || !sendingContact.value) return
       sendingContact.value = ''; clearTimeout(sendTimer); showToast('消息发送失败，请重试')
     }
     ctx.eventSource.on(ctx.eventTypes.GENERATION_ENDED, onGenEnded)
