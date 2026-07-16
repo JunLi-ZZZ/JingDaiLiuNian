@@ -683,7 +683,7 @@ function markFailed(ref) { const m = findBySid(ref); if (m && m.status === 'pend
 function clearPending() { markSent(pendingRef); pendingRef = null }
 
 function send(retryText) {
-  const text = (retryText != null ? retryText : draft.value).trim()
+  const text = (typeof retryText === 'string' ? retryText : draft.value).trim()
   const contact = activeContact.value; const owner = curOwner.value
   if (!text || !contact || sendingContact.value) return
   const time = storyTime()

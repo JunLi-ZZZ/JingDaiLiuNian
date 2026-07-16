@@ -263,7 +263,7 @@ function ensurePhones(): void {
     const sd = vars.stat_data;
     const me = meName();
     const hasPhone = (items: any) => Object.keys(items || {}).some(k => /手机|手环|电话|通讯/.test(k));
-    const phoneItem = { 描述: '可收发消息的随身通讯设备', 数量: 1, 品阶: '凡品', 能力: '即时通讯' };
+    const phoneItem = { 描述: '可收发消息的随身通讯设备', 数量: 1, 品阶: '普通', 能力: '即时通讯' };
     let changed = false;
     parts.forEach(name => {
       if (name === me) {
