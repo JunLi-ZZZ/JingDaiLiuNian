@@ -49,6 +49,8 @@
               <div v-if="showSep(i)" class="mp-timesep"><span>{{ fmtTime(m.time) }}</span></div>
               <div :class="['mp-row', m.dir === '发出' ? 'out' : 'in']">
                 <div class="mp-ava">{{ initial(m.dir === '发出' ? curOwner : activeContact) }}</div>
+                <button v-if="m.status === 'failed'" class="mp-fail" title="发送失败，点击重发" @click="resend(m)">!</button>
+                <span v-else-if="m.status === 'pending'" class="mp-pending"></span>
                 <div :class="['mp-bub', 'mt-' + (m.type || '文字')]">
                   <template v-if="m.type === '语音'"><span class="mp-voice" :style="{ width: voiceWidth(m.text) }"><span class="mp-voice-ico"><i></i><i></i><i></i></span><span class="mp-voice-len">{{ voiceLen(m.text) }}″</span></span><span class="mp-vtext">{{ m.text }}</span></template>
                   <template v-else-if="m.type === '图片'"><span class="mp-media"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M128 128c-35 0-64 29-64 64v256c0 35 29 64 64 64h384c35 0 64-29 64-64V192c0-35-29-64-64-64zm80 80a48 48 0 110 96 48 48 0 010-96m304 240H128l96-128 64 80 80-112z"/></svg></span><span class="mp-cap">{{ m.text }}</span></template>
@@ -661,13 +663,36 @@ function toggleEmoji() { showEmoji.value = !showEmoji.value; if (showEmoji.value
 function insertEmoji(ch) { draft.value += ch }
 function backspaceEmoji() { draft.value = Array.from(draft.value).slice(0, -1).join('') }
 
-function send() {
-  const text = draft.value.trim(); const contact = activeContact.value; const owner = curOwner.value
+// 乐观写一条"发出"到自己手机并标 pending。用 sid 定位（轮询 loadLogs 会整体替换 logs.value，不能持对象引用）。失败的消息不镜像给对方。
+function putPending(owner, contact, text, type, time) {
+  if (!logs.value[owner]) logs.value[owner] = {}
+  if (!logs.value[owner][contact]) logs.value[owner][contact] = []
+  const sid = 's' + Date.now() + Math.random().toString(36).slice(2, 6)
+  const msg = { dir: '发出', type: type || '文字', text, time, status: 'pending', sid }
+  logs.value[owner][contact].push(msg)
+  pendingRef = { owner, contact, sid }
+  return sid
+}
+function findBySid(ref) {                       // 在当前 logs.value 里按 sid 找回那条（跨轮询替换后仍有效）
+  if (!ref) return null
+  const arr = logs.value[ref.owner] && logs.value[ref.owner][ref.contact]
+  return arr ? arr.find(m => m.sid === ref.sid) : null
+}
+function markSent(ref) { const m = findBySid(ref); if (m && m.status === 'pending') { delete m.status; delete m.sid; saveLogs() } }
+function markFailed(ref) { const m = findBySid(ref); if (m && m.status === 'pending') { m.status = 'failed'; saveLogs() } }
+function clearPending() { markSent(pendingRef); pendingRef = null }
+
+function send(retryText) {
+  const text = (retryText != null ? retryText : draft.value).trim()
+  const contact = activeContact.value; const owner = curOwner.value
   if (!text || !contact || sendingContact.value) return
   const time = storyTime()
-  putBoth(owner, contact, { dir: '发出', type: '文字', text, time }); saveLogs(); draft.value = ''; scrollDown()
+  const sid = putPending(owner, contact, text, '文字', time); saveLogs()
+  const pref = { owner, contact, sid }
+  if (retryText == null) draft.value = ''
+  scrollDown()
   // 纯手机模式：不进正文楼层，静默让 AI 只在手机里回一段 <手机> 块（类似镜渡生成）
-  if (silent.value) { silentReply(owner, contact, text); return }
+  if (silent.value) { silentReply(owner, contact, text, pref); return }
   // 常规：把发出内容追加进酒馆主输入框并自动发送，AI 在正文里回 <手机> 块，syncScrape 再拉回收到
   let sent = false
   try {
@@ -684,22 +709,38 @@ function send() {
   if (sent) {
     sendingContact.value = contact
     clearTimeout(sendTimer)
-    sendTimer = setTimeout(() => { if (sendingContact.value === contact) { sendingContact.value = ''; showToast('等待回复超时') } }, 90000)
+    sendTimer = setTimeout(() => { if (sendingContact.value === contact) { sendingContact.value = ''; markFailed(pref); showToast('发送超时，点消息旁的感叹号可重发') } }, 90000)
   } else {
-    showToast('未能自动发送，请在输入框手动发送')
+    markFailed(pref)
+    showToast('未能自动发送，点消息旁的感叹号可重发')
   }
 }
+function resend(msg) {
+  if (!msg || sendingContact.value) return
+  const arr = ownerLogs.value[activeContact.value]
+  if (arr) { const i = arr.indexOf(msg); if (i >= 0) arr.splice(i, 1) }   // 删掉失败条，重走发送
+  saveLogs()
+  send(msg.text)
+}
 
+// 剥掉推理模型的思维链，避免思维链里出现的 <手机> 或文字被当成消息
+function stripReasoning(s) {
+  return String(s)
+    .replace(/<(think|thinking|reasoning|thought|thoughts|antml:thinking)[\s\S]*?<\/\1>/gi, '')  // 成对思维链标签
+    .replace(/^[\s\S]*?<\/(?:think|thinking|reasoning|thought|thoughts)>/i, '')                   // 只有闭合标签（开头思维链）
+    .trim()
+}
 // 从 AI 回复文本里抽取 <手机> 块的体行，写进双方手机；返回落库消息数
 function ingestPhoneReply(replyText, owner, contact, time) {
-  const blocks = String(replyText).match(/<手机>([\s\S]*?)<\/手机>/gi) || []
+  const clean = stripReasoning(replyText)
+  const blocks = clean.match(/<手机>([\s\S]*?)<\/手机>/gi) || []
   let n = 0
   const handle = blob => {
     blob.split(/(?=(?:发出|收到)\|)/).forEach(line => {
       const ln = line.trim(); if (!ln) return
       const f = ln.split('|'); if (f.length < 3) return
       const dir = f[0].trim(), type = (f[1] || '文字').trim() || '文字', tx = f.slice(2).join('|').trim()
-      if (!dir || !tx) return
+      if (!dir || !tx || (dir !== '发出' && dir !== '收到')) return
       if (putBoth(owner, contact, { dir, type, text: tx, time })) n++
     })
   }
@@ -710,9 +751,11 @@ function ingestPhoneReply(replyText, owner, contact, time) {
       handle(bodyStart >= 0 ? inner.slice(bodyStart) : inner)   // 跳过块内的 机主:/联系人:/时间: 头
     })
   } else {
-    // AI 没按格式包块：把整段回复当作对方发来的一条文字
-    const clean = String(replyText).replace(/<[^>]+>/g, '').trim()
-    if (clean) { if (putBoth(owner, contact, { dir: '收到', type: '文字', text: clean, time })) n++ }
+    // 没抓到规范块：仅当剩余是一小段干净短文本时才当一条回复，避免把思维链/长旁白整段塞进来
+    const txt = clean.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+    if (txt && txt.length <= 200 && !/[\r\n]/.test(clean.trim())) {
+      if (putBoth(owner, contact, { dir: '收到', type: '文字', text: txt, time })) n++
+    }
   }
   return n
 }
@@ -737,8 +780,8 @@ function buildSilentHistory(owner, contact) {
     }
   } catch (e) {}
   if (prompts.length) prompts.unshift({ role: 'system', content: `以下几条是「${contact}」相关的当前剧情正文背景，仅供了解处境，回复时不要复述：` })
-  // 手机对话历史：发出=owner(user)、收到=contact(assistant)，取最近 24 条
-  const arr = (logs.value[owner] && logs.value[owner][contact]) || []
+  // 手机对话历史：发出=owner(user)、收到=contact(assistant)，取最近 24 条（跳过发送失败、没真发出去的）
+  const arr = ((logs.value[owner] && logs.value[owner][contact]) || []).filter(m => m.status !== 'failed')
   const recent = arr.slice(-24)
   if (recent.length) {
     prompts.push({ role: 'system', content: `以下是「${owner === meName.value ? meName.value : owner}」与「${contact}」的手机聊天记录：` })
@@ -747,13 +790,13 @@ function buildSilentHistory(owner, contact) {
   return prompts
 }
 
-async function silentReply(owner, contact, myText) {
+async function silentReply(owner, contact, myText, pref) {
   const th = TH()
-  if (!th || !th.generate) { showToast('当前环境不支持纯手机模式生成'); return }
+  if (!th || !th.generate) { markFailed(pref); showToast('当前环境不支持纯手机模式生成'); return }
   silentBusy.value = true
   sendingContact.value = contact
   clearTimeout(sendTimer)
-  sendTimer = setTimeout(() => { if (sendingContact.value === contact) { sendingContact.value = ''; showToast('等待回复超时') } }, 90000)
+  sendTimer = setTimeout(() => { if (sendingContact.value === contact) { sendingContact.value = ''; markFailed(pref); showToast('等待回复超时，点消息旁的感叹号可重发') } }, 90000)
   const ownerLabel = owner === meName.value ? `${meName.value}（我）` : owner
   const instruction =
     `【纯手机模式·仅手机回复】现在只模拟一次手机聊天，不要输出任何正文、旁白、场景或动作描写。` +
@@ -768,10 +811,12 @@ async function silentReply(owner, contact, myText) {
       overrides: { chat_history: { with_depth_entries: true, prompts: history } },
     })
     const replyText = typeof result === 'string' ? result : (result && result.content) || ''
+    markSent(pref)   // 生成成功返回：把乐观写的发出条转正
     const got = ingestPhoneReply(replyText, owner, contact, storyTime())
     saveLogs(); scrollDown()
     if (!got) showToast('未能解析到手机回复')
   } catch (e) {
+    markFailed(pref)
     showToast('生成失败：' + ((e && e.message) || e))
   } finally {
     if (sendingContact.value === contact) { sendingContact.value = ''; clearTimeout(sendTimer) }
@@ -799,6 +844,7 @@ let vvHandler = null
 let genCtx = null
 let onGenEnded = null
 let onGenStopped = null
+let pendingRef = null                  // 当前乐观写、待确认的发出消息 { owner, contact, msg }
 
 function showToast(msg) {
   sendError.value = msg
@@ -812,11 +858,14 @@ function hookGen() {
     genCtx = ctx
     onGenEnded = () => {
       if (silentBusy.value || !sendingContact.value) return   // 纯手机模式由 silentReply 自行落库/清态
+      clearPending()                                          // 生成成功：乐观写的发出条转正
       setTimeout(() => { loadLogs(); syncScrape(); sendingContact.value = ''; clearTimeout(sendTimer) }, 250)
     }
     onGenStopped = () => {
       if (silentBusy.value || !sendingContact.value) return
-      sendingContact.value = ''; clearTimeout(sendTimer); showToast('消息发送失败，请重试')
+      sendingContact.value = ''; clearTimeout(sendTimer)
+      if (pendingRef) { markFailed(pendingRef.msg); pendingRef = null }   // API 断/被停：标红可重发
+      showToast('消息发送失败，点消息旁的感叹号可重发')
     }
     ctx.eventSource.on(ctx.eventTypes.GENERATION_ENDED, onGenEnded)
     ctx.eventSource.on(ctx.eventTypes.GENERATION_STOPPED, onGenStopped)
@@ -1035,6 +1084,11 @@ onUnmounted(() => {
 .mp-typing span{width:6px;height:6px;border-radius:50%;background:#bbb;animation:mp-bnc 1.2s infinite}
 .mp-typing span:nth-child(2){animation-delay:.2s}.mp-typing span:nth-child(3){animation-delay:.4s}
 @keyframes mp-bnc{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-5px);opacity:1}}
+/* 发送失败红感叹号 / 发送中转圈，紧贴气泡（out 行为 row-reverse，故居气泡左侧） */
+.mp-fail{align-self:center;flex-shrink:0;width:19px;height:19px;border:none;border-radius:50%;background:#fa5151;color:#fff;font-size:13px;font-weight:700;line-height:1;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(250,81,81,.4)}
+.mp-fail:active{transform:scale(.9)}
+.mp-pending{align-self:center;flex-shrink:0;width:16px;height:16px;border:2px solid #c8c8ca;border-top-color:#8a8a8e;border-radius:50%;animation:mp-spin .7s linear infinite}
+@keyframes mp-spin{100%{transform:rotate(360deg)}}
 .mp-toast{position:absolute;left:50%;bottom:64px;transform:translateX(-50%);background:rgba(0,0,0,.78);color:#fff;font-size:12.5px;padding:7px 14px;border-radius:8px;z-index:10;white-space:nowrap;animation:mp-fade .2s ease-out;pointer-events:none}
 
 /* 输入栏 */
