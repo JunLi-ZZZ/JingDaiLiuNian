@@ -9,6 +9,13 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Local credentials for the repository image-generation skill
+.env.image.local
+.agents/skills/gpt-image-assets/test-output/
+
+# 本地 agent 状态（权限、会话数据），勿入库
+.claude/
+
 auto-imports.d.ts
 components.d.ts
 

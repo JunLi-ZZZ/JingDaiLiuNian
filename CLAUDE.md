@@ -14,3 +14,8 @@
 升版 CDN 版本时，**必须**先用 `node bump_version.mjs vXXX` 脚本，不要手动改文件。脚本自动替换 package.json / index.yaml / MirrorPanel.vue（卡区+src）/ tavern_sync.yaml 里的版本号。详见 memory `bump_version_script.md`。
 
 流程：`node bump_version.mjs vXXX` → `pnpm build` → `git add -A && git commit && git push`
+
+## 生图素材与本地密钥
+
+- 用户要求生图、改图、图生图或项目图片素材时，必须先读取并遵循 `.agents/skills/gpt-image-assets/SKILL.md`。
+- `.env.image.local` 是本地密钥文件。Claude 不得直接读取、显示、复制、暂存或提交它，也不得使用 `git add -f` 绕过忽略规则。只允许由生图脚本在运行时读取。
