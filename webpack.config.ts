@@ -559,6 +559,8 @@ function parse_configuration(entry: Entry): (_env: any, argv: any) => webpack.Co
       }
       const cdn = {
         sass: 'https://jspm.dev/sass',
+        // 钉死版本，防止 jsDelivr 未锁 URL 自动升到不兼容的 pinia 4.x
+        pinia: 'https://testingcf.jsdelivr.net/npm/pinia@3.0.4/+esm',
       };
       return callback(
         null,
