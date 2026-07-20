@@ -225,11 +225,28 @@ const toolsTab = ref('');
 function onStorage(e: StorageEvent) {
   if (e.key === 'jdnl_theme' && e.newValue) theme.value = e.newValue;
 }
+let detectTimer: ReturnType<typeof setInterval> | null = null;
 onMounted(() => {
   addEventListener('storage', onStorage);
+  // 扩展检测：封面 iframe 常先于 MVU 等框架就绪，首测可能漏检，轮询到全就绪或超时兜底
+  if (!detectTick()) {
+    const start = Date.now();
+    detectTimer = setInterval(() => {
+      if (detectTick() || Date.now() - start > 15000) {
+        if (detectTimer) {
+          clearInterval(detectTimer);
+          detectTimer = null;
+        }
+      }
+    }, 500);
+  }
 });
 onUnmounted(() => {
   removeEventListener('storage', onStorage);
+  if (detectTimer) {
+    clearInterval(detectTimer);
+    detectTimer = null;
+  }
 });
 
 const page = ref('intro');
@@ -277,23 +294,23 @@ function detectExt(name: string): boolean {
   }
 }
 
-const extensions = computed(() => [
-  {
-    name: '酒馆助手',
-    ok: detectExt('酒馆助手'),
-    hint: '提供前台界面渲染与酒馆交互 API',
-  },
-  {
-    name: '提示词模板',
-    ok: detectExt('提示词模板'),
-    hint: '提供 EJS 动态世界书加载，变量规则自动切换',
-  },
-  {
-    name: 'MVU 变量框架',
-    ok: detectExt('MVU 变量框架'),
-    hint: '管理角色状态变量，支撑状态栏实时显示',
-  },
-]);
+const extMeta = [
+  { name: '酒馆助手', hint: '提供前台界面渲染与酒馆交互 API' },
+  { name: '提示词模板', hint: '提供 EJS 动态世界书加载，变量规则自动切换' },
+  { name: 'MVU 变量框架', hint: '管理角色状态变量，支撑状态栏实时显示' },
+];
+const detected = ref<Record<string, boolean>>({});
+// 重测各扩展、写入响应式 detected，返回是否全部就绪（轮询据此决定是否停）
+function detectTick(): boolean {
+  let all = true;
+  for (const m of extMeta) {
+    const ok = detectExt(m.name);
+    if (detected.value[m.name] !== ok) detected.value = { ...detected.value, [m.name]: ok };
+    if (!ok) all = false;
+  }
+  return all;
+}
+const extensions = computed(() => extMeta.map(m => ({ name: m.name, hint: m.hint, ok: !!detected.value[m.name] })));
 
 const allOk = computed(() => extensions.value.every(e => e.ok));
 
