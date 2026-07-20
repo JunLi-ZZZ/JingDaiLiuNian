@@ -733,7 +733,7 @@ function stripReasoning(s) {
 // 从 AI 回复文本里抽取 <手机> 块的体行，写进双方手机；返回落库消息数
 function ingestPhoneReply(replyText, owner, contact, time) {
   const clean = stripReasoning(replyText)
-  const blocks = clean.match(/<手机>([\s\S]*?)<\/手机>/gi) || []
+  const blocks = clean.match(/<手机[^>]*>([\s\S]*?)<\/手机>/gi) || []
   let n = 0
   const handle = blob => {
     blob.split(/(?=(?:发出|收到)\|)/).forEach(line => {
@@ -746,7 +746,7 @@ function ingestPhoneReply(replyText, owner, contact, time) {
   }
   if (blocks.length) {
     blocks.forEach(b => {
-      const inner = b.replace(/<\/?手机>/gi, '')
+      const inner = b.replace(/<手机[^>]*>|<\/手机>/gi, '')
       const bodyStart = inner.search(/(?:发出|收到)\|/)
       handle(bodyStart >= 0 ? inner.slice(bodyStart) : inner)   // 跳过块内的 机主:/联系人:/时间: 头
     })
@@ -802,7 +802,7 @@ async function silentReply(owner, contact, myText, pref) {
     `【纯手机模式·仅手机回复】现在只模拟一次手机聊天，不要输出任何正文、旁白、场景或动作描写。` +
     `${ownerLabel}刚用手机给「${contact}」发送了：「${myText}」。` +
     `请以「${contact}」的身份、结合下方手机聊天记录与其性格、当前处境，回复这条手机消息。` +
-    `只输出一个 <手机> 块，联系人写「${contact}」，块内体行格式为「方向|类型|内容」，方向用“收到”表示${contact}发来的、“发出”表示${ownerLabel}发出的，类型取 文字/语音/图片/表情/红包 之一。除这个块外不要输出任何其它文字。`
+    `按以下格式输出一个 <手机> 块，除此之外不输出任何其它文字：\n<手机>\n联系人: 对方角色名\n时间: YYYY年MM月DD日 HH:MM\n收到|文字|消息内容\n</手机>\n每条消息占一行、写作「方向|类型|内容」，方向取 收到/发出，类型取 文字/语音/图片/表情/红包 之一。`
   try {
     const history = buildSilentHistory(owner, contact)
     let result
@@ -819,7 +819,7 @@ async function silentReply(owner, contact, myText, pref) {
         'user_input',
       ]
       result = await th.generateRaw({
-        user_input: `【必须遵守】只输出一个 <手机> 块，联系人写「${contact}」，块内每行严格用「方向|类型|内容」，方向仅取“收到”“发出”，除这个块外不写任何其它文字。`,
+        user_input: `按格式输出一个 <手机> 块，除此之外不写任何其它文字：\n<手机>\n联系人: 对方角色名\n时间: YYYY年MM月DD日 HH:MM\n收到|文字|消息内容\n</手机>`,
         should_silence: true,
         ordered_prompts: ordered,
       })
