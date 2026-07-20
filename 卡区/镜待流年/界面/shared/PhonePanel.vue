@@ -19,7 +19,7 @@
       </div>
 
       <!-- 主屏 -->
-      <div v-if="view === 'home'" class="mp-home">
+      <div v-if="view === 'home'" class="mp-home" :style="homeStyle">
         <div class="mp-home-clock">{{ clock }}</div>
         <div class="mp-home-date">{{ dateLabel }}</div>
         <div class="mp-apps">
@@ -28,14 +28,16 @@
             <span class="mp-app-lbl">微信</span>
             <span v-if="totalUnread" class="mp-badge">{{ totalUnread > 99 ? '99+' : totalUnread }}</span>
           </button>
-          <button class="mp-app mp-app-dim" disabled><span class="mp-app-ico ico-cam"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M256 128l-32 48h-96c-35 0-64 29-64 64v224c0 35 29 64 64 64h384c35 0 64-29 64-64V240c0-35-29-64-64-64h-96l-32-48zm64 128a112 112 0 110 224 112 112 0 010-224"/></svg></span><span class="mp-app-lbl">相机</span></button>
+          <button class="mp-app" @click="view = 'camera'"><span class="mp-app-ico ico-cam"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M256 128l-32 48h-96c-35 0-64 29-64 64v224c0 35 29 64 64 64h384c35 0 64-29 64-64V240c0-35-29-64-64-64h-96l-32-48zm64 128a112 112 0 110 224 112 112 0 010-224"/></svg></span><span class="mp-app-lbl">相机</span></button>
+          <button class="mp-app" @click="view = 'album'"><span class="mp-app-ico ico-album"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M96 96h448c35 0 64 29 64 64v320c0 35-29 64-64 64H96c-35 0-64-29-64-64V160c0-35 29-64 64-64zm80 80a80 80 0 100 160 80 80 0 000-160zm336 304L384 320l-96 128-64-80-112 112z"/></svg></span><span class="mp-app-lbl">相册</span></button>
+          <button class="mp-app" @click="view = 'wallpaper'"><span class="mp-app-ico ico-wp"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M320 64a256 256 0 100 512A256 256 0 00320 64m0 64a192 192 0 110 384A192 192 0 01320 128m0 64a128 128 0 100 256 128 128 0 000-256"/></svg></span><span class="mp-app-lbl">壁纸</span></button>
           <button class="mp-app mp-app-dim" disabled><span class="mp-app-ico ico-note"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M160 64c-35 0-64 29-64 64v384c0 35 29 64 64 64h320c35 0 64-29 64-64V128c0-35-29-64-64-64zm64 128h192v48H224zm0 112h192v48H224zm0 112h128v48H224z"/></svg></span><span class="mp-app-lbl">备忘</span></button>
           <button class="mp-app" @click="showPhoneSettings = true"><span class="mp-app-ico ico-set"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M320 208a112 112 0 100 224 112 112 0 000-224m0 64a48 48 0 110 96 48 48 0 010-96"/></svg><svg class="ico-set-gear" viewBox="0 0 640 640"><path fill="currentColor" d="M320 128l24 56 60-16 4 62 58 22-36 50 36 50-58 22-4 62-60-16-24 56-24-56-60 16-4-62-58-22 36-50-36-50 58-22 4-62 60 16z"/></svg></span><span class="mp-app-lbl">设置</span></button>
         </div>
       </div>
 
       <!-- 微信 -->
-      <div v-else class="mp-wx">
+      <div v-else-if="view === 'wechat'" class="mp-wx">
         <!-- 单聊视图 -->
         <template v-if="activeContact">
           <div class="mp-wx-nav">
@@ -88,7 +90,11 @@
               <div v-else-if="emojiTab === 'kaomoji'" class="mp-emoji-kao">
                 <button v-for="(k, i) in kaomoji" :key="i" class="mp-kao-cell" @click="insertEmoji(k)">{{ k }}</button>
               </div>
-              <div v-else class="mp-emoji-sticker-empty">贴纸即将上线</div>
+              <div v-else class="mp-emoji-sticker">
+                <button v-for="(url, name) in STICKERS" :key="name" class="mp-sticker-btn" @click="insertEmoji('[表情:' + name + ']')" :title="name">
+                  <img :src="url" :alt="name" class="mp-sticker-sel" />
+                </button>
+              </div>
             </div>
             <div class="mp-emoji-bar">
               <div class="mp-emoji-tabs">
@@ -273,6 +279,93 @@
 
       <!-- home 指示条 -->
       <div class="mp-homebar" @click="goHome"></div>
+
+      <!-- 相机 -->
+      <div v-if="view === 'camera'" class="mp-cam">
+        <div class="mp-cam-nav">
+          <button class="mp-nav-back" @click="goHome"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
+          <span class="mp-cam-title">相机</span>
+          <button class="mp-cam-gear" @click="showCameraSettings = !showCameraSettings"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M320 208a112 112 0 100 224 112 112 0 000-224m0 64a48 48 0 110 96 48 48 0 010-96"/></svg><svg class="ico-set-gear" viewBox="0 0 640 640"><path fill="currentColor" d="M320 128l24 56 60-16 4 62 58 22-36 50 36 50-58 22-4 62-60-16-24 56-24-56-60 16-4-62-58-22 36-50-36-50 58-22 4-62 60 16z"/></svg></button>
+        </div>
+        <!-- 相机设置面板 -->
+        <div v-if="showCameraSettings" class="mp-cam-settings">
+          <div class="mp-cs-title">设置</div>
+          <div class="mp-cs-row">
+            <span class="mp-cs-lbl">纯手机模式</span>
+            <button class="mp-switch" :class="{ on: silentMap['相机'] }" @click="toggleSilentApp('相机')"><span class="mp-switch-dot"></span></button>
+          </div>
+          <div v-if="silentMap['相机']" class="mp-cs-row">
+            <span class="mp-cs-lbl">拍摄模式</span>
+            <div class="mp-cs-modes">
+              <button :class="['mp-cs-mode', { on: cameraMode === '普通' }]" @click="cameraMode = '普通'">普通</button>
+              <button :class="['mp-cs-mode', { on: cameraMode === '透视' }]" @click="cameraMode = '透视'">透视</button>
+            </div>
+          </div>
+        </div>
+        <!-- 取景器 -->
+        <div class="mp-cam-view" @click.self="showCameraSettings = false">
+          <svg viewBox="0 0 64 64" class="mp-cam-icon"><path fill="currentColor" d="M24 8l-4 6H8a4 4 0 0 0-4 4v30a4 4 0 0 0 4 4h48a4 4 0 0 0 4-4V18a4 4 0 0 0-4-4H44l-4-6zm8 10a14 14 0 1 1 0 28 14 14 0 0 1 0-28zm0 4a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/></svg>
+          <div v-if="sendingCamera" class="mp-cam-busy"><span></span><span></span><span></span></div>
+        </div>
+        <!-- 纯手机模式输入区 -->
+        <div v-if="silentMap['相机']" class="mp-cam-input">
+          <span v-if="cameraMode === '透视'" class="mp-cam-tag">透视</span>
+          <textarea v-model="cameraDraft" class="mp-cam-ta" rows="1" placeholder="描述拍摄对象…" @focus="showCameraSettings = false"></textarea>
+        </div>
+        <!-- 底部操作栏 -->
+        <div class="mp-cam-bar">
+          <button class="mp-cam-album-btn" @click="view = 'album'"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M96 96h448c35 0 64 29 64 64v320c0 35-29 64-64 64H96c-35 0-64-29-64-64V160c0-35 29-64 64-64zm80 80a80 80 0 100 160 80 80 0 000-160zm336 304L384 320l-96 128-64-80-112 112z"/></svg></button>
+          <button class="mp-shutter" :disabled="sendingCamera" @click="doShutter">
+            <span class="mp-shutter-inner"></span>
+          </button>
+          <div class="mp-cam-bar-r"></div>
+        </div>
+      </div>
+
+      <!-- 相册 -->
+      <div v-if="view === 'album'" class="mp-album">
+        <div class="mp-wx-nav" style="background:#000">
+          <button class="mp-nav-back" style="color:#fff" @click="goHome"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
+          <span class="mp-nav-title" style="color:#fff">相册</span>
+          <span></span>
+        </div>
+        <div class="mp-album-body">
+          <div v-if="!photos.length" class="mp-hint" style="color:#888;margin-top:60px">还没有照片，去拍一张吧</div>
+          <div v-else class="mp-album-grid">
+            <div v-for="(p, i) in photos" :key="i" class="mp-photo-cell" @click="selectedPhoto = p">
+              <div class="mp-photo-thumb"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M9 3h6l2 2h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h4zm3 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12zm0-2a4 4 0 1 1 0-8 4 4 0 0 1 0 8"/></svg></div>
+              <div class="mp-photo-meta"><div class="mp-photo-subj">{{ p.对象 || '照片' }}</div><div class="mp-photo-time">{{ p.时间 || '' }}</div></div>
+            </div>
+          </div>
+        </div>
+        <!-- 照片详情 -->
+        <div v-if="selectedPhoto" class="mp-photo-detail">
+          <button class="mp-nav-back" style="position:absolute;top:14px;left:12px;color:#fff;z-index:2" @click="selectedPhoto = null"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
+          <div class="mp-detail-bg"></div>
+          <div class="mp-detail-meta"><span class="mp-detail-subj">{{ selectedPhoto.对象 }}</span><span v-if="selectedPhoto.模式 === '透视'" class="mp-detail-mode">透视</span><span class="mp-detail-time">{{ selectedPhoto.时间 }}</span></div>
+          <div class="mp-detail-cap">{{ selectedPhoto.画面 }}</div>
+        </div>
+      </div>
+
+      <!-- 壁纸 -->
+      <div v-if="view === 'wallpaper'" class="mp-wp-panel">
+        <div class="mp-wx-nav">
+          <button class="mp-nav-back" @click="goHome"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
+          <span class="mp-nav-title">壁纸</span>
+          <span></span>
+        </div>
+        <div class="mp-wp-body">
+          <div class="mp-wp-grid">
+            <button class="mp-wp-item" :class="{ on: !curWallpaper }" @click="selectWallpaper('')">
+              <div class="mp-wp-thumb mp-wp-default"><span>默认</span></div>
+            </button>
+            <button v-for="wp in WALLPAPERS" :key="wp.url" class="mp-wp-item" :class="{ on: curWallpaper === wp.url }" @click="selectWallpaper(wp.url)">
+              <div class="mp-wp-thumb" :style="{ backgroundImage: `url(${wp.url})` }"></div>
+              <span class="mp-wp-name">{{ wp.name }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   </Teleport>
@@ -287,7 +380,8 @@ const props = defineProps({ owner: { type: String, default: '' } })   // 指定�
 const VAR_KEY = 'phone_logs'
 const REMARK_KEY = 'phone_remarks'
 const DELETED_KEY = 'phone_deleted'    // 墓碑：{ 机主: { 联系人: true } }，删除后不被 DOM 卡片扒回
-const SILENT_KEY = 'phone_silent'      // 纯手机模式开关，按 app 存：{ 微信: true, QQ: false, ... }
+const SILENT_KEY = 'phone_silent'      // 纯手机模式开关，按 app 存：{ 微信: true, 相机: true, ... }
+const PHOTO_KEY = 'photo_album'        // 相册存储 key
 const CUR_APP = '微信'                  // 目前只有微信 app，将来加 QQ/B站等在此扩展
 const logs = ref({})
 const unread = ref({})
@@ -324,6 +418,14 @@ const remarks = ref({})                // { 机主: { 联系人: 备注 } }
 const confirmDel = ref(false)          // 删除好友二次确认
 const remarkDraft = ref('')            // 资料页备注本地草稿(避免轮询覆盖输入)
 const silentBusy = ref(false)          // 纯手机模式生成中，抑制 onGenEnded 通用回收
+// 相机 / 相册 / 壁纸状态
+const photos = ref([])                 // 相册：{ 拍摄者, 对象, 时间, 画面, 模式 }[]
+const selectedPhoto = ref(null)        // 相册详情弹层
+const cameraMode = ref('普通')          // 相机拍摄模式：普通 / 透视
+const cameraDraft = ref('')            // 相机输入框草稿
+const showCameraSettings = ref(false)  // 相机设置面板
+const sendingCamera = ref(false)       // 相机生成中
+const curWallpaper = ref(localStorage.getItem('jdnl_wallpaper') || '')  // 当前壁纸URL
 
 const doc = window.parent ? window.parent.document : document
 function TH() { return window.parent && window.parent.TavernHelper }
@@ -342,8 +444,22 @@ function ownerId(name) {
 }
 const meId = computed(() => ownerId(meName.value))
 
-// 表情贴纸脚手架：名称→URL（暂空，等真图接入）；内联 [表情:名称] token
-const STICKERS = {}
+// 贴纸 & 壁纸
+const CDN_BASE = 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian'
+const STICKERS = {
+  '你好呀': `${CDN_BASE}/assets/stickers/final/01_你好呀.png`,
+  '嘿嘿':   `${CDN_BASE}/assets/stickers/final/02_嘿嘿.png`,
+  '摸摸头': `${CDN_BASE}/assets/stickers/final/03_摸摸头.png`,
+  '好害羞': `${CDN_BASE}/assets/stickers/final/04_好害羞.png`,
+  '呜呜':   `${CDN_BASE}/assets/stickers/final/05_呜呜.png`,
+  '晚安':   `${CDN_BASE}/assets/stickers/final/06_晚安.png`,
+  '略略':   `${CDN_BASE}/assets/stickers/final/07_略略.png`,
+  '诶':     `${CDN_BASE}/assets/stickers/final/08_诶.png`,
+  '哼':     `${CDN_BASE}/assets/stickers/final/09_哼.png`,
+}
+const WALLPAPERS = [
+  { name: '月夜', url: `${CDN_BASE}/assets/wallpapers/final/月夜_展示.png` },
+]
 function stickerUrl(text) {
   const name = ((String(text).match(/\[表情[：:]\s*(.*?)\]/) || [])[1] || '').replace(/\s+/g, '')
   return (name && STICKERS[name]) || ''
@@ -417,6 +533,7 @@ const meGroups = [
 // 主屏「设置」总控里可切纯手机模式的 app（将来加 QQ/B站/微博等在此登记；ready:false 为占位未上线）
 const silentApps = [
   { k: '微信', l: '微信', bg: 'linear-gradient(160deg,#4ade80,#07c160)', ready: true },
+  { k: '相机', l: '相机', bg: 'linear-gradient(160deg,#8b9dbb,#4a5568)', ready: true },
   { k: 'QQ', l: 'QQ', bg: 'linear-gradient(160deg,#4aa3ff,#0a72e6)', ready: false },
   { k: '微博', l: '微博', bg: 'linear-gradient(160deg,#ff9a3d,#e6482e)', ready: false },
   { k: '抖音', l: '抖音', bg: 'linear-gradient(160deg,#333,#000)', ready: false },
@@ -614,11 +731,18 @@ function syncScrape() {
   if (changed) saveLogs()
 }
 
-function openWeChat() { view.value = 'wechat'; wxTab.value = 'chats'; activeContact.value = ''; discoverView.value = 'list' }
-function toggleSearch() { showSearch.value = !showSearch.value; showNew.value = false; if (!showSearch.value) searchQuery.value = '' }
+function openWeChat() { view.value = 'wechat'; wxTab.value = 'chats'; activeContact.value = ''; discoverView.value = 'list' }function toggleSearch() { showSearch.value = !showSearch.value; showNew.value = false; if (!showSearch.value) searchQuery.value = '' }
 function togglePlus() { showPlus.value = !showPlus.value; showSearch.value = false }
 function startAddFriend() { showPlus.value = false; showNew.value = true; showSearch.value = false }
-function goHome() { if (showPhoneSettings.value) { showPhoneSettings.value = false; return } if (activeContact.value) closeContact(); else view.value = 'home' }
+function goHome() {
+  if (showPhoneSettings.value) { showPhoneSettings.value = false; return }
+  if (showCameraSettings.value) { showCameraSettings.value = false; return }
+  if (selectedPhoto.value) { selectedPhoto.value = null; return }
+  if (activeContact.value) { closeContact(); return }
+  view.value = 'home'
+}
+const homeStyle = computed(() => curWallpaper.value ? { backgroundImage: `url(${curWallpaper.value})`, backgroundSize: 'cover', backgroundPosition: 'center' } : null)
+function selectWallpaper(url) { curWallpaper.value = url; localStorage.setItem('jdnl_wallpaper', url) }
 function openContact(c) { activeContact.value = c; const o = curOwner.value; if (unread.value[o]) unread.value[o][c] = 0; showEmoji.value = false; profileContact.value = ''; scrollDown() }
 function closeContact() { activeContact.value = ''; showEmoji.value = false; voiceMode.value = false }
 function startChat() {
@@ -800,11 +924,12 @@ async function silentReply(owner, contact, myText, pref) {
   const ownerLabel = owner === meName.value ? `${meName.value}（我）` : owner
   const instruction =
     `【纯手机模式·仅手机回复】现在只模拟一次手机聊天，不要输出任何正文、旁白、场景或动作描写。` +
-    `${ownerLabel}刚用手机给「${contact}」发送了：「${myText}」。` +
-    `请以「${contact}」的身份、结合下方手机聊天记录与其性格、当前处境，回复这条手机消息。` +
-    `按以下格式与规则输出一个 <手机> 块，块外不写任何其它文字。\n` +
-    `格式：\n<手机>\n联系人: 对方角色名\n时间: YYYY年MM月DD日 HH:MM\n收到|文字|消息内容\n发出|文字|消息内容\n</手机>\n` +
-    `联系人填对方角色的名录全名，与角色名录一致，不用昵称、简称或代称；时间用绝对格式、与世界当前时间一致；每条消息占一行，写作「方向|类型|内容」，三段用竖线分隔；方向相对机主而言，发出是机主这方发出去的、收到是机主这方收到的；类型据实取 文字/语音/图片/表情/红包 之一，非文字类型时内容处写这条消息承载的信息（图片写画面，语音写说出的话，表情写[表情:名称]，红包写祝福语）；依对方的身份、语气、与机主的关系及当前处境回复，像真人发消息；多条消息按先后顺序排列。`
+    `这是机主「${ownerLabel}」的手机，${ownerLabel}刚给「${contact}」发送了：「${myText}」。` +
+    `请以「${contact}」的身份、结合下方手机聊天记录与其性格、当前处境，回复这条消息。` +
+    `按以下格式输出一个 <手机> 块，块外不写任何其它文字：\n` +
+    `<手机>\n机主: ${owner}\n联系人: ${contact}\n时间: YYYY年MM月DD日 HH:MM\n收到|文字|${contact}回复的内容\n</手机>\n` +
+    `你在扮演「${contact}」给机主回消息，这些都是机主收到的，方向一律写「收到」；不要替机主「${ownerLabel}」写他自己发出的消息。` +
+    `联系人填名录全名、与角色名录一致，不用昵称/简称/代称；时间用绝对格式、与世界当前时间一致；每条消息占一行写作「方向|类型|内容」，类型据实取 文字/语音/图片/表情/红包 之一，非文字类型时内容处写这条消息承载的信息（图片写画面，语音写说出的话，表情写[表情:名称]，红包写祝福语）；可回复多条，按先后顺序排列。`
   try {
     const history = buildSilentHistory(owner, contact)
     let result
@@ -821,7 +946,7 @@ async function silentReply(owner, contact, myText, pref) {
         'user_input',
       ]
       result = await th.generateRaw({
-        user_input: `按格式输出一个 <手机> 块，除此之外不写任何其它文字：\n<手机>\n联系人: 对方角色名\n时间: YYYY年MM月DD日 HH:MM\n收到|文字|消息内容\n</手机>`,
+        user_input: `以「${contact}」身份回消息，只输出一个 <手机> 块，方向一律写「收到」，块外不写任何其它文字：\n<手机>\n机主: ${owner}\n联系人: ${contact}\n时间: YYYY年MM月DD日 HH:MM\n收到|文字|${contact}回复的内容\n</手机>`,
         should_silence: true,
         ordered_prompts: ordered,
       })
@@ -847,6 +972,98 @@ async function silentReply(owner, contact, myText, pref) {
 }
 function toggleSilentApp(app) { silentMap.value = { ...silentMap.value, [app]: !silentMap.value[app] }; saveSilent() }
 function toggleSilent() { toggleSilentApp(CUR_APP) }
+
+// ---- 相册 ----
+function loadPhotos() {
+  const th = TH(); if (!th || !th.getVariables) return
+  try { const v = th.getVariables({ type: 'chat' }) || {}; if (Array.isArray(v[PHOTO_KEY])) photos.value = v[PHOTO_KEY] } catch (e) {}
+}
+function savePhotos() { putVar(PHOTO_KEY, photos.value) }
+function syncScrapePhotos() {
+  const spans = doc.querySelectorAll('[class*="photo-data"]')
+  if (!spans.length) return
+  let changed = false
+  spans.forEach(span => {
+    const raw = (span.textContent || '').trim(); if (!raw) return
+    const parts = raw.split('|||')
+    if (parts.length < 4) return
+    const shooter = parts[0].trim(), target = parts[1].trim(), time = parts[2].trim(), caption = parts[3].trim()
+    if (!caption) return
+    const sig = shooter + '|' + target + '|' + time + '|' + caption
+    if (!photos.value.some(p => p.拍摄者 + '|' + p.对象 + '|' + p.时间 + '|' + p.画面 === sig)) {
+      photos.value.push({ 拍摄者: shooter, 对象: target, 时间: time, 画面: caption, 模式: '普通' })
+      changed = true
+    }
+  })
+  if (changed) savePhotos()
+}
+function ingestPhotoBlock(text, mode) {
+  const blocks = text.match(/<照片[^>]*>([\s\S]*?)<\/照片>/gi) || []
+  let n = 0
+  blocks.forEach(b => {
+    const inner = b.replace(/<照片[^>]*>|<\/照片>/gi, '')
+    const get = key => { const m = inner.match(new RegExp(key + '[：:]\\s*([^\\n]*)')) ; return m ? m[1].trim() : '' }
+    const caption = get('画面'); if (!caption) return
+    const sig = get('拍摄者') + '|' + get('对象') + '|' + get('时间') + '|' + caption
+    if (!photos.value.some(p => p.拍摄者 + '|' + p.对象 + '|' + p.时间 + '|' + p.画面 === sig)) {
+      photos.value.push({ 拍摄者: get('拍摄者'), 对象: get('对象'), 时间: get('时间') || storyTime(), 画面: caption, 模式: mode || '普通' })
+      n++
+    }
+  })
+  if (n) savePhotos()
+  return n
+}
+
+// ---- 相机快门（常规模式：注入正文） ----
+function doShutter() {
+  if (sendingCamera.value) return
+  if (silentMap.value['相机']) { silentCamera(); return }
+  const line = cameraDraft.value.trim() ? `（我举起手机拍照：${cameraDraft.value.trim()}）` : `（我举起手机拍了张照）`
+  cameraDraft.value = ''
+  try {
+    const ta = doc.querySelector('#send_textarea')
+    if (ta) {
+      const cur = (ta.value || '').replace(/\s+$/, '')
+      ta.value = cur ? cur + '\n\n' + line : line
+      ta.dispatchEvent(new Event('input', { bubbles: true }))
+      const btn = doc.querySelector('#send_but'); if (btn) btn.click()
+    }
+  } catch (e) {}
+}
+
+// ---- 相机快门（纯手机模式：静默生成照片描述） ----
+async function silentCamera() {
+  const th = TH()
+  if (!th || (!th.generateRaw && !th.generate)) { showToast('当前环境不支持纯手机模式生成'); return }
+  sendingCamera.value = true
+  const subject = cameraDraft.value.trim()
+  cameraDraft.value = ''
+  const mode = cameraMode.value
+  const timeNow = storyTime()
+  const instruction =
+    `【相机快门】根据当前剧情场景，为这张手机照片生成真实描述。` +
+    (subject ? `拍摄对象：${subject}。` : '') +
+    (mode === '透视' ? `透视模式开启，透过衣物描述被拍者。` : '') +
+    `只输出一个 <照片> 块，块外不写任何其它文字。格式：\n<照片>\n拍摄者: 拍照的角色名\n对象: 被拍摄主体\n时间: ${timeNow || 'YYYY年MM月DD日 HH:MM'}\n画面: 照片内容的具体描述\n</照片>`
+  try {
+    const history = buildSilentHistory('', '')
+    let result
+    if (th.generateRaw) {
+      result = await th.generateRaw({
+        user_input: `只输出一个 <照片> 块描述这张照片，块外不写任何文字。`,
+        should_silence: true,
+        ordered_prompts: [{ role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after', ...history, 'user_input'],
+      })
+    } else {
+      result = await th.generate({ user_input: instruction, should_silence: true, overrides: { chat_history: { with_depth_entries: false, prompts: history } } })
+    }
+    const text = typeof result === 'string' ? result : (result && result.content) || ''
+    const got = ingestPhotoBlock(text, mode)
+    if (!got) showToast('未能解析到照片')
+    else { view.value = 'album'; selectedPhoto.value = photos.value[photos.value.length - 1] }
+  } catch (e) { showToast('生成失败：' + ((e && e.message) || e)) }
+  finally { sendingCamera.value = false }
+}
 
 function tick() {                              // 时钟/日期一律取剧情时间，取不到留空（不显示真实时间）
   const now = parseTime(storyTime())
@@ -930,8 +1147,8 @@ function copyStyles() {
 onMounted(() => {
   if (props.owner) activeOwner.value = props.owner   // 状态栏点某角色手机 → 直接定位到该机主
   copyStyles()
-  tick(); loadLogs(); loadRemarks(); syncScrape()
-  timer = setInterval(() => { tick(); loadLogs(); loadRemarks(); syncScrape() }, 2000)
+  tick(); loadLogs(); loadRemarks(); loadPhotos(); syncScrape(); syncScrapePhotos()
+  timer = setInterval(() => { tick(); loadLogs(); loadRemarks(); loadPhotos(); syncScrape(); syncScrapePhotos() }, 2000)
   doc.documentElement.style.overflow = 'hidden'; doc.body.style.overflow = 'hidden'
   hookGen()
   try {
@@ -1238,4 +1455,84 @@ onUnmounted(() => {
 .mp-setapp-soon{font-size:11px;color:#b0b0b4;background:#f0f0f2;border-radius:4px;padding:1px 6px}
 .mp-setapp-arrow{color:#c4c4c8;font-size:19px}
 .mp-setapp-note{padding:16px 18px;font-size:12px;color:#a0a0a4;line-height:1.6}
+
+/* 主屏壁纸 */
+.mp-home{transition:background .4s}
+
+/* 新 app 图标色 */
+.ico-album{background:linear-gradient(160deg,#7eb8f7,#3a7bd5)}
+.ico-wp{background:linear-gradient(160deg,#f7c97e,#e0903a)}
+
+/* 相机 */
+.mp-cam{flex:1;display:flex;flex-direction:column;background:#000;min-height:0;position:relative}
+.mp-cam-nav{display:flex;align-items:center;justify-content:space-between;padding:6px 14px 8px;background:rgba(0,0,0,.7);flex-shrink:0}
+.mp-cam-title{font-size:16px;font-weight:600;color:#fff}
+.mp-cam-gear{display:flex;align-items:center;justify-content:center;width:30px;height:30px;background:none;border:none;cursor:pointer;position:relative;color:#fff}
+.mp-cam-gear svg{width:18px;height:18px;color:#c8c8ca}
+.mp-cam-gear .ico-set-gear{position:absolute;width:18px;height:18px;color:#c8c8ca;opacity:.9}
+.mp-cam-settings{position:absolute;top:44px;right:10px;background:rgba(30,30,34,.95);border-radius:12px;padding:10px 0;z-index:20;min-width:190px;box-shadow:0 4px 16px rgba(0,0,0,.5)}
+.mp-cs-title{padding:2px 14px 8px;font-size:13px;color:#8a8a8e;font-weight:500}
+.mp-cs-row{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;position:relative}
+.mp-cs-row::after{content:'';position:absolute;left:16px;right:0;bottom:0;height:1px;background:rgba(255,255,255,.07)}
+.mp-cs-row:last-child::after{display:none}
+.mp-cs-lbl{font-size:15px;color:#e0e0e0}
+.mp-cs-modes{display:flex;gap:6px}
+.mp-cs-mode{padding:5px 12px;border:1.5px solid rgba(255,255,255,.25);border-radius:20px;background:transparent;color:#c8c8c8;font-size:13px;cursor:pointer}
+.mp-cs-mode.on{background:#fff;color:#000;border-color:#fff}
+.mp-cam-view{flex:1;display:flex;align-items:center;justify-content:center;background:#111;position:relative;cursor:pointer}
+.mp-cam-icon{width:72px;height:72px;color:rgba(255,255,255,.18)}
+.mp-cam-busy{display:flex;gap:6px;align-items:center;position:absolute}
+.mp-cam-busy span{width:8px;height:8px;border-radius:50%;background:#fff;animation:mp-bnc 1.2s infinite}
+.mp-cam-busy span:nth-child(2){animation-delay:.2s}.mp-cam-busy span:nth-child(3){animation-delay:.4s}
+.mp-cam-input{display:flex;align-items:center;gap:7px;padding:8px 12px;background:rgba(0,0,0,.8);flex-shrink:0}
+.mp-cam-tag{flex-shrink:0;padding:3px 9px;background:rgba(255,255,255,.18);color:#e0e0e0;border-radius:12px;font-size:12px;border:1px solid rgba(255,255,255,.3)}
+.mp-cam-ta{flex:1;min-width:0;max-height:64px;padding:6px 10px;border:none;border-radius:8px;background:rgba(255,255,255,.12);color:#fff;font-size:14px;resize:none;outline:none;font-family:inherit;line-height:1.4}
+.mp-cam-ta::placeholder{color:rgba(255,255,255,.4)}
+.mp-cam-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 28px 20px;background:#000;flex-shrink:0}
+.mp-cam-album-btn{width:46px;height:46px;border:2px solid rgba(255,255,255,.4);border-radius:10px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.mp-cam-album-btn svg{width:22px;height:22px;color:#e0e0e0}
+.mp-shutter{width:68px;height:68px;border-radius:50%;background:rgba(255,255,255,.9);border:3px solid rgba(255,255,255,.6);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 4px rgba(255,255,255,.15);flex-shrink:0;transition:transform .1s}
+.mp-shutter:active{transform:scale(.92)}
+.mp-shutter:disabled{opacity:.5;cursor:default}
+.mp-shutter-inner{width:54px;height:54px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.mp-cam-bar-r{width:46px}
+
+/* 相册 */
+.mp-album{flex:1;display:flex;flex-direction:column;background:#000;min-height:0}
+.mp-album-body{flex:1;overflow-y:auto;background:#111;-webkit-overflow-scrolling:touch}
+.mp-album-body::-webkit-scrollbar{width:0}
+.mp-album-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:2px}
+.mp-photo-cell{position:relative;cursor:pointer;aspect-ratio:1}
+.mp-photo-thumb{width:100%;height:100%;background:#1e1e2a;display:flex;align-items:center;justify-content:center}
+.mp-photo-thumb svg{width:28px;height:28px;color:rgba(255,255,255,.2)}
+.mp-photo-meta{position:absolute;bottom:0;left:0;right:0;padding:6px 6px 4px;background:linear-gradient(0,rgba(0,0,0,.7),transparent);display:flex;flex-direction:column}
+.mp-photo-subj{font-size:11px;color:#e0e0e0;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mp-photo-time{font-size:10px;color:rgba(255,255,255,.5)}
+.mp-photo-detail{position:absolute;inset:0;background:#000;z-index:15;display:flex;flex-direction:column;animation:mp-fade .2s ease-out}
+.mp-detail-bg{width:100%;aspect-ratio:4/3;background:linear-gradient(135deg,#1a1a2e,#2a2a4a);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mp-detail-meta{display:flex;align-items:center;gap:8px;padding:10px 14px 6px;flex-shrink:0}
+.mp-detail-subj{font-size:14px;font-weight:600;color:#e0e0e0;flex:1}
+.mp-detail-mode{font-size:11px;padding:2px 8px;background:rgba(255,255,255,.15);color:#c8c8c8;border-radius:10px;border:1px solid rgba(255,255,255,.2)}
+.mp-detail-time{font-size:12px;color:#666}
+.mp-detail-cap{flex:1;padding:8px 14px 16px;font-size:14px;color:#c0c0c0;line-height:1.6;overflow-y:auto;white-space:pre-wrap}
+.mp-detail-cap::-webkit-scrollbar{width:0}
+
+/* 壁纸 */
+.mp-wp-panel{flex:1;display:flex;flex-direction:column;background:#efeff4;min-height:0}
+.mp-wp-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.mp-wp-body::-webkit-scrollbar{width:0}
+.mp-wp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:14px}
+.mp-wp-item{border:none;background:none;cursor:pointer;border-radius:12px;overflow:hidden;position:relative;border:2.5px solid transparent;padding:0;transition:border-color .2s}
+.mp-wp-item.on{border-color:#007aff}
+.mp-wp-item.on::after{content:'✓';position:absolute;top:7px;right:7px;width:22px;height:22px;border-radius:50%;background:#007aff;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.mp-wp-thumb{width:100%;aspect-ratio:9/16;background-size:cover;background-position:center;border-radius:9px}
+.mp-wp-default{background:linear-gradient(135deg,#4a5b7d,#161d2b);display:flex;align-items:center;justify-content:center}
+.mp-wp-default span{color:rgba(255,255,255,.5);font-size:13px}
+.mp-wp-name{display:block;text-align:center;font-size:12px;color:#555;padding:5px 0 6px}
+
+/* 贴纸选择器 */
+.mp-emoji-sticker{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:8px}
+.mp-sticker-btn{background:none;border:none;cursor:pointer;border-radius:8px;padding:4px;display:flex;align-items:center;justify-content:center}
+.mp-sticker-btn:active{background:rgba(0,0,0,.08)}
+.mp-sticker-sel{width:60px;height:60px;object-fit:contain;display:block}
 </style>

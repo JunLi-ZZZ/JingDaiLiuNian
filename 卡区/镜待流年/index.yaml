@@ -400,7 +400,7 @@
       不可激活其他条目: true
     文件: 世界书\系统\品阶体系
 
-  - 名称: 物品格式要求
+  - 名称: 物品与生物格式
     启用: true
     激活策略:
       类型: 蓝灯
@@ -413,24 +413,9 @@
     递归:
       不可被其他条目激活: true
       不可激活其他条目: true
-    文件: 世界书\系统\物品格式要求
+    文件: 世界书\系统\物品与生物格式
 
-  - 名称: 生物格式要求
-    启用: true
-    激活策略:
-      类型: 蓝灯
-    插入位置:
-      类型: 指定深度
-      角色: 系统
-      深度: 0
-      顺序: 14717
-    激活概率: 100
-    递归:
-      不可被其他条目激活: true
-      不可激活其他条目: true
-    文件: 世界书\系统\生物格式要求
-
-  - 名称: 手机消息格式
+  - 名称: 手机与照片格式
     启用: false
     激活策略:
       类型: 蓝灯
@@ -443,7 +428,7 @@
     递归:
       不可被其他条目激活: true
       不可激活其他条目: true
-    文件: 世界书\系统\手机消息格式
+    文件: 世界书\系统\手机与照片格式
 
   - 名称: "[EJS]手机控制器"
     启用: true
@@ -991,7 +976,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v160/界面/状态栏/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v161/界面/状态栏/index.html')
         </script>
         </body>
         ```
@@ -1009,7 +994,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v160/界面/封面/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v161/界面/封面/index.html')
         </script>
         </body>
         ```
@@ -1068,10 +1053,22 @@
 
     - 正则名称: "[美化]手机消息"
       启用: true
-      查找表达式: "/<手机>\\s*(?:机主:\\s*([^\\n]*?)\\s*\\n\\s*)?联系人:\\s*([^\\n]*?)\\s*\\n\\s*时间:\\s*([^\\n]*?)\\s*\\n([\\s\\S]*?)<\\/手机>/gi"
+      查找表达式: "/<手机[^>]*>\\s*(?:机主:\\s*([^\\n]*?)\\s*\\n\\s*)?联系人:\\s*([^\\n]*?)\\s*\\n\\s*时间:\\s*([^\\n]*?)\\s*\\n([\\s\\S]*?)<\\/手机>/gi"
       文件: 正则/手机消息
       来源:
         用户输入: true
+        AI输出: true
+      作用于:
+        仅格式显示: true
+        仅格式提示词: false
+      最大深度: 10
+
+    - 正则名称: "[美化]照片"
+      启用: true
+      查找表达式: "/<照片>\\s*(?:拍摄者:\\s*([^\\n]*?)\\s*\\n)?\\s*(?:对象:\\s*([^\\n]*?)\\s*\\n)?\\s*(?:时间:\\s*([^\\n]*?)\\s*\\n)?\\s*画面:\\s*([\\s\\S]*?)<\\/照片>/gi"
+      文件: 正则/照片
+      来源:
+        用户输入: false
         AI输出: true
       作用于:
         仅格式显示: true
@@ -1092,13 +1089,13 @@
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v160/脚本/变量结构/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v161/脚本/变量结构/index.js';
 
       - 名称: 手机渲染
         id: a7f3c2e1-9b4d-4e6a-8c1f-2d5e7a9b3c4d
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v160/脚本/手机渲染/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v161/脚本/手机渲染/index.js';
 
     变量: {}
