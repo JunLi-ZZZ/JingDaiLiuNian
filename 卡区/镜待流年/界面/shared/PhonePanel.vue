@@ -49,8 +49,6 @@
               <div v-if="showSep(i)" class="mp-timesep"><span>{{ fmtTime(m.time) }}</span></div>
               <div :class="['mp-row', m.dir === '发出' ? 'out' : 'in']">
                 <div class="mp-ava">{{ initial(m.dir === '发出' ? curOwner : activeContact) }}</div>
-                <button v-if="m.status === 'failed'" class="mp-fail" title="发送失败，点击重发" @click="resend(m)">!</button>
-                <span v-else-if="m.status === 'pending'" class="mp-pending"></span>
                 <div :class="['mp-bub', 'mt-' + (m.type || '文字')]">
                   <template v-if="m.type === '语音'"><span class="mp-voice" :style="{ width: voiceWidth(m.text) }"><span class="mp-voice-ico"><i></i><i></i><i></i></span><span class="mp-voice-len">{{ voiceLen(m.text) }}″</span></span><span class="mp-vtext">{{ m.text }}</span></template>
                   <template v-else-if="m.type === '图片'"><span class="mp-media"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M128 128c-35 0-64 29-64 64v256c0 35 29 64 64 64h384c35 0 64-29 64-64V192c0-35-29-64-64-64zm80 80a48 48 0 110 96 48 48 0 010-96m304 240H128l96-128 64 80 80-112z"/></svg></span><span class="mp-cap">{{ m.text }}</span></template>
@@ -59,6 +57,8 @@
                   <template v-else-if="m.type === '表情'"><img v-if="stickerUrl(m.text)" class="mp-sticker-img" :src="stickerUrl(m.text)" :alt="m.text" /><span v-else class="mp-sticker">{{ stickerFallback(m.text) }}</span></template>
                   <template v-else><span v-html="renderText(m.text)"></span></template>
                 </div>
+                <button v-if="m.status === 'failed'" class="mp-fail" title="发送失败，点击重发" @click="resend(m)">!</button>
+                <span v-else-if="m.status === 'pending'" class="mp-pending"></span>
               </div>
             </template>
             <div v-if="sendingContact === activeContact" class="mp-row in"><div class="mp-ava">{{ initial(activeContact) }}</div><div class="mp-bub mp-typing"><span></span><span></span><span></span></div></div>
@@ -792,7 +792,7 @@ function buildSilentHistory(owner, contact) {
 
 async function silentReply(owner, contact, myText, pref) {
   const th = TH()
-  if (!th || !th.generate) { markFailed(pref); showToast('当前环境不支持纯手机模式生成'); return }
+  if (!th || (!th.generateRaw && !th.generate)) { markFailed(pref); showToast('当前环境不支持纯手机模式生成'); return }
   silentBusy.value = true
   sendingContact.value = contact
   clearTimeout(sendTimer)
@@ -801,15 +801,35 @@ async function silentReply(owner, contact, myText, pref) {
   const instruction =
     `【纯手机模式·仅手机回复】现在只模拟一次手机聊天，不要输出任何正文、旁白、场景或动作描写。` +
     `${ownerLabel}刚用手机给「${contact}」发送了：「${myText}」。` +
-    `请以「${contact}」的身份、结合上面的手机聊天记录与其性格、当前处境，回复这条手机消息。` +
+    `请以「${contact}」的身份、结合下方手机聊天记录与其性格、当前处境，回复这条手机消息。` +
     `只输出一个 <手机> 块，联系人写「${contact}」，块内体行格式为「方向|类型|内容」，方向用“收到”表示${contact}发来的、“发出”表示${ownerLabel}发出的，类型取 文字/语音/图片/表情/红包 之一。除这个块外不要输出任何其它文字。`
   try {
     const history = buildSilentHistory(owner, contact)
-    const result = await th.generate({
-      user_input: instruction,
-      should_silence: true,
-      overrides: { chat_history: { with_depth_entries: true, prompts: history } },
-    })
+    let result
+    if (th.generateRaw) {
+      // 指令顶到最前（system），再接人设/世界书槽与手机历史，user_input 末尾重申格式约束。
+      // 不注入 main_prompt（预设主提示词），避免正文向指令把 AI 带跑。
+      const ordered = [
+        { role: 'system', content: instruction },
+        'persona_description',
+        'char_description',
+        'world_info_before',
+        'world_info_after',
+        ...history,
+        'user_input',
+      ]
+      result = await th.generateRaw({
+        user_input: `【必须遵守】只输出一个 <手机> 块，联系人写「${contact}」，块内每行严格用「方向|类型|内容」，方向仅取“收到”“发出”，除这个块外不写任何其它文字。`,
+        should_silence: true,
+        ordered_prompts: ordered,
+      })
+    } else {
+      result = await th.generate({
+        user_input: instruction,
+        should_silence: true,
+        overrides: { chat_history: { with_depth_entries: false, prompts: history } },
+      })
+    }
     const replyText = typeof result === 'string' ? result : (result && result.content) || ''
     markSent(pref)   // 生成成功返回：把乐观写的发出条转正
     const got = ingestPhoneReply(replyText, owner, contact, storyTime())
