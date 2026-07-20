@@ -689,7 +689,7 @@ function send(retryText) {
   const time = storyTime()
   const sid = putPending(owner, contact, text, '文字', time); saveLogs()
   const pref = { owner, contact, sid }
-  if (retryText == null) draft.value = ''
+  if (typeof retryText !== 'string') draft.value = ''   // 重发传字符串保留草稿；正常发送(事件对象/无参)清空
   scrollDown()
   // 纯手机模式：不进正文楼层，静默让 AI 只在手机里回一段 <手机> 块（类似镜渡生成）
   if (silent.value) { silentReply(owner, contact, text, pref); return }
