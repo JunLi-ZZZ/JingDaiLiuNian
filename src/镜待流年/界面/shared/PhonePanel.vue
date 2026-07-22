@@ -889,29 +889,32 @@ function msgToLine(m) {
   const t = m.type && m.type !== '文字' ? `[${m.type}]` : ''
   return t + (m.type === '表情' ? stickerFallback(m.text) : (m.text || ''))
 }
-// 纯手机模式上下文：当前联系人的手机对话（近若干条）+ 少量正文楼层背景，转成 chat_history prompts
+// 纯手机模式上下文：合并为单条 system 字符串，避免 ordered_prompts 处理多对象时兼容问题
 function buildSilentHistory(owner, contact) {
-  const prompts = []
-  // 少量正文楼层作背景（取最近 3 楼可见消息），让 AI 知道当前剧情处境
+  const lines = []
+  // 少量正文楼层作背景（去 HTML 标签保留文本，不再用 [\s\S]*? 把整段内容也剥掉）
   try {
     const th = TH()
     if (th && th.getChatMessages) {
       const msgs = th.getChatMessages('-3--1', { hide_state: 'unhidden' }) || []
       msgs.forEach(mm => {
-        const body = String(mm.message || '').replace(/<[^>]+>[\s\S]*?<\/[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 600)
-        if (body) prompts.push({ role: mm.role === 'user' ? 'user' : 'assistant', content: body })
+        const body = String(mm.message || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 500)
+        if (body) lines.push((mm.role === 'user' ? '【user】' : '【AI】') + body)
       })
     }
   } catch (e) {}
-  if (prompts.length) prompts.unshift({ role: 'system', content: `以下几条是「${contact}」相关的当前剧情正文背景，仅供了解处境，回复时不要复述：` })
-  // 手机对话历史：发出=owner(user)、收到=contact(assistant)，取最近 24 条（跳过发送失败、没真发出去的）
+  // 手机对话历史：最近 24 条（跳过失败条）
   const arr = ((logs.value[owner] && logs.value[owner][contact]) || []).filter(m => m.status !== 'failed')
   const recent = arr.slice(-24)
+  if (!lines.length && !recent.length) return []
+  let ctx = ''
+  if (lines.length) ctx += `【当前剧情背景（仅供了解处境，不要复述）】\n${lines.join('\n')}\n`
   if (recent.length) {
-    prompts.push({ role: 'system', content: `以下是「${owner === meName.value ? meName.value : owner}」与「${contact}」的手机聊天记录：` })
-    recent.forEach(m => prompts.push({ role: m.dir === '发出' ? 'user' : 'assistant', content: msgToLine(m) }))
+    const ownerLabel = owner === meName.value ? meName.value : owner
+    ctx += `【${ownerLabel}与${contact}的手机聊天记录】\n`
+    ctx += recent.map(m => (m.dir === '发出' ? ownerLabel : contact) + '：' + msgToLine(m)).join('\n')
   }
-  return prompts
+  return [{ role: 'system', content: ctx.trim() }]
 }
 
 async function silentReply(owner, contact, myText, pref) {
@@ -927,15 +930,13 @@ async function silentReply(owner, contact, myText, pref) {
     `这是机主「${ownerLabel}」的手机，${ownerLabel}刚给「${contact}」发送了：「${myText}」。` +
     `请以「${contact}」的身份、结合下方手机聊天记录与其性格、当前处境，回复这条消息。` +
     `按以下格式输出一个 <手机> 块，块外不写任何其它文字：\n` +
-    `<手机>\n机主: ${owner}\n联系人: ${contact}\n时间: YYYY年MM月DD日 HH:MM\n收到|文字|${contact}回复的内容\n</手机>\n` +
-    `你在扮演「${contact}」给机主回消息，这些都是机主收到的，方向一律写「收到」；不要替机主「${ownerLabel}」写他自己发出的消息。` +
+    `<手机>\n机主: ${owner}\n联系人: ${contact}\n时间: YYYY年MM月DD日 HH:MM\n发出|文字|${myText}\n收到|文字|${contact}回复的内容\n</手机>\n` +
+    `第一行固定是「发出|文字|${myText}」（原样复制，这是机主刚发出的那条消息）；之后是「${contact}」的一条或多条回复，方向一律写「收到」。` +
     `联系人填名录全名、与角色名录一致，不用昵称/简称/代称；时间用绝对格式、与世界当前时间一致；每条消息占一行写作「方向|类型|内容」，类型据实取 文字/语音/图片/表情/红包 之一，非文字类型时内容处写这条消息承载的信息（图片写画面，语音写说出的话，表情写[表情:名称]，红包写祝福语）；可回复多条，按先后顺序排列。`
   try {
     const history = buildSilentHistory(owner, contact)
     let result
     if (th.generateRaw) {
-      // 指令顶到最前（system），再接人设/世界书槽与手机历史，user_input 末尾重申格式约束。
-      // 不注入 main_prompt（预设主提示词），避免正文向指令把 AI 带跑。
       const ordered = [
         { role: 'system', content: instruction },
         'persona_description',
@@ -943,10 +944,10 @@ async function silentReply(owner, contact, myText, pref) {
         'world_info_before',
         'world_info_after',
         ...history,
-        'user_input',
+        { role: 'user', content: `以「${contact}」身份回消息，只输出一个 <手机> 块，块外不写任何其它文字：\n<手机>\n机主: ${owner}\n联系人: ${contact}\n时间: YYYY年MM月DD日 HH:MM\n发出|文字|${myText}\n收到|文字|${contact}回复的内容\n</手机>` },
       ]
       result = await th.generateRaw({
-        user_input: `以「${contact}」身份回消息，只输出一个 <手机> 块，方向一律写「收到」，块外不写任何其它文字：\n<手机>\n机主: ${owner}\n联系人: ${contact}\n时间: YYYY年MM月DD日 HH:MM\n收到|文字|${contact}回复的内容\n</手机>`,
+        user_input: `以「${contact}」身份回消息，只输出一个 <手机> 块。`,
         should_silence: true,
         ordered_prompts: ordered,
       })
@@ -1050,9 +1051,17 @@ async function silentCamera() {
     let result
     if (th.generateRaw) {
       result = await th.generateRaw({
-        user_input: `只输出一个 <照片> 块描述这张照片，块外不写任何文字。`,
+        user_input: subject || `（举起手机拍照）`,
         should_silence: true,
-        ordered_prompts: [{ role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after', ...history, 'user_input'],
+        ordered_prompts: [
+          { role: 'system', content: instruction },
+          'persona_description',
+          'char_description',
+          'world_info_before',
+          'world_info_after',
+          ...history,
+          { role: 'user', content: subject || `（举起手机拍照）` },
+        ],
       })
     } else {
       result = await th.generate({ user_input: instruction, should_silence: true, overrides: { chat_history: { with_depth_entries: false, prompts: history } } })
@@ -1464,7 +1473,7 @@ onUnmounted(() => {
 .ico-wp{background:linear-gradient(160deg,#f7c97e,#e0903a)}
 
 /* 相机 */
-.mp-cam{flex:1;display:flex;flex-direction:column;background:#000;min-height:0;position:relative}
+.mp-cam{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;background:#000}
 .mp-cam-nav{display:flex;align-items:center;justify-content:space-between;padding:6px 14px 8px;background:rgba(0,0,0,.7);flex-shrink:0}
 .mp-cam-title{font-size:16px;font-weight:600;color:#fff}
 .mp-cam-gear{display:flex;align-items:center;justify-content:center;width:30px;height:30px;background:none;border:none;cursor:pointer;position:relative;color:#fff}
@@ -1498,7 +1507,7 @@ onUnmounted(() => {
 .mp-cam-bar-r{width:46px}
 
 /* 相册 */
-.mp-album{flex:1;display:flex;flex-direction:column;background:#000;min-height:0}
+.mp-album{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;background:#000}
 .mp-album-body{flex:1;overflow-y:auto;background:#111;-webkit-overflow-scrolling:touch}
 .mp-album-body::-webkit-scrollbar{width:0}
 .mp-album-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:2px}
@@ -1518,7 +1527,7 @@ onUnmounted(() => {
 .mp-detail-cap::-webkit-scrollbar{width:0}
 
 /* 壁纸 */
-.mp-wp-panel{flex:1;display:flex;flex-direction:column;background:#efeff4;min-height:0}
+.mp-wp-panel{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;background:#efeff4}
 .mp-wp-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .mp-wp-body::-webkit-scrollbar{width:0}
 .mp-wp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:14px}

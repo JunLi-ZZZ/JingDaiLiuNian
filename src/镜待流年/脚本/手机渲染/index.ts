@@ -159,7 +159,29 @@ function buildBubble(dir: string, type: string, text: string, contact: string, o
     bub.appendChild(foot);
   } else if (isSticker) {
     const m = text.match(/\[表情[：:]\s*(.*?)\]/);
-    bub.appendChild(d.createTextNode(m ? '[' + m[1].trim() + ']' : text));
+    const sname = m ? m[1].trim().replace(/\s+/g, '') : '';
+    const CDN_BASE = 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian';
+    const STICKERS: Record<string, string> = {
+      '你好呀': CDN_BASE + '/assets/stickers/final/01_你好呀.png',
+      '嘿嘿':   CDN_BASE + '/assets/stickers/final/02_嘿嘿.png',
+      '摸摸头': CDN_BASE + '/assets/stickers/final/03_摸摸头.png',
+      '好害羞': CDN_BASE + '/assets/stickers/final/04_好害羞.png',
+      '呜呜':   CDN_BASE + '/assets/stickers/final/05_呜呜.png',
+      '晚安':   CDN_BASE + '/assets/stickers/final/06_晚安.png',
+      '略略':   CDN_BASE + '/assets/stickers/final/07_略略.png',
+      '诶':     CDN_BASE + '/assets/stickers/final/08_诶.png',
+      '哼':     CDN_BASE + '/assets/stickers/final/09_哼.png',
+    };
+    const imgUrl = sname && STICKERS[sname];
+    if (imgUrl) {
+      const img = d.createElement('img');
+      img.src = imgUrl;
+      img.alt = sname;
+      img.style.cssText = 'width:88px;height:88px;object-fit:contain;display:block';
+      bub.appendChild(img);
+    } else {
+      bub.appendChild(d.createTextNode(m ? '[' + m[1].trim() + ']' : text));
+    }
   } else {
     bub.appendChild(d.createTextNode(text));
   }
@@ -231,7 +253,7 @@ function renderAll(): void {
     .forEach(c => renderCard(c, now));
 }
 
-// 收集页面上所有卡片的参与者（机主+联系人），用于确认谁该拥有手机
+// 收集页面上所有卡片的参与者（手机机主+联系人 + 照片拍摄者），用于确认谁该拥有手机
 function collectParticipants(): string[] {
   const set = new Set<string>();
   pdoc()
@@ -243,6 +265,14 @@ function collectParticipants(): string[] {
       else if (head.length === 3) { owner = meName(); contact = head[0].trim(); }
       if (owner) set.add(owner);
       if (contact) set.add(contact);
+    });
+  // 照片卡片：拍摄者（第一字段）也需要手机
+  pdoc()
+    .querySelectorAll('[class*="photo-data"]')
+    .forEach(el => {
+      const parts = (el.textContent || '').trim().split('|||');
+      const shooter = parts[0].trim() || meName();
+      if (shooter) set.add(shooter);
     });
   return Array.from(set);
 }
