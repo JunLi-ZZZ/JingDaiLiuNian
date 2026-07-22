@@ -8,6 +8,7 @@
 @.cursor/rules/脚本.mdc
 @.cursor/rules/mvu变量框架.mdc
 @.cursor/rules/mvu角色卡.mdc
+<<<<<<< HEAD
 
 ## 升版流程（重要）
 
@@ -19,3 +20,5 @@
 
 - 用户要求生图、改图、图生图或项目图片素材时，必须先读取并遵循 `.agents/skills/gpt-image-assets/SKILL.md`。
 - `.env.image.local` 是本地密钥文件。Claude 不得直接读取、显示、复制、暂存或提交它，也不得使用 `git add -f` 绕过忽略规则。只允许由生图脚本在运行时读取。
+=======
+>>>>>>> f24091c9a91d583dafdb4867d858268ebc487545
