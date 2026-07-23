@@ -1071,6 +1071,7 @@ let tpStyle = null
 let sendTimer = null
 let errTimer = null
 let lockedW = 0
+let lockedH = 0
 let vvRef = null
 let vvHandler = null
 let genCtx = null
@@ -1117,11 +1118,25 @@ function applyVV() {
     if (!vv) { overlayStyle.value = null; phoneStyle.value = null; return }
     overlayStyle.value = { position: 'fixed', left: vv.offsetLeft + 'px', top: vv.offsetTop + 'px', width: vv.width + 'px', height: vv.height + 'px' }
     const layoutH = (window.parent && window.parent.innerHeight) || vv.height
-    if (layoutH - vv.height > 140) {   // 软键盘顶起：只缩高度、锁住宽度，让聊天区上滑而非整机缩小
-      if (!lockedW && phoneEl.value) lockedW = phoneEl.value.offsetWidth
-      phoneStyle.value = { height: Math.round(vv.height * 0.98) + 'px', width: (lockedW || Math.round(vv.width * 0.94)) + 'px', maxWidth: 'none', aspectRatio: 'auto' }
+    if (layoutH - vv.height > 140) {   // 软键盘顶起：固定手机尺寸，避免缩小导致输入困难
+      if (!lockedW && phoneEl.value) {
+        lockedW = phoneEl.value.offsetWidth
+        lockedH = phoneEl.value.offsetHeight
+      }
+      // 保持手机原始尺寸，通过 transform 居中
+      const scale = Math.min(1, vv.height / (lockedH || 700))
+      const topOffset = Math.max(0, (vv.height - (lockedH || 700) * scale) / 2)
+      phoneStyle.value = {
+        height: (lockedH || 700) + 'px',
+        width: (lockedW || Math.round(vv.width * 0.94)) + 'px',
+        maxWidth: 'none',
+        aspectRatio: 'auto',
+        transform: scale < 1 ? `scale(${scale})` : 'none',
+        transformOrigin: 'top center',
+        marginTop: topOffset + 'px'
+      }
     } else {
-      lockedW = 0; phoneStyle.value = null
+      lockedW = 0; lockedH = 0; phoneStyle.value = null
     }
   } catch (e) {}
 }
