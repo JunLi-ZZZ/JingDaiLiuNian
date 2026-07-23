@@ -8,7 +8,7 @@ if (!anyPhone) {
   const roster = getvar('stat_data.角色名录', { defaults: {} }) || {};
   anyPhone = Object.keys(roster).some(n => hasPhone(roster[n] && roster[n].随身物品));
 }
-if (anyPhone || matchChatMessages(['手机', '微信', '短信', '来电', '发消息', '拍照', '相机', '照片', '拍了张', '自拍', '摄影'])) {
+if (anyPhone || matchChatMessages(['手机', '微信', '短信', '来电', '发消息', '拍照', '相机', '照片', '拍了张', '自拍', '摄影', '相册', '翻看', '浏览照片', '旧照片', '回忆', '那张照片'])) {
   print(await getwi('手机与照片格式'));
 }
 %>
