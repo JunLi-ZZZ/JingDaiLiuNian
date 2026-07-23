@@ -891,29 +891,13 @@ function msgToLine(m) {
 }
 // 纯手机模式上下文：合并为单条 system 字符串，避免 ordered_prompts 处理多对象时兼容问题
 function buildSilentHistory(owner, contact) {
-  const lines = []
-  // 少量正文楼层作背景（去 HTML 标签保留文本，不再用 [\s\S]*? 把整段内容也剥掉）
-  try {
-    const th = TH()
-    if (th && th.getChatMessages) {
-      const msgs = th.getChatMessages('-3--1', { hide_state: 'unhidden' }) || []
-      msgs.forEach(mm => {
-        const body = String(mm.message || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 500)
-        if (body) lines.push((mm.role === 'user' ? '【user】' : '【AI】') + body)
-      })
-    }
-  } catch (e) {}
   // 手机对话历史：最近 24 条（跳过失败条）
   const arr = ((logs.value[owner] && logs.value[owner][contact]) || []).filter(m => m.status !== 'failed')
   const recent = arr.slice(-24)
-  if (!lines.length && !recent.length) return []
-  let ctx = ''
-  if (lines.length) ctx += `【当前剧情背景（仅供了解处境，不要复述）】\n${lines.join('\n')}\n`
-  if (recent.length) {
-    const ownerLabel = owner === meName.value ? meName.value : owner
-    ctx += `【${ownerLabel}与${contact}的手机聊天记录】\n`
-    ctx += recent.map(m => (m.dir === '发出' ? ownerLabel : contact) + '：' + msgToLine(m)).join('\n')
-  }
+  if (!recent.length) return []
+  const ownerLabel = owner === meName.value ? meName.value : owner
+  let ctx = `【${ownerLabel}与${contact}的手机聊天记录】\n`
+  ctx += recent.map(m => (m.dir === '发出' ? ownerLabel : contact) + '：' + msgToLine(m)).join('\n')
   return [{ role: 'system', content: ctx.trim() }]
 }
 
@@ -934,6 +918,7 @@ async function silentReply(owner, contact, myText, pref) {
     `第一行固定是「发出|文字|${myText}」（原样复制，这是机主刚发出的那条消息）；之后是「${contact}」的一条或多条回复，方向一律写「收到」。` +
     `联系人填名录全名、与角色名录一致，不用昵称/简称/代称；时间用绝对格式、与世界当前时间一致；每条消息占一行写作「方向|类型|内容」，类型据实取 文字/语音/图片/表情/红包 之一，非文字类型时内容处写这条消息承载的信息（图片写画面，语音写说出的话，表情写[表情:名称]，红包写祝福语）；可回复多条，按先后顺序排列。模仿真实微信的随意性：消息条数、长度、类型自然多样，避免每次都是固定的句式或格式。`
   try {
+    const history = buildSilentHistory(owner, contact)
     let result
     if (th.generateRaw) {
       const ordered = [
@@ -942,6 +927,7 @@ async function silentReply(owner, contact, myText, pref) {
         'char_description',
         'world_info_before',
         'world_info_after',
+        ...history,
         { role: 'user', content: `以「${contact}」身份回消息，只输出一个 <手机> 块，块外不写任何其它文字：\n<手机>\n机主: ${owner}\n联系人: ${contact}\n时间: YYYY年MM月DD日 HH:MM\n发出|文字|${myText}\n收到|文字|${contact}回复的内容\n</手机>` },
       ]
       result = await th.generateRaw({
@@ -950,7 +936,6 @@ async function silentReply(owner, contact, myText, pref) {
         ordered_prompts: ordered,
       })
     } else {
-      const history = buildSilentHistory(owner, contact)
       result = await th.generate({
         user_input: instruction,
         should_silence: true,
@@ -1472,7 +1457,7 @@ onUnmounted(() => {
 .ico-wp{background:linear-gradient(160deg,#f7c97e,#e0903a)}
 
 /* 相机 */
-.mp-cam{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;background:#000}
+.mp-cam{position:absolute;inset:7px;z-index:10;display:flex;flex-direction:column;background:#000;border-radius:33px;overflow:hidden}
 .mp-cam-nav{display:flex;align-items:center;justify-content:space-between;padding:6px 14px 8px;background:rgba(0,0,0,.7);flex-shrink:0}
 .mp-cam-title{font-size:16px;font-weight:600;color:#fff}
 .mp-cam-gear{display:flex;align-items:center;justify-content:center;width:30px;height:30px;background:none;border:none;cursor:pointer;position:relative;color:#fff}
@@ -1506,7 +1491,7 @@ onUnmounted(() => {
 .mp-cam-bar-r{width:46px}
 
 /* 相册 */
-.mp-album{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;background:#000}
+.mp-album{position:absolute;inset:7px;z-index:10;display:flex;flex-direction:column;background:#000;border-radius:33px;overflow:hidden}
 .mp-album-body{flex:1;overflow-y:auto;background:#111;-webkit-overflow-scrolling:touch}
 .mp-album-body::-webkit-scrollbar{width:0}
 .mp-album-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:2px}
@@ -1526,7 +1511,7 @@ onUnmounted(() => {
 .mp-detail-cap::-webkit-scrollbar{width:0}
 
 /* 壁纸 */
-.mp-wp-panel{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;background:#efeff4}
+.mp-wp-panel{position:absolute;inset:7px;z-index:10;display:flex;flex-direction:column;background:#efeff4;border-radius:33px;overflow:hidden}
 .mp-wp-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .mp-wp-body::-webkit-scrollbar{width:0}
 .mp-wp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:14px}
