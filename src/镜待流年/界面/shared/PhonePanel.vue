@@ -1118,22 +1118,19 @@ function applyVV() {
     if (!vv) { overlayStyle.value = null; phoneStyle.value = null; return }
     overlayStyle.value = { position: 'fixed', left: vv.offsetLeft + 'px', top: vv.offsetTop + 'px', width: vv.width + 'px', height: vv.height + 'px' }
     const layoutH = (window.parent && window.parent.innerHeight) || vv.height
-    if (layoutH - vv.height > 140) {   // 软键盘顶起：固定手机尺寸，避免缩小导致输入困难
+    if (layoutH - vv.height > 140) {   // 软键盘弹起：完全锁定尺寸，不缩放
       if (!lockedW && phoneEl.value) {
         lockedW = phoneEl.value.offsetWidth
         lockedH = phoneEl.value.offsetHeight
       }
-      // 保持手机原始尺寸，通过 transform 居中
-      const scale = Math.min(1, vv.height / (lockedH || 700))
-      const topOffset = Math.max(0, (vv.height - (lockedH || 700) * scale) / 2)
+      // 保持手机原始尺寸，顶部对齐，底部输入框保持可用
       phoneStyle.value = {
         height: (lockedH || 700) + 'px',
         width: (lockedW || Math.round(vv.width * 0.94)) + 'px',
         maxWidth: 'none',
         aspectRatio: 'auto',
-        transform: scale < 1 ? `scale(${scale})` : 'none',
-        transformOrigin: 'top center',
-        marginTop: topOffset + 'px'
+        marginTop: '0',
+        alignSelf: 'flex-start'
       }
     } else {
       lockedW = 0; lockedH = 0; phoneStyle.value = null
