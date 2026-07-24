@@ -49,14 +49,15 @@
             <div v-if="!messages.length" class="mp-chat-empty"></div>
             <template v-for="(m, i) in messages" :key="i">
               <div v-if="showSep(i)" class="mp-timesep"><span>{{ fmtTime(m.time) }}</span></div>
-              <div :class="['mp-row', m.dir === '发出' ? 'out' : 'in']">
-                <div class="mp-ava">{{ initial(m.dir === '发出' ? curOwner : activeContact) }}</div>
+              <div :class="['mp-row', m.dir === '发出' ? 'out' : m.dir === '系统' ? 'sys' : 'in']" @pointerdown="startLongPress($event, i, m)" @pointerup="cancelLongPress" @pointermove="cancelLongPress" @pointercancel="cancelLongPress" @contextmenu.prevent>
+                <div v-if="m.dir !== '系统'" class="mp-ava">{{ initial(m.dir === '发出' ? curOwner : activeContact) }}</div>
                 <div :class="['mp-bub', 'mt-' + (m.type || '文字')]">
                   <template v-if="m.type === '语音'"><span class="mp-voice" :style="{ width: voiceWidth(m.text) }"><span class="mp-voice-ico"><i></i><i></i><i></i></span><span class="mp-voice-len">{{ voiceLen(m.text) }}″</span></span><span class="mp-vtext">{{ m.text }}</span></template>
                   <template v-else-if="m.type === '图片'"><span class="mp-media"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M128 128c-35 0-64 29-64 64v256c0 35 29 64 64 64h384c35 0 64-29 64-64V192c0-35-29-64-64-64zm80 80a48 48 0 110 96 48 48 0 010-96m304 240H128l96-128 64 80 80-112z"/></svg></span><span class="mp-cap">{{ m.text }}</span></template>
                   <template v-else-if="m.type === '视频'"><span class="mp-media mp-video"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M320 128a192 192 0 100 384 192 192 0 000-384m-40 120l112 72-112 72z"/></svg></span><span class="mp-cap">{{ m.text }}</span></template>
                   <template v-else-if="m.type === '红包'"><span class="mp-rp-top"><span class="mp-rp-ico"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2m0 2v5h12V4zm6 9a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2"/></svg></span><span class="mp-rp-txt">{{ m.text || '恭喜发财，大吉大利' }}</span></span><span class="mp-rp-tag">微信红包</span></template>
                   <template v-else-if="m.type === '表情'"><img v-if="stickerUrl(m.text)" class="mp-sticker-img" :src="stickerUrl(m.text)" :alt="m.text" /><span v-else class="mp-sticker">{{ stickerFallback(m.text) }}</span></template>
+                  <template v-else-if="m.type === '系统'"><span class="mp-sys-text">{{ m.text }}</span></template>
                   <template v-else><span v-html="renderText(m.text)"></span></template>
                 </div>
                 <button v-if="m.status === 'failed'" class="mp-fail" title="发送失败，点击重发" @click="resend(m)">!</button>
@@ -229,6 +230,16 @@
           </div>
         </div>
 
+        <!-- 长按消息菜单 -->
+        <div v-if="ctxMenu" class="mp-ctx-overlay" @click.self="closeCtxMenu">
+          <div class="mp-ctx-sheet">
+            <button v-if="ctxMenu.dir === '发出'" class="mp-ctx-item" @click="recallMsg">撤回</button>
+            <button v-if="ctxMenu.dir === '发出'" class="mp-ctx-item" @click="resendCtx">重发</button>
+            <button class="mp-ctx-item danger" @click="deleteMsg">删除</button>
+            <button class="mp-ctx-cancel" @click="closeCtxMenu">取消</button>
+          </div>
+        </div>
+
         <!-- 设置页：我tab点设置打开 -->
         <div v-if="showSettings" class="mp-profile">
           <div class="mp-prof-nav">
@@ -395,6 +406,8 @@ const wxTab = ref('chats')
 const discoverView = ref('list')
 const activeContact = ref('')
 const draft = ref('')
+const ctxMenu = ref(null)
+let lpTimer = null
 const newContact = ref('')
 const showSearch = ref(false)
 const showNew = ref(false)
@@ -846,6 +859,35 @@ function resend(msg) {
   saveLogs()
   send(msg.text)
 }
+function startLongPress(e, i, m) {
+  clearTimeout(lpTimer)
+  lpTimer = setTimeout(() => { ctxMenu.value = { idx: i, dir: m.dir } }, 500)
+}
+function cancelLongPress() { clearTimeout(lpTimer) }
+function closeCtxMenu() { ctxMenu.value = null }
+function deleteMsg() {
+  const arr = ownerLogs.value[activeContact.value]
+  if (arr && ctxMenu.value !== null) { arr.splice(ctxMenu.value.idx, 1); saveLogs() }
+  closeCtxMenu()
+}
+function recallMsg() {
+  const arr = ownerLogs.value[activeContact.value]
+  if (arr && ctxMenu.value !== null) {
+    const orig = arr[ctxMenu.value.idx]
+    arr.splice(ctxMenu.value.idx, 1, { dir: '系统', type: '系统', text: '你撤回了一条消息', time: orig.time })
+    saveLogs()
+  }
+  closeCtxMenu()
+}
+function resendCtx() {
+  const arr = ownerLogs.value[activeContact.value]
+  if (arr && ctxMenu.value !== null) {
+    const msg = { ...arr[ctxMenu.value.idx] }
+    arr.splice(ctxMenu.value.idx, 1)
+    resend(msg)
+  }
+  closeCtxMenu()
+}
 
 // 剥掉推理模型的思维链，避免思维链里出现的 <手机> 或文字被当成消息
 function stripReasoning(s) {
@@ -1179,7 +1221,7 @@ onUnmounted(() => {
 @keyframes mp-pop{0%{opacity:0;transform:scale(.93) translateY(14px)}100%{opacity:1;transform:scale(1) translateY(0)}}
 .mp-power{position:absolute;right:-3px;top:180px;width:3px;height:74px;border:none;background:linear-gradient(180deg,#3a3a40,#141416);border-radius:3px;cursor:pointer;z-index:9}
 .mp-phone > *:not(.mp-power):not(.mp-island):not(.mp-cam):not(.mp-album):not(.mp-wp-panel){position:relative;z-index:2}
-.mp-island{position:absolute;left:50%;top:14px;transform:translateX(-50%);width:96px;height:26px;background:#000;border-radius:13px;z-index:8}
+.mp-island{position:absolute;left:50%;top:10px;transform:translateX(-50%);width:86px;height:23px;background:#000;border-radius:12px;z-index:8}
 
 /* 状态栏 */
 .mp-status{display:flex;align-items:center;justify-content:space-between;padding:8px 34px 6px;font-size:14px;font-weight:600;color:#111;flex-shrink:0}
@@ -1334,6 +1376,17 @@ onUnmounted(() => {
 .mp-pending{align-self:center;flex-shrink:0;width:16px;height:16px;border:2px solid #c8c8ca;border-top-color:#8a8a8e;border-radius:50%;animation:mp-spin .7s linear infinite}
 @keyframes mp-spin{100%{transform:rotate(360deg)}}
 .mp-toast{position:absolute;left:50%;bottom:64px;transform:translateX(-50%);background:rgba(0,0,0,.78);color:#fff;font-size:12.5px;padding:7px 14px;border-radius:8px;z-index:10;white-space:nowrap;animation:mp-fade .2s ease-out;pointer-events:none}
+.mp-row.sys{justify-content:center;margin-bottom:8px}
+.mp-bub.mt-系统{background:transparent!important;padding:2px 0!important;max-width:100%;box-shadow:none}
+.mp-bub.mt-系统::before{display:none}
+.mp-sys-text{font-size:12px;color:#888}
+.mp-ctx-overlay{position:absolute;inset:0;z-index:30;display:flex;align-items:flex-end;background:rgba(0,0,0,.38);animation:mp-fade .15s ease-out}
+.mp-ctx-sheet{width:100%;background:#f7f7f7;border-radius:12px 12px 0 0;overflow:hidden;padding-bottom:env(safe-area-inset-bottom,8px)}
+.mp-ctx-item{display:block;width:100%;padding:13px 18px;border:none;border-bottom:1px solid rgba(0,0,0,.06);background:#fff;text-align:left;font-size:15px;color:#0d0d0d;cursor:pointer;font-family:inherit}
+.mp-ctx-item:active{background:#e8e8e8}
+.mp-ctx-item.danger{color:#fa5151}
+.mp-ctx-cancel{display:block;width:100%;margin-top:8px;padding:13px 18px;border:none;background:#fff;text-align:center;font-size:15px;font-weight:600;color:#0d0d0d;cursor:pointer;font-family:inherit}
+.mp-ctx-cancel:active{background:#e8e8e8}
 
 /* 输入栏 */
 .mp-inbar{display:flex;gap:8px;align-items:center;padding:7px 10px 15px;background:#f7f7f7;border-top:1px solid rgba(0,0,0,.06);flex-shrink:0}
@@ -1473,6 +1526,7 @@ onUnmounted(() => {
 .mp-cam-nav{display:flex;align-items:center;justify-content:space-between;padding:6px 14px 8px;background:rgba(0,0,0,.7);flex-shrink:0}
 .mp-cam-title{font-size:16px;font-weight:600;color:#fff}
 .mp-cam-gear{display:flex;align-items:center;justify-content:center;width:30px;height:30px;background:none;border:none;cursor:pointer;position:relative;color:#fff}
+.mp-cam .mp-nav-back{color:#fff}
 .mp-cam-gear svg{width:18px;height:18px;color:#c8c8ca}
 .mp-cam-gear .ico-set-gear{position:absolute;width:18px;height:18px;color:#c8c8ca;opacity:.9}
 .mp-cam-settings{position:absolute;top:44px;right:10px;background:rgba(30,30,34,.95);border-radius:12px;padding:10px 0;z-index:20;min-width:190px;box-shadow:0 4px 16px rgba(0,0,0,.5)}
