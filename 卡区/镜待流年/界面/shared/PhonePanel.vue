@@ -860,6 +860,7 @@ function resend(msg) {
   send(msg.text)
 }
 function startLongPress(e, i, m) {
+  e.preventDefault()
   clearTimeout(lpTimer)
   lpTimer = setTimeout(() => { ctxMenu.value = { idx: i, dir: m.dir } }, 500)
 }
@@ -939,7 +940,7 @@ function buildSilentHistory(owner, contact) {
   if (!recent.length) return []
   const ownerLabel = owner === meName.value ? meName.value : owner
   let ctx = `【${ownerLabel}与${contact}的手机聊天记录】\n`
-  ctx += recent.map(m => (m.dir === '发出' ? ownerLabel : contact) + '：' + msgToLine(m)).join('\n')
+  ctx += recent.map(m => m.dir === '系统' ? `（${m.text}）` : (m.dir === '发出' ? ownerLabel : contact) + '：' + msgToLine(m)).join('\n')
   return [{ role: 'system', content: ctx.trim() }]
 }
 
@@ -1336,7 +1337,7 @@ onUnmounted(() => {
 .mp-row.out{flex-direction:row-reverse}
 .mp-row .mp-ava{width:38px;height:38px;font-size:17px;border-radius:5px}
 .mp-row.out .mp-ava{background:linear-gradient(135deg,#5bd07a,#07c160)}
-.mp-bub{position:relative;max-width:64%;padding:9px 12px;border-radius:5px;font-size:15px;line-height:1.45;color:#0d0d0d;background:#fff;word-break:break-word;white-space:pre-wrap}
+.mp-bub{position:relative;max-width:64%;padding:9px 12px;border-radius:5px;font-size:15px;line-height:1.45;color:#0d0d0d;background:#fff;word-break:break-word;white-space:pre-wrap;-webkit-user-select:none;user-select:none}
 .mp-row.out .mp-bub{background:#95ec69}
 .mp-bub::before{content:'';position:absolute;top:12px;width:0;height:0;border:5px solid transparent}
 .mp-row.in .mp-bub::before{left:-9px;border-right-color:#fff}
