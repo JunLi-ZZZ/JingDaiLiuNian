@@ -31,7 +31,7 @@
           <button class="mp-app" @click="view = 'camera'"><span class="mp-app-ico ico-cam"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M256 128l-32 48h-96c-35 0-64 29-64 64v224c0 35 29 64 64 64h384c35 0 64-29 64-64V240c0-35-29-64-64-64h-96l-32-48zm64 128a112 112 0 110 224 112 112 0 010-224"/></svg></span><span class="mp-app-lbl">相机</span></button>
           <button class="mp-app" @click="view = 'album'"><span class="mp-app-ico ico-album"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M96 96h448c35 0 64 29 64 64v320c0 35-29 64-64 64H96c-35 0-64-29-64-64V160c0-35 29-64 64-64zm80 80a80 80 0 100 160 80 80 0 000-160zm336 304L384 320l-96 128-64-80-112 112z"/></svg></span><span class="mp-app-lbl">相册</span></button>
           <button class="mp-app" @click="view = 'wallpaper'"><span class="mp-app-ico ico-wp"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M320 64a256 256 0 100 512A256 256 0 00320 64m0 64a192 192 0 110 384A192 192 0 01320 128m0 64a128 128 0 100 256 128 128 0 000-256"/></svg></span><span class="mp-app-lbl">壁纸</span></button>
-          <button class="mp-app mp-app-dim" disabled><span class="mp-app-ico ico-note"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M160 64c-35 0-64 29-64 64v384c0 35 29 64 64 64h320c35 0 64-29 64-64V128c0-35-29-64-64-64zm64 128h192v48H224zm0 112h192v48H224zm0 112h128v48H224z"/></svg></span><span class="mp-app-lbl">备忘</span></button>
+          <button class="mp-app" @click="view = 'douyin'"><span class="mp-app-ico" style="background:linear-gradient(160deg,#fe2c55,#010101)"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M448 64v320a160 160 0 11-64-128V192l-192-32V448a160 160 0 11-64-128V96z"/></svg></span><span class="mp-app-lbl">抖音</span></button>
           <button class="mp-app" @click="showPhoneSettings = true"><span class="mp-app-ico ico-set"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M320 208a112 112 0 100 224 112 112 0 000-224m0 64a48 48 0 110 96 48 48 0 010-96"/></svg><svg class="ico-set-gear" viewBox="0 0 640 640"><path fill="currentColor" d="M320 128l24 56 60-16 4 62 58 22-36 50 36 50-58 22-4 62-60-16-24 56-24-56-60 16-4-62-58-22 36-50-36-50 58-22 4-62 60 16z"/></svg></span><span class="mp-app-lbl">设置</span></button>
         </div>
       </div>
@@ -49,9 +49,9 @@
             <div v-if="!messages.length" class="mp-chat-empty"></div>
             <template v-for="(m, i) in messages" :key="i">
               <div v-if="showSep(i)" class="mp-timesep"><span>{{ fmtTime(m.time) }}</span></div>
-              <div :class="['mp-row', m.dir === '发出' ? 'out' : m.dir === '系统' ? 'sys' : 'in']" @pointerdown="startLongPress($event, i, m)" @pointerup="cancelLongPress" @pointermove="cancelLongPress" @pointercancel="cancelLongPress" @contextmenu.prevent>
+              <div :class="['mp-row', m.dir === '发出' ? 'out' : m.dir === '系统' ? 'sys' : 'in']">
                 <div v-if="m.dir !== '系统'" class="mp-ava">{{ initial(m.dir === '发出' ? curOwner : activeContact) }}</div>
-                <div :class="['mp-bub', 'mt-' + (m.type || '文字')]">
+                <div :class="['mp-bub', 'mt-' + (m.type || '文字')]" @click.stop="openCtxMenu(i, m.dir)">
                   <template v-if="m.type === '语音'"><span class="mp-voice" :style="{ width: voiceWidth(m.text) }"><span class="mp-voice-ico"><i></i><i></i><i></i></span><span class="mp-voice-len">{{ voiceLen(m.text) }}″</span></span><span class="mp-vtext">{{ m.text }}</span></template>
                   <template v-else-if="m.type === '图片'"><span class="mp-media"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M128 128c-35 0-64 29-64 64v256c0 35 29 64 64 64h384c35 0 64-29 64-64V192c0-35-29-64-64-64zm80 80a48 48 0 110 96 48 48 0 010-96m304 240H128l96-128 64 80 80-112z"/></svg></span><span class="mp-cap">{{ m.text }}</span></template>
                   <template v-else-if="m.type === '视频'"><span class="mp-media mp-video"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M320 128a192 192 0 100 384 192 192 0 000-384m-40 120l112 72-112 72z"/></svg></span><span class="mp-cap">{{ m.text }}</span></template>
@@ -277,14 +277,36 @@
           <div class="mp-setapp-hd">纯手机模式</div>
           <div class="mp-setapp-desc">开启后，在该应用里发消息只在手机内往来、不写进正文，AI 只以聊天对象的身份在手机里回你。适合单独把玩手机、补写消息。</div>
           <div class="mp-setapp-sec">
-            <div v-for="a in silentApps" :key="a.k" class="mp-setapp-row" :class="{ dim: !a.ready }">
-              <span class="mp-setapp-ico" :style="{ background: a.bg }">{{ a.l.slice(0, 1) }}</span>
-              <span class="mp-setapp-lbl">{{ a.l }}<span v-if="!a.ready" class="mp-setapp-soon">未上线</span></span>
-              <button v-if="a.ready" class="mp-switch" :class="{ on: silentMap[a.k] }" @click="toggleSilentApp(a.k)"><span class="mp-switch-dot"></span></button>
-              <span v-else class="mp-setapp-arrow">›</span>
+            <div v-for="a in silentApps" :key="a.k">
+              <div class="mp-setapp-row" :class="{ dim: !a.ready }">
+                <span class="mp-setapp-ico" :style="{ background: a.bg }">{{ a.l.slice(0, 1) }}</span>
+                <span class="mp-setapp-lbl">{{ a.l }}<span v-if="!a.ready" class="mp-setapp-soon">未上线</span></span>
+                <template v-if="a.k === '抖音' && a.ready">
+                  <span class="mp-dy-mode-tag" :class="{r18: douyinSettings.mode==='r18'}">{{ douyinSettings.mode==='r18' ? '抖阴模式' : '抖音模式' }}</span>
+                </template>
+                <button v-else-if="a.ready" class="mp-switch" :class="{ on: silentMap[a.k] }" @click="toggleSilentApp(a.k)"><span class="mp-switch-dot"></span></button>
+                <span v-else class="mp-setapp-arrow">›</span>
+              </div>
+              <div v-if="a.k === '抖音' && a.ready" class="mp-dy-settings-panel">
+                <div class="mp-dy-set-row">
+                  <span class="mp-dy-set-lbl">模式</span>
+                  <div class="mp-dy-set-btns">
+                    <button :class="['mp-dy-set-btn', {on: douyinSettings.mode==='normal'}]" @click="douyinSettings.mode='normal';saveDySettings()">抖音</button>
+                    <button :class="['mp-dy-set-btn', {on: douyinSettings.mode==='r18'}]" @click="douyinSettings.mode='r18';saveDySettings()">抖阴</button>
+                  </div>
+                </div>
+                <div class="mp-dy-set-row">
+                  <span class="mp-dy-set-lbl">内容</span>
+                  <div class="mp-dy-set-btns">
+                    <button :class="['mp-dy-set-btn', {on: douyinSettings.visibility==='public'}]" @click="douyinSettings.visibility='public';saveDySettings()">公开</button>
+                    <button :class="['mp-dy-set-btn', {on: douyinSettings.visibility==='private'}]" @click="douyinSettings.visibility='private';saveDySettings()">仅你可见</button>
+                  </div>
+                </div>
+                <button class="mp-dy-set-clear" @click="clearDyCache">清理视频缓存（共 {{ douyinFeed.length }} 条）</button>
+              </div>
             </div>
           </div>
-          <div class="mp-setapp-note">后续会往手机里加入更多应用（QQ、微博、抖音等），届时都能在这里各自开关。</div>
+          <div class="mp-setapp-note">后续会往手机里加入更多应用（QQ、微博等），届时都能在这里各自开关。</div>
         </div>
       </div>
 
@@ -377,6 +399,97 @@
           </div>
         </div>
       </div>
+
+      <!-- 抖音 -->
+      <div v-if="view === 'douyin'" class="mp-dy">
+        <!-- 顶栏 -->
+        <div class="mp-dy-nav">
+          <button class="mp-nav-back mp-dy-back" @click="goHome"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
+          <div class="mp-dy-tabs">
+            <button :class="['mp-dy-tab', {on: dyTab==='关注'}]" @click="dyTab='关注'">关注</button>
+            <button :class="['mp-dy-tab', {on: dyTab==='推荐'}]" @click="dyTab='推荐'">推荐</button>
+          </div>
+          <svg class="mp-dy-search-ico" viewBox="0 0 24 24"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"/></svg>
+        </div>
+        <!-- 视频流 -->
+        <div class="mp-dy-feed" ref="dyFeedEl" @scroll.passive="onDyScroll">
+          <!-- 空状态 -->
+          <div v-if="!douyinFeed.length && !generatingDy" class="mp-dy-slide mp-dy-empty" @click="generateDyVideo">
+            <div class="mp-dy-empty-ico"><svg viewBox="0 0 24 24" style="width:48px;height:48px"><path fill="currentColor" d="M8 5v14l11-7z"/></svg></div>
+            <div class="mp-dy-empty-txt">点击开始刷视频</div>
+          </div>
+          <!-- 视频卡片列表 -->
+          <div v-for="(v, vi) in douyinFeed" :key="vi" class="mp-dy-slide">
+            <div class="mp-dy-grad-top"></div>
+            <div class="mp-dy-grad-bot"></div>
+            <div class="mp-dy-content">{{ v.content }}</div>
+            <div v-if="douyinIdx===vi" class="mp-dy-dm-layer">
+              <span v-for="dm in activeDanmaku" :key="dm.k" class="mp-dy-dm" :style="{ top: dm.top+'%', animationDuration: dm.dur+'s', animationDelay: dm.delay+'s' }">{{ dm.text }}</span>
+            </div>
+            <div class="mp-dy-info">
+              <div class="mp-dy-creator-row">
+                <span class="mp-dy-creator-name">@{{ v.creator }}</span>
+                <span v-if="v.verified" class="mp-dy-verified">✓</span>
+                <button v-if="!v.isFollowing" class="mp-dy-follow-btn" @click.stop="v.isFollowing=true;saveDyFeed()">关注</button>
+              </div>
+              <div class="mp-dy-caption">{{ v.caption }}</div>
+              <div class="mp-dy-sound-row"><span class="mp-dy-note-ico">♪</span><span class="mp-dy-sound-name">{{ v.sound }}</span></div>
+            </div>
+            <div class="mp-dy-actions">
+              <div class="mp-dy-ava-wrap">
+                <div class="mp-dy-ava">{{ (v.creator||'?').replace('@','').slice(0,1).toUpperCase() }}</div>
+                <div v-if="!v.isFollowing" class="mp-dy-ava-plus" @click.stop="v.isFollowing=true;saveDyFeed()">+</div>
+              </div>
+              <button class="mp-dy-act-btn" :class="{on:v.isLiked}" @click.stop="toggleDyLike(vi)">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54z"/></svg>
+                <span>{{ v.likes }}</span>
+              </button>
+              <button class="mp-dy-act-btn" @click.stop="openDyComments(vi)">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                <span>{{ v.commentCount }}</span>
+              </button>
+              <button class="mp-dy-act-btn" @click.stop>
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.51 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.3 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+                <span>{{ v.shares }}</span>
+              </button>
+              <div class="mp-dy-disc" :class="{spinning: douyinIdx===vi}">
+                <div class="mp-dy-disc-inner">{{ (v.creator||'♪').replace('@','').slice(0,1).toUpperCase() }}</div>
+              </div>
+            </div>
+          </div>
+          <!-- 加载中 -->
+          <div v-if="generatingDy" class="mp-dy-slide mp-dy-loading">
+            <div class="mp-dy-spinner"><span></span><span></span><span></span></div>
+            <div class="mp-dy-load-txt">正在为你推荐...</div>
+          </div>
+        </div>
+        <!-- 评论弹层 -->
+        <div v-if="showDyComments" class="mp-dy-cm-overlay" @click.self="showDyComments=false">
+          <div class="mp-dy-cm-sheet">
+            <div class="mp-dy-cm-handle"></div>
+            <div class="mp-dy-cm-hd">
+              <span>{{ dyCurrentCommentTotal }} 条评论</span>
+              <button @click="showDyComments=false">✕</button>
+            </div>
+            <div class="mp-dy-cm-body">
+              <div v-for="(c, ci) in dyAllComments" :key="ci" class="mp-dy-cmt">
+                <div class="mp-dy-cmt-ava">{{ (c.user||'?').replace('@','').slice(0,1).toUpperCase() }}</div>
+                <div class="mp-dy-cmt-main">
+                  <div class="mp-dy-cmt-user">{{ c.user }}</div>
+                  <div class="mp-dy-cmt-text">{{ c.text }}</div>
+                </div>
+                <div class="mp-dy-cmt-lk"><svg viewBox="0 0 24 24" style="width:13px;height:13px"><path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54z"/></svg><span>{{ c.likes }}</span></div>
+              </div>
+              <div v-if="!dyAllComments.length" style="text-align:center;color:#888;padding:30px 0;font-size:13px">还没有评论，来说点什么吧</div>
+            </div>
+            <div class="mp-dy-cm-input">
+              <input class="mp-dy-cm-in" v-model="dyCommentDraft" placeholder="发一条友善的评论" @keydown.enter.prevent="submitDyComment" />
+              <button class="mp-dy-cm-send" :disabled="!dyCommentDraft.trim()" @click="submitDyComment">发送</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
   </Teleport>
@@ -407,7 +520,21 @@ const discoverView = ref('list')
 const activeContact = ref('')
 const draft = ref('')
 const ctxMenu = ref(null)
-let lpTimer = null
+// 抖音
+const DY_FEED_KEY = 'jdnl_dy_feed'
+const DY_IDX_KEY = 'jdnl_dy_idx'
+const DY_SETTINGS_KEY = 'jdnl_dy_settings'
+const douyinFeed = ref([])
+const douyinIdx = ref(0)
+const douyinSettings = ref({ mode: 'normal', visibility: 'public' })
+const dyTab = ref('推荐')
+const showDyComments = ref(false)
+const dyCommentIdx = ref(0)
+const dyCommentDraft = ref('')
+const generatingDy = ref(false)
+const activeDanmaku = ref([])
+const dyFeedEl = ref(null)
+let dmTimer = null
 const newContact = ref('')
 const showSearch = ref(false)
 const showNew = ref(false)
@@ -549,7 +676,7 @@ const silentApps = [
   { k: '相机', l: '相机', bg: 'linear-gradient(160deg,#8b9dbb,#4a5568)', ready: true },
   { k: 'QQ', l: 'QQ', bg: 'linear-gradient(160deg,#4aa3ff,#0a72e6)', ready: false },
   { k: '微博', l: '微博', bg: 'linear-gradient(160deg,#ff9a3d,#e6482e)', ready: false },
-  { k: '抖音', l: '抖音', bg: 'linear-gradient(160deg,#333,#000)', ready: false },
+  { k: '抖音', l: '抖音', bg: 'linear-gradient(160deg,#fe2c55,#010101)', ready: true },
 ]
 
 const curOwner = computed(() => activeOwner.value || meName.value)      // 当前机主
@@ -859,12 +986,7 @@ function resend(msg) {
   saveLogs()
   send(msg.text)
 }
-function startLongPress(e, i, m) {
-  e.preventDefault()
-  clearTimeout(lpTimer)
-  lpTimer = setTimeout(() => { ctxMenu.value = { idx: i, dir: m.dir } }, 500)
-}
-function cancelLongPress() { clearTimeout(lpTimer) }
+function openCtxMenu(i, dir) { ctxMenu.value = { idx: i, dir } }
 function closeCtxMenu() { ctxMenu.value = null }
 function deleteMsg() {
   const arr = ownerLogs.value[activeContact.value]
@@ -1042,6 +1164,99 @@ function ingestPhotoBlock(text, mode) {
   return n
 }
 
+// ---- 抖音 ----
+const currentDyVideo = computed(() => douyinFeed.value[douyinIdx.value] || null)
+const dyAllComments = computed(() => {
+  const v = douyinFeed.value[dyCommentIdx.value]
+  if (!v) return []
+  return [...(v.commentList || []), ...(v.myComments || [])]
+})
+const dyCurrentCommentTotal = computed(() => {
+  const v = douyinFeed.value[dyCommentIdx.value]
+  return v ? (v.commentList || []).length + (v.myComments || []).length : 0
+})
+function loadDyData() {
+  try {
+    const raw = localStorage.getItem(DY_FEED_KEY); if (raw) douyinFeed.value = JSON.parse(raw).slice(-50)
+    const idx = localStorage.getItem(DY_IDX_KEY); if (idx !== null) douyinIdx.value = Math.min(+idx, douyinFeed.value.length - 1)
+    const s = localStorage.getItem(DY_SETTINGS_KEY); if (s) douyinSettings.value = { ...douyinSettings.value, ...JSON.parse(s) }
+  } catch (e) {}
+}
+function saveDyFeed() { try { localStorage.setItem(DY_FEED_KEY, JSON.stringify(douyinFeed.value.slice(-50))); localStorage.setItem(DY_IDX_KEY, String(douyinIdx.value)) } catch (e) {} }
+function saveDySettings() { try { localStorage.setItem(DY_SETTINGS_KEY, JSON.stringify(douyinSettings.value)) } catch (e) {} }
+function clearDyCache() { douyinFeed.value = []; douyinIdx.value = 0; localStorage.removeItem(DY_FEED_KEY); localStorage.removeItem(DY_IDX_KEY); showToast('缓存已清理') }
+function onDyScroll() {
+  const el = dyFeedEl.value; if (!el) return
+  const idx = Math.round(el.scrollTop / el.clientHeight)
+  if (idx !== douyinIdx.value) {
+    douyinIdx.value = idx; saveDyFeed()
+    stopDanmaku()
+    const v = douyinFeed.value[idx]; if (v) startDanmaku(v)
+    if (idx >= douyinFeed.value.length - 1 && !generatingDy.value) generateDyVideo()
+  }
+}
+function toggleDyLike(vi) { const v = douyinFeed.value[vi]; if (!v) return; v.isLiked = !v.isLiked; saveDyFeed() }
+function openDyComments(vi) { dyCommentIdx.value = vi; showDyComments.value = true }
+function submitDyComment() {
+  const txt = dyCommentDraft.value.trim(); if (!txt) return
+  const v = douyinFeed.value[dyCommentIdx.value]; if (!v) return
+  if (!v.myComments) v.myComments = []
+  v.myComments.push({ user: '@' + (meName.value || '我'), text: txt, likes: '0' })
+  dyCommentDraft.value = ''; saveDyFeed()
+}
+function startDanmaku(video) {
+  stopDanmaku()
+  if (!video.danmaku || !video.danmaku.length) return
+  let di = 0
+  function spawnNext() {
+    if (!video.danmaku.length) return
+    const text = video.danmaku[di % video.danmaku.length]; di++
+    activeDanmaku.value.push({ k: Date.now() + Math.random(), text, top: 20 + Math.random() * 50, dur: 7 + Math.random() * 4, delay: 0 })
+    if (activeDanmaku.value.length > 6) activeDanmaku.value.shift()
+    dmTimer = setTimeout(spawnNext, 2500 + Math.random() * 2000)
+  }
+  dmTimer = setTimeout(spawnNext, 800)
+}
+function stopDanmaku() { clearTimeout(dmTimer); activeDanmaku.value = [] }
+
+async function generateDyVideo() {
+  if (generatingDy.value) return
+  const th = TH(); if (!th || (!th.generateRaw && !th.generate)) { showToast('当前环境不支持生成'); return }
+  generatingDy.value = true
+  const isR18 = douyinSettings.value.mode === 'r18'
+  const isPrivate = douyinSettings.value.visibility === 'private'
+  const chars = contacts.value.slice(0, 5).map(c => displayName(c)).join('、') || '角色'
+  const prompt = `你是一个创意十足的抖音内容生成器，根据以下设定生成一条视频内容。\n` +
+    (isPrivate
+      ? `发布者是游戏中的角色（从以下角色中选一个或创造相关角色：${chars}），视频是私下发给用户的，内容更私密、亲密。`
+      : `发布者是随机抖音博主，也可以偶尔是游戏中的角色（${chars}）。`) +
+    (isR18 ? `\n内容风格：大尺度、性感、成人向，可以包含挑逗性描述，但保持叙事性和场景感。` : `\n内容风格：生活化、有趣、有情感共鸣，题材多样（美食/搞笑/情感/日常/才艺/风景等）。`) +
+    `\n注意：每次生成内容要有新意，避免重复套路，发挥创意。` +
+    `\n\n请严格按以下格式输出，不输出任何其他内容：\n===DYSTART===\ncreator:@用户名（6字内）\nverified:true或false\ncaption:视频描述（20字内）#话题1 #话题2\nsound:歌曲名-歌手\nlikes:点赞数（如"1.2万"）\ncomments:评论数（如"888"）\nshares:分享数（如"234"）\ncontent:视频画面内容（2-4句，生动具体有场景感）\ndanmaku:弹幕1|弹幕2|弹幕3\nc1:@用户名|||评论内容|||赞数\nc2:@用户名|||评论内容|||赞数\nc3:@用户名|||评论内容|||赞数\n===DYEND===`
+  try {
+    let result
+    if (th.generateRaw) {
+      result = await th.generateRaw({ user_input: '生成抖音视频', should_silence: true, ordered_prompts: [{ role: 'user', content: prompt }] })
+    } else {
+      result = await th.generate(prompt)
+    }
+    const video = parseDyVideo(result)
+    if (video) { douyinFeed.value.push(video); saveDyFeed(); if (douyinFeed.value.length === 1) { douyinIdx.value = 0; nextTick(() => { startDanmaku(video) }) } }
+    else showToast('视频生成失败，请重试')
+  } catch (e) { showToast('生成出错') } finally { generatingDy.value = false }
+}
+function parseDyVideo(raw) {
+  if (!raw) return null
+  const m = raw.match(/===DYSTART===([\s\S]*?)===DYEND===/)
+  if (!m) return null
+  const block = m[1]
+  const f = (k) => { const r = block.match(new RegExp(k + ':(.+)')); return r ? r[1].trim() : '' }
+  const danmakuRaw = f('danmaku')
+  const commentList = []
+  for (let i = 1; i <= 5; i++) { const c = f('c'+i); if (c) { const p = c.split('|||'); if (p.length >= 2) commentList.push({ user: p[0].trim(), text: p[1].trim(), likes: (p[2]||'0').trim() }) } }
+  return { creator: f('creator').replace('@',''), verified: f('verified')==='true', caption: f('caption'), sound: f('sound') || '未知音乐', likes: f('likes') || '0', commentCount: f('comments') || '0', shares: f('shares') || '0', content: f('content'), danmaku: danmakuRaw ? danmakuRaw.split('|').map(s=>s.trim()).filter(Boolean) : [], commentList, myComments: [], isLiked: false, isFollowing: false }
+}
+
 // ---- 相机快门（常规模式：注入正文） ----
 function doShutter() {
   if (sendingCamera.value) return
@@ -1195,7 +1410,7 @@ function copyStyles() {
 onMounted(() => {
   if (props.owner) activeOwner.value = props.owner   // 状态栏点某角色手机 → 直接定位到该机主
   copyStyles()
-  tick(); loadLogs(); loadRemarks(); loadPhotos(); syncScrape(); syncScrapePhotos()
+  tick(); loadLogs(); loadRemarks(); loadPhotos(); loadDyData(); syncScrape(); syncScrapePhotos()
   timer = setInterval(() => { tick(); loadLogs(); loadRemarks(); loadPhotos(); syncScrape(); syncScrapePhotos() }, 2000)
   doc.documentElement.style.overflow = 'hidden'; doc.body.style.overflow = 'hidden'
   hookGen()
@@ -1337,7 +1552,7 @@ onUnmounted(() => {
 .mp-row.out{flex-direction:row-reverse}
 .mp-row .mp-ava{width:38px;height:38px;font-size:17px;border-radius:5px}
 .mp-row.out .mp-ava{background:linear-gradient(135deg,#5bd07a,#07c160)}
-.mp-bub{position:relative;max-width:64%;padding:9px 12px;border-radius:5px;font-size:15px;line-height:1.45;color:#0d0d0d;background:#fff;word-break:break-word;white-space:pre-wrap;-webkit-user-select:none;user-select:none}
+.mp-bub{position:relative;max-width:64%;padding:9px 12px;border-radius:5px;font-size:15px;line-height:1.45;color:#0d0d0d;background:#fff;word-break:break-word;white-space:pre-wrap;cursor:pointer}
 .mp-row.out .mp-bub{background:#95ec69}
 .mp-bub::before{content:'';position:absolute;top:12px;width:0;height:0;border:5px solid transparent}
 .mp-row.in .mp-bub::before{left:-9px;border-right-color:#fff}
@@ -1521,6 +1736,79 @@ onUnmounted(() => {
 /* 新 app 图标色 */
 .ico-album{background:linear-gradient(160deg,#7eb8f7,#3a7bd5)}
 .ico-wp{background:linear-gradient(160deg,#f7c97e,#e0903a)}
+
+/* 抖音 */
+.mp-dy{position:absolute;inset:7px;z-index:12;display:flex;flex-direction:column;background:#000;border-radius:33px;overflow:hidden}
+.mp-dy-nav{position:absolute;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:10px 14px 6px;background:linear-gradient(to bottom,rgba(0,0,0,.55),transparent)}
+.mp-dy-back{color:#fff!important}
+.mp-dy-tabs{display:flex;gap:16px;align-items:center}
+.mp-dy-tab{background:none;border:none;color:rgba(255,255,255,.65);font-size:15.5px;font-weight:500;cursor:pointer;padding:0 0 4px;border-bottom:2px solid transparent;font-family:inherit}
+.mp-dy-tab.on{color:#fff;font-weight:700;border-bottom-color:#fff}
+.mp-dy-search-ico{width:22px;height:22px;fill:#fff;opacity:.85;flex-shrink:0}
+.mp-dy-feed{flex:1;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none}
+.mp-dy-feed::-webkit-scrollbar{display:none}
+.mp-dy-slide{position:relative;height:100%;min-height:100%;scroll-snap-align:start;scroll-snap-stop:always;display:flex;align-items:stretch;background:#111}
+.mp-dy-grad-top{position:absolute;top:0;left:0;right:0;height:100px;background:linear-gradient(to bottom,rgba(0,0,0,.45),transparent);z-index:2;pointer-events:none}
+.mp-dy-grad-bot{position:absolute;bottom:0;left:0;right:0;height:180px;background:linear-gradient(to top,rgba(0,0,0,.72),transparent);z-index:2;pointer-events:none}
+.mp-dy-content{position:absolute;top:80px;left:14px;right:68px;bottom:120px;z-index:3;font-size:14px;line-height:1.7;color:rgba(255,255,255,.92);overflow:hidden;display:flex;align-items:flex-start;white-space:pre-wrap;word-break:break-word}
+.mp-dy-empty,.mp-dy-loading{justify-content:center;align-items:center;flex-direction:column;gap:12px;cursor:pointer}
+.mp-dy-empty-ico{color:rgba(255,255,255,.6)}
+.mp-dy-empty-txt,.mp-dy-load-txt{color:rgba(255,255,255,.6);font-size:14px}
+.mp-dy-spinner{display:flex;gap:6px;align-items:center}
+.mp-dy-spinner span{width:8px;height:8px;border-radius:50%;background:#fe2c55;animation:mp-bnc 1s infinite}
+.mp-dy-spinner span:nth-child(2){animation-delay:.15s}.mp-dy-spinner span:nth-child(3){animation-delay:.3s}
+.mp-dy-dm-layer{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden}
+.mp-dy-dm{position:absolute;right:0;white-space:nowrap;font-size:12.5px;color:rgba(255,255,255,.82);text-shadow:0 1px 3px rgba(0,0,0,.6);animation:mp-dy-fly linear forwards}
+@keyframes mp-dy-fly{from{transform:translateX(105%)}to{transform:translateX(-110%)}}
+.mp-dy-info{position:absolute;bottom:56px;left:14px;right:68px;z-index:5;display:flex;flex-direction:column;gap:5px}
+.mp-dy-creator-row{display:flex;align-items:center;gap:6px}
+.mp-dy-creator-name{color:#fff;font-size:15px;font-weight:700}
+.mp-dy-verified{color:#20d5ec;font-size:12px;font-weight:700}
+.mp-dy-follow-btn{padding:1px 8px;border:1px solid #fff;border-radius:3px;background:transparent;color:#fff;font-size:12px;cursor:pointer;font-family:inherit}
+.mp-dy-caption{color:rgba(255,255,255,.9);font-size:13px;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.mp-dy-sound-row{display:flex;align-items:center;gap:5px;color:rgba(255,255,255,.8);font-size:12px}
+.mp-dy-note-ico{font-size:13px}
+.mp-dy-sound-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mp-dy-actions{position:absolute;right:8px;bottom:60px;z-index:5;display:flex;flex-direction:column;align-items:center;gap:18px}
+.mp-dy-ava-wrap{position:relative;width:44px;margin-bottom:4px}
+.mp-dy-ava{width:44px;height:44px;border-radius:50%;border:2px solid #fff;background:linear-gradient(135deg,#fe2c55,#ff6d9f);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff}
+.mp-dy-ava-plus{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:18px;height:18px;border-radius:50%;background:#fe2c55;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1}
+.mp-dy-act-btn{background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:#fff;padding:0}
+.mp-dy-act-btn svg{width:30px;height:30px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
+.mp-dy-act-btn span{font-size:11.5px;font-weight:500;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.mp-dy-act-btn.on svg{fill:#fe2c55}
+.mp-dy-disc{width:40px;height:40px;border-radius:50%;border:6px solid #2a2a2a;background:linear-gradient(135deg,#1a1a1a,#333);display:flex;align-items:center;justify-content:center;margin-top:2px}
+.mp-dy-disc.spinning{animation:mp-dy-spin 3s linear infinite}
+@keyframes mp-dy-spin{100%{transform:rotate(360deg)}}
+.mp-dy-disc-inner{width:16px;height:16px;border-radius:50%;background:#fe2c55;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:700}
+.mp-dy-cm-overlay{position:absolute;inset:0;z-index:25;background:rgba(0,0,0,.5);display:flex;align-items:flex-end}
+.mp-dy-cm-sheet{width:100%;height:72%;background:#1c1c1c;border-radius:12px 12px 0 0;display:flex;flex-direction:column;overflow:hidden}
+.mp-dy-cm-handle{width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.25);margin:10px auto 0}
+.mp-dy-cm-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;color:#fff;font-size:15px;font-weight:600}
+.mp-dy-cm-hd button{background:none;border:none;color:rgba(255,255,255,.6);font-size:16px;cursor:pointer;line-height:1}
+.mp-dy-cm-body{flex:1;overflow-y:auto;padding:8px 14px}
+.mp-dy-cm-body::-webkit-scrollbar{width:0}
+.mp-dy-cmt{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.mp-dy-cmt-ava{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#fe2c55,#ff8c69);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+.mp-dy-cmt-main{flex:1;min-width:0}
+.mp-dy-cmt-user{font-size:12.5px;color:#aaa;margin-bottom:3px}
+.mp-dy-cmt-text{font-size:14px;color:#e8e8e8;line-height:1.4}
+.mp-dy-cmt-lk{display:flex;flex-direction:column;align-items:center;gap:3px;color:#aaa;font-size:11px;flex-shrink:0}
+.mp-dy-cm-input{display:flex;gap:8px;padding:8px 14px 12px;border-top:1px solid rgba(255,255,255,.08)}
+.mp-dy-cm-in{flex:1;background:#333;border:none;border-radius:20px;padding:8px 14px;color:#fff;font-size:14px;font-family:inherit;outline:none}
+.mp-dy-cm-in::placeholder{color:#666}
+.mp-dy-cm-send{padding:8px 14px;border:none;border-radius:20px;background:#fe2c55;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit}
+.mp-dy-cm-send:disabled{opacity:.4;cursor:default}
+.mp-dy-mode-tag{font-size:12px;padding:2px 8px;border-radius:10px;background:rgba(254,44,85,.15);color:#fe2c55;border:1px solid rgba(254,44,85,.3)}
+.mp-dy-mode-tag.r18{background:rgba(130,0,30,.3);color:#ff6b9d;border-color:rgba(255,107,157,.3)}
+.mp-dy-settings-panel{background:#f7f7fa;padding:8px 16px 12px;border-bottom:1px solid #e2e2e6}
+.mp-dy-set-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0}
+.mp-dy-set-lbl{font-size:14px;color:#444}
+.mp-dy-set-btns{display:flex;gap:6px}
+.mp-dy-set-btn{padding:4px 12px;border:1px solid #ddd;border-radius:14px;background:#fff;font-size:13px;color:#666;cursor:pointer;font-family:inherit}
+.mp-dy-set-btn.on{background:#fe2c55;border-color:#fe2c55;color:#fff}
+.mp-dy-set-clear{width:100%;margin-top:6px;padding:8px;border:none;border-radius:8px;background:#f0f0f2;color:#666;font-size:13px;cursor:pointer;font-family:inherit}
+.mp-dy-set-clear:active{background:#e0e0e2}
 
 /* 相机 */
 .mp-cam{position:absolute;inset:7px;z-index:10;display:flex;flex-direction:column;background:#000;border-radius:33px;overflow:hidden}
