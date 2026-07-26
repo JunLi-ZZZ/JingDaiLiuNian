@@ -438,7 +438,7 @@
           <template v-else>
             <button class="mp-nav-back mp-dy-back" @click="goHome"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
             <div class="mp-dy-tabs">
-              <span v-if="!dyR18" class="mp-dy-tab-dim">直播</span>
+              <button v-if="!dyR18" class="mp-dy-tab mp-dy-tab-live" @click="openDyLive">直播</button>
               <span v-if="!dyR18" class="mp-dy-tab-dim">商城</span>
               <button :class="['mp-dy-tab', {on: dyTab==='关注'}]" @click="switchDyTab('关注')">关注</button>
               <button :class="['mp-dy-tab', {on: dyTab==='推荐'}]" @click="switchDyTab('推荐')">推荐</button>
@@ -620,10 +620,10 @@
                   <svg viewBox="0 0 24 24"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.75 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z"/></svg>
                 </button>
               </div>
-              <div v-if="generatingHot && !dyHotList.length" class="mp-dys-hot-loading">正在加载热榜…</div>
-              <div v-else-if="!dyHotList.length" class="mp-dys-hot-empty">点击右上角刷新加载热榜</div>
+              <div v-if="generatingHot && !dyHotShown.length" class="mp-dys-hot-loading">正在加载热榜…</div>
+              <div v-else-if="!dyHotShown.length" class="mp-dys-hot-empty">点击右上角 ↻ 刷新，加载{{ dyR18 ? '抖阴' : '抖音' }}热榜</div>
               <div v-else class="mp-dys-hot-list">
-                <div v-for="(h, hi) in dyHotList" :key="hi" class="mp-dys-hot-row" @click="runDySearch(h.topic)">
+                <div v-for="(h, hi) in dyHotShown" :key="hi" class="mp-dys-hot-row" @click="runDySearch(h.topic)">
                   <span class="mp-dys-hot-rank" :class="{top:hi<3}">{{ hi+1 }}</span>
                   <span class="mp-dys-hot-topic">{{ h.topic }}</span>
                   <span v-if="h.heat" class="mp-dys-hot-heat">{{ h.heat }}</span>
@@ -631,6 +631,50 @@
               </div>
             </div>
           </div>
+        </div>
+        <!-- 直播 -->
+        <div v-if="showDyLive" class="mp-dyl">
+          <template v-if="!dyLiveRoom">
+            <div class="mp-dyl-hd">
+              <button class="mp-nav-back" @click="closeDyLive"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
+              <span class="mp-dyl-title">直播广场</span>
+              <button class="mp-dyl-refresh" :class="{spin:generatingLiveList}" @click="generateDyLiveList" :disabled="generatingLiveList"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.75 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z"/></svg></button>
+            </div>
+            <div class="mp-dyl-body">
+              <div v-if="generatingLiveList && !dyLiveList.length" class="mp-dyl-none">正在加载直播…</div>
+              <div v-else-if="!dyLiveList.length" class="mp-dyl-none">点击右上角 ↻ 刷新加载直播</div>
+              <div v-else class="mp-dyl-grid">
+                <div v-for="(r, ri) in dyLiveList" :key="ri" class="mp-dyl-card" @click="enterDyLiveRoom(r)">
+                  <div class="mp-dyl-cover">{{ (r.streamer||'?').slice(0,1).toUpperCase() }}<span class="mp-dyl-live-tag">● LIVE</span></div>
+                  <div class="mp-dyl-cap">{{ r.title }}</div>
+                  <div class="mp-dyl-meta"><span class="mp-dyl-st">@{{ r.streamer }}</span><span class="mp-dyl-vw">{{ r.viewers }}</span></div>
+                </div>
+              </div>
+            </div>
+          </template>
+          <template v-else>
+            <div class="mp-dylr">
+              <div class="mp-dylr-top">
+                <div class="mp-dylr-who">
+                  <div class="mp-dylr-ava">{{ (dyLiveRoom.streamer||'?').slice(0,1).toUpperCase() }}</div>
+                  <div class="mp-dylr-info"><div class="mp-dylr-name">@{{ dyLiveRoom.streamer }}<span v-if="dyLiveRoom.verified" class="mp-dy-verified">✓</span></div><div class="mp-dylr-vw">{{ dyLiveRoom.viewers }} 在线</div></div>
+                </div>
+                <button class="mp-dylr-x" @click="leaveDyLiveRoom"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M18.3 5.71L12 12.01l-6.3-6.3l-1.42 1.42l6.3 6.29l-6.3 6.3l1.42 1.41L12 14.84l6.3 6.29l1.41-1.41l-6.29-6.3l6.29-6.29z"/></svg></button>
+              </div>
+              <div class="mp-dylr-stage">
+                <div class="mp-dylr-dm-band"><span v-for="dm in activeDanmaku" :key="dm.k" class="mp-dy-dm" :style="{ top: dm.top+'px', animationDuration: dm.dur+'s' }">{{ dm.text }}</span></div>
+                <div class="mp-dylr-content" ref="dyLiveContentEl">
+                  <div class="mp-dylr-title">{{ dyLiveRoom.title }}</div>
+                  <div v-for="(seg, si) in dyLiveRoom.segments" :key="si" class="mp-dylr-seg">{{ seg }}</div>
+                  <div v-if="generatingLiveSeg" class="mp-dylr-seg-loading">主播正在直播…</div>
+                </div>
+              </div>
+              <div class="mp-dylr-bar">
+                <div class="mp-dylr-gifts"><button v-for="g in DY_LIVE_GIFTS" :key="g.k" class="mp-dylr-gift" @click="sendDyGift(g)">{{ g.icon }}</button></div>
+                <button class="mp-dylr-next" @click="generateDyLiveSegment" :disabled="generatingLiveSeg">继续</button>
+              </div>
+            </div>
+          </template>
         </div>
       </div>
 
@@ -720,6 +764,14 @@ const DY_SEARCHES_KEY = 'jdnl_dy_searches'
 const dyHotList = ref([])                 // 热榜条目 [{topic,heat}]
 const dyHotMode = ref('')                 // 当前热榜是哪个模式生成的(normal/r18)，切模式要重出
 const generatingHot = ref(false)
+// 直播（阶段C）
+const showDyLive = ref(false)             // 直播列表页是否打开
+const dyLiveList = ref([])                // 直播间预览 [{streamer,title,viewers,verified,tag}]
+const generatingLiveList = ref(false)
+const dyLiveRoom = ref(null)              // 当前进入的直播间 {streamer,title,verified,segments:[],danmaku:[],viewers}
+const generatingLiveSeg = ref(false)
+const dyLiveContentEl = ref(null)         // 直播间内容滚动容器，新段落生成后滚到底
+const DY_LIVE_GIFTS = [{ k: 'like', icon: '👍', name: '点赞' }, { k: 'rose', icon: '🌹', name: '玫瑰' }, { k: 'heart', icon: '❤️', name: '小心心' }, { k: 'rocket', icon: '🚀', name: '火箭' }]
 const newContact = ref('')
 const showSearch = ref(false)
 const showNew = ref(false)
@@ -1066,6 +1118,7 @@ function goHome() {
   if (showCameraSettings.value) { showCameraSettings.value = false; return }
   if (selectedPhoto.value) { selectedPhoto.value = null; return }
   if (activeContact.value) { closeContact(); return }
+  if (view.value === 'douyin') { showDyLive.value = false; dyLiveRoom.value = null; stopDanmaku() }
   view.value = 'home'
 }
 const homeStyle = computed(() => curWallpaper.value ? { backgroundImage: `url(${curWallpaper.value})`, backgroundSize: 'cover', backgroundPosition: 'center' } : null)
@@ -1428,6 +1481,7 @@ function clearDyCache() {
   dySearchMode.value = false; dySearchQuery.value = ''; showDySearchInput.value = false; dySearchDraft.value = ''
   dyRecentSearches.value = []; localStorage.removeItem(DY_SEARCHES_KEY)
   dyHotList.value = []; dyHotMode.value = ''; localStorage.removeItem(DY_HOT_KEY)
+  showDyLive.value = false; dyLiveRoom.value = null; dyLiveList.value = []
   localStorage.removeItem(DY_FEED_KEY); localStorage.removeItem(DY_IDX_KEY)
   localStorage.removeItem(DY_IDXMAP_KEY); localStorage.removeItem(DY_HISTORY_KEY)
   showToast('缓存已清理')
@@ -1788,10 +1842,10 @@ function openDyFromHistory(h) {
 function openDySearchInput() {
   dySearchDraft.value = dySearchMode.value ? dySearchQuery.value : ''
   showDySearchInput.value = true
-  // 首次打开或切了抖音/抖阴模式，出一份对应的热榜
-  const wantMode = dyR18.value ? 'r18' : 'normal'
-  if (!generatingHot.value && (!dyHotList.value.length || dyHotMode.value !== wantMode)) generateDyHotList()
+  // 不自动打API刷新热榜，交给用户点刷新按钮，避免一进搜索页就霸道地消耗生成
 }
+// 只显示与当前模式匹配的热榜；切了抖音/抖阴或从没刷过，就当空、提示用户手动刷新
+const dyHotShown = computed(() => (dyHotMode.value === (dyR18.value ? 'r18' : 'normal')) ? dyHotList.value : [])
 function closeDySearchInput() { showDySearchInput.value = false }
 // 记一条最近搜索（去重置顶，最多12条）
 function pushRecentSearch(q) {
@@ -1871,6 +1925,110 @@ async function generateDyHotList() {
     else showToast('热榜没刷出来，再试一次')
   } catch (e) { showToast('热榜生成失败：' + ((e && e.message) || e)) }
   finally { generatingHot.value = false }
+}
+// ---- 直播（阶段C，先做抖音全年龄骨架）----
+// 进直播页属于明确意图，空列表就自动出一次(和刷视频一致，不算霸道)；之后手动刷新
+function openDyLive() { showDyLive.value = true; dyLiveRoom.value = null; stopDanmaku(); if (!dyLiveList.value.length && !generatingLiveList.value) generateDyLiveList() }
+// 关直播页回到视频流，重挂当前视频的弹幕
+function closeDyLive() {
+  showDyLive.value = false; dyLiveRoom.value = null
+  stopDanmaku()
+  const v = douyinFeed.value[douyinIdx.value]
+  if (v && !v.pending) startDanmaku(v)
+}
+function parseDyLiveList(raw) {
+  if (!raw) return []
+  const m = raw.match(/===LIVELIST===([\s\S]*?)===LIVEEND===/); if (!m) return []
+  const out = []
+  m[1].split('\n').forEach(ln => {
+    const t = ln.trim(); if (!t || !t.includes('|||')) return
+    const p = t.split('|||')
+    const streamer = (p[0] || '').replace(/^@/, '').replace(/^\d+[.、\s]*/, '').trim()
+    const title = (p[1] || '').trim()
+    if (streamer && title) out.push({ streamer, title, viewers: (p[2] || '在线').trim(), verified: /true|是|认证/.test(p[3] || '') })
+  })
+  return out.slice(0, 12)
+}
+async function generateDyLiveList() {
+  if (generatingLiveList.value) return
+  const th = TH(); if (!th || (!th.generateRaw && !th.generate)) { showToast('当前环境不支持生成'); return }
+  generatingLiveList.value = true
+  const me = meName.value || '我'
+  const instruction =
+    `【抖音·直播广场·静默生成】结合下方世界观设定与当前剧情，生成当前正在直播的8个直播间，绝不输出任何正文、旁白或解释。` +
+    `\n每个直播间是这个故事世界里的人在直播：主播可能是故事中的角色，也可能是陌生素人主播。内容生活化、真实：聊天/唱歌/才艺/带${me}逛/游戏/美食/户外等皆可，全年龄向、不涉黄。` +
+    `\n主播号像真人抖音号；直播标题口语化有吸引力（15字内）；在线人数像真实数字（如 1.2万 / 3856）。` +
+    `\n【账号唯一】同一个角色只有一个固定账号名，不要用别名/小名/拼音把同一人重复列出。` +
+    `\n只输出一个 ===LIVELIST=== 数据块，块外不写任何字。每行格式：主播号|||直播标题|||在线人数|||是否认证(true/false)\n===LIVELIST===\n主播1|||标题|||人数|||true\n…(共8行)\n===LIVEEND===`
+  try {
+    let result
+    if (th.generateRaw) {
+      result = await th.generateRaw({ user_input: '看直播广场', should_silence: true, ordered_prompts: [
+        { role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
+        { role: 'user', content: '给我当前的直播列表，只输出一个 ===LIVELIST=== 数据块，块外不写字。' },
+      ] })
+    } else { result = await th.generate({ user_input: instruction, should_silence: true }) }
+    const list = parseDyLiveList(result)
+    if (list.length) dyLiveList.value = list
+    else showToast('直播没刷出来，再试一次')
+  } catch (e) { showToast('直播生成失败：' + ((e && e.message) || e)) }
+  finally { generatingLiveList.value = false }
+}
+function enterDyLiveRoom(r) {
+  dyLiveRoom.value = { streamer: r.streamer, title: r.title, verified: r.verified, viewers: r.viewers, segments: [], danmaku: [] }
+  stopDanmaku()
+  generateDyLiveSegment()   // 进房先生成开场这一段
+}
+function leaveDyLiveRoom() { stopDanmaku(); dyLiveRoom.value = null }
+function parseDyLiveSeg(raw) {
+  if (!raw) return null
+  const m = raw.match(/===LIVESEG===([\s\S]*?)===SEGEND===/); if (!m) return null
+  const block = m[1]
+  const f = (k) => { const r = block.match(new RegExp('^\\s*' + k + '\\s*:(.+)$', 'm')); return r ? r[1].trim() : '' }
+  const content = f('content'); if (!content) return null
+  const dm = f('danmaku')
+  return { content, danmaku: dm ? dm.split('|').map(s => s.trim()).filter(Boolean) : [] }
+}
+// 点「继续」：带着已播内容作上下文，生成同一主播的下一段直播，连续接上
+async function generateDyLiveSegment() {
+  if (generatingLiveSeg.value || !dyLiveRoom.value) return
+  const th = TH(); if (!th || (!th.generateRaw && !th.generate)) { showToast('当前环境不支持生成'); return }
+  generatingLiveSeg.value = true
+  const room = dyLiveRoom.value
+  const me = meName.value || '我'
+  const recent = room.segments.slice(-3).join('\n')
+  const first = room.segments.length === 0
+  const instruction =
+    `【抖音·直播间·静默生成】主播 @${room.streamer} 正在直播，标题「${room.title}」。你要生成这场直播接下来的一小段实况，绝不输出正文/旁白/解释。` +
+    `\n以第三人称临场描述主播此刻在说什么、做什么，2-4句，像正在直播的实时画面；全年龄向、生活化、不涉黄。` +
+    (first ? `\n这是${me}刚进直播间时的开场片段。` : `\n【已播内容，请自然承接、往下推进，别重复】\n${recent}`) +
+    `\n弹幕是观众即时反应，短促口语有梗，4-6条；若${me}刚送了礼物，主播可以顺口谢一下。` +
+    `\n只输出一个 ===LIVESEG=== 数据块，块外不写字：\n===LIVESEG===\ncontent:这一小段直播画面\ndanmaku:弹幕1|弹幕2|弹幕3|弹幕4\n===SEGEND===`
+  try {
+    let result
+    if (th.generateRaw) {
+      result = await th.generateRaw({ user_input: '看直播', should_silence: true, ordered_prompts: [
+        { role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
+        { role: 'user', content: first ? '进入直播间，生成开场片段。' : '主播继续直播，生成下一段。只输出 ===LIVESEG=== 数据块。' },
+      ] })
+    } else { result = await th.generate({ user_input: instruction, should_silence: true }) }
+    const seg = parseDyLiveSeg(result)
+    if (seg && dyLiveRoom.value) {
+      dyLiveRoom.value.segments.push(seg.content)
+      dyLiveRoom.value.danmaku = seg.danmaku
+      stopDanmaku(); startDanmaku(dyLiveRoom.value)
+      nextTick(() => { const el = dyLiveContentEl.value; if (el) el.scrollTop = el.scrollHeight })
+    } else showToast('直播没接上，再点一次继续')
+  } catch (e) { showToast('直播生成失败：' + ((e && e.message) || e)) }
+  finally { generatingLiveSeg.value = false }
+}
+// 送礼：飘一条弹幕，主播下一段可顺口感谢
+function sendDyGift(g) {
+  if (!dyLiveRoom.value) return
+  const me = meName.value || '我'
+  const key = Date.now() + Math.random()
+  activeDanmaku.value.push({ k: key, text: `${me} 送出 ${g.icon}${g.name}`, top: DM_LANES[Math.floor(Math.random() * DM_LANES.length)], dur: 7 })
+  setTimeout(() => { activeDanmaku.value = activeDanmaku.value.filter(d => d.k !== key) }, 7200)
 }
 
 // ---- 相机快门（常规模式：注入正文） ----
@@ -2542,6 +2700,48 @@ onUnmounted(() => {
 .mp-dys-hot-rank.top{color:#fe2c55}
 .mp-dys-hot-topic{flex:1;min-width:0;font-size:14px;color:#222;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mp-dys-hot-heat{font-size:12px;color:#b0b1b6;flex-shrink:0}
+/* 直播列表 */
+.mp-dyl{position:absolute;inset:0;z-index:33;background:#f5f5f7;display:flex;flex-direction:column}
+.mp-dyl-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#fff;border-bottom:1px solid #eee;flex-shrink:0}
+.mp-dyl-hd .mp-nav-back{background:none;border:none;cursor:pointer;padding:0;width:24px;height:24px}
+.mp-dyl-hd .mp-nav-back svg{width:22px;height:22px;fill:#161823}
+.mp-dyl-title{font-size:16px;font-weight:600;color:#161823}
+.mp-dyl-refresh{background:none;border:none;cursor:pointer;color:#8a8a8e;padding:2px;display:flex}
+.mp-dyl-refresh svg{width:19px;height:19px}
+.mp-dyl-refresh.spin svg{animation:mp-dys-spin 1s linear infinite}
+.mp-dyl-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px}
+.mp-dyl-body::-webkit-scrollbar{width:0}
+.mp-dyl-none{text-align:center;color:#999;font-size:14px;padding:44px 0}
+.mp-dyl-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mp-dyl-card{background:#fff;border-radius:12px;overflow:hidden;cursor:pointer}
+.mp-dyl-card:active{opacity:.85}
+.mp-dyl-cover{position:relative;height:104px;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:700;color:#fff;background:linear-gradient(135deg,#4a4a52,#232327)}
+.mp-dyl-live-tag{position:absolute;top:7px;left:7px;font-size:10px;font-weight:600;color:#fff;background:#fe2c55;padding:2px 7px;border-radius:9px}
+.mp-dyl-cap{font-size:13px;color:#161823;padding:7px 9px 2px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.mp-dyl-meta{display:flex;align-items:center;justify-content:space-between;padding:2px 9px 9px;font-size:11px;color:#9a9a9e}
+.mp-dyl-st{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}
+/* 直播间 */
+.mp-dylr{position:absolute;inset:0;display:flex;flex-direction:column;background:linear-gradient(160deg,#1a1320,#0d0d10)}
+.mp-dylr-top{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;flex-shrink:0}
+.mp-dylr-who{display:flex;align-items:center;gap:9px;background:rgba(0,0,0,.35);padding:5px 12px 5px 5px;border-radius:22px}
+.mp-dylr-ava{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#fe2c55,#ff6b9d);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px}
+.mp-dylr-name{font-size:13px;font-weight:600;color:#fff;display:flex;align-items:center;gap:4px}
+.mp-dylr-vw{font-size:11px;color:rgba(255,255,255,.6)}
+.mp-dylr-x{background:rgba(0,0,0,.35);border:none;cursor:pointer;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.mp-dylr-x svg{width:18px;height:18px;fill:#fff}
+.mp-dylr-stage{flex:1;position:relative;min-height:0;display:flex;flex-direction:column}
+.mp-dylr-dm-band{position:absolute;top:0;left:0;right:0;height:90px;overflow:hidden;pointer-events:none;z-index:2}
+.mp-dylr-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:100px 18px 18px;z-index:1}
+.mp-dylr-content::-webkit-scrollbar{width:0}
+.mp-dylr-title{font-size:15px;font-weight:600;color:#fff;margin-bottom:14px}
+.mp-dylr-seg{font-size:14px;line-height:1.7;color:rgba(255,255,255,.92);margin-bottom:14px;text-shadow:0 1px 4px rgba(0,0,0,.5)}
+.mp-dylr-seg-loading{font-size:13px;color:rgba(255,255,255,.5);padding:4px 0}
+.mp-dylr-bar{display:flex;align-items:center;gap:10px;padding:10px 14px 14px;flex-shrink:0}
+.mp-dylr-gifts{display:flex;gap:6px;flex:1}
+.mp-dylr-gift{width:38px;height:38px;border-radius:50%;border:none;background:rgba(255,255,255,.14);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}
+.mp-dylr-gift:active{background:rgba(255,255,255,.28)}
+.mp-dylr-next{padding:10px 26px;border:none;border-radius:22px;background:#fe2c55;color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0}
+.mp-dylr-next:disabled{opacity:.5}
 
 /* 相机 */
 .mp-cam{position:absolute;inset:7px;z-index:10;display:flex;flex-direction:column;background:#000;border-radius:33px;overflow:hidden}
