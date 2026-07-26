@@ -426,23 +426,34 @@
         </div>
         <!-- 顶栏 -->
         <div class="mp-dy-nav">
-          <button class="mp-nav-back mp-dy-back" @click="goHome"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
-          <div class="mp-dy-tabs">
-            <span v-if="!dyR18" class="mp-dy-tab-dim">直播</span>
-            <span v-if="!dyR18" class="mp-dy-tab-dim">商城</span>
-            <button :class="['mp-dy-tab', {on: dyTab==='关注'}]" @click="switchDyTab('关注')">关注</button>
-            <button :class="['mp-dy-tab', {on: dyTab==='推荐'}]" @click="switchDyTab('推荐')">推荐</button>
-            <button v-if="dyR18" :class="['mp-dy-tab','mp-dy-tab-pv', {on: dyTab==='私密'}]" @click="switchDyTab('私密')">私密</button>
-          </div>
-          <svg class="mp-dy-search-ico" viewBox="0 0 24 24"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"/></svg>
-          <span v-if="dyVisibleFeed.length" class="mp-dy-progress">{{ dyCurrentPos }}/{{ dyVisibleFeed.length }}</span>
+          <!-- 搜索模式：返回箭头 + 搜索词条，点词条可改词重搜 -->
+          <template v-if="dySearchMode">
+            <button class="mp-nav-back mp-dy-back" @click="exitDySearch"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
+            <div class="mp-dy-search-pill" @click="openDySearchInput">
+              <svg viewBox="0 0 24 24"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"/></svg>
+              <span class="mp-dy-search-pill-txt">{{ dySearchQuery }}</span>
+            </div>
+            <span v-if="dyVisibleFeed.length" class="mp-dy-progress">{{ dyCurrentPos }}/{{ dyVisibleFeed.length }}</span>
+          </template>
+          <template v-else>
+            <button class="mp-nav-back mp-dy-back" @click="goHome"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
+            <div class="mp-dy-tabs">
+              <span v-if="!dyR18" class="mp-dy-tab-dim">直播</span>
+              <span v-if="!dyR18" class="mp-dy-tab-dim">商城</span>
+              <button :class="['mp-dy-tab', {on: dyTab==='关注'}]" @click="switchDyTab('关注')">关注</button>
+              <button :class="['mp-dy-tab', {on: dyTab==='推荐'}]" @click="switchDyTab('推荐')">推荐</button>
+              <button v-if="dyR18" :class="['mp-dy-tab','mp-dy-tab-pv', {on: dyTab==='私密'}]" @click="switchDyTab('私密')">私密</button>
+            </div>
+            <svg class="mp-dy-search-ico" viewBox="0 0 24 24" @click="openDySearchInput"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"/></svg>
+            <span v-if="dyVisibleFeed.length" class="mp-dy-progress">{{ dyCurrentPos }}/{{ dyVisibleFeed.length }}</span>
+          </template>
         </div>
         <!-- 视频流 -->
         <div class="mp-dy-feed" ref="dyFeedEl" @scroll.passive="onDyScroll">
           <!-- 空状态：关注tab无关注对象时只引导、不生成 -->
-          <div v-if="!dyVisibleFeed.length && !generatingDy" class="mp-dy-slide mp-dy-empty" @click="(dyTab==='关注' && !dyFollows.size) ? null : generateDyVideo()">
+          <div v-if="!dyVisibleFeed.length && !generatingDy" class="mp-dy-slide mp-dy-empty" @click="(!dySearchMode && dyTab==='关注' && !dyFollows.size) ? null : generateDyVideo()">
             <div class="mp-dy-empty-ico"><svg viewBox="0 0 24 24" style="width:48px;height:48px"><path fill="currentColor" d="M8 5v14l11-7z"/></svg></div>
-            <div class="mp-dy-empty-txt">{{ (dyTab==='关注' && !dyFollows.size) ? '还没关注任何人，去推荐里关注几个吧' : dyTab==='关注' ? '点击刷新关注的作者' : dyTab==='私密' ? '点击看看谁私发了东西给你' : '点击开始刷视频' }}</div>
+            <div class="mp-dy-empty-txt">{{ dySearchMode ? ('没找到「'+dySearchQuery+'」相关内容，点击重试') : (dyTab==='关注' && !dyFollows.size) ? '还没关注任何人，去推荐里关注几个吧' : dyTab==='关注' ? '点击刷新关注的作者' : dyTab==='私密' ? '点击看看谁私发了东西给你' : '点击开始刷视频' }}</div>
           </div>
           <div v-if="!dyVisibleFeed.length && generatingDy" class="mp-dy-slide mp-dy-loading">
             <div class="mp-dy-spinner"><span></span><span></span><span></span></div>
@@ -581,6 +592,18 @@
             </div>
           </div>
         </div>
+        <!-- 搜索输入层 -->
+        <div v-if="showDySearchInput" class="mp-dys">
+          <div class="mp-dys-top">
+            <button class="mp-nav-back" @click="closeDySearchInput"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
+            <div class="mp-dys-box">
+              <svg viewBox="0 0 24 24"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"/></svg>
+              <input class="mp-dys-in" v-model="dySearchDraft" placeholder="搜索你感兴趣的内容" @keydown.enter.prevent="submitDySearch" />
+              <button v-if="dySearchDraft.trim()" class="mp-dys-clr" @click="dySearchDraft=''">✕</button>
+            </div>
+            <button class="mp-dys-btn" @click="submitDySearch">搜索</button>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -659,6 +682,10 @@ let dySuppressTimer = null
 function suppressDyScroll(ms = 500) { dySuppressScroll = true; clearTimeout(dySuppressTimer); dySuppressTimer = setTimeout(() => { dySuppressScroll = false }, ms) }
 const dyFlipped = ref({})                 // { _i: true } 该视频文字已翻转到私密版
 const showDyHistory = ref(false)          // 「我」页观看历史弹层
+const dySearchMode = ref(false)           // 搜索结果流是否激活（独立于推荐/关注/私密三tab）
+const dySearchQuery = ref('')             // 当前搜索关键词
+const dySearchDraft = ref('')             // 搜索输入框草稿
+const showDySearchInput = ref(false)      // 搜索输入层是否展开
 const newContact = ref('')
 const showSearch = ref(false)
 const showNew = ref(false)
@@ -1306,9 +1333,13 @@ const dyR18 = computed(() => douyinSettings.value.mode === 'r18')
 // 推荐=公开流；私密=私密流；关注=所有已关注作者(含红颜私密视频，这样关注里也能看到红颜)
 const dyVisibleFeed = computed(() => {
   const all = douyinFeed.value.map((v, i) => ({ ...v, _i: i }))
-  if (dyTab.value === '私密') return all.filter(v => v.vis === 'private')
-  if (dyTab.value === '关注') return all.filter(v => v.isFollowing)
-  return all.filter(v => v.vis !== 'private')
+  // 搜索模式：只显示当前关键词的搜索结果，与三tab完全隔离
+  if (dySearchMode.value) return all.filter(v => v.searchQ === dySearchQuery.value)
+  // 非搜索模式：搜索结果不混入任何常规tab
+  const base = all.filter(v => !v.searchQ)
+  if (dyTab.value === '私密') return base.filter(v => v.vis === 'private')
+  if (dyTab.value === '关注') return base.filter(v => v.isFollowing)
+  return base.filter(v => v.vis !== 'private')
 })
 const dyAllComments = computed(() => {
   const v = douyinFeed.value[dyCommentIdx.value]
@@ -1348,7 +1379,7 @@ function loadDyData() {
   } catch (e) {}
 }
 // 存feed时剔除未完成的占位卡，避免刷新后残留空卡
-function saveDyFeed() { try { const clean = douyinFeed.value.filter(v => !v.pending).slice(-50); localStorage.setItem(DY_FEED_KEY, JSON.stringify(clean)); localStorage.setItem(DY_IDX_KEY, String(douyinIdx.value)) } catch (e) {} }
+function saveDyFeed() { try { const clean = douyinFeed.value.filter(v => !v.pending && !v.searchQ).slice(-50); localStorage.setItem(DY_FEED_KEY, JSON.stringify(clean)); localStorage.setItem(DY_IDX_KEY, String(douyinIdx.value)) } catch (e) {} }
 function saveDyFollows() { try { localStorage.setItem(DY_FOLLOWS_KEY, JSON.stringify([...dyFollows.value])) } catch (e) {} }
 function saveDyIdxMap() { try { localStorage.setItem(DY_IDXMAP_KEY, JSON.stringify(dyIdxMap.value)) } catch (e) {} }
 function saveDySettings() { try { localStorage.setItem(DY_SETTINGS_KEY, JSON.stringify(douyinSettings.value)) } catch (e) {} }
@@ -1356,6 +1387,7 @@ function clearDyCache() {
   douyinFeed.value = []; douyinIdx.value = 0
   dyIdxMap.value = { 推荐: 0, 关注: 0, 私密: 0 }
   dyHistory.value = []; dyFlipped.value = {}
+  dySearchMode.value = false; dySearchQuery.value = ''; showDySearchInput.value = false; dySearchDraft.value = ''
   localStorage.removeItem(DY_FEED_KEY); localStorage.removeItem(DY_IDX_KEY)
   localStorage.removeItem(DY_IDXMAP_KEY); localStorage.removeItem(DY_HISTORY_KEY)
   showToast('缓存已清理')
@@ -1372,7 +1404,8 @@ function onDyScroll() {
     const real = vis[pos] && vis[pos]._i
     if (real !== undefined && real !== douyinIdx.value) {
       douyinIdx.value = real
-      dyIdxMap.value[dyTab.value] = real; saveDyIdxMap()
+      // 搜索模式的下标不写进三tab的记忆，避免污染推荐/关注/私密位置
+      if (!dySearchMode.value) { dyIdxMap.value[dyTab.value] = real; saveDyIdxMap() }
       saveDyFeed()
       stopDanmaku(); startDanmaku(douyinFeed.value[real])
     }
@@ -1397,7 +1430,8 @@ function dyRestorePos(tries = 0) {
     if (!el.clientHeight) { if (tries < 10) setTimeout(() => dyRestorePos(tries + 1), 50); return }
     const vis = dyVisibleFeed.value
     if (!vis.length) { el.scrollTop = 0; stopDanmaku(); return }
-    let want = dyIdxMap.value[dyTab.value]
+    // 搜索模式定位到 douyinIdx 指定的那条；常规tab用各自记住的位置
+    let want = dySearchMode.value ? douyinIdx.value : dyIdxMap.value[dyTab.value]
     let pos = vis.findIndex(v => v._i === want)
     if (pos < 0) pos = 0
     el.scrollTop = pos * el.clientHeight
@@ -1483,8 +1517,11 @@ async function generateDyVideo() {
   if (generatingDy.value) return
   const th = TH(); if (!th || (!th.generateRaw && !th.generate)) { showToast('当前环境不支持生成'); return }
   const isR18 = dyR18.value
-  const isPrivate = dyTab.value === '私密'
-  const isFollowTab = dyTab.value === '关注'
+  const isSearch = dySearchMode.value
+  const query = dySearchQuery.value
+  // 搜索是独立的公开结果流：不当作私密/关注生成
+  const isPrivate = !isSearch && dyTab.value === '私密'
+  const isFollowTab = !isSearch && dyTab.value === '关注'
   // 关注tab没有已关注对象时不生成，避免凭空造关注对象
   if (isFollowTab && !dyFollows.value.size) { showToast('还没有关注任何人，去推荐看看吧'); return }
   generatingDy.value = true
@@ -1505,6 +1542,7 @@ async function generateDyVideo() {
     danmaku: [], commentList: [], myComments: [],
     vis: isPrivate ? 'private' : 'public',
     isFollowing: isPrivate || isFollowTab, isLiked: false, isSaved: false,
+    searchQ: isSearch ? query : undefined,
   }
   const wasEmpty = !dyVisibleFeed.value.length
   suppressDyScroll(800)
@@ -1548,6 +1586,10 @@ async function generateDyVideo() {
   const flipLine = wantFlip
     ? `\n另外，${me}对这条视频有独享特权，可以翻转看到只给${me}的私密版：请额外输出一行 pcontent，写这条视频真正大尺度的版本（直接写裸露与性事本身，具体到身体、动作、声音、气息），是发布者只愿意让${me}看到的样子。【极重要】评论区(c1~c4)和弹幕只能围绕上面那条公开的擦边画面(content)，绝对不能提及、暗示或反应 pcontent 里的私密内容——因为除了${me}没人看得到私密版，谁提了就是穿帮。`
     : ''
+  // 搜索：这条必须紧扣关键词
+  const searchLine = isSearch
+    ? `\n【搜索结果】${me}在搜索框输入了「${query}」，这条视频必须与该关键词高度相关——题材、话题标签(#)、创作者领域都要贴合搜索意图，就像真实抖音搜出来的结果。不要生成与「${query}」无关的内容。`
+    : ''
   const fmt = wantFlip
     ? DY_FORMAT_BASE + `\npcontent:只给${me}看的私密版画面，2-3句，直接写实、大尺度`
     : DY_FORMAT_BASE
@@ -1557,7 +1599,7 @@ async function generateDyVideo() {
     `请结合下方提供的世界观设定、角色信息与当前剧情，生成一条真实可信、符合该世界背景的短视频。` +
     `\n发布来源：${sourceLine}` +
     `\n内容风格：${styleLine}` +
-    audienceLine + flipLine +
+    audienceLine + flipLine + searchLine +
     // 关注tab要求"从已关注里选"，与"换新人别重复"冲突，故关注tab不加seen；只提示换新题材
     (isFollowTab
       ? `\n可以从已关注的这几个人里任选，题材尽量换新、别和最近重复。`
@@ -1590,9 +1632,11 @@ async function generateDyVideo() {
       if (!video.isFollowing && (douyinFeed.value.some(x => x.creator === video.creator && x.isFollowing) || dyFollows.value.has(video.creator))) {
         video.isFollowing = true
       }
+      if (isSearch) { video.searchQ = query; video.vis = 'public' }
       douyinFeed.value.splice(idx, 1, video)   // 原地替换占位卡
       douyinIdx.value = idx
-      dyIdxMap.value[dyTab.value] = idx; saveDyIdxMap()   // 记住位置，退出再进/重挂能定位到新视频
+      // 搜索结果的下标不写进三tab记忆，避免污染
+      if (!isSearch) { dyIdxMap.value[dyTab.value] = idx; saveDyIdxMap() }   // 记住位置，退出再进/重挂能定位到新视频
       pushDyHistory(video)
       saveDyFeed()
       nextTick(() => {
@@ -1612,14 +1656,14 @@ async function generateDyVideo() {
       const rm = douyinFeed.value.indexOf(placeholder)
       if (rm >= 0) douyinFeed.value.splice(rm, 1)
       douyinIdx.value = Math.max(0, douyinFeed.value.length - 1)
-      dyIdxMap.value[dyTab.value] = douyinIdx.value; saveDyIdxMap()
+      if (!isSearch) { dyIdxMap.value[dyTab.value] = douyinIdx.value; saveDyIdxMap() }
       showToast('没刷出内容，再试一次')
     }
   } catch (e) {
     const rm = douyinFeed.value.indexOf(placeholder)
     if (rm >= 0) douyinFeed.value.splice(rm, 1)
     douyinIdx.value = Math.max(0, douyinFeed.value.length - 1)
-    dyIdxMap.value[dyTab.value] = douyinIdx.value; saveDyIdxMap()
+    if (!isSearch) { dyIdxMap.value[dyTab.value] = douyinIdx.value; saveDyIdxMap() }
     showToast('生成失败：' + ((e && e.message) || e))
   } finally { generatingDy.value = false }
 }
@@ -1683,11 +1727,50 @@ function openDyFromHistory(h) {
   const idx = douyinFeed.value.findIndex(v => !v.pending && v.creator === h.creator && (v.content || '').slice(0, 40) === h.content)
   if (idx < 0) { showToast('这条已不在缓存里了'); return }
   const v = douyinFeed.value[idx]
+  showDyHistory.value = false
+  showDySearchInput.value = false
+  // 搜索结果：回到对应关键词的搜索流
+  if (v.searchQ) {
+    dySearchMode.value = true
+    dySearchQuery.value = v.searchQ
+    douyinIdx.value = idx
+    dyRestorePos()
+    return
+  }
+  dySearchMode.value = false
   dyTab.value = v.vis === 'private' ? (dyR18.value ? '私密' : '推荐') : (v.isFollowing ? dyTab.value : (dyTab.value === '关注' ? '推荐' : dyTab.value))
   if (dyTab.value === '私密' && !dyR18.value) dyTab.value = '推荐'
-  showDyHistory.value = false
   dyIdxMap.value[dyTab.value] = idx; saveDyIdxMap()
   douyinIdx.value = idx
+  dyRestorePos()
+}
+// 搜索：打开输入层（带上当前关键词便于改词）
+function openDySearchInput() { dySearchDraft.value = dySearchMode.value ? dySearchQuery.value : ''; showDySearchInput.value = true }
+function closeDySearchInput() { showDySearchInput.value = false }
+// 提交搜索：进独立搜索流，已有该词结果则直接展示，否则生成
+function submitDySearch() {
+  const q = dySearchDraft.value.trim(); if (!q) return
+  showDySearchInput.value = false
+  suppressDyScroll(800)
+  dySearchQuery.value = q
+  dySearchMode.value = true
+  stopDanmaku()
+  const existing = douyinFeed.value.find(v => !v.pending && v.searchQ === q)
+  if (existing) {
+    douyinIdx.value = douyinFeed.value.indexOf(existing)
+    dyRestorePos()
+  } else {
+    nextTick(() => { const el = dyFeedEl.value; if (el) el.scrollTop = 0 })
+    generateDyVideo()
+  }
+}
+// 退出搜索：回到进搜索前的tab与位置（搜索结果保留在内存，可从历史再进）
+function exitDySearch() {
+  suppressDyScroll(800)
+  dySearchMode.value = false
+  dySearchQuery.value = ''
+  showDySearchInput.value = false
+  stopDanmaku()
   dyRestorePos()
 }
 
@@ -2193,7 +2276,7 @@ onUnmounted(() => {
 .mp-dy-tab{background:none;border:none;color:rgba(255,255,255,.7);font-size:15px;font-weight:500;cursor:pointer;padding:0 0 4px;position:relative;font-family:inherit;text-shadow:0 1px 3px rgba(0,0,0,.4)}
 .mp-dy-tab.on{color:#fff;font-size:17px;font-weight:700}
 .mp-dy-tab.on::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:16px;height:2.5px;border-radius:2px;background:#fff}
-.mp-dy-search-ico{width:22px;height:22px;fill:#fff;opacity:.85;flex-shrink:0}
+.mp-dy-search-ico{width:22px;height:22px;fill:#fff;opacity:.85;flex-shrink:0;cursor:pointer}
 .mp-dy-progress{font-size:11px;color:rgba(255,255,255,.6);white-space:nowrap;flex-shrink:0;text-shadow:0 1px 3px rgba(0,0,0,.5)}
 .mp-dy-feed{flex:1;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none;overflow-anchor:none}
 .mp-dy-feed::-webkit-scrollbar{display:none}
@@ -2324,6 +2407,20 @@ onUnmounted(() => {
 .mp-dyh-author{font-size:14px;font-weight:600;color:#161823;display:flex;align-items:center;gap:6px}
 .mp-dyh-pvtag{font-size:10px;padding:1px 6px;border-radius:8px;background:rgba(255,107,157,.15);color:#ff6b9d}
 .mp-dyh-txt{font-size:13px;color:#888;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 抖音搜索 */
+.mp-dy-search-pill{flex:1;display:flex;align-items:center;gap:6px;margin:0 8px;min-width:0;height:30px;padding:0 12px;border-radius:16px;background:rgba(255,255,255,.16);cursor:pointer}
+.mp-dy-search-pill svg{width:16px;height:16px;fill:#fff;opacity:.85;flex-shrink:0}
+.mp-dy-search-pill-txt{flex:1;min-width:0;font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+.mp-dys{position:absolute;inset:0;z-index:32;background:#fff;display:flex;flex-direction:column}
+.mp-dys-top{display:flex;align-items:center;gap:8px;padding:12px 12px 10px;border-bottom:1px solid #eee}
+.mp-dys-top .mp-nav-back{background:none;border:none;cursor:pointer;padding:0;width:24px;height:24px;flex-shrink:0}
+.mp-dys-top .mp-nav-back svg{width:22px;height:22px;fill:#161823}
+.mp-dys-box{flex:1;display:flex;align-items:center;gap:6px;min-width:0;height:34px;padding:0 12px;border-radius:17px;background:#f2f2f4}
+.mp-dys-box svg{width:16px;height:16px;fill:#9a9a9a;flex-shrink:0}
+.mp-overlay .mp-dys-in{flex:1;min-width:0;height:100%;border:none!important;background:transparent!important;color:#161823!important;font-size:14px;outline:none;font-family:inherit;box-shadow:none!important;background-image:none!important}
+.mp-overlay .mp-dys-in::placeholder{color:#b0b1b6!important}
+.mp-dys-clr{background:none;border:none;cursor:pointer;color:#b0b0b4;font-size:13px;padding:0 2px;flex-shrink:0}
+.mp-dys-btn{background:none;border:none;cursor:pointer;color:#fe2c55;font-size:15px;font-weight:600;flex-shrink:0;padding:0 2px;font-family:inherit}
 
 /* 相机 */
 .mp-cam{position:absolute;inset:7px;z-index:10;display:flex;flex-direction:column;background:#000;border-radius:33px;overflow:hidden}
