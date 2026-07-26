@@ -31,7 +31,7 @@
           <button class="mp-app" @click="view = 'camera'"><span class="mp-app-ico ico-cam"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M256 128l-32 48h-96c-35 0-64 29-64 64v224c0 35 29 64 64 64h384c35 0 64-29 64-64V240c0-35-29-64-64-64h-96l-32-48zm64 128a112 112 0 110 224 112 112 0 010-224"/></svg></span><span class="mp-app-lbl">相机</span></button>
           <button class="mp-app" @click="view = 'album'"><span class="mp-app-ico ico-album"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M96 96h448c35 0 64 29 64 64v320c0 35-29 64-64 64H96c-35 0-64-29-64-64V160c0-35 29-64 64-64zm80 80a80 80 0 100 160 80 80 0 000-160zm336 304L384 320l-96 128-64-80-112 112z"/></svg></span><span class="mp-app-lbl">相册</span></button>
           <button class="mp-app" @click="view = 'wallpaper'"><span class="mp-app-ico ico-wp"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M320 64a256 256 0 100 512A256 256 0 00320 64m0 64a192 192 0 110 384A192 192 0 01320 128m0 64a128 128 0 100 256 128 128 0 000-256"/></svg></span><span class="mp-app-lbl">壁纸</span></button>
-          <button class="mp-app" @click="view = 'douyin'"><span class="mp-app-ico ico-dy"><svg class="ico-dy-b" viewBox="0 0 24 24"><path fill="#25f4ee" d="M16 8.245V15.5a6.5 6.5 0 1 1-5-6.326v3.163a3.5 3.5 0 1 0 2 3.163V2h3a5 5 0 0 0 5 5v3a7.97 7.97 0 0 1-5-1.755"/></svg><svg class="ico-dy-r" viewBox="0 0 24 24"><path fill="#fe2c55" d="M16 8.245V15.5a6.5 6.5 0 1 1-5-6.326v3.163a3.5 3.5 0 1 0 2 3.163V2h3a5 5 0 0 0 5 5v3a7.97 7.97 0 0 1-5-1.755"/></svg><svg class="ico-dy-w" viewBox="0 0 24 24"><path fill="#fff" d="M16 8.245V15.5a6.5 6.5 0 1 1-5-6.326v3.163a3.5 3.5 0 1 0 2 3.163V2h3a5 5 0 0 0 5 5v3a7.97 7.97 0 0 1-5-1.755"/></svg></span><span class="mp-app-lbl">抖音</span></button>
+          <button class="mp-app" @click="openDouyin"><span class="mp-app-ico ico-dy"><svg class="ico-dy-b" viewBox="0 0 24 24"><path fill="#25f4ee" d="M16 8.245V15.5a6.5 6.5 0 1 1-5-6.326v3.163a3.5 3.5 0 1 0 2 3.163V2h3a5 5 0 0 0 5 5v3a7.97 7.97 0 0 1-5-1.755"/></svg><svg class="ico-dy-r" viewBox="0 0 24 24"><path fill="#fe2c55" d="M16 8.245V15.5a6.5 6.5 0 1 1-5-6.326v3.163a3.5 3.5 0 1 0 2 3.163V2h3a5 5 0 0 0 5 5v3a7.97 7.97 0 0 1-5-1.755"/></svg><svg class="ico-dy-w" viewBox="0 0 24 24"><path fill="#fff" d="M16 8.245V15.5a6.5 6.5 0 1 1-5-6.326v3.163a3.5 3.5 0 1 0 2 3.163V2h3a5 5 0 0 0 5 5v3a7.97 7.97 0 0 1-5-1.755"/></svg></span><span class="mp-app-lbl">抖音</span></button>
           <button class="mp-app" @click="showPhoneSettings = true"><span class="mp-app-ico ico-set"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M320 208a112 112 0 100 224 112 112 0 000-224m0 64a48 48 0 110 96 48 48 0 010-96"/></svg><svg class="ico-set-gear" viewBox="0 0 640 640"><path fill="currentColor" d="M320 128l24 56 60-16 4 62 58 22-36 50 36 50-58 22-4 62-60-16-24 56-24-56-60 16-4-62-58-22 36-50-36-50 58-22 4-62 60 16z"/></svg></span><span class="mp-app-lbl">设置</span></button>
         </div>
       </div>
@@ -295,14 +295,18 @@
                     <button :class="['mp-dy-set-btn', {on: douyinSettings.mode==='r18'}]" @click="douyinSettings.mode='r18';saveDySettings()">抖阴</button>
                   </div>
                 </div>
-                <div class="mp-dy-set-row">
-                  <span class="mp-dy-set-lbl">内容</span>
-                  <div class="mp-dy-set-btns">
-                    <button :class="['mp-dy-set-btn', {on: douyinSettings.visibility==='public'}]" @click="douyinSettings.visibility='public';saveDySettings()">公开</button>
-                    <button :class="['mp-dy-set-btn', {on: douyinSettings.visibility==='private'}]" @click="douyinSettings.visibility='private';saveDySettings()">仅你可见</button>
-                  </div>
-                </div>
+                <div class="mp-dy-set-note">抖阴模式下顶栏会多出「私密」页，那里是角色单独发给你的大尺度内容，不与公开流混杂。</div>
                 <button class="mp-dy-set-clear" @click="clearDyCache">清理视频缓存（共 {{ douyinFeed.length }} 条）</button>
+              </div>
+            </div>
+          </div>
+          <div class="mp-setapp-hd">上下文</div>
+          <div class="mp-setapp-desc">纯手机模式下，每次让 AI 回消息时带上多少条历史。条数越多越记得住前情，代价是 token 略增。</div>
+          <div class="mp-setapp-sec">
+            <div class="mp-setapp-row">
+              <span class="mp-setapp-lbl">带入历史条数</span>
+              <div class="mp-dy-set-btns">
+                <button v-for="n in HIST_OPTIONS" :key="n" :class="['mp-dy-set-btn', {on: histLimit===n}]" @click="setHistLimit(n)">{{ n }}</button>
               </div>
             </div>
           </div>
@@ -415,10 +419,11 @@
         <div class="mp-dy-nav">
           <button class="mp-nav-back mp-dy-back" @click="goHome"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
           <div class="mp-dy-tabs">
-            <span class="mp-dy-tab-dim">直播</span>
-            <span class="mp-dy-tab-dim">商城</span>
+            <span v-if="!dyR18" class="mp-dy-tab-dim">直播</span>
+            <span v-if="!dyR18" class="mp-dy-tab-dim">商城</span>
             <button :class="['mp-dy-tab', {on: dyTab==='关注'}]" @click="switchDyTab('关注')">关注</button>
             <button :class="['mp-dy-tab', {on: dyTab==='推荐'}]" @click="switchDyTab('推荐')">推荐</button>
+            <button v-if="dyR18" :class="['mp-dy-tab','mp-dy-tab-pv', {on: dyTab==='私密'}]" @click="switchDyTab('私密')">私密</button>
           </div>
           <svg class="mp-dy-search-ico" viewBox="0 0 24 24"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"/></svg>
         </div>
@@ -427,7 +432,7 @@
           <!-- 空状态 -->
           <div v-if="!dyVisibleFeed.length && !generatingDy" class="mp-dy-slide mp-dy-empty" @click="dyTab==='关注' ? null : generateDyVideo()">
             <div class="mp-dy-empty-ico"><svg viewBox="0 0 24 24" style="width:48px;height:48px"><path fill="currentColor" d="M8 5v14l11-7z"/></svg></div>
-            <div class="mp-dy-empty-txt">{{ dyTab==='关注' ? '还没有关注的作者' : '点击开始刷视频' }}</div>
+            <div class="mp-dy-empty-txt">{{ dyTab==='关注' ? '还没有关注的作者' : dyTab==='私密' ? '点击看看谁私发了东西给你' : '点击开始刷视频' }}</div>
           </div>
           <div v-if="!dyVisibleFeed.length && generatingDy" class="mp-dy-slide mp-dy-loading">
             <div class="mp-dy-spinner"><span></span><span></span><span></span></div>
@@ -528,7 +533,7 @@
                     <span>{{ c.likes }}</span>
                   </span>
                   <span class="mp-dy-cmt-lk-one" :class="{dis:c.myDis}" @click.stop="c.myDis=!c.myDis">
-                    <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.65l1.45 1.32C18.6 8.64 22 11.72 22 15.5 22 18.58 19.58 21 16.5 21c-1.74 0-3.41-.81-4.5-2.09C10.91 20.19 9.24 21 7.5 21 4.42 21 2 18.58 2 15.5c0-3.78 3.4-6.86 8.55-11.54z"/></svg>
+                    <svg viewBox="0 0 24 24"><path fill="currentColor" d="m12 21.35l-1.45-1.32C5.4 15.36 2 12.27 2 8.5C2 5.41 4.42 3 7.5 3c.67 0 1.32.12 1.94.33L13 9.35l-4 5zM16.5 3C19.58 3 22 5.41 22 8.5c0 3.77-3.4 6.86-8.55 11.53L12 21.35l-1-7l4.5-5l-2.65-5.08C13.87 3.47 15.17 3 16.5 3"/></svg>
                   </span>
                 </div>
               </div>
@@ -560,6 +565,9 @@ const REMARK_KEY = 'phone_remarks'
 const DELETED_KEY = 'phone_deleted'    // 墓碑：{ 机主: { 联系人: true } }，删除后不被 DOM 卡片扒回
 const SILENT_KEY = 'phone_silent'      // 纯手机模式开关，按 app 存：{ 微信: true, 相机: true, ... }
 const PHOTO_KEY = 'photo_album'        // 相册存储 key
+const HIST_KEY = 'phone_hist_limit'    // 纯手机模式带入的历史消息条数
+const HIST_OPTIONS = [24, 48, 100, 200]
+const histLimit = ref(48)
 const CUR_APP = '微信'                  // 目前只有微信 app，将来加 QQ/B站等在此扩展
 const logs = ref({})
 const unread = ref({})
@@ -596,7 +604,7 @@ c4:评论者号|||评论内容|||赞数|||地区
 ===DYEND===`
 const douyinFeed = ref([])
 const douyinIdx = ref(0)
-const douyinSettings = ref({ mode: 'normal', visibility: 'public' })
+const douyinSettings = ref({ mode: 'normal' })
 const dyTab = ref('推荐')
 const showDyComments = ref(false)
 const dyCommentIdx = ref(0)
@@ -859,6 +867,7 @@ function loadLogs() {
     const sv = v[SILENT_KEY]
     if (typeof sv === 'boolean') silentMap.value = { [CUR_APP]: sv }        // 旧布尔 → 迁移成按 app
     else if (sv && typeof sv === 'object') silentMap.value = sv
+    const hl = +v[HIST_KEY]; if (hl > 0) histLimit.value = hl
   } catch (e) {}
 }
 function migrate(data) {                         // 旧格式 {联系人:[消息]} → 新格式 {机主:{联系人:[消息]}}
@@ -889,6 +898,7 @@ function putVar(key, val) {
 function saveLogs() { putVar(VAR_KEY, logs.value) }
 function saveDeleted() { putVar(DELETED_KEY, deleted.value) }
 function saveSilent() { putVar(SILENT_KEY, silentMap.value) }
+function setHistLimit(n) { histLimit.value = n; putVar(HIST_KEY, n) }
 function delKey(o, c) { return o + '→' + c } //+ '' + c }
 function isDeleted(o, c) { return !!deleted.value[delKey(o, c)] }
 const swapDir = d => (d === '发出' ? '收到' : d === '收到' ? '发出' : d)
@@ -1016,6 +1026,15 @@ function findBySid(ref) {                       // 在当前 logs.value 里按 s
 function markSent(ref) { const m = findBySid(ref); if (m && m.status === 'pending') { delete m.status; delete m.sid; saveLogs() } }
 function markFailed(ref) { const m = findBySid(ref); if (m && m.status === 'pending') { m.status = 'failed'; saveLogs() } }
 function clearPending() { markSent(pendingRef); pendingRef = null }
+// 自愈：AI 没回显发出行时 pending 会一直转圈。若该会话在 pending 之后已有"收到"，说明回复到了，直接转正
+function healPending() {
+  if (!pendingRef || silentBusy.value) return
+  const arr = logs.value[pendingRef.owner] && logs.value[pendingRef.owner][pendingRef.contact]
+  if (!arr) return
+  const i = arr.findIndex(m => m.sid === pendingRef.sid)
+  if (i < 0) { pendingRef = null; return }              // 那条已不在（被删/被去重合并）→ 松开引用
+  if (arr.slice(i + 1).some(m => m.dir === '收到')) { markSent(pendingRef); pendingRef = null }
+}
 
 function send(retryText) {
   const text = (typeof retryText === 'string' ? retryText : draft.value).trim()
@@ -1127,9 +1146,9 @@ function msgToLine(m) {
 }
 // 纯手机模式上下文：合并为单条 system 字符串，避免 ordered_prompts 处理多对象时兼容问题
 function buildSilentHistory(owner, contact) {
-  // 手机对话历史：最近 24 条（跳过失败条）
+  // 手机对话历史条数可在设置里调（默认 48）
   const arr = ((logs.value[owner] && logs.value[owner][contact]) || []).filter(m => m.status !== 'failed')
-  const recent = arr.slice(-24)
+  const recent = arr.slice(-histLimit.value)
   if (!recent.length) return []
   const ownerLabel = owner === meName.value ? meName.value : owner
   let ctx = `【${ownerLabel}与${contact}的手机聊天记录】\n`
@@ -1237,10 +1256,13 @@ function ingestPhotoBlock(text, mode) {
 
 // ---- 抖音 ----
 const currentDyVideo = computed(() => douyinFeed.value[douyinIdx.value] || null)
-// 带原始下标的可见列表：关注tab只看已关注的作者
+const dyR18 = computed(() => douyinSettings.value.mode === 'r18')
+// 带原始下标的可见列表：私密流与公开流互不混杂，关注tab只看已关注的
 const dyVisibleFeed = computed(() => {
   const all = douyinFeed.value.map((v, i) => ({ ...v, _i: i }))
-  return dyTab.value === '关注' ? all.filter(v => v.isFollowing) : all
+  if (dyTab.value === '私密') return all.filter(v => v.vis === 'private')
+  const pub = all.filter(v => v.vis !== 'private')
+  return dyTab.value === '关注' ? pub.filter(v => v.isFollowing) : pub
 })
 const dyAllComments = computed(() => {
   const v = douyinFeed.value[dyCommentIdx.value]
@@ -1272,6 +1294,20 @@ function onDyScroll() {
     douyinIdx.value = real; saveDyFeed()
     stopDanmaku(); startDanmaku(douyinFeed.value[real])
   }
+}
+// 进抖音：恢复上次看到的那条（无动画，避免跳一下）
+function openDouyin() {
+  view.value = 'douyin'
+  const cur = douyinFeed.value[douyinIdx.value]
+  if (cur && cur.vis === 'private') dyTab.value = dyR18.value ? '私密' : '推荐'
+  else if (dyTab.value === '私密' && !dyR18.value) dyTab.value = '推荐'
+  nextTick(() => {
+    const el = dyFeedEl.value; if (!el) return
+    const pos = dyVisibleFeed.value.findIndex(v => v._i === douyinIdx.value)
+    el.scrollTop = pos > 0 ? pos * el.clientHeight : 0
+    stopDanmaku()
+    const v = douyinFeed.value[douyinIdx.value]; if (v) startDanmaku(v)
+  })
 }
 // 切 tab：可见列表变了，回到顶部并重挂弹幕
 function switchDyTab(t) {
@@ -1343,24 +1379,33 @@ async function generateDyVideo() {
   if (generatingDy.value) return
   const th = TH(); if (!th || (!th.generateRaw && !th.generate)) { showToast('当前环境不支持生成'); return }
   generatingDy.value = true
-  const isR18 = douyinSettings.value.mode === 'r18'
-  const isPrivate = douyinSettings.value.visibility === 'private'
+  const isR18 = dyR18.value
+  const isPrivate = dyTab.value === '私密'
+  const me = meName.value || '我'
   // 已刷过的创作者，供 AI 参考避免重复
   const seen = [...new Set(douyinFeed.value.slice(-8).map(v => v.creator).filter(Boolean))].join('、')
-  const platform = isR18 ? '抖阴（成人向短视频平台）' : '抖音（短视频平台）'
-  const styleLine = isR18
-    ? `内容尺度大、性感撩人、成人向，可含情欲与挑逗，但要有真实的场景感与叙事，不是干瘪的堆砌。`
-    : `内容生活化、有真情实感或趣味，题材自由（日常/情感/才艺/风景/美食/知识/搞笑/宠物/穿搭等皆可）。`
+  const platform = isPrivate ? '抖阴·私密（只有本人能看到的私发内容）' : (isR18 ? '抖阴（成人向短视频平台）' : '抖音（短视频平台）')
+  const styleLine = isPrivate
+    ? `尺度完全放开：直接写出裸露与性事本身，具体到身体、动作、声音、气息与情态，不用暗示、不用留白、不擦边。同时保有情绪与关系的温度，是这个人对${me}才会这样，不是无名的色情素材。`
+    : (isR18
+      ? `擦边风格：性感、撩人、若隐若现，靠体态、衣物、角度、氛围撩拨，可以呼之欲出但不真正露出，也不直接描写性行为。`
+      : `内容生活化、有真情实感或趣味，题材自由（日常/情感/才艺/风景/美食/知识/搞笑/宠物/穿搭等皆可）。`)
   const sourceLine = isPrivate
-    ? `这条视频由当前故事世界中的某个角色发布，且仅私下可见（相当于ta私发给${meName.value || '我'}看），因此更私密、更有针对性，能流露只对${meName.value || '我'}才有的心思。`
+    ? `发布者必须是当前故事世界中与${me}关系亲密的女性角色（从下方角色信息中自行判断谁符合，别凭空造陌生人）。这条视频是ta单独拍给${me}的，没有发到公开平台。`
     : `发布者既可能是当前故事世界里的角色，也可能是与故事无关的陌生博主、路人、素人——由内容自然决定，不必偏向任何人。`
+  // 评论区硬约束：私密内容不许出现陌生人/男性围观
+  const audienceLine = isPrivate
+    ? `\n【评论区铁则】这条视频只有${me}一个人能看到，因此绝对禁止出现任何陌生人、路人、男性观众的评论——出现即为错误。评论只能来自以下两种：${me}本人，或与发布者同属${me}亲密圈子的其他女性角色（她们之间彼此知情）。若判断没有合适的人会看到，就把 c1~c4 全部留空，评论数写0，宁可没有评论也不许放陌生人进来。弹幕同理，私密视频没有公开观众，弹幕留空。`
+    : `\n评论区可以有各种陌生观众，立场性格各异；若发布者是故事中的角色，其他角色也可能出现在评论里。`
   const instruction =
     `【${platform}·刷视频·静默生成】现在只模拟刷到的一条短视频，绝不输出任何正文、旁白、场景或动作描写，只产出下面规定的数据块。` +
     `请结合下方提供的世界观设定、角色信息与当前剧情，生成一条真实可信、符合该世界背景的短视频。` +
     `\n发布来源：${sourceLine}` +
     `\n内容风格：${styleLine}` +
+    audienceLine +
     (seen ? `\n最近已刷到过这些创作者，请换新的人和新的题材，别重复：${seen}。` : '') +
-    `\n真实感要求：创作者名像真人抖音号（可含字母数字emoji）；文案口语化、可带#话题；弹幕是观众即时反应、短促随意有梗；评论有不同性格与立场，别千篇一律；点赞/评论/分享数符合内容热度。` +
+    `\n真实感要求：创作者名像真人抖音号（可含字母数字emoji）；文案口语化、可带#话题；弹幕是观众即时反应、短促随意有梗；评论有不同性格与立场，别千篇一律；点赞/评论/分享数符合内容热度` +
+    (isPrivate ? `（私密视频数据极低或为0，因为只有一个人看）` : '') + `。` +
     `\n只输出一个 ===DYSTART=== 数据块，块外不写任何字：\n` + DY_FORMAT
   try {
     let result
@@ -1379,16 +1424,17 @@ async function generateDyVideo() {
     }
     const video = parseDyVideo(result)
     if (video) {
+      video.vis = isPrivate ? 'private' : 'public'
+      if (isPrivate) { video.danmaku = []; video.isFollowing = true }   // 私密无公开观众
       // 新作者延续已关注状态
       if (douyinFeed.value.some(x => x.creator === video.creator && x.isFollowing)) video.isFollowing = true
+      const wasEmpty = !dyVisibleFeed.value.length
       douyinFeed.value.push(video)
       douyinIdx.value = douyinFeed.value.length - 1
       saveDyFeed()
-      // 滚到这条新视频（关注tab下若作者未关注则留在原处）
+      // 只在从空列表刷出第一条时定位；否则新条插在尾部滑块前，视口天然不动，不做滚动避免"跳一下"
       nextTick(() => {
-        const el = dyFeedEl.value
-        const pos = dyVisibleFeed.value.findIndex(v => v._i === douyinIdx.value)
-        if (el && pos >= 0) el.scrollTo({ top: pos * el.clientHeight, behavior: 'smooth' })
+        if (wasEmpty && dyFeedEl.value) dyFeedEl.value.scrollTop = 0
         stopDanmaku(); startDanmaku(video)
       })
     } else showToast('没刷出内容，再试一次')
@@ -1516,14 +1562,14 @@ function hookGen() {
     if (!ctx || !ctx.eventSource || !ctx.eventTypes) return
     genCtx = ctx
     onGenEnded = () => {
-      if (silentBusy.value || !sendingContact.value) return   // 纯手机模式由 silentReply 自行落库/清态
-      clearPending()                                          // 生成成功：乐观写的发出条转正
+      if (silentBusy.value) return          // 纯手机模式由 silentReply 自行落库/清态
+      clearPending()                        // 生成结束：乐观写的发出条转正（不再要求 sendingContact 仍在，超时清空后也要转正）
       setTimeout(() => { loadLogs(); syncScrape(); sendingContact.value = ''; clearTimeout(sendTimer) }, 250)
     }
     onGenStopped = () => {
-      if (silentBusy.value || !sendingContact.value) return
+      if (silentBusy.value) return
       sendingContact.value = ''; clearTimeout(sendTimer)
-      if (pendingRef) { markFailed(pendingRef.msg); pendingRef = null }   // API 断/被停：标红可重发
+      if (pendingRef) { markFailed(pendingRef); pendingRef = null }   // API 断/被停：标红可重发（pendingRef 本身就是 {owner,contact,sid}）
       showToast('消息发送失败，点消息旁的感叹号可重发')
     }
     ctx.eventSource.on(ctx.eventTypes.GENERATION_ENDED, onGenEnded)
@@ -1579,7 +1625,7 @@ onMounted(() => {
   if (props.owner) activeOwner.value = props.owner   // 状态栏点某角色手机 → 直接定位到该机主
   copyStyles()
   tick(); loadLogs(); loadRemarks(); loadPhotos(); loadDyData(); syncScrape(); syncScrapePhotos()
-  timer = setInterval(() => { tick(); loadLogs(); loadRemarks(); loadPhotos(); syncScrape(); syncScrapePhotos() }, 2000)
+  timer = setInterval(() => { tick(); loadLogs(); loadRemarks(); loadPhotos(); syncScrape(); syncScrapePhotos(); healPending() }, 2000)
   doc.documentElement.style.overflow = 'hidden'; doc.body.style.overflow = 'hidden'
   hookGen()
   try {
@@ -2009,9 +2055,9 @@ onUnmounted(() => {
 .mp-dy-cmt-lk-one.dis svg{fill:#4a90d9}
 .mp-dy-cm-none{text-align:center;color:#b0b1b6;padding:36px 0;font-size:14px}
 .mp-dy-cm-input{display:flex;align-items:center;gap:10px;padding:8px 14px 12px;border-top:1px solid #f0f0f2}
-.mp-dy-cm-in{flex:1;background:#fff;border:1px solid #e8e8ea;border-radius:18px;padding:9px 15px;color:#161823;font-size:14px;font-family:inherit;outline:none}
-.mp-dy-cm-in:focus{border-color:#d0d0d4}
-.mp-dy-cm-in::placeholder{color:#b0b1b6}
+.mp-overlay .mp-dy-cm-in{flex:1;min-width:0;background:#fff!important;border:1px solid #e8e8ea!important;border-radius:18px;padding:9px 15px;color:#161823!important;font-size:14px;font-family:inherit;outline:none;box-shadow:none!important;background-image:none!important}
+.mp-overlay .mp-dy-cm-in:focus{border-color:#d0d0d4!important;background:#fff!important}
+.mp-overlay .mp-dy-cm-in::placeholder{color:#b0b1b6!important}
 .mp-dy-cm-ic{font-size:19px;color:#61626a;cursor:pointer;flex-shrink:0}
 .mp-dy-cm-send{padding:8px 16px;border:none;border-radius:18px;background:#fe2c55;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0}
 .mp-dy-mode-tag{font-size:12px;padding:2px 8px;border-radius:10px;background:rgba(254,44,85,.15);color:#fe2c55;border:1px solid rgba(254,44,85,.3)}
@@ -2022,6 +2068,9 @@ onUnmounted(() => {
 .mp-dy-set-btns{display:flex;gap:6px}
 .mp-dy-set-btn{padding:4px 12px;border:1px solid #ddd;border-radius:14px;background:#fff;font-size:13px;color:#666;cursor:pointer;font-family:inherit}
 .mp-dy-set-btn.on{background:#fe2c55;border-color:#fe2c55;color:#fff}
+.mp-dy-set-note{font-size:12px;color:#8a8a90;line-height:1.5;padding:2px 0 8px}
+.mp-dy-tab-pv.on{color:#ff6b9d}
+.mp-dy-tab-pv.on::after{background:#ff6b9d}
 .mp-dy-set-clear{width:100%;margin-top:6px;padding:8px;border:none;border-radius:8px;background:#f0f0f2;color:#666;font-size:13px;cursor:pointer;font-family:inherit}
 .mp-dy-set-clear:active{background:#e0e0e2}
 
