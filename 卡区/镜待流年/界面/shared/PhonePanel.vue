@@ -603,6 +603,14 @@
             </div>
             <button class="mp-dys-btn" @click="submitDySearch">搜索</button>
           </div>
+          <div v-if="dyRecentSearches.length" class="mp-dys-recent">
+            <div class="mp-dys-recent-hd">最近搜索</div>
+            <div class="mp-dys-chips">
+              <span v-for="q in dyRecentSearches" :key="q" class="mp-dys-chip" @click="runDySearch(q)">
+                {{ q }}<i class="mp-dys-chip-x" @click.stop="removeRecentSearch(q)">✕</i>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -686,6 +694,8 @@ const dySearchMode = ref(false)           // 搜索结果流是否激活（独�
 const dySearchQuery = ref('')             // 当前搜索关键词
 const dySearchDraft = ref('')             // 搜索输入框草稿
 const showDySearchInput = ref(false)      // 搜索输入层是否展开
+const dyRecentSearches = ref([])          // 最近搜索关键词，供点击重搜
+const DY_SEARCHES_KEY = 'jdnl_dy_searches'
 const newContact = ref('')
 const showSearch = ref(false)
 const showNew = ref(false)
@@ -1376,10 +1386,12 @@ function loadDyData() {
     const f = localStorage.getItem(DY_FOLLOWS_KEY); if (f) dyFollows.value = new Set(JSON.parse(f))
     const im = localStorage.getItem(DY_IDXMAP_KEY); if (im) dyIdxMap.value = { ...dyIdxMap.value, ...JSON.parse(im) }
     const h = localStorage.getItem(DY_HISTORY_KEY); if (h) dyHistory.value = JSON.parse(h)
+    const sq = localStorage.getItem(DY_SEARCHES_KEY); if (sq) dyRecentSearches.value = JSON.parse(sq)
   } catch (e) {}
 }
 // 存feed时剔除未完成的占位卡，避免刷新后残留空卡
-function saveDyFeed() { try { const clean = douyinFeed.value.filter(v => !v.pending && !v.searchQ).slice(-50); localStorage.setItem(DY_FEED_KEY, JSON.stringify(clean)); localStorage.setItem(DY_IDX_KEY, String(douyinIdx.value)) } catch (e) {} }
+// 持久化feed：只剔除未完成的占位卡。搜索结果照常存(靠dyVisibleFeed的!v.searchQ隐藏，不靠丢弃)，否则重开手机就没了、历史也点不开
+function saveDyFeed() { try { const clean = douyinFeed.value.filter(v => !v.pending).slice(-50); localStorage.setItem(DY_FEED_KEY, JSON.stringify(clean)); localStorage.setItem(DY_IDX_KEY, String(douyinIdx.value)) } catch (e) {} }
 function saveDyFollows() { try { localStorage.setItem(DY_FOLLOWS_KEY, JSON.stringify([...dyFollows.value])) } catch (e) {} }
 function saveDyIdxMap() { try { localStorage.setItem(DY_IDXMAP_KEY, JSON.stringify(dyIdxMap.value)) } catch (e) {} }
 function saveDySettings() { try { localStorage.setItem(DY_SETTINGS_KEY, JSON.stringify(douyinSettings.value)) } catch (e) {} }
@@ -1388,6 +1400,7 @@ function clearDyCache() {
   dyIdxMap.value = { 推荐: 0, 关注: 0, 私密: 0 }
   dyHistory.value = []; dyFlipped.value = {}
   dySearchMode.value = false; dySearchQuery.value = ''; showDySearchInput.value = false; dySearchDraft.value = ''
+  dyRecentSearches.value = []; localStorage.removeItem(DY_SEARCHES_KEY)
   localStorage.removeItem(DY_FEED_KEY); localStorage.removeItem(DY_IDX_KEY)
   localStorage.removeItem(DY_IDXMAP_KEY); localStorage.removeItem(DY_HISTORY_KEY)
   showToast('缓存已清理')
@@ -1604,7 +1617,7 @@ async function generateDyVideo() {
     (isFollowTab
       ? `\n可以从已关注的这几个人里任选，题材尽量换新、别和最近重复。`
       : (seen ? `\n最近已刷到过这些创作者，请换新的人和新的题材，别重复：${seen}。` : '')) +
-    `\n真实感要求：创作者名像真人抖音号（可含字母数字emoji）；文案口语化、可带#话题；弹幕是观众即时反应、短促随意有梗；评论有不同性格与立场，别千篇一律；点赞/评论/分享数符合内容热度` +
+    `\n真实感要求：创作者名像真人抖音号（可含字母数字emoji）；【账号唯一】同一个角色在整个平台只有一个固定账号，出现时始终用同一个名字，绝不能用别名、小名、拼音、缩写、外号或换个称呼把同一个人包装成不同的新博主重复刷出；文案口语化、可带#话题；弹幕是观众即时反应、短促随意有梗；评论有不同性格与立场，别千篇一律；点赞/评论/分享数符合内容热度` +
     (isPrivate ? `（私密视频数据极低或为0，因为只有一个人看）` : '') + `。` +
     `\n只输出一个 ===DYSTART=== 数据块，块外不写任何字：\n===DYSTART===\n` + fmt + `\n===DYEND===`
   try {
@@ -1747,11 +1760,22 @@ function openDyFromHistory(h) {
 // 搜索：打开输入层（带上当前关键词便于改词）
 function openDySearchInput() { dySearchDraft.value = dySearchMode.value ? dySearchQuery.value : ''; showDySearchInput.value = true }
 function closeDySearchInput() { showDySearchInput.value = false }
+// 记一条最近搜索（去重置顶，最多12条）
+function pushRecentSearch(q) {
+  dyRecentSearches.value = [q, ...dyRecentSearches.value.filter(x => x !== q)].slice(0, 12)
+  try { localStorage.setItem(DY_SEARCHES_KEY, JSON.stringify(dyRecentSearches.value)) } catch (e) {}
+}
+function removeRecentSearch(q) {
+  dyRecentSearches.value = dyRecentSearches.value.filter(x => x !== q)
+  try { localStorage.setItem(DY_SEARCHES_KEY, JSON.stringify(dyRecentSearches.value)) } catch (e) {}
+}
+function submitDySearch() { runDySearch(dySearchDraft.value) }
 // 提交搜索：进独立搜索流，已有该词结果则直接展示，否则生成
-function submitDySearch() {
-  const q = dySearchDraft.value.trim(); if (!q) return
+function runDySearch(raw) {
+  const q = (raw || '').trim(); if (!q) return
   showDySearchInput.value = false
   suppressDyScroll(800)
+  pushRecentSearch(q)
   dySearchQuery.value = q
   dySearchMode.value = true
   stopDanmaku()
@@ -2421,6 +2445,12 @@ onUnmounted(() => {
 .mp-overlay .mp-dys-in::placeholder{color:#b0b1b6!important}
 .mp-dys-clr{background:none;border:none;cursor:pointer;color:#b0b0b4;font-size:13px;padding:0 2px;flex-shrink:0}
 .mp-dys-btn{background:none;border:none;cursor:pointer;color:#fe2c55;font-size:15px;font-weight:600;flex-shrink:0;padding:0 2px;font-family:inherit}
+.mp-dys-recent{padding:16px 14px 0}
+.mp-dys-recent-hd{font-size:13px;color:#8a8a8e;margin-bottom:10px}
+.mp-dys-chips{display:flex;flex-wrap:wrap;gap:8px}
+.mp-dys-chip{display:inline-flex;align-items:center;gap:5px;max-width:100%;padding:6px 12px;border-radius:15px;background:#f2f2f4;color:#333;font-size:13px;cursor:pointer;overflow:hidden}
+.mp-dys-chip:active{background:#e6e6e9}
+.mp-dys-chip-x{font-style:normal;color:#b0b0b4;font-size:11px;flex-shrink:0}
 
 /* 相机 */
 .mp-cam{position:absolute;inset:7px;z-index:10;display:flex;flex-direction:column;background:#000;border-radius:33px;overflow:hidden}
