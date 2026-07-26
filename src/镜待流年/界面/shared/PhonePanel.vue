@@ -593,6 +593,12 @@
                   <div class="mp-dy-cmt-user">{{ c.user }}</div>
                   <div class="mp-dy-cmt-text">{{ c.text }}</div>
                   <div class="mp-dy-cmt-meta"><span>{{ c.region || '刚刚' }}</span><span class="mp-dy-cmt-reply" @click.stop="setDyReplyTo(c)">回复</span></div>
+                  <!-- 回复列表：属于当前评论c，必须在评论循环内 -->
+                  <div v-for="(r, ri) in (c.replies||[])" :key="'r'+ri" class="mp-dy-cmt-reply-item">
+                    <span class="mp-dy-cmt-reply-user">{{ r.user }}</span>
+                    <span class="mp-dy-cmt-reply-to" v-if="r.replyTo"> 回复 {{ r.replyTo }}</span>
+                    <span class="mp-dy-cmt-reply-txt">{{ r.text }}</span>
+                  </div>
                 </div>
                 <div class="mp-dy-cmt-lk">
                   <span class="mp-dy-cmt-lk-one" :class="{on:c.myLike}" @click.stop="toggleDyCmtLike(c)">
@@ -603,12 +609,6 @@
                     <svg viewBox="0 0 24 24"><path fill="currentColor" d="m12 21.35l-1.45-1.32C5.4 15.36 2 12.27 2 8.5C2 5.41 4.42 3 7.5 3c.67 0 1.32.12 1.94.33L13 9.35l-4 5zM16.5 3C19.58 3 22 5.41 22 8.5c0 3.77-3.4 6.86-8.55 11.53L12 21.35l-1-7l4.5-5l-2.65-5.08C13.87 3.47 15.17 3 16.5 3"/></svg>
                   </span>
                 </div>
-              </div>
-              <!-- 回复列表 -->
-              <div v-for="(r, ri) in (c.replies||[])" :key="'r'+ri" class="mp-dy-cmt-reply-item">
-                <span class="mp-dy-cmt-reply-user">{{ r.user }}</span>
-                <span class="mp-dy-cmt-reply-to" v-if="r.replyTo"> 回复 {{ r.replyTo }}</span>
-                <span class="mp-dy-cmt-reply-txt">{{ r.text }}</span>
               </div>
               <div v-if="!dyAllComments.length" class="mp-dy-cm-none">暂无评论，快来抢沙发~</div>
               <div v-else-if="dyCommentGap > 0" class="mp-dy-cm-more">共 {{ dyCurrentCommentClaimed }} 条评论，仅显示 {{ dyAllComments.length }} 条</div>
