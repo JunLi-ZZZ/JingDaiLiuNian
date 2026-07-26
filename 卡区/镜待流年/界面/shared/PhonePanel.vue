@@ -287,6 +287,16 @@
                 <button v-else-if="a.ready" class="mp-switch" :class="{ on: silentMap[a.k] }" @click="toggleSilentApp(a.k)"><span class="mp-switch-dot"></span></button>
                 <span v-else class="mp-setapp-arrow">›</span>
               </div>
+              <!-- 微信：纯手机模式下的历史条数设置 -->
+              <div v-if="a.k === '微信' && a.ready && silentMap['微信']" class="mp-dy-settings-panel">
+                <div class="mp-dy-set-row">
+                  <span class="mp-dy-set-lbl">带入历史条数</span>
+                  <div class="mp-dy-set-btns">
+                    <button v-for="n in HIST_OPTIONS" :key="n" :class="['mp-dy-set-btn', {on: histLimit===n}]" @click="setHistLimit(n)">{{ n }}</button>
+                  </div>
+                </div>
+                <div class="mp-dy-set-note">纯手机模式下每次让 AI 回消息时带上多少条历史。越多越记得住前情，代价是 token 略增。</div>
+              </div>
               <div v-if="a.k === '抖音' && a.ready" class="mp-dy-settings-panel">
                 <div class="mp-dy-set-row">
                   <span class="mp-dy-set-lbl">模式</span>
@@ -295,18 +305,15 @@
                     <button :class="['mp-dy-set-btn', {on: douyinSettings.mode==='r18'}]" @click="douyinSettings.mode='r18';saveDySettings()">抖阴</button>
                   </div>
                 </div>
-                <div class="mp-dy-set-note">抖阴模式下顶栏会多出「私密」页，那里是角色单独发给你的大尺度内容，不与公开流混杂。</div>
+                <div class="mp-dy-set-note">抖阴模式下顶栏会多出「私密」页，那里是专门私发给你的大尺度内容。公开流（推荐/关注）里点视频文字可翻转看只给你的私密版。</div>
+                <div v-if="douyinSettings.mode==='r18'" class="mp-dy-set-row">
+                  <span class="mp-dy-set-lbl">私密页·陌生人占比</span>
+                  <div class="mp-dy-set-btns">
+                    <button v-for="p in DY_STRANGER_OPTIONS" :key="p" :class="['mp-dy-set-btn', {on: dyStrangerPct===p}]" @click="setDyStrangerPct(p)">{{ p }}%</button>
+                  </div>
+                </div>
+                <div v-if="douyinSettings.mode==='r18'" class="mp-dy-set-note">私密页里陌生美女成人内容的占比，其余为红颜私发。默认 0，即全是与你有关系的人私发给你。</div>
                 <button class="mp-dy-set-clear" @click="clearDyCache">清理视频缓存（共 {{ douyinFeed.length }} 条）</button>
-              </div>
-            </div>
-          </div>
-          <div class="mp-setapp-hd">上下文</div>
-          <div class="mp-setapp-desc">纯手机模式下，每次让 AI 回消息时带上多少条历史。条数越多越记得住前情，代价是 token 略增。</div>
-          <div class="mp-setapp-sec">
-            <div class="mp-setapp-row">
-              <span class="mp-setapp-lbl">带入历史条数</span>
-              <div class="mp-dy-set-btns">
-                <button v-for="n in HIST_OPTIONS" :key="n" :class="['mp-dy-set-btn', {on: histLimit===n}]" @click="setHistLimit(n)">{{ n }}</button>
               </div>
             </div>
           </div>
@@ -431,10 +438,10 @@
         </div>
         <!-- 视频流 -->
         <div class="mp-dy-feed" ref="dyFeedEl" @scroll.passive="onDyScroll">
-          <!-- 空状态 -->
-          <div v-if="!dyVisibleFeed.length && !generatingDy" class="mp-dy-slide mp-dy-empty" @click="dyTab==='关注' ? null : generateDyVideo()">
+          <!-- 空状态：关注tab无关注对象时只引导、不生成 -->
+          <div v-if="!dyVisibleFeed.length && !generatingDy" class="mp-dy-slide mp-dy-empty" @click="(dyTab==='关注' && !dyFollows.size) ? null : generateDyVideo()">
             <div class="mp-dy-empty-ico"><svg viewBox="0 0 24 24" style="width:48px;height:48px"><path fill="currentColor" d="M8 5v14l11-7z"/></svg></div>
-            <div class="mp-dy-empty-txt">{{ dyTab==='关注' ? '还没有关注的作者' : dyTab==='私密' ? '点击看看谁私发了东西给你' : '点击开始刷视频' }}</div>
+            <div class="mp-dy-empty-txt">{{ (dyTab==='关注' && !dyFollows.size) ? '还没关注任何人，去推荐里关注几个吧' : dyTab==='关注' ? '点击刷新关注的作者' : dyTab==='私密' ? '点击看看谁私发了东西给你' : '点击开始刷视频' }}</div>
           </div>
           <div v-if="!dyVisibleFeed.length && generatingDy" class="mp-dy-slide mp-dy-loading">
             <div class="mp-dy-spinner"><span></span><span></span><span></span></div>
@@ -444,8 +451,19 @@
           <div v-for="(v, vi) in dyVisibleFeed" :key="v._i" class="mp-dy-slide">
             <div class="mp-dy-grad-top"></div>
             <div class="mp-dy-grad-bot"></div>
-            <!-- 画面文字：左右对称，超出可滚动 -->
-            <div class="mp-dy-content"><div class="mp-dy-content-in">{{ v.content }}</div></div>
+            <!-- 占位卡：正在生成 -->
+            <template v-if="v.pending">
+              <div class="mp-dy-ph">
+                <div class="mp-dy-spinner"><span></span><span></span><span></span></div>
+                <div class="mp-dy-load-txt">正在为你推荐…</div>
+              </div>
+            </template>
+            <template v-else>
+            <!-- 画面文字：左右对称，超出可滚动；抖阴公开流可点击翻转看私密版 -->
+            <div class="mp-dy-content" :class="{ flip: dyFlipped[v._i] }" @click="v.pcontent && toggleDyFlip(v._i)">
+              <div class="mp-dy-content-in">{{ dyFlipped[v._i] && v.pcontent ? v.pcontent : v.content }}</div>
+              <div v-if="v.pcontent" class="mp-dy-flip-hint">{{ dyFlipped[v._i] ? '· 私密版 · 点击收起' : '· 点击查看只给你的私密版 ·' }}</div>
+            </div>
             <!-- 弹幕带：独立区域，不压文字 -->
             <div class="mp-dy-dm-band">
               <span v-for="dm in (douyinIdx===v._i ? activeDanmaku : [])" :key="dm.k" class="mp-dy-dm" :style="{ top: dm.top+'px', animationDuration: dm.dur+'s' }">{{ dm.text }}</span>
@@ -487,21 +505,16 @@
               <svg v-else viewBox="0 0 24 24"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77"/></svg>
               <span>{{ dyMuted ? '取消静音' : '静音中' }}</span>
             </div>
+            </template>
           </div>
-          <!-- 尾部常驻滑块：既是上划落点，也是「下一个」触发点 -->
-          <div v-if="dyVisibleFeed.length" class="mp-dy-slide mp-dy-next" @click="generateDyVideo">
-            <template v-if="generatingDy">
-              <div class="mp-dy-spinner"><span></span><span></span><span></span></div>
-              <div class="mp-dy-load-txt">正在为你推荐…</div>
-            </template>
-            <template v-else>
-              <div class="mp-dy-next-ico"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z" transform="rotate(90 12 12)"/></svg></div>
-              <div class="mp-dy-load-txt">上划或点击，看下一个</div>
-            </template>
+          <!-- 尾部常驻滑块：只在没有pending占位卡、没在生成时作为「下一个」落点 -->
+          <div v-if="dyVisibleFeed.length && !generatingDy" class="mp-dy-slide mp-dy-next" @click="generateDyVideo">
+            <div class="mp-dy-next-ico"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z" transform="rotate(90 12 12)"/></svg></div>
+            <div class="mp-dy-load-txt">上划或点击，看下一个</div>
           </div>
         </div>
-        <!-- 上划提示：只在当前是最后一条真实视频时出现 -->
-        <div v-if="dyVisibleFeed.length && !showDyComments && douyinIdx === dyVisibleFeed[dyVisibleFeed.length-1]?._i" class="mp-dy-swipe-hint">
+        <!-- 上划提示：只在当前是最后一条真实视频、且没在生成时出现 -->
+        <div v-if="dyVisibleFeed.length && !showDyComments && !generatingDy && douyinIdx === dyVisibleFeed[dyVisibleFeed.length-1]?._i" class="mp-dy-swipe-hint">
           <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z" transform="rotate(90 12 12)"/></svg>
         </div>
         <!-- 底部导航 -->
@@ -510,7 +523,7 @@
           <button class="mp-dy-tb" @click="showToast('该功能暂未开放')">朋友</button>
           <button class="mp-dy-tb mp-dy-tb-add" @click="showToast('该功能暂未开放')"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg></button>
           <button class="mp-dy-tb" @click="showToast('该功能暂未开放')">消息</button>
-          <button class="mp-dy-tb" @click="showToast('该功能暂未开放')">我</button>
+          <button class="mp-dy-tb" @click="showDyHistory=true">我</button>
         </div>
         <!-- 评论弹层 -->
         <div v-if="showDyComments" class="mp-dy-cm-overlay" @click.self="showDyComments=false">
@@ -546,6 +559,24 @@
               <span class="mp-dy-cm-ic">@</span>
               <span class="mp-dy-cm-ic">☺</span>
               <button v-if="dyCommentDraft.trim()" class="mp-dy-cm-send" @click="submitDyComment">发送</button>
+            </div>
+          </div>
+        </div>
+        <!-- 「我」·观看历史 -->
+        <div v-if="showDyHistory" class="mp-dyh">
+          <div class="mp-dyh-hd">
+            <button class="mp-nav-back" @click="showDyHistory=false"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
+            <span class="mp-dyh-title">观看历史</span>
+            <span></span>
+          </div>
+          <div class="mp-dyh-body">
+            <div v-if="!dyHistory.length" class="mp-dyh-none">还没有观看记录</div>
+            <div v-for="(h, hi) in dyHistory" :key="hi" class="mp-dyh-item" @click="openDyFromHistory(h)">
+              <div class="mp-dyh-thumb" :class="{ pv: h.vis==='private' }">{{ (h.creator||'?').slice(0,1).toUpperCase() }}</div>
+              <div class="mp-dyh-info">
+                <div class="mp-dyh-author">@{{ h.creator }}<span v-if="h.vis==='private'" class="mp-dyh-pvtag">私密</span></div>
+                <div class="mp-dyh-txt">{{ h.content }}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -588,8 +619,9 @@ const ctxMenu = ref(null)
 const DY_FEED_KEY = 'jdnl_dy_feed'
 const DY_IDX_KEY = 'jdnl_dy_idx'
 const DY_SETTINGS_KEY = 'jdnl_dy_settings'
-const DY_FORMAT = `===DYSTART===
-creator:创作者抖音号（不带@，6字内）
+const DY_IDXMAP_KEY = 'jdnl_dy_idxmap'   // 各tab独立记忆的当前下标
+// content 是公开画面；pcontent 只在抖阴公开流要求，是点文字翻转后只给user看的私密版
+const DY_FORMAT_BASE = `creator:创作者抖音号（不带@，6字内）
 verified:true或false（是否蓝V认证）
 caption:视频文案（20字内，可带#话题）
 sound:配乐（歌名-歌手，或"原声-创作者号"）
@@ -602,11 +634,13 @@ danmaku:弹幕1|弹幕2|弹幕3|弹幕4（观众即时反应，短促口语，4-
 c1:评论者号|||评论内容|||赞数|||地区（如 浙江/广东/未知）
 c2:评论者号|||评论内容|||赞数|||地区
 c3:评论者号|||评论内容|||赞数|||地区
-c4:评论者号|||评论内容|||赞数|||地区
-===DYEND===`
+c4:评论者号|||评论内容|||赞数|||地区`
 const douyinFeed = ref([])
 const douyinIdx = ref(0)
 const douyinSettings = ref({ mode: 'normal' })
+const dyStrangerPct = ref(0)             // 私密页陌生美女占比，默认0（全红颜私发）
+const DY_STRANGER_OPTIONS = [0, 25, 50, 75, 100]
+const dyIdxMap = ref({ 推荐: 0, 关注: 0, 私密: 0 })   // 各tab记住看到哪条(_i)
 const dyTab = ref('推荐')
 const showDyComments = ref(false)
 const dyCommentIdx = ref(0)
@@ -619,6 +653,8 @@ let dmTimer = null
 const dyFollows = ref(new Set())          // 已关注作者名单，独立于feed，不随50条上限淘汰
 let dyLastGenMs = 0                       // 防止scroll连续触发生成的冷却时间戳
 let dyScrollTimer = null                  // scroll防抖定时器
+const dyFlipped = ref({})                 // { _i: true } 该视频文字已翻转到私密版
+const showDyHistory = ref(false)          // 「我」页观看历史弹层
 const newContact = ref('')
 const showSearch = ref(false)
 const showNew = ref(false)
@@ -1262,12 +1298,13 @@ function ingestPhotoBlock(text, mode) {
 // ---- 抖音 ----
 const currentDyVideo = computed(() => douyinFeed.value[douyinIdx.value] || null)
 const dyR18 = computed(() => douyinSettings.value.mode === 'r18')
-// 带原始下标的可见列表：私密流与公开流互不混杂，关注tab只看已关注的
+// 带原始下标的可见列表
+// 推荐=公开流；私密=私密流；关注=所有已关注作者(含红颜私密视频，这样关注里也能看到红颜)
 const dyVisibleFeed = computed(() => {
   const all = douyinFeed.value.map((v, i) => ({ ...v, _i: i }))
   if (dyTab.value === '私密') return all.filter(v => v.vis === 'private')
-  const pub = all.filter(v => v.vis !== 'private')
-  return dyTab.value === '关注' ? pub.filter(v => v.isFollowing) : pub
+  if (dyTab.value === '关注') return all.filter(v => v.isFollowing)
+  return all.filter(v => v.vis !== 'private')
 })
 const dyAllComments = computed(() => {
   const v = douyinFeed.value[dyCommentIdx.value]
@@ -1291,13 +1328,18 @@ function loadDyData() {
     const raw = localStorage.getItem(DY_FEED_KEY); if (raw) douyinFeed.value = JSON.parse(raw).slice(-50)
     const idx = localStorage.getItem(DY_IDX_KEY); if (idx !== null) douyinIdx.value = Math.min(+idx, douyinFeed.value.length - 1)
     const s = localStorage.getItem(DY_SETTINGS_KEY); if (s) douyinSettings.value = { ...douyinSettings.value, ...JSON.parse(s) }
+    if (typeof douyinSettings.value.strangerPct === 'number') dyStrangerPct.value = douyinSettings.value.strangerPct
     const f = localStorage.getItem(DY_FOLLOWS_KEY); if (f) dyFollows.value = new Set(JSON.parse(f))
+    const im = localStorage.getItem(DY_IDXMAP_KEY); if (im) dyIdxMap.value = { ...dyIdxMap.value, ...JSON.parse(im) }
+    const h = localStorage.getItem(DY_HISTORY_KEY); if (h) dyHistory.value = JSON.parse(h)
   } catch (e) {}
 }
-function saveDyFeed() { try { localStorage.setItem(DY_FEED_KEY, JSON.stringify(douyinFeed.value.slice(-50))); localStorage.setItem(DY_IDX_KEY, String(douyinIdx.value)) } catch (e) {} }
+// 存feed时剔除未完成的占位卡，避免刷新后残留空卡
+function saveDyFeed() { try { const clean = douyinFeed.value.filter(v => !v.pending).slice(-50); localStorage.setItem(DY_FEED_KEY, JSON.stringify(clean)); localStorage.setItem(DY_IDX_KEY, String(douyinIdx.value)) } catch (e) {} }
 function saveDyFollows() { try { localStorage.setItem(DY_FOLLOWS_KEY, JSON.stringify([...dyFollows.value])) } catch (e) {} }
+function saveDyIdxMap() { try { localStorage.setItem(DY_IDXMAP_KEY, JSON.stringify(dyIdxMap.value)) } catch (e) {} }
 function saveDySettings() { try { localStorage.setItem(DY_SETTINGS_KEY, JSON.stringify(douyinSettings.value)) } catch (e) {} }
-function clearDyCache() { douyinFeed.value = []; douyinIdx.value = 0; localStorage.removeItem(DY_FEED_KEY); localStorage.removeItem(DY_IDX_KEY); showToast('缓存已清理') }
+function clearDyCache() { douyinFeed.value = []; douyinIdx.value = 0; dyIdxMap.value = { 推荐: 0, 关注: 0, 私密: 0 }; localStorage.removeItem(DY_FEED_KEY); localStorage.removeItem(DY_IDX_KEY); showToast('缓存已清理') }
 function onDyScroll() {
   const el = dyFeedEl.value; if (!el || !el.clientHeight) return
   const vis = dyVisibleFeed.value
@@ -1307,12 +1349,14 @@ function onDyScroll() {
   if (pos < vis.length) {
     const real = vis[pos] && vis[pos]._i
     if (real !== undefined && real !== douyinIdx.value) {
-      douyinIdx.value = real; saveDyFeed()
+      douyinIdx.value = real
+      dyIdxMap.value[dyTab.value] = real; saveDyIdxMap()
+      saveDyFeed()
       stopDanmaku(); startDanmaku(douyinFeed.value[real])
     }
     return
   }
-  // 到了尾部滑块：加冷却+防抖，防止scroll-anchor补偿触发连续生成
+  // 到了尾部：若当前已有pending占位卡在生成，不再触发
   if (generatingDy.value) return
   const now = Date.now()
   if (now - dyLastGenMs < 1500) return
@@ -1321,30 +1365,33 @@ function onDyScroll() {
     if (!generatingDy.value && Date.now() - dyLastGenMs >= 1500) generateDyVideo()
   }, 150)
 }
-// 进抖音：恢复上次看到的那条（无动画，避免跳一下）
-function openDouyin() {
-  view.value = 'douyin'
-  const cur = douyinFeed.value[douyinIdx.value]
-  if (cur && cur.vis === 'private') dyTab.value = dyR18.value ? '私密' : '推荐'
-  else if (dyTab.value === '私密' && !dyR18.value) dyTab.value = '推荐'
+// 定位到某tab记住的那条（无则第一条），并重挂弹幕
+function dyRestorePos() {
   nextTick(() => {
     const el = dyFeedEl.value; if (!el) return
-    const pos = dyVisibleFeed.value.findIndex(v => v._i === douyinIdx.value)
-    el.scrollTop = pos > 0 ? pos * el.clientHeight : 0
-    stopDanmaku()
-    const v = douyinFeed.value[douyinIdx.value]; if (v) startDanmaku(v)
+    const vis = dyVisibleFeed.value
+    if (!vis.length) { el.scrollTop = 0; stopDanmaku(); return }
+    let want = dyIdxMap.value[dyTab.value]
+    let pos = vis.findIndex(v => v._i === want)
+    if (pos < 0) pos = 0
+    el.scrollTop = pos * el.clientHeight
+    douyinIdx.value = vis[pos]._i
+    stopDanmaku(); startDanmaku(douyinFeed.value[douyinIdx.value])
   })
 }
-// 切 tab：可见列表变了，回到顶部并重挂弹幕
+// 进抖音：回到当前tab上次看到的那条
+function openDouyin() {
+  view.value = 'douyin'
+  if (dyTab.value === '私密' && !dyR18.value) dyTab.value = '推荐'
+  dyRestorePos()
+}
+// 切 tab：记住旧tab位置，恢复新tab位置
 function switchDyTab(t) {
   if (dyTab.value === t) return
+  dyIdxMap.value[dyTab.value] = douyinIdx.value; saveDyIdxMap()
   dyTab.value = t
   stopDanmaku()
-  nextTick(() => {
-    const el = dyFeedEl.value; if (el) el.scrollTop = 0
-    const first = dyVisibleFeed.value[0]
-    if (first) { douyinIdx.value = first._i; startDanmaku(douyinFeed.value[first._i]) }
-  })
+  dyRestorePos()
 }
 function toggleDyLike(vi) { const v = douyinFeed.value[vi]; if (!v) return; v.isLiked = !v.isLiked; saveDyFeed() }
 function toggleDySave(vi) { const v = douyinFeed.value[vi]; if (!v) return; v.isSaved = !v.isSaved; saveDyFeed() }
@@ -1405,62 +1452,85 @@ function stopDanmaku() { clearTimeout(dmTimer); dmTimer = null; activeDanmaku.va
 async function generateDyVideo() {
   if (generatingDy.value) return
   const th = TH(); if (!th || (!th.generateRaw && !th.generate)) { showToast('当前环境不支持生成'); return }
-  generatingDy.value = true
-  dyLastGenMs = Date.now()
   const isR18 = dyR18.value
   const isPrivate = dyTab.value === '私密'
   const isFollowTab = dyTab.value === '关注'
+  // 关注tab没有已关注对象时不生成，避免凭空造关注对象
+  if (isFollowTab && !dyFollows.value.size) { showToast('还没有关注任何人，去推荐看看吧'); return }
+  generatingDy.value = true
+  dyLastGenMs = Date.now()
   const me = meName.value || '我'
   // 已刷过的创作者，供 AI 参考避免重复
   const seen = [...new Set(douyinFeed.value.slice(-8).map(v => v.creator).filter(Boolean))].join('、')
 
-  // 私密流：4成红颜私发，6成陌生美女
-  const isPrivateStranger = isPrivate && Math.random() < 0.6
+  // 私密流：按设置的陌生人占比掷骰，默认0（全红颜私发）
+  const isPrivateStranger = isPrivate && Math.random() * 100 < dyStrangerPct.value
+  // 抖阴公开流（推荐/关注）要一份翻转私密版；抖音全年龄模式不要
+  const wantFlip = isR18 && !isPrivate
+
+  // 先插占位卡并滚过去，让当前条立刻是它——箭头/进度同步，且占位期间不再触发新生成
+  const placeholder = {
+    pending: true, creator: '', verified: false, caption: '', sound: '',
+    likes: '0', commentCount: '0', shares: '0', saves: '0', content: '',
+    danmaku: [], commentList: [], myComments: [],
+    vis: isPrivate ? 'private' : 'public',
+    isFollowing: isPrivate || isFollowTab, isLiked: false, isSaved: false,
+  }
+  const wasEmpty = !dyVisibleFeed.value.length
+  douyinFeed.value.push(placeholder)
+  const placeholderRealIdx = douyinFeed.value.length - 1
+  douyinIdx.value = placeholderRealIdx
+  stopDanmaku()
+  nextTick(() => {
+    const el = dyFeedEl.value; if (!el) return
+    const pos = dyVisibleFeed.value.findIndex(v => v._i === placeholderRealIdx)
+    if (pos >= 0) el.scrollTop = pos * el.clientHeight
+  })
 
   let platform, styleLine, sourceLine, audienceLine
   if (isPrivate && !isPrivateStranger) {
-    // 私密·红颜私发
     platform = '抖阴·私密（只有本人能看到的私发内容）'
     styleLine = `尺度完全放开：直接写出裸露与性事本身，具体到身体、动作、声音、气息与情态，不用暗示、不用留白、不擦边。同时保有情绪与关系的温度，是这个人对${me}才会这样，不是无名的色情素材。`
     sourceLine = `发布者必须是当前故事世界中与${me}关系亲密的女性角色（从下方角色信息中自行判断谁符合，别凭空造陌生人）。这条视频是ta单独拍给${me}的，没有发到公开平台。`
     audienceLine = `\n【评论区铁则】这条视频只有${me}一个人能看到，因此绝对禁止出现任何陌生人、路人、男性观众的评论——出现即为错误。评论只能来自以下两种：${me}本人，或与发布者同属${me}亲密圈子的其他女性角色（她们之间彼此知情）。若判断没有合适的人会看到，就把 c1~c4 全部留空，评论数写0，宁可没有评论也不许放陌生人进来。弹幕同理，私密视频没有公开观众，弹幕留空。`
   } else if (isPrivate && isPrivateStranger) {
-    // 私密·陌生美女成人内容
     platform = '抖阴·私密（成人内容平台）'
     styleLine = `尺度完全放开：直接写出裸露与性事，具体到身体、动作、声音、气息与情态，不用暗示、不用留白。这是平台上的陌生成人内容创作者，与故事世界无关，可以有陌生观众评论和弹幕。`
     sourceLine = `发布者是平台上的陌生女性成人内容创作者，与当前故事人物无关，是真实存在感强的素人博主或成人up主。`
     audienceLine = `\n评论区可以有陌生的成人观众评论，口吻符合成人平台真实氛围。`
   } else if (isFollowTab) {
-    // 关注 tab：从已关注名单里定向生成
     platform = isR18 ? '抖阴（成人向短视频平台）' : '抖音（短视频平台）'
     styleLine = isR18
-      ? `擦边风格：性感、撩人、若隐若现，靠体态、衣物、角度、氛围撩拨，可以呼之欲出但不真正露出，也不直接描写性行为。`
+      ? `公开画面擦边风格：性感、撩人、若隐若现，靠体态、衣物、角度、氛围撩拨，呼之欲出但不真正露出、不直接描写性行为。`
       : `内容生活化、有真情实感或趣味，题材自由（日常/情感/才艺/风景/美食/知识/搞笑/宠物/穿搭等皆可）。`
-    const followList = [...dyFollows.value]
-    sourceLine = followList.length
-      ? `发布者必须是以下已关注的创作者之一，从中选一个来发新视频：${followList.join('、')}。`
-      : `发布者从故事世界中的角色或陌生博主里自然决定。`
+    sourceLine = `发布者必须是以下已关注的创作者之一，从中选一个来发新视频：${[...dyFollows.value].join('、')}。`
     audienceLine = `\n评论区可以有各种陌生观众，立场性格各异；若发布者是故事中的角色，其他角色也可能出现在评论里。`
   } else {
-    // 推荐/抖音/抖阴常规
     platform = isR18 ? '抖阴（成人向短视频平台）' : '抖音（短视频平台）'
     styleLine = isR18
-      ? `擦边风格：性感、撩人、若隐若现，靠体态、衣物、角度、氛围撩拨，可以呼之欲出但不真正露出，也不直接描写性行为。`
+      ? `公开画面擦边风格：性感、撩人、若隐若现，靠体态、衣物、角度、氛围撩拨，呼之欲出但不真正露出、不直接描写性行为。`
       : `内容生活化、有真情实感或趣味，题材自由（日常/情感/才艺/风景/美食/知识/搞笑/宠物/穿搭等皆可）。`
     sourceLine = `发布者既可能是当前故事世界里的角色，也可能是与故事无关的陌生博主、路人、素人——由内容自然决定，不必偏向任何人。`
     audienceLine = `\n评论区可以有各种陌生观众，立场性格各异；若发布者是故事中的角色，其他角色也可能出现在评论里。`
   }
+  // 翻转私密版：user 独享特权。评论只能围绕公开画面，绝不能提及私密版内容
+  const flipLine = wantFlip
+    ? `\n另外，${me}对这条视频有独享特权，可以翻转看到只给${me}的私密版：请额外输出一行 pcontent，写这条视频真正大尺度的版本（直接写裸露与性事本身，具体到身体、动作、声音、气息），是发布者只愿意让${me}看到的样子。【极重要】评论区(c1~c4)和弹幕只能围绕上面那条公开的擦边画面(content)，绝对不能提及、暗示或反应 pcontent 里的私密内容——因为除了${me}没人看得到私密版，谁提了就是穿帮。`
+    : ''
+  const fmt = wantFlip
+    ? DY_FORMAT_BASE + `\npcontent:只给${me}看的私密版画面，2-3句，直接写实、大尺度`
+    : DY_FORMAT_BASE
 
   const instruction =
     `【${platform}·刷视频·静默生成】现在只模拟刷到的一条短视频，绝不输出任何正文、旁白、场景或动作描写，只产出下面规定的数据块。` +
     `请结合下方提供的世界观设定、角色信息与当前剧情，生成一条真实可信、符合该世界背景的短视频。` +
     `\n发布来源：${sourceLine}` +
     `\n内容风格：${styleLine}` +
-    audienceLine +
+    audienceLine + flipLine +
     (seen ? `\n最近已刷到过这些创作者，请换新的人和新的题材，别重复：${seen}。` : '') +
     `\n真实感要求：创作者名像真人抖音号（可含字母数字emoji）；文案口语化、可带#话题；弹幕是观众即时反应、短促随意有梗；评论有不同性格与立场，别千篇一律；点赞/评论/分享数符合内容热度` +
     (isPrivate ? `（私密视频数据极低或为0，因为只有一个人看）` : '') + `。` +
-    `\n只输出一个 ===DYSTART=== 数据块，块外不写任何字：\n` + DY_FORMAT
+    `\n只输出一个 ===DYSTART=== 数据块，块外不写任何字：\n===DYSTART===\n` + fmt + `\n===DYEND===`
   try {
     let result
     if (th.generateRaw) {
@@ -1477,29 +1547,36 @@ async function generateDyVideo() {
       result = await th.generate({ user_input: instruction, should_silence: true })
     }
     const video = parseDyVideo(result)
-    if (video) {
+    const idx = douyinFeed.value.indexOf(placeholder)
+    if (video && idx >= 0) {
       video.vis = isPrivate ? 'private' : 'public'
-      if (isPrivate && !isPrivateStranger) { video.danmaku = []; video.isFollowing = true }   // 红颜私发：无公开观众
-      // 关注 tab 生成的视频强制标记已关注，并加入独立名单
-      if (isFollowTab) {
-        video.isFollowing = true
-        dyFollows.value.add(video.creator); saveDyFollows()
-      }
-      // 新作者延续已关注状态（推荐流里刷到的同名作者）
+      if (isPrivate && !isPrivateStranger) { video.danmaku = []; video.isFollowing = true }
+      else if (isPrivate) video.isFollowing = true
+      if (isFollowTab) { video.isFollowing = true; dyFollows.value.add(video.creator); saveDyFollows() }
       if (!video.isFollowing && (douyinFeed.value.some(x => x.creator === video.creator && x.isFollowing) || dyFollows.value.has(video.creator))) {
         video.isFollowing = true
       }
-      const wasEmpty = !dyVisibleFeed.value.length
-      douyinFeed.value.push(video)
-      douyinIdx.value = douyinFeed.value.length - 1
+      douyinFeed.value.splice(idx, 1, video)   // 原地替换占位卡
+      douyinIdx.value = idx
+      pushDyHistory(video)
       saveDyFeed()
-      // 只在从空列表刷出第一条时定位；否则新条插在尾部滑块前，视口天然不动，不做滚动避免"跳一下"
       nextTick(() => {
         if (wasEmpty && dyFeedEl.value) dyFeedEl.value.scrollTop = 0
         stopDanmaku(); startDanmaku(video)
       })
-    } else showToast('没刷出内容，再试一次')
-  } catch (e) { showToast('生成失败：' + ((e && e.message) || e)) } finally { generatingDy.value = false }
+    } else {
+      // 生成失败：移除占位卡，回到上一条
+      const rm = douyinFeed.value.indexOf(placeholder)
+      if (rm >= 0) douyinFeed.value.splice(rm, 1)
+      douyinIdx.value = Math.max(0, douyinFeed.value.length - 1)
+      showToast('没刷出内容，再试一次')
+    }
+  } catch (e) {
+    const rm = douyinFeed.value.indexOf(placeholder)
+    if (rm >= 0) douyinFeed.value.splice(rm, 1)
+    douyinIdx.value = Math.max(0, douyinFeed.value.length - 1)
+    showToast('生成失败：' + ((e && e.message) || e))
+  } finally { generatingDy.value = false }
 }
 function parseDyVideo(raw) {
   if (!raw) return null
@@ -1513,7 +1590,11 @@ function parseDyVideo(raw) {
   for (let i = 1; i <= 6; i++) {
     const c = f('c'+i); if (!c) continue
     const p = c.split('|||')
-    if (p.length >= 2 && p[0].trim() && p[1].trim()) commentList.push({ user: p[0].trim().replace(/^@/,'').replace(/^/,'@'), text: p[1].trim(), likes: (p[2]||'0').trim(), region: (p[3]||'').trim(), replyCount: 0 })
+    if (p.length >= 2 && p[0].trim() && p[1].trim()) {
+      // 部分评论挂几条"展开N条回复"的样子（不产出回复正文，只显示数字）
+      const replyCount = Math.random() < 0.4 ? 1 + Math.floor(Math.random() * 20) : 0
+      commentList.push({ user: p[0].trim().replace(/^@/,'').replace(/^/,'@'), text: p[1].trim(), likes: (p[2]||'0').trim(), region: (p[3]||'').trim(), replyCount })
+    }
   }
   const content = f('content')
   if (!content && !f('caption')) return null
@@ -1527,9 +1608,39 @@ function parseDyVideo(raw) {
     shares: f('shares') || '0',
     saves: f('saves') || '0',
     content,
+    pcontent: f('pcontent') || '',   // 翻转后的私密版画面（抖阴公开流才有）
     danmaku: danmakuRaw ? danmakuRaw.split('|').map(s=>s.trim()).filter(Boolean) : [],
     commentList, myComments: [], isLiked: false, isSaved: false, isFollowing: false,
   }
+}
+// 观看历史：只存已成功填充的视频，去重，最多80条
+const DY_HISTORY_KEY = 'jdnl_dy_history'
+const dyHistory = ref([])
+function pushDyHistory(v) {
+  if (!v || v.pending) return
+  const entry = { creator: v.creator, caption: v.caption, content: (v.content || '').slice(0, 40), vis: v.vis, ts: Date.now() }
+  dyHistory.value = dyHistory.value.filter(h => !(h.creator === entry.creator && h.content === entry.content))
+  dyHistory.value.unshift(entry)
+  if (dyHistory.value.length > 80) dyHistory.value = dyHistory.value.slice(0, 80)
+  try { localStorage.setItem(DY_HISTORY_KEY, JSON.stringify(dyHistory.value)) } catch (e) {}
+}
+function toggleDyFlip(vi) {
+  const v = douyinFeed.value[vi]
+  if (!v || !v.pcontent) return
+  dyFlipped.value = { ...dyFlipped.value, [vi]: !dyFlipped.value[vi] }
+}
+function setDyStrangerPct(p) { dyStrangerPct.value = p; douyinSettings.value.strangerPct = p; saveDySettings() }
+// 从历史点回看：在feed里找到那条并定位到对应tab
+function openDyFromHistory(h) {
+  const idx = douyinFeed.value.findIndex(v => !v.pending && v.creator === h.creator && (v.content || '').slice(0, 40) === h.content)
+  if (idx < 0) { showToast('这条已不在缓存里了'); return }
+  const v = douyinFeed.value[idx]
+  dyTab.value = v.vis === 'private' ? (dyR18.value ? '私密' : '推荐') : (v.isFollowing ? dyTab.value : (dyTab.value === '关注' ? '推荐' : dyTab.value))
+  if (dyTab.value === '私密' && !dyR18.value) dyTab.value = '推荐'
+  showDyHistory.value = false
+  dyIdxMap.value[dyTab.value] = idx; saveDyIdxMap()
+  douyinIdx.value = idx
+  dyRestorePos()
 }
 
 // ---- 相机快门（常规模式：注入正文） ----
@@ -2046,6 +2157,10 @@ onUnmounted(() => {
 .mp-dy-content::-webkit-scrollbar{width:2px}
 .mp-dy-content::-webkit-scrollbar-thumb{background:rgba(255,255,255,.35);border-radius:2px}
 .mp-dy-content-in{font-size:14.5px;line-height:1.75;color:rgba(255,255,255,.94);white-space:pre-wrap;word-break:break-word;text-shadow:0 1px 4px rgba(0,0,0,.55);text-align:left}
+.mp-dy-content[class*="flip"]{cursor:pointer}
+.mp-dy-content.flip .mp-dy-content-in{color:#ffd9e6}
+.mp-dy-flip-hint{margin-top:8px;font-size:11px;color:rgba(255,180,210,.85);letter-spacing:.5px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.mp-dy-ph{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;background:#111;z-index:4}
 .mp-dy-empty,.mp-dy-loading,.mp-dy-next{justify-content:center;align-items:center;flex-direction:column;gap:12px;cursor:pointer}
 .mp-dy-next-ico svg{width:34px;height:34px;fill:rgba(255,255,255,.5)}
 .mp-dy-swipe-hint{position:absolute;left:50%;transform:translateX(-50%);bottom:118px;z-index:6;pointer-events:none;animation:mp-dy-bob 1.6s ease-in-out infinite}
@@ -2135,6 +2250,23 @@ onUnmounted(() => {
 .mp-dy-tab-pv.on::after{background:#ff6b9d}
 .mp-dy-set-clear{width:100%;margin-top:6px;padding:8px;border:none;border-radius:8px;background:#f0f0f2;color:#666;font-size:13px;cursor:pointer;font-family:inherit}
 .mp-dy-set-clear:active{background:#e0e0e2}
+/* 观看历史 */
+.mp-dyh{position:absolute;inset:0;z-index:30;background:#fff;display:flex;flex-direction:column}
+.mp-dyh-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #eee;flex-shrink:0}
+.mp-dyh-hd .mp-nav-back{background:none;border:none;cursor:pointer;padding:0;width:24px;height:24px}
+.mp-dyh-hd .mp-nav-back svg{width:22px;height:22px;fill:#161823}
+.mp-dyh-title{font-size:16px;font-weight:600;color:#161823}
+.mp-dyh-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.mp-dyh-body::-webkit-scrollbar{width:0}
+.mp-dyh-none{text-align:center;color:#999;font-size:14px;padding:40px 0}
+.mp-dyh-item{display:flex;gap:12px;padding:11px 14px;cursor:pointer;align-items:center}
+.mp-dyh-item:active{background:#f5f5f7}
+.mp-dyh-thumb{width:48px;height:64px;border-radius:8px;background:linear-gradient(135deg,#3a3a3a,#1a1a1a);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;flex-shrink:0}
+.mp-dyh-thumb.pv{background:linear-gradient(135deg,#82001e,#3a0010)}
+.mp-dyh-info{flex:1;min-width:0}
+.mp-dyh-author{font-size:14px;font-weight:600;color:#161823;display:flex;align-items:center;gap:6px}
+.mp-dyh-pvtag{font-size:10px;padding:1px 6px;border-radius:8px;background:rgba(255,107,157,.15);color:#ff6b9d}
+.mp-dyh-txt{font-size:13px;color:#888;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* 相机 */
 .mp-cam{position:absolute;inset:7px;z-index:10;display:flex;flex-direction:column;background:#000;border-radius:33px;overflow:hidden}
