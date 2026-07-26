@@ -395,6 +395,7 @@
           <div class="mp-wp-grid">
             <button class="mp-wp-item" :class="{ on: !curWallpaper }" @click="selectWallpaper('')">
               <div class="mp-wp-thumb mp-wp-default"><span>默认</span></div>
+              <span class="mp-wp-name">默认</span>
             </button>
             <button v-for="wp in WALLPAPERS" :key="wp.url" class="mp-wp-item" :class="{ on: curWallpaper === wp.url }" @click="selectWallpaper(wp.url)">
               <div class="mp-wp-thumb" :style="{ backgroundImage: `url(${wp.url})` }"></div>
@@ -426,6 +427,7 @@
             <button v-if="dyR18" :class="['mp-dy-tab','mp-dy-tab-pv', {on: dyTab==='私密'}]" @click="switchDyTab('私密')">私密</button>
           </div>
           <svg class="mp-dy-search-ico" viewBox="0 0 24 24"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"/></svg>
+          <span v-if="dyVisibleFeed.length" class="mp-dy-progress">{{ dyCurrentPos }}/{{ dyVisibleFeed.length }}</span>
         </div>
         <!-- 视频流 -->
         <div class="mp-dy-feed" ref="dyFeedEl" @scroll.passive="onDyScroll">
@@ -498,8 +500,8 @@
             </template>
           </div>
         </div>
-        <!-- 上划提示 -->
-        <div v-if="dyVisibleFeed.length && !showDyComments" class="mp-dy-swipe-hint">
+        <!-- 上划提示：只在当前是最后一条真实视频时出现 -->
+        <div v-if="dyVisibleFeed.length && !showDyComments && douyinIdx === dyVisibleFeed[dyVisibleFeed.length-1]?._i" class="mp-dy-swipe-hint">
           <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z" transform="rotate(90 12 12)"/></svg>
         </div>
         <!-- 底部导航 -->
@@ -614,6 +616,9 @@ const activeDanmaku = ref([])
 const dyFeedEl = ref(null)
 const dyMuted = ref(true)
 let dmTimer = null
+const dyFollows = ref(new Set())          // 已关注作者名单，独立于feed，不随50条上限淘汰
+let dyLastGenMs = 0                       // 防止scroll连续触发生成的冷却时间戳
+let dyScrollTimer = null                  // scroll防抖定时器
 const newContact = ref('')
 const showSearch = ref(false)
 const showNew = ref(false)
@@ -1273,27 +1278,48 @@ const dyCurrentCommentTotal = computed(() => {
   const v = douyinFeed.value[dyCommentIdx.value]
   return v ? (v.commentList || []).length + (v.myComments || []).length : 0
 })
+// 顶栏进度胶囊："当前条/总数"
+const dyCurrentPos = computed(() => {
+  const vis = dyVisibleFeed.value
+  if (!vis.length) return 0
+  const pos = vis.findIndex(v => v._i === douyinIdx.value)
+  return pos >= 0 ? pos + 1 : 1
+})
+const DY_FOLLOWS_KEY = 'jdnl_dy_follows'
 function loadDyData() {
   try {
     const raw = localStorage.getItem(DY_FEED_KEY); if (raw) douyinFeed.value = JSON.parse(raw).slice(-50)
     const idx = localStorage.getItem(DY_IDX_KEY); if (idx !== null) douyinIdx.value = Math.min(+idx, douyinFeed.value.length - 1)
     const s = localStorage.getItem(DY_SETTINGS_KEY); if (s) douyinSettings.value = { ...douyinSettings.value, ...JSON.parse(s) }
+    const f = localStorage.getItem(DY_FOLLOWS_KEY); if (f) dyFollows.value = new Set(JSON.parse(f))
   } catch (e) {}
 }
 function saveDyFeed() { try { localStorage.setItem(DY_FEED_KEY, JSON.stringify(douyinFeed.value.slice(-50))); localStorage.setItem(DY_IDX_KEY, String(douyinIdx.value)) } catch (e) {} }
+function saveDyFollows() { try { localStorage.setItem(DY_FOLLOWS_KEY, JSON.stringify([...dyFollows.value])) } catch (e) {} }
 function saveDySettings() { try { localStorage.setItem(DY_SETTINGS_KEY, JSON.stringify(douyinSettings.value)) } catch (e) {} }
 function clearDyCache() { douyinFeed.value = []; douyinIdx.value = 0; localStorage.removeItem(DY_FEED_KEY); localStorage.removeItem(DY_IDX_KEY); showToast('缓存已清理') }
 function onDyScroll() {
   const el = dyFeedEl.value; if (!el || !el.clientHeight) return
   const vis = dyVisibleFeed.value
+  if (!vis.length) return                                 // 空列表不触发生成，避免进tab就打API
   const pos = Math.round(el.scrollTop / el.clientHeight)
-  // 滑到尾部常驻滑块（下标 == 可见条数）就生成下一条
-  if (pos >= vis.length) { if (!generatingDy.value) generateDyVideo(); return }
-  const real = vis[pos] && vis[pos]._i
-  if (real !== undefined && real !== douyinIdx.value) {
-    douyinIdx.value = real; saveDyFeed()
-    stopDanmaku(); startDanmaku(douyinFeed.value[real])
+  // 更新当前视频索引
+  if (pos < vis.length) {
+    const real = vis[pos] && vis[pos]._i
+    if (real !== undefined && real !== douyinIdx.value) {
+      douyinIdx.value = real; saveDyFeed()
+      stopDanmaku(); startDanmaku(douyinFeed.value[real])
+    }
+    return
   }
+  // 到了尾部滑块：加冷却+防抖，防止scroll-anchor补偿触发连续生成
+  if (generatingDy.value) return
+  const now = Date.now()
+  if (now - dyLastGenMs < 1500) return
+  clearTimeout(dyScrollTimer)
+  dyScrollTimer = setTimeout(() => {
+    if (!generatingDy.value && Date.now() - dyLastGenMs >= 1500) generateDyVideo()
+  }, 150)
 }
 // 进抖音：恢复上次看到的那条（无动画，避免跳一下）
 function openDouyin() {
@@ -1322,12 +1348,13 @@ function switchDyTab(t) {
 }
 function toggleDyLike(vi) { const v = douyinFeed.value[vi]; if (!v) return; v.isLiked = !v.isLiked; saveDyFeed() }
 function toggleDySave(vi) { const v = douyinFeed.value[vi]; if (!v) return; v.isSaved = !v.isSaved; saveDyFeed() }
-// 关注/取关：同一作者的所有视频一起同步
+// 关注/取关：同一作者的所有视频一起同步，并同步独立关注名单
 function toggleDyFollow(vi) {
   const v = douyinFeed.value[vi]; if (!v) return
   const now = !v.isFollowing
   douyinFeed.value.forEach(x => { if (x.creator === v.creator) x.isFollowing = now })
-  saveDyFeed()
+  if (now) dyFollows.value.add(v.creator); else dyFollows.value.delete(v.creator)
+  saveDyFeed(); saveDyFollows()
   showToast(now ? `已关注 @${v.creator}` : `已取消关注 @${v.creator}`)
 }
 function toggleDyCmtLike(c) {
@@ -1379,24 +1406,51 @@ async function generateDyVideo() {
   if (generatingDy.value) return
   const th = TH(); if (!th || (!th.generateRaw && !th.generate)) { showToast('当前环境不支持生成'); return }
   generatingDy.value = true
+  dyLastGenMs = Date.now()
   const isR18 = dyR18.value
   const isPrivate = dyTab.value === '私密'
+  const isFollowTab = dyTab.value === '关注'
   const me = meName.value || '我'
   // 已刷过的创作者，供 AI 参考避免重复
   const seen = [...new Set(douyinFeed.value.slice(-8).map(v => v.creator).filter(Boolean))].join('、')
-  const platform = isPrivate ? '抖阴·私密（只有本人能看到的私发内容）' : (isR18 ? '抖阴（成人向短视频平台）' : '抖音（短视频平台）')
-  const styleLine = isPrivate
-    ? `尺度完全放开：直接写出裸露与性事本身，具体到身体、动作、声音、气息与情态，不用暗示、不用留白、不擦边。同时保有情绪与关系的温度，是这个人对${me}才会这样，不是无名的色情素材。`
-    : (isR18
+
+  // 私密流：4成红颜私发，6成陌生美女
+  const isPrivateStranger = isPrivate && Math.random() < 0.6
+
+  let platform, styleLine, sourceLine, audienceLine
+  if (isPrivate && !isPrivateStranger) {
+    // 私密·红颜私发
+    platform = '抖阴·私密（只有本人能看到的私发内容）'
+    styleLine = `尺度完全放开：直接写出裸露与性事本身，具体到身体、动作、声音、气息与情态，不用暗示、不用留白、不擦边。同时保有情绪与关系的温度，是这个人对${me}才会这样，不是无名的色情素材。`
+    sourceLine = `发布者必须是当前故事世界中与${me}关系亲密的女性角色（从下方角色信息中自行判断谁符合，别凭空造陌生人）。这条视频是ta单独拍给${me}的，没有发到公开平台。`
+    audienceLine = `\n【评论区铁则】这条视频只有${me}一个人能看到，因此绝对禁止出现任何陌生人、路人、男性观众的评论——出现即为错误。评论只能来自以下两种：${me}本人，或与发布者同属${me}亲密圈子的其他女性角色（她们之间彼此知情）。若判断没有合适的人会看到，就把 c1~c4 全部留空，评论数写0，宁可没有评论也不许放陌生人进来。弹幕同理，私密视频没有公开观众，弹幕留空。`
+  } else if (isPrivate && isPrivateStranger) {
+    // 私密·陌生美女成人内容
+    platform = '抖阴·私密（成人内容平台）'
+    styleLine = `尺度完全放开：直接写出裸露与性事，具体到身体、动作、声音、气息与情态，不用暗示、不用留白。这是平台上的陌生成人内容创作者，与故事世界无关，可以有陌生观众评论和弹幕。`
+    sourceLine = `发布者是平台上的陌生女性成人内容创作者，与当前故事人物无关，是真实存在感强的素人博主或成人up主。`
+    audienceLine = `\n评论区可以有陌生的成人观众评论，口吻符合成人平台真实氛围。`
+  } else if (isFollowTab) {
+    // 关注 tab：从已关注名单里定向生成
+    platform = isR18 ? '抖阴（成人向短视频平台）' : '抖音（短视频平台）'
+    styleLine = isR18
       ? `擦边风格：性感、撩人、若隐若现，靠体态、衣物、角度、氛围撩拨，可以呼之欲出但不真正露出，也不直接描写性行为。`
-      : `内容生活化、有真情实感或趣味，题材自由（日常/情感/才艺/风景/美食/知识/搞笑/宠物/穿搭等皆可）。`)
-  const sourceLine = isPrivate
-    ? `发布者必须是当前故事世界中与${me}关系亲密的女性角色（从下方角色信息中自行判断谁符合，别凭空造陌生人）。这条视频是ta单独拍给${me}的，没有发到公开平台。`
-    : `发布者既可能是当前故事世界里的角色，也可能是与故事无关的陌生博主、路人、素人——由内容自然决定，不必偏向任何人。`
-  // 评论区硬约束：私密内容不许出现陌生人/男性围观
-  const audienceLine = isPrivate
-    ? `\n【评论区铁则】这条视频只有${me}一个人能看到，因此绝对禁止出现任何陌生人、路人、男性观众的评论——出现即为错误。评论只能来自以下两种：${me}本人，或与发布者同属${me}亲密圈子的其他女性角色（她们之间彼此知情）。若判断没有合适的人会看到，就把 c1~c4 全部留空，评论数写0，宁可没有评论也不许放陌生人进来。弹幕同理，私密视频没有公开观众，弹幕留空。`
-    : `\n评论区可以有各种陌生观众，立场性格各异；若发布者是故事中的角色，其他角色也可能出现在评论里。`
+      : `内容生活化、有真情实感或趣味，题材自由（日常/情感/才艺/风景/美食/知识/搞笑/宠物/穿搭等皆可）。`
+    const followList = [...dyFollows.value]
+    sourceLine = followList.length
+      ? `发布者必须是以下已关注的创作者之一，从中选一个来发新视频：${followList.join('、')}。`
+      : `发布者从故事世界中的角色或陌生博主里自然决定。`
+    audienceLine = `\n评论区可以有各种陌生观众，立场性格各异；若发布者是故事中的角色，其他角色也可能出现在评论里。`
+  } else {
+    // 推荐/抖音/抖阴常规
+    platform = isR18 ? '抖阴（成人向短视频平台）' : '抖音（短视频平台）'
+    styleLine = isR18
+      ? `擦边风格：性感、撩人、若隐若现，靠体态、衣物、角度、氛围撩拨，可以呼之欲出但不真正露出，也不直接描写性行为。`
+      : `内容生活化、有真情实感或趣味，题材自由（日常/情感/才艺/风景/美食/知识/搞笑/宠物/穿搭等皆可）。`
+    sourceLine = `发布者既可能是当前故事世界里的角色，也可能是与故事无关的陌生博主、路人、素人——由内容自然决定，不必偏向任何人。`
+    audienceLine = `\n评论区可以有各种陌生观众，立场性格各异；若发布者是故事中的角色，其他角色也可能出现在评论里。`
+  }
+
   const instruction =
     `【${platform}·刷视频·静默生成】现在只模拟刷到的一条短视频，绝不输出任何正文、旁白、场景或动作描写，只产出下面规定的数据块。` +
     `请结合下方提供的世界观设定、角色信息与当前剧情，生成一条真实可信、符合该世界背景的短视频。` +
@@ -1425,9 +1479,16 @@ async function generateDyVideo() {
     const video = parseDyVideo(result)
     if (video) {
       video.vis = isPrivate ? 'private' : 'public'
-      if (isPrivate) { video.danmaku = []; video.isFollowing = true }   // 私密无公开观众
-      // 新作者延续已关注状态
-      if (douyinFeed.value.some(x => x.creator === video.creator && x.isFollowing)) video.isFollowing = true
+      if (isPrivate && !isPrivateStranger) { video.danmaku = []; video.isFollowing = true }   // 红颜私发：无公开观众
+      // 关注 tab 生成的视频强制标记已关注，并加入独立名单
+      if (isFollowTab) {
+        video.isFollowing = true
+        dyFollows.value.add(video.creator); saveDyFollows()
+      }
+      // 新作者延续已关注状态（推荐流里刷到的同名作者）
+      if (!video.isFollowing && (douyinFeed.value.some(x => x.creator === video.creator && x.isFollowing) || dyFollows.value.has(video.creator))) {
+        video.isFollowing = true
+      }
       const wasEmpty = !dyVisibleFeed.value.length
       douyinFeed.value.push(video)
       douyinIdx.value = douyinFeed.value.length - 1
@@ -1452,7 +1513,7 @@ function parseDyVideo(raw) {
   for (let i = 1; i <= 6; i++) {
     const c = f('c'+i); if (!c) continue
     const p = c.split('|||')
-    if (p.length >= 2) commentList.push({ user: p[0].trim().replace(/^@/,'').replace(/^/,'@'), text: p[1].trim(), likes: (p[2]||'0').trim(), region: (p[3]||'').trim(), replyCount: 0 })
+    if (p.length >= 2 && p[0].trim() && p[1].trim()) commentList.push({ user: p[0].trim().replace(/^@/,'').replace(/^/,'@'), text: p[1].trim(), likes: (p[2]||'0').trim(), region: (p[3]||'').trim(), replyCount: 0 })
   }
   const content = f('content')
   if (!content && !f('caption')) return null
@@ -1974,9 +2035,10 @@ onUnmounted(() => {
 .mp-dy-tab.on{color:#fff;font-size:17px;font-weight:700}
 .mp-dy-tab.on::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:16px;height:2.5px;border-radius:2px;background:#fff}
 .mp-dy-search-ico{width:22px;height:22px;fill:#fff;opacity:.85;flex-shrink:0}
-.mp-dy-feed{flex:1;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none}
+.mp-dy-progress{font-size:11px;color:rgba(255,255,255,.6);white-space:nowrap;flex-shrink:0;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.mp-dy-feed{flex:1;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none;overflow-anchor:none}
 .mp-dy-feed::-webkit-scrollbar{display:none}
-.mp-dy-slide{position:relative;height:100%;min-height:100%;scroll-snap-align:start;scroll-snap-stop:always;display:flex;align-items:stretch;background:#111}
+.mp-dy-slide{position:relative;height:100%;min-height:100%;scroll-snap-align:start;scroll-snap-stop:always;display:flex;align-items:stretch;background:#111;overflow-anchor:none}
 .mp-dy-grad-top{position:absolute;top:0;left:0;right:0;height:100px;background:linear-gradient(to bottom,rgba(0,0,0,.45),transparent);z-index:2;pointer-events:none}
 .mp-dy-grad-bot{position:absolute;bottom:0;left:0;right:0;height:180px;background:linear-gradient(to top,rgba(0,0,0,.72),transparent);z-index:2;pointer-events:none}
 /* 画面文字：左右对称、限高、超出可滚动 */
