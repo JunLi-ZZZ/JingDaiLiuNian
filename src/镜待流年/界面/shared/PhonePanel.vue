@@ -293,6 +293,7 @@
                   <span class="mp-dy-set-lbl">带入历史条数</span>
                   <div class="mp-dy-set-btns">
                     <button v-for="n in HIST_OPTIONS" :key="n" :class="['mp-dy-set-btn', {on: histLimit===n}]" @click="setHistLimit(n)">{{ n }}</button>
+                    <input class="mp-dy-set-input" type="number" min="1" max="500" :value="HIST_OPTIONS.includes(histLimit) ? '' : histLimit" placeholder="自定义" @change="setHistLimit(+$event.target.value)" />
                   </div>
                 </div>
                 <div class="mp-dy-set-note">纯手机模式下每次让 AI 回消息时带上多少条历史。越多越记得住前情，代价是 token 略增。</div>
@@ -305,14 +306,18 @@
                     <button :class="['mp-dy-set-btn', {on: douyinSettings.mode==='r18'}]" @click="douyinSettings.mode='r18';saveDySettings()">抖阴</button>
                   </div>
                 </div>
-                <div class="mp-dy-set-note">抖阴模式下顶栏会多出「私密」页，那里是专门私发给你的大尺度内容。公开流（推荐/关注）里点视频文字可翻转看只给你的私密版。</div>
-                <div v-if="douyinSettings.mode==='r18'" class="mp-dy-set-row">
-                  <span class="mp-dy-set-lbl">私密页·陌生人占比</span>
-                  <div class="mp-dy-set-btns">
-                    <button v-for="p in DY_STRANGER_OPTIONS" :key="p" :class="['mp-dy-set-btn', {on: dyStrangerPct===p}]" @click="setDyStrangerPct(p)">{{ p }}%</button>
+                <div class="mp-dy-set-note">抖阴模式下顶栏会多出「私密」页。公开流（推荐/关注）里点视频文字可翻转看只给你的私密版。</div>
+                <template v-if="douyinSettings.mode==='r18'">
+                  <div class="mp-dy-set-subhd">私密页·陌生人占比</div>
+                  <div class="mp-dy-set-row">
+                    <div class="mp-dy-set-btns">
+                      <button v-for="p in DY_STRANGER_OPTIONS" :key="p" :class="['mp-dy-set-btn', {on: dyStrangerPct===p}]" @click="setDyStrangerPct(p)">{{ p }}%</button>
+                      <input class="mp-dy-set-input" type="number" min="0" max="100" :value="DY_STRANGER_OPTIONS.includes(dyStrangerPct) ? '' : dyStrangerPct" placeholder="自定义" @change="setDyStrangerPct(Math.max(0,Math.min(100,+$event.target.value)))" />
+                    </div>
                   </div>
-                </div>
-                <div v-if="douyinSettings.mode==='r18'" class="mp-dy-set-note">私密页里陌生美女成人内容的占比，其余为红颜私发。默认 0，即全是与你有关系的人私发给你。</div>
+                  <div class="mp-dy-set-note">私密页里，这个比例是<b>陌生成人博主</b>的内容，其余是<b>红颜私发</b>。默认 0，全为红颜私发。</div>
+                  <div class="mp-dy-set-warn">⚠️ 两者性质完全不同：<b>红颜私发</b>只有你和红颜看得到、评论只会是你俩；<b>陌生博主的私密内容是公开发布的成人内容</b>，会被其他陌生人看到、也会有陌生人评论。调高此项＝私密页混入公开的陌生成人视频。</div>
+                </template>
                 <button class="mp-dy-set-clear" @click="clearDyCache">清理视频缓存（共 {{ douyinFeed.length }} 条）</button>
               </div>
             </div>
@@ -530,7 +535,7 @@
           <div class="mp-dy-cm-sheet">
             <div class="mp-dy-cm-handle"></div>
             <div class="mp-dy-cm-hd">
-              <span class="mp-dy-cm-count">{{ dyCurrentCommentTotal }}条评论</span>
+              <span class="mp-dy-cm-count">{{ dyCurrentCommentClaimed }}条评论</span>
               <button class="mp-dy-cm-x" @click="showDyComments=false"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M18.3 5.71L12 12.01l-6.3-6.3l-1.42 1.42l6.3 6.29l-6.3 6.3l1.42 1.41L12 14.84l6.3 6.29l1.41-1.41l-6.29-6.3l6.29-6.29z"/></svg></button>
             </div>
             <div class="mp-dy-cm-body">
@@ -540,7 +545,6 @@
                   <div class="mp-dy-cmt-user">{{ c.user }}</div>
                   <div class="mp-dy-cmt-text">{{ c.text }}</div>
                   <div class="mp-dy-cmt-meta"><span>{{ c.region || '刚刚' }}</span><span class="mp-dy-cmt-reply">回复</span></div>
-                  <div v-if="c.replyCount" class="mp-dy-cmt-expand">—— 展开{{ c.replyCount }}条回复 <svg viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5l5-5z"/></svg></div>
                 </div>
                 <div class="mp-dy-cmt-lk">
                   <span class="mp-dy-cmt-lk-one" :class="{on:c.myLike}" @click.stop="toggleDyCmtLike(c)">
@@ -553,6 +557,7 @@
                 </div>
               </div>
               <div v-if="!dyAllComments.length" class="mp-dy-cm-none">暂无评论，快来抢沙发~</div>
+              <div v-else-if="dyCommentGap > 0" class="mp-dy-cm-more">共 {{ dyCurrentCommentClaimed }} 条评论，仅显示 {{ dyAllComments.length }} 条</div>
             </div>
             <div class="mp-dy-cm-input">
               <input class="mp-dy-cm-in" v-model="dyCommentDraft" placeholder="善语结善缘，恶言伤人心" @keydown.enter.prevent="submitDyComment" />
@@ -939,7 +944,7 @@ function putVar(key, val) {
 function saveLogs() { putVar(VAR_KEY, logs.value) }
 function saveDeleted() { putVar(DELETED_KEY, deleted.value) }
 function saveSilent() { putVar(SILENT_KEY, silentMap.value) }
-function setHistLimit(n) { histLimit.value = n; putVar(HIST_KEY, n) }
+function setHistLimit(n) { n = Math.round(+n); if (!n || n < 1) return; n = Math.min(n, 500); histLimit.value = n; putVar(HIST_KEY, n) }
 function delKey(o, c) { return o + '→' + c } //+ '' + c }
 function isDeleted(o, c) { return !!deleted.value[delKey(o, c)] }
 const swapDir = d => (d === '发出' ? '收到' : d === '收到' ? '发出' : d)
@@ -1315,6 +1320,15 @@ const dyCurrentCommentTotal = computed(() => {
   const v = douyinFeed.value[dyCommentIdx.value]
   return v ? (v.commentList || []).length + (v.myComments || []).length : 0
 })
+// AI 声称的评论总数（视频卡上显示的数字），可能远大于实际加载的几条
+const dyCurrentCommentClaimed = computed(() => {
+  const v = douyinFeed.value[dyCommentIdx.value]
+  if (!v) return 0
+  const claimed = parseDyNum(v.commentCount)
+  const real = dyCurrentCommentTotal.value
+  return (claimed && claimed > real) ? claimed : real
+})
+const dyCommentGap = computed(() => dyCurrentCommentClaimed.value - dyAllComments.value.length)
 // 顶栏进度胶囊："当前条/总数"
 const dyCurrentPos = computed(() => {
   const vis = dyVisibleFeed.value
@@ -1339,7 +1353,14 @@ function saveDyFeed() { try { const clean = douyinFeed.value.filter(v => !v.pend
 function saveDyFollows() { try { localStorage.setItem(DY_FOLLOWS_KEY, JSON.stringify([...dyFollows.value])) } catch (e) {} }
 function saveDyIdxMap() { try { localStorage.setItem(DY_IDXMAP_KEY, JSON.stringify(dyIdxMap.value)) } catch (e) {} }
 function saveDySettings() { try { localStorage.setItem(DY_SETTINGS_KEY, JSON.stringify(douyinSettings.value)) } catch (e) {} }
-function clearDyCache() { douyinFeed.value = []; douyinIdx.value = 0; dyIdxMap.value = { 推荐: 0, 关注: 0, 私密: 0 }; localStorage.removeItem(DY_FEED_KEY); localStorage.removeItem(DY_IDX_KEY); showToast('缓存已清理') }
+function clearDyCache() {
+  douyinFeed.value = []; douyinIdx.value = 0
+  dyIdxMap.value = { 推荐: 0, 关注: 0, 私密: 0 }
+  dyHistory.value = []; dyFlipped.value = {}
+  localStorage.removeItem(DY_FEED_KEY); localStorage.removeItem(DY_IDX_KEY)
+  localStorage.removeItem(DY_IDXMAP_KEY); localStorage.removeItem(DY_HISTORY_KEY)
+  showToast('缓存已清理')
+}
 function onDyScroll() {
   const el = dyFeedEl.value; if (!el || !el.clientHeight) return
   const vis = dyVisibleFeed.value
@@ -1558,10 +1579,19 @@ async function generateDyVideo() {
       }
       douyinFeed.value.splice(idx, 1, video)   // 原地替换占位卡
       douyinIdx.value = idx
+      dyIdxMap.value[dyTab.value] = idx; saveDyIdxMap()   // 记住位置，退出再进/重挂能定位到新视频
       pushDyHistory(video)
       saveDyFeed()
       nextTick(() => {
-        if (wasEmpty && dyFeedEl.value) dyFeedEl.value.scrollTop = 0
+        // 若此时仍在抖音视图，把视口对准这条新视频（后台生成完退回来也能显示）
+        const el = dyFeedEl.value
+        if (el) {
+          if (wasEmpty) el.scrollTop = 0
+          else {
+            const pos = dyVisibleFeed.value.findIndex(v => v._i === idx)
+            if (pos >= 0) el.scrollTop = pos * el.clientHeight
+          }
+        }
         stopDanmaku(); startDanmaku(video)
       })
     } else {
@@ -1569,12 +1599,14 @@ async function generateDyVideo() {
       const rm = douyinFeed.value.indexOf(placeholder)
       if (rm >= 0) douyinFeed.value.splice(rm, 1)
       douyinIdx.value = Math.max(0, douyinFeed.value.length - 1)
+      dyIdxMap.value[dyTab.value] = douyinIdx.value; saveDyIdxMap()
       showToast('没刷出内容，再试一次')
     }
   } catch (e) {
     const rm = douyinFeed.value.indexOf(placeholder)
     if (rm >= 0) douyinFeed.value.splice(rm, 1)
     douyinIdx.value = Math.max(0, douyinFeed.value.length - 1)
+    dyIdxMap.value[dyTab.value] = douyinIdx.value; saveDyIdxMap()
     showToast('生成失败：' + ((e && e.message) || e))
   } finally { generatingDy.value = false }
 }
@@ -1591,9 +1623,7 @@ function parseDyVideo(raw) {
     const c = f('c'+i); if (!c) continue
     const p = c.split('|||')
     if (p.length >= 2 && p[0].trim() && p[1].trim()) {
-      // 部分评论挂几条"展开N条回复"的样子（不产出回复正文，只显示数字）
-      const replyCount = Math.random() < 0.4 ? 1 + Math.floor(Math.random() * 20) : 0
-      commentList.push({ user: p[0].trim().replace(/^@/,'').replace(/^/,'@'), text: p[1].trim(), likes: (p[2]||'0').trim(), region: (p[3]||'').trim(), replyCount })
+      commentList.push({ user: p[0].trim().replace(/^@/,'').replace(/^/,'@'), text: p[1].trim(), likes: (p[2]||'0').trim(), region: (p[3]||'').trim() })
     }
   }
   const content = f('content')
@@ -1629,7 +1659,7 @@ function toggleDyFlip(vi) {
   if (!v || !v.pcontent) return
   dyFlipped.value = { ...dyFlipped.value, [vi]: !dyFlipped.value[vi] }
 }
-function setDyStrangerPct(p) { dyStrangerPct.value = p; douyinSettings.value.strangerPct = p; saveDySettings() }
+function setDyStrangerPct(p) { p = Math.round(+p); if (isNaN(p)) return; p = Math.max(0, Math.min(100, p)); dyStrangerPct.value = p; douyinSettings.value.strangerPct = p; saveDySettings() }
 // 从历史点回看：在feed里找到那条并定位到对应tab
 function openDyFromHistory(h) {
   const idx = douyinFeed.value.findIndex(v => !v.pending && v.creator === h.creator && (v.content || '').slice(0, 40) === h.content)
@@ -2231,6 +2261,7 @@ onUnmounted(() => {
 .mp-dy-cmt-lk-one.on{color:#fe2c55}
 .mp-dy-cmt-lk-one.dis svg{fill:#4a90d9}
 .mp-dy-cm-none{text-align:center;color:#b0b1b6;padding:36px 0;font-size:14px}
+.mp-dy-cm-more{text-align:center;color:#b0b1b6;padding:14px 0 20px;font-size:12.5px}
 .mp-dy-cm-input{display:flex;align-items:center;gap:10px;padding:8px 14px 12px;border-top:1px solid #f0f0f2}
 .mp-overlay .mp-dy-cm-in{flex:1;min-width:0;background:#fff!important;border:1px solid #e8e8ea!important;border-radius:18px;padding:9px 15px;color:#161823!important;font-size:14px;font-family:inherit;outline:none;box-shadow:none!important;background-image:none!important}
 .mp-overlay .mp-dy-cm-in:focus{border-color:#d0d0d4!important;background:#fff!important}
@@ -2242,10 +2273,16 @@ onUnmounted(() => {
 .mp-dy-settings-panel{background:#f7f7fa;padding:8px 16px 12px;border-bottom:1px solid #e2e2e6}
 .mp-dy-set-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0}
 .mp-dy-set-lbl{font-size:14px;color:#444}
-.mp-dy-set-btns{display:flex;gap:6px}
+.mp-dy-set-btns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .mp-dy-set-btn{padding:4px 12px;border:1px solid #ddd;border-radius:14px;background:#fff;font-size:13px;color:#666;cursor:pointer;font-family:inherit}
 .mp-dy-set-btn.on{background:#fe2c55;border-color:#fe2c55;color:#fff}
 .mp-dy-set-note{font-size:12px;color:#8a8a90;line-height:1.5;padding:2px 0 8px}
+.mp-dy-set-note b{color:#666;font-weight:600}
+.mp-dy-set-subhd{font-size:13px;font-weight:600;color:#444;padding:8px 0 4px;border-top:1px solid #ececf0;margin-top:6px}
+.mp-dy-set-warn{font-size:12px;color:#c0392b;line-height:1.55;padding:4px 0 8px}
+.mp-dy-set-warn b{font-weight:700}
+.mp-dy-set-input{width:64px;padding:4px 8px;border:1px solid #ddd;border-radius:14px;background:#fff;font-size:13px;color:#333;font-family:inherit;text-align:center}
+.mp-dy-set-input:focus{outline:none;border-color:#fe2c55}
 .mp-dy-tab-pv.on{color:#ff6b9d}
 .mp-dy-tab-pv.on::after{background:#ff6b9d}
 .mp-dy-set-clear{width:100%;margin-top:6px;padding:8px;border:none;border-radius:8px;background:#f0f0f2;color:#666;font-size:13px;cursor:pointer;font-family:inherit}
