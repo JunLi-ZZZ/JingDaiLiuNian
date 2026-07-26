@@ -603,12 +603,32 @@
             </div>
             <button class="mp-dys-btn" @click="submitDySearch">搜索</button>
           </div>
-          <div v-if="dyRecentSearches.length" class="mp-dys-recent">
-            <div class="mp-dys-recent-hd">最近搜索</div>
-            <div class="mp-dys-chips">
-              <span v-for="q in dyRecentSearches" :key="q" class="mp-dys-chip" @click="runDySearch(q)">
-                {{ q }}<i class="mp-dys-chip-x" @click.stop="removeRecentSearch(q)">✕</i>
-              </span>
+          <div class="mp-dys-scroll">
+            <div v-if="dyRecentSearches.length" class="mp-dys-recent">
+              <div class="mp-dys-recent-hd">最近搜索</div>
+              <div class="mp-dys-chips">
+                <span v-for="q in dyRecentSearches" :key="q" class="mp-dys-chip" @click="runDySearch(q)">
+                  {{ q }}<i class="mp-dys-chip-x" @click.stop="removeRecentSearch(q)">✕</i>
+                </span>
+              </div>
+            </div>
+            <!-- 热榜 -->
+            <div class="mp-dys-hot">
+              <div class="mp-dys-hot-hd">
+                <span class="mp-dys-hot-title">{{ dyR18 ? '抖阴热榜' : '抖音热榜' }}</span>
+                <button class="mp-dys-hot-refresh" :class="{spin:generatingHot}" @click="generateDyHotList" :disabled="generatingHot">
+                  <svg viewBox="0 0 24 24"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.75 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z"/></svg>
+                </button>
+              </div>
+              <div v-if="generatingHot && !dyHotList.length" class="mp-dys-hot-loading">正在加载热榜…</div>
+              <div v-else-if="!dyHotList.length" class="mp-dys-hot-empty">点击右上角刷新加载热榜</div>
+              <div v-else class="mp-dys-hot-list">
+                <div v-for="(h, hi) in dyHotList" :key="hi" class="mp-dys-hot-row" @click="runDySearch(h.topic)">
+                  <span class="mp-dys-hot-rank" :class="{top:hi<3}">{{ hi+1 }}</span>
+                  <span class="mp-dys-hot-topic">{{ h.topic }}</span>
+                  <span v-if="h.heat" class="mp-dys-hot-heat">{{ h.heat }}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -652,6 +672,7 @@ const DY_FEED_KEY = 'jdnl_dy_feed'
 const DY_IDX_KEY = 'jdnl_dy_idx'
 const DY_SETTINGS_KEY = 'jdnl_dy_settings'
 const DY_IDXMAP_KEY = 'jdnl_dy_idxmap'   // 各tab独立记忆的当前下标
+const DY_HOT_KEY = 'jdnl_dy_hot'         // 热榜缓存 { mode, list:[{topic,heat}] }
 // content 是公开画面；pcontent 只在抖阴公开流要求，是点文字翻转后只给user看的私密版
 const DY_FORMAT_BASE = `creator:创作者抖音号（不带@，6字内）
 verified:true或false（是否蓝V认证）
@@ -696,6 +717,9 @@ const dySearchDraft = ref('')             // 搜索输入框草稿
 const showDySearchInput = ref(false)      // 搜索输入层是否展开
 const dyRecentSearches = ref([])          // 最近搜索关键词，供点击重搜
 const DY_SEARCHES_KEY = 'jdnl_dy_searches'
+const dyHotList = ref([])                 // 热榜条目 [{topic,heat}]
+const dyHotMode = ref('')                 // 当前热榜是哪个模式生成的(normal/r18)，切模式要重出
+const generatingHot = ref(false)
 const newContact = ref('')
 const showSearch = ref(false)
 const showNew = ref(false)
@@ -1345,10 +1369,11 @@ const dyVisibleFeed = computed(() => {
   const all = douyinFeed.value.map((v, i) => ({ ...v, _i: i }))
   // 搜索模式：只显示当前关键词的搜索结果，与三tab完全隔离
   if (dySearchMode.value) return all.filter(v => v.searchQ === dySearchQuery.value)
-  // 非搜索模式：搜索结果不混入任何常规tab
+  // 关注tab：只要已关注就显示，含在搜索里关注到的作者（真抖音在哪关注的都进关注流）
+  if (dyTab.value === '关注') return all.filter(v => v.isFollowing)
+  // 推荐/私密：搜索结果不混入
   const base = all.filter(v => !v.searchQ)
   if (dyTab.value === '私密') return base.filter(v => v.vis === 'private')
-  if (dyTab.value === '关注') return base.filter(v => v.isFollowing)
   return base.filter(v => v.vis !== 'private')
 })
 const dyAllComments = computed(() => {
@@ -1387,6 +1412,7 @@ function loadDyData() {
     const im = localStorage.getItem(DY_IDXMAP_KEY); if (im) dyIdxMap.value = { ...dyIdxMap.value, ...JSON.parse(im) }
     const h = localStorage.getItem(DY_HISTORY_KEY); if (h) dyHistory.value = JSON.parse(h)
     const sq = localStorage.getItem(DY_SEARCHES_KEY); if (sq) dyRecentSearches.value = JSON.parse(sq)
+    const hot = localStorage.getItem(DY_HOT_KEY); if (hot) { const h = JSON.parse(hot); dyHotList.value = h.list || []; dyHotMode.value = h.mode || '' }
   } catch (e) {}
 }
 // 存feed时剔除未完成的占位卡，避免刷新后残留空卡
@@ -1401,6 +1427,7 @@ function clearDyCache() {
   dyHistory.value = []; dyFlipped.value = {}
   dySearchMode.value = false; dySearchQuery.value = ''; showDySearchInput.value = false; dySearchDraft.value = ''
   dyRecentSearches.value = []; localStorage.removeItem(DY_SEARCHES_KEY)
+  dyHotList.value = []; dyHotMode.value = ''; localStorage.removeItem(DY_HOT_KEY)
   localStorage.removeItem(DY_FEED_KEY); localStorage.removeItem(DY_IDX_KEY)
   localStorage.removeItem(DY_IDXMAP_KEY); localStorage.removeItem(DY_HISTORY_KEY)
   showToast('缓存已清理')
@@ -1758,7 +1785,13 @@ function openDyFromHistory(h) {
   dyRestorePos()
 }
 // 搜索：打开输入层（带上当前关键词便于改词）
-function openDySearchInput() { dySearchDraft.value = dySearchMode.value ? dySearchQuery.value : ''; showDySearchInput.value = true }
+function openDySearchInput() {
+  dySearchDraft.value = dySearchMode.value ? dySearchQuery.value : ''
+  showDySearchInput.value = true
+  // 首次打开或切了抖音/抖阴模式，出一份对应的热榜
+  const wantMode = dyR18.value ? 'r18' : 'normal'
+  if (!generatingHot.value && (!dyHotList.value.length || dyHotMode.value !== wantMode)) generateDyHotList()
+}
 function closeDySearchInput() { showDySearchInput.value = false }
 // 记一条最近搜索（去重置顶，最多12条）
 function pushRecentSearch(q) {
@@ -1796,6 +1829,48 @@ function exitDySearch() {
   showDySearchInput.value = false
   stopDanmaku()
   dyRestorePos()
+}
+// ---- 热榜（阶段B）：抖音/抖阴两套，AI生成话题+热度，点条目=带该话题搜索 ----
+function saveDyHot() { try { localStorage.setItem(DY_HOT_KEY, JSON.stringify({ mode: dyHotMode.value, list: dyHotList.value })) } catch (e) {} }
+function parseDyHot(raw) {
+  if (!raw) return []
+  const m = raw.match(/===HOTSTART===([\s\S]*?)===HOTEND===/); if (!m) return []
+  const out = []
+  m[1].split('\n').forEach(ln => {
+    const t = ln.trim(); if (!t || !t.includes('|||')) return
+    const p = t.split('|||'); const topic = (p[0] || '').replace(/^#/, '').replace(/^\d+[.、\s]*/, '').trim(); const heat = (p[1] || '').trim()
+    if (topic) out.push({ topic, heat })
+  })
+  return out.slice(0, 12)
+}
+async function generateDyHotList() {
+  if (generatingHot.value) return
+  const th = TH(); if (!th || (!th.generateRaw && !th.generate)) { showToast('当前环境不支持生成'); return }
+  generatingHot.value = true
+  const isR18 = dyR18.value
+  const platform = isR18 ? '抖阴（成人向短视频平台）' : '抖音（短视频平台）'
+  const styleLine = isR18
+    ? '这是成人向平台的热搜榜，话题可以露骨、擦边、情色、猎奇向，但仍要像真实能搜的热搜词条。'
+    : '这是全年龄短视频平台的热搜榜，题材广泛：社会热点/娱乐/影视/情感/生活/搞笑/知识/地域等，像真实抖音热榜。'
+  const instruction =
+    `【${platform}·热榜·静默生成】结合下方世界观设定与当前剧情，生成一份当前的热搜榜，共10条，绝不输出任何正文、旁白或解释。` +
+    `\n${styleLine}` +
+    `\n每条是一个热搜话题词（简洁、有话题感、像真的能搜到的词，不用带#），配一个热度数字（如 328.5万 / 1024.8万，排名越靠前热度越高）。` +
+    `\n话题要贴合这个故事世界的背景（可含本世界的地名/事件/人物/风俗相关话题），别都套现实世界的东西。` +
+    `\n只输出一个 ===HOTSTART=== 数据块，块外不写任何字。每行格式：话题|||热度\n===HOTSTART===\n话题1|||热度\n话题2|||热度\n…(共10行)\n===HOTEND===`
+  try {
+    let result
+    if (th.generateRaw) {
+      result = await th.generateRaw({ user_input: '看抖音热榜', should_silence: true, ordered_prompts: [
+        { role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
+        { role: 'user', content: '给我当前的热搜榜，只输出一个 ===HOTSTART=== 数据块，块外不写字。' },
+      ] })
+    } else { result = await th.generate({ user_input: instruction, should_silence: true }) }
+    const list = parseDyHot(result)
+    if (list.length) { dyHotList.value = list; dyHotMode.value = isR18 ? 'r18' : 'normal'; saveDyHot() }
+    else showToast('热榜没刷出来，再试一次')
+  } catch (e) { showToast('热榜生成失败：' + ((e && e.message) || e)) }
+  finally { generatingHot.value = false }
 }
 
 // ---- 相机快门（常规模式：注入正文） ----
@@ -2451,6 +2526,22 @@ onUnmounted(() => {
 .mp-dys-chip{display:inline-flex;align-items:center;gap:5px;max-width:100%;padding:6px 12px;border-radius:15px;background:#f2f2f4;color:#333;font-size:13px;cursor:pointer;overflow:hidden}
 .mp-dys-chip:active{background:#e6e6e9}
 .mp-dys-chip-x{font-style:normal;color:#b0b0b4;font-size:11px;flex-shrink:0}
+.mp-dys-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.mp-dys-scroll::-webkit-scrollbar{width:0}
+.mp-dys-hot{padding:18px 14px 20px}
+.mp-dys-hot-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.mp-dys-hot-title{font-size:15px;font-weight:700;color:#161823}
+.mp-dys-hot-refresh{background:none;border:none;cursor:pointer;color:#8a8a8e;padding:2px;display:flex}
+.mp-dys-hot-refresh svg{width:17px;height:17px}
+.mp-dys-hot-refresh.spin svg{animation:mp-dys-spin 1s linear infinite}
+@keyframes mp-dys-spin{to{transform:rotate(360deg)}}
+.mp-dys-hot-loading,.mp-dys-hot-empty{color:#999;font-size:13px;padding:14px 2px}
+.mp-dys-hot-row{display:flex;align-items:center;gap:10px;padding:9px 2px;cursor:pointer}
+.mp-dys-hot-row:active{background:#f7f7f9}
+.mp-dys-hot-rank{width:18px;text-align:center;font-size:14px;font-weight:700;color:#b0b1b6;flex-shrink:0}
+.mp-dys-hot-rank.top{color:#fe2c55}
+.mp-dys-hot-topic{flex:1;min-width:0;font-size:14px;color:#222;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mp-dys-hot-heat{font-size:12px;color:#b0b1b6;flex-shrink:0}
 
 /* 相机 */
 .mp-cam{position:absolute;inset:7px;z-index:10;display:flex;flex-direction:column;background:#000;border-radius:33px;overflow:hidden}
