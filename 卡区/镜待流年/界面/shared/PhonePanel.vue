@@ -304,7 +304,14 @@
                     <button :class="['mp-dy-set-btn', {on: douyinSettings.mode==='r18'}]" @click="douyinSettings.mode='r18';saveDySettings()">抖阴</button>
                   </div>
                 </div>
-                <div class="mp-dy-set-note">抖阴模式下顶栏会多出「私密」页。公开流（推荐/关注）里点视频文字可翻转看只给你的私密版。</div>
+                <div class="mp-dy-set-note">抖阴模式下顶栏会多出「私密」页。公开流（推荐/关注）里点视频文字可翻转看只给你的私密版。直播卡也会混入推荐/关注流。</div>
+                <!-- 直播出现概率 -->
+                <div class="mp-dy-set-subhd">直播出现概率（当前 {{ dyLivePct }}%）</div>
+                <div class="mp-dy-set-btns">
+                  <button v-for="p in DY_LIVE_PCT_OPTIONS" :key="p" :class="['mp-dy-set-btn', {on: dyLivePct===p}]" @click="setDyLivePct(p)">{{ p }}%</button>
+                  <input class="mp-dy-set-input" :class="{on: !DY_LIVE_PCT_OPTIONS.includes(dyLivePct)}" type="number" min="0" max="100" v-model="livePctDraft" :placeholder="DY_LIVE_PCT_OPTIONS.includes(dyLivePct) ? '自定义' : String(dyLivePct)" @keydown.enter.prevent="applyLivePctDraft" @blur="applyLivePctDraft" />
+                </div>
+                <div class="mp-dy-set-note">推荐/关注流里直播卡占的比例。0=全是视频，15=约每7条有1条直播。</div>
                 <template v-if="douyinSettings.mode==='r18'">
                   <div class="mp-dy-set-subhd">私密页·陌生人占比（当前 {{ dyStrangerPct }}%）</div>
                   <div class="mp-dy-set-btns">
@@ -438,7 +445,7 @@
           <template v-else>
             <button class="mp-nav-back mp-dy-back" @click="goHome"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
             <div class="mp-dy-tabs">
-              <button v-if="!dyR18" class="mp-dy-tab mp-dy-tab-live" @click="openDyLive">直播</button>
+              <span v-if="!dyR18" class="mp-dy-tab-dim">直播</span>
               <span v-if="!dyR18" class="mp-dy-tab-dim">商城</span>
               <button :class="['mp-dy-tab', {on: dyTab==='关注'}]" @click="switchDyTab('关注')">关注</button>
               <button :class="['mp-dy-tab', {on: dyTab==='推荐'}]" @click="switchDyTab('推荐')">推荐</button>
@@ -450,6 +457,13 @@
         </div>
         <!-- 视频流 -->
         <div class="mp-dy-feed" ref="dyFeedEl" @scroll.passive="onDyScroll">
+          <!-- 关注tab正在直播的人头像条 -->
+          <div v-if="dyTab==='关注' && !dySearchMode && dyLiveInFollowed.length" class="mp-dy-live-strip">
+            <div v-for="lv in dyLiveInFollowed" :key="lv._i" class="mp-dy-ls-item" @click="enterDyLiveRoom(lv._i)">
+              <div class="mp-dy-ls-ava">{{ (lv.creator||'?').slice(0,1).toUpperCase() }}<span class="mp-dy-ls-dot">●</span></div>
+              <span class="mp-dy-ls-name">{{ lv.creator }}</span>
+            </div>
+          </div>
           <!-- 空状态：关注tab无关注对象时只引导、不生成 -->
           <div v-if="!dyVisibleFeed.length && !generatingDy" class="mp-dy-slide mp-dy-empty" @click="(!dySearchMode && dyTab==='关注' && !dyFollows.size) ? null : generateDyVideo()">
             <div class="mp-dy-empty-ico"><svg viewBox="0 0 24 24" style="width:48px;height:48px"><path fill="currentColor" d="M8 5v14l11-7z"/></svg></div>
@@ -470,6 +484,32 @@
                 <div class="mp-dy-load-txt">正在为你推荐…</div>
               </div>
             </template>
+            <template v-else>
+            <!-- 直播卡：点击进入直播间 -->
+            <template v-if="v.type==='live'">
+              <div class="mp-dy-live-badge">● 直播中</div>
+              <div class="mp-dy-live-content">{{ v.content }}</div>
+              <button class="mp-dy-live-enter" @click.stop="enterDyLiveRoom(v._i)">
+                <svg viewBox="0 0 24 24" style="width:16px;height:16px"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zm2.46-7.12l1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14l2.12 2.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14z"/></svg>
+                点击进入直播间
+              </button>
+              <div class="mp-dy-info">
+                <div class="mp-dy-creator-row">
+                  <span class="mp-dy-creator-name">@{{ v.creator }}</span>
+                  <span v-if="v.verified" class="mp-dy-verified">✓</span>
+                  <button v-if="!v.isFollowing" class="mp-dy-follow-btn" @click.stop="toggleDyFollow(v._i)">关注</button>
+                  <span v-else class="mp-dy-followed" @click.stop="toggleDyFollow(v._i)">已关注</span>
+                </div>
+                <div class="mp-dy-caption">{{ v.title }}</div>
+                <div class="mp-dy-sound-row"><span class="mp-dy-note-ico">👁</span><span class="mp-dy-sound-name">{{ v.viewers }} 在线</span></div>
+              </div>
+              <div class="mp-dy-mute" @click.stop="dyMuted=!dyMuted">
+                <svg v-if="dyMuted" viewBox="0 0 24 24"><path fill="currentColor" d="M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63m2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.8 8.8 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71M4.27 3L3 4.27L7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21L21 19.73l-9-9zM12 4L9.91 6.09L12 8.18z"/></svg>
+                <svg v-else viewBox="0 0 24 24"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77"/></svg>
+                <span>{{ dyMuted ? '取消静音' : '静音中' }}</span>
+              </div>
+            </template>
+            <!-- 普通视频卡 -->
             <template v-else>
             <!-- 画面文字：左右对称，超出可滚动；抖阴公开流可点击翻转看私密版 -->
             <div class="mp-dy-content" :class="{ flip: dyFlipped[v._i] }" @click="v.pcontent && toggleDyFlip(v._i)">
@@ -518,6 +558,7 @@
               <span>{{ dyMuted ? '取消静音' : '静音中' }}</span>
             </div>
             </template>
+            </template>
           </div>
           <!-- 尾部常驻滑块：只在没有pending占位卡、没在生成时作为「下一个」落点 -->
           <div v-if="dyVisibleFeed.length && !generatingDy" class="mp-dy-slide mp-dy-next" @click="generateDyVideo">
@@ -551,7 +592,7 @@
                 <div class="mp-dy-cmt-main">
                   <div class="mp-dy-cmt-user">{{ c.user }}</div>
                   <div class="mp-dy-cmt-text">{{ c.text }}</div>
-                  <div class="mp-dy-cmt-meta"><span>{{ c.region || '刚刚' }}</span><span class="mp-dy-cmt-reply">回复</span></div>
+                  <div class="mp-dy-cmt-meta"><span>{{ c.region || '刚刚' }}</span><span class="mp-dy-cmt-reply" @click.stop="setDyReplyTo(c)">回复</span></div>
                 </div>
                 <div class="mp-dy-cmt-lk">
                   <span class="mp-dy-cmt-lk-one" :class="{on:c.myLike}" @click.stop="toggleDyCmtLike(c)">
@@ -563,11 +604,18 @@
                   </span>
                 </div>
               </div>
+              <!-- 回复列表 -->
+              <div v-for="(r, ri) in (c.replies||[])" :key="'r'+ri" class="mp-dy-cmt-reply-item">
+                <span class="mp-dy-cmt-reply-user">{{ r.user }}</span>
+                <span class="mp-dy-cmt-reply-to" v-if="r.replyTo"> 回复 {{ r.replyTo }}</span>
+                <span class="mp-dy-cmt-reply-txt">{{ r.text }}</span>
+              </div>
               <div v-if="!dyAllComments.length" class="mp-dy-cm-none">暂无评论，快来抢沙发~</div>
               <div v-else-if="dyCommentGap > 0" class="mp-dy-cm-more">共 {{ dyCurrentCommentClaimed }} 条评论，仅显示 {{ dyAllComments.length }} 条</div>
             </div>
             <div class="mp-dy-cm-input">
-              <input class="mp-dy-cm-in" v-model="dyCommentDraft" placeholder="善语结善缘，恶言伤人心" @keydown.enter.prevent="submitDyComment" />
+              <div v-if="dyReplyTo" class="mp-dy-cm-reply-bar">回复 @{{ dyReplyTo }}<span @click="dyReplyTo=''" class="mp-dy-cm-reply-x">✕</span></div>
+              <input class="mp-dy-cm-in" v-model="dyCommentDraft" :placeholder="dyReplyTo ? '回复 @'+dyReplyTo : '善语结善缘，恶言伤人心'" @keydown.enter.prevent="submitDyComment" />
               <span class="mp-dy-cm-ic">@</span>
               <span class="mp-dy-cm-ic">☺</span>
               <button v-if="dyCommentDraft.trim()" class="mp-dy-cm-send" @click="submitDyComment">发送</button>
@@ -632,49 +680,53 @@
             </div>
           </div>
         </div>
-        <!-- 直播 -->
-        <div v-if="showDyLive" class="mp-dyl">
-          <template v-if="!dyLiveRoom">
-            <div class="mp-dyl-hd">
-              <button class="mp-nav-back" @click="closeDyLive"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
-              <span class="mp-dyl-title">直播广场</span>
-              <button class="mp-dyl-refresh" :class="{spin:generatingLiveList}" @click="generateDyLiveList" :disabled="generatingLiveList"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.75 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z"/></svg></button>
+        <!-- 直播间全屏 overlay（对照截图真实结构） -->
+        <div v-if="dyLiveRoom" class="mp-dylv">
+          <!-- 顶部：主播信息 + 关注 + 在线人数 + 关闭 -->
+          <div class="mp-dylv-top">
+            <div class="mp-dylv-who">
+              <div class="mp-dylv-ava">{{ (dyLiveRoom.creator||'?').slice(0,1).toUpperCase() }}</div>
+              <div class="mp-dylv-info">
+                <span class="mp-dylv-name">{{ dyLiveRoom.creator }}<span v-if="dyLiveRoom.verified" class="mp-dy-verified">✓</span></span>
+                <span class="mp-dylv-likes">{{ dyLiveRoom.liveLikes }} 本场点赞</span>
+              </div>
+              <button v-if="!dyLiveRoom.isFollowing" class="mp-dylv-follow" @click="toggleDyFollowFromLive">关注</button>
+              <span v-else class="mp-dylv-following">已关注</span>
             </div>
-            <div class="mp-dyl-body">
-              <div v-if="generatingLiveList && !dyLiveList.length" class="mp-dyl-none">正在加载直播…</div>
-              <div v-else-if="!dyLiveList.length" class="mp-dyl-none">点击右上角 ↻ 刷新加载直播</div>
-              <div v-else class="mp-dyl-grid">
-                <div v-for="(r, ri) in dyLiveList" :key="ri" class="mp-dyl-card" @click="enterDyLiveRoom(r)">
-                  <div class="mp-dyl-cover">{{ (r.streamer||'?').slice(0,1).toUpperCase() }}<span class="mp-dyl-live-tag">● LIVE</span></div>
-                  <div class="mp-dyl-cap">{{ r.title }}</div>
-                  <div class="mp-dyl-meta"><span class="mp-dyl-st">@{{ r.streamer }}</span><span class="mp-dyl-vw">{{ r.viewers }}</span></div>
-                </div>
-              </div>
+            <div class="mp-dylv-viewers">
+              <div class="mp-dylv-vw-avas"><span v-for="n in 3" :key="n" class="mp-dylv-vw-ava">{{ String.fromCharCode(65+n) }}</span></div>
+              <span class="mp-dylv-vw-cnt">{{ dyLiveRoom.viewers }}</span>
             </div>
-          </template>
-          <template v-else>
-            <div class="mp-dylr">
-              <div class="mp-dylr-top">
-                <div class="mp-dylr-who">
-                  <div class="mp-dylr-ava">{{ (dyLiveRoom.streamer||'?').slice(0,1).toUpperCase() }}</div>
-                  <div class="mp-dylr-info"><div class="mp-dylr-name">@{{ dyLiveRoom.streamer }}<span v-if="dyLiveRoom.verified" class="mp-dy-verified">✓</span></div><div class="mp-dylr-vw">{{ dyLiveRoom.viewers }} 在线</div></div>
-                </div>
-                <button class="mp-dylr-x" @click="leaveDyLiveRoom"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M18.3 5.71L12 12.01l-6.3-6.3l-1.42 1.42l6.3 6.29l-6.3 6.3l1.42 1.41L12 14.84l6.3 6.29l1.41-1.41l-6.29-6.3l6.29-6.29z"/></svg></button>
-              </div>
-              <div class="mp-dylr-stage">
-                <div class="mp-dylr-dm-band"><span v-for="dm in activeDanmaku" :key="dm.k" class="mp-dy-dm" :style="{ top: dm.top+'px', animationDuration: dm.dur+'s' }">{{ dm.text }}</span></div>
-                <div class="mp-dylr-content" ref="dyLiveContentEl">
-                  <div class="mp-dylr-title">{{ dyLiveRoom.title }}</div>
-                  <div v-for="(seg, si) in dyLiveRoom.segments" :key="si" class="mp-dylr-seg">{{ seg }}</div>
-                  <div v-if="generatingLiveSeg" class="mp-dylr-seg-loading">主播正在直播…</div>
-                </div>
-              </div>
-              <div class="mp-dylr-bar">
-                <div class="mp-dylr-gifts"><button v-for="g in DY_LIVE_GIFTS" :key="g.k" class="mp-dylr-gift" @click="sendDyGift(g)">{{ g.icon }}</button></div>
-                <button class="mp-dylr-next" @click="generateDyLiveSegment" :disabled="generatingLiveSeg">继续</button>
-              </div>
+            <button class="mp-dylv-x" @click="closeDyLiveRoom"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M18.3 5.71L12 12.01l-6.3-6.3l-1.42 1.42l6.3 6.29l-6.3 6.3l1.42 1.41L12 14.84l6.3 6.29l1.41-1.41l-6.29-6.3l6.29-6.29z"/></svg></button>
+          </div>
+          <!-- 直播内容区 -->
+          <div class="mp-dylv-screen">
+            <div class="mp-dylv-screen-txt">{{ dyLiveRoom.content }}</div>
+          </div>
+          <!-- 聊天流区域 -->
+          <div class="mp-dylv-chat" ref="dyLiveChatEl">
+            <div v-for="(msg, mi) in dyLiveRoom.chatLog" :key="mi" class="mp-dylv-msg" :class="{'mp-dylv-msg-join': msg.isJoin, 'mp-dylv-msg-me': msg.isMe}">
+              <template v-if="msg.isJoin"><span class="mp-dylv-join-txt">{{ msg.user }} 来了</span></template>
+              <template v-else>
+                <span v-if="msg.level" class="mp-dylv-lv">{{ msg.level }}</span>
+                <span class="mp-dylv-user">{{ msg.user }}：</span>
+                <span class="mp-dylv-txt">{{ msg.text }}</span>
+              </template>
             </div>
-          </template>
+            <div v-if="generatingLiveChat" class="mp-dylv-loading">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+          <!-- 底部输入栏 -->
+          <div class="mp-dylv-bar">
+            <div class="mp-dylv-input-row">
+              <input class="mp-dylv-in" v-model="dyLiveChatDraft" :placeholder="dyLiveReplyTo ? '回复 @'+dyLiveReplyTo : '说点什么...'" @keydown.enter.prevent="submitLiveChat" />
+              <button class="mp-dylv-emoji" @click.stop>😊</button>
+              <button class="mp-dylv-heart" @click.stop="sendLiveHeart">❤️</button>
+              <button class="mp-dylv-gift" @click.stop="sendLiveGift">🎁</button>
+              <button class="mp-dylv-share" @click.stop>↗️</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -732,6 +784,20 @@ c1:评论者号|||评论内容|||赞数|||地区（如 浙江/广东/未知）
 c2:评论者号|||评论内容|||赞数|||地区
 c3:评论者号|||评论内容|||赞数|||地区
 c4:评论者号|||评论内容|||赞数|||地区`
+// 直播卡生成格式（type:'live'）
+const DY_LIVE_FORMAT = `creator:主播抖音号（不带@，6字内）
+verified:true或false
+title:直播标题（15字内，有吸引力）
+viewers:当前在线人数（如 1929 / 2.3万）
+content:当前直播画面描述（2-3句，主播在做什么，有临场感）
+chat1:等级数字|||昵称|||内容（或者末尾加|||join表示进场消息如"来了"）
+chat2:等级数字|||昵称|||内容
+chat3:等级数字|||昵称|||内容
+chat4:等级数字|||昵称|||内容
+chat5:等级数字|||昵称|||内容
+chat6:等级数字|||昵称|||内容
+chat7:等级数字|||昵称|||内容
+chat8:等级数字|||昵称|||内容`
 const douyinFeed = ref([])
 const douyinIdx = ref(0)
 const douyinSettings = ref({ mode: 'normal' })
@@ -764,14 +830,17 @@ const DY_SEARCHES_KEY = 'jdnl_dy_searches'
 const dyHotList = ref([])                 // 热榜条目 [{topic,heat}]
 const dyHotMode = ref('')                 // 当前热榜是哪个模式生成的(normal/r18)，切模式要重出
 const generatingHot = ref(false)
-// 直播（阶段C）
-const showDyLive = ref(false)             // 直播列表页是否打开
-const dyLiveList = ref([])                // 直播间预览 [{streamer,title,viewers,verified,tag}]
-const generatingLiveList = ref(false)
-const dyLiveRoom = ref(null)              // 当前进入的直播间 {streamer,title,verified,segments:[],danmaku:[],viewers}
-const generatingLiveSeg = ref(false)
-const dyLiveContentEl = ref(null)         // 直播间内容滚动容器，新段落生成后滚到底
-const DY_LIVE_GIFTS = [{ k: 'like', icon: '👍', name: '点赞' }, { k: 'rose', icon: '🌹', name: '玫瑰' }, { k: 'heart', icon: '❤️', name: '小心心' }, { k: 'rocket', icon: '🚀', name: '火箭' }]
+// 直播（阶段C重构：直播融入视频流，不再独立广场页）
+const dyLivePct = ref(15)                // 推荐/关注流里直播卡出现的概率(%)，默认15
+const DY_LIVE_PCT_OPTIONS = [0, 10, 15, 30]
+const livePctDraft = ref('')
+const dyLiveRoom = ref(null)             // 当前打开的直播间 {creator,verified,title,viewers,liveLikes,content,chatLog,isFollowing,feedIdx}
+const dyLiveChatEl = ref(null)           // 聊天滚动容器
+const dyLiveChatDraft = ref('')          // 聊天输入草稿
+const dyLiveReplyTo = ref('')            // 正在回复的用户名
+const generatingLiveChat = ref(false)
+// 视频评论回复
+const dyReplyTo = ref('')                // 正在回复的评论用户名
 const newContact = ref('')
 const showSearch = ref(false)
 const showNew = ref(false)
@@ -1118,7 +1187,7 @@ function goHome() {
   if (showCameraSettings.value) { showCameraSettings.value = false; return }
   if (selectedPhoto.value) { selectedPhoto.value = null; return }
   if (activeContact.value) { closeContact(); return }
-  if (view.value === 'douyin') { showDyLive.value = false; dyLiveRoom.value = null; stopDanmaku() }
+  if (view.value === 'douyin') { dyLiveRoom.value = null; stopDanmaku() }
   view.value = 'home'
 }
 const homeStyle = computed(() => curWallpaper.value ? { backgroundImage: `url(${curWallpaper.value})`, backgroundSize: 'cover', backgroundPosition: 'center' } : null)
@@ -1447,6 +1516,8 @@ const dyCurrentCommentClaimed = computed(() => {
   return (claimed && claimed > real) ? claimed : real
 })
 const dyCommentGap = computed(() => dyCurrentCommentClaimed.value - dyAllComments.value.length)
+// 关注tab顶部直播头像条：feed里type=live且isFollowing的条目
+const dyLiveInFollowed = computed(() => douyinFeed.value.map((v,i)=>({...v,_i:i})).filter(v=>v.type==='live'&&v.isFollowing))
 // 顶栏进度胶囊："当前条/总数"
 const dyCurrentPos = computed(() => {
   const vis = dyVisibleFeed.value
@@ -1461,6 +1532,7 @@ function loadDyData() {
     const idx = localStorage.getItem(DY_IDX_KEY); if (idx !== null) douyinIdx.value = Math.min(+idx, douyinFeed.value.length - 1)
     const s = localStorage.getItem(DY_SETTINGS_KEY); if (s) douyinSettings.value = { ...douyinSettings.value, ...JSON.parse(s) }
     if (typeof douyinSettings.value.strangerPct === 'number') dyStrangerPct.value = douyinSettings.value.strangerPct
+    if (typeof douyinSettings.value.livePct === 'number') dyLivePct.value = douyinSettings.value.livePct
     const f = localStorage.getItem(DY_FOLLOWS_KEY); if (f) dyFollows.value = new Set(JSON.parse(f))
     const im = localStorage.getItem(DY_IDXMAP_KEY); if (im) dyIdxMap.value = { ...dyIdxMap.value, ...JSON.parse(im) }
     const h = localStorage.getItem(DY_HISTORY_KEY); if (h) dyHistory.value = JSON.parse(h)
@@ -1481,7 +1553,7 @@ function clearDyCache() {
   dySearchMode.value = false; dySearchQuery.value = ''; showDySearchInput.value = false; dySearchDraft.value = ''
   dyRecentSearches.value = []; localStorage.removeItem(DY_SEARCHES_KEY)
   dyHotList.value = []; dyHotMode.value = ''; localStorage.removeItem(DY_HOT_KEY)
-  showDyLive.value = false; dyLiveRoom.value = null; dyLiveList.value = []
+  dyLiveRoom.value = null; dyLiveChatDraft.value = ''; dyLiveReplyTo.value = ''
   localStorage.removeItem(DY_FEED_KEY); localStorage.removeItem(DY_IDX_KEY)
   localStorage.removeItem(DY_IDXMAP_KEY); localStorage.removeItem(DY_HISTORY_KEY)
   showToast('缓存已清理')
@@ -1628,8 +1700,10 @@ async function generateDyVideo() {
   const isPrivateStranger = isPrivate && Math.random() * 100 < dyStrangerPct.value
   // 抖阴公开流（推荐/关注）要一份翻转私密版；抖音全年龄模式不要
   const wantFlip = isR18 && !isPrivate
+  // 直播卡：推荐/关注流里按概率掷骰（不在搜索/私密/follow-without-follows的情况下）
+  const isLive = !isSearch && !isPrivate && Math.random() * 100 < dyLivePct.value
 
-  // 先插占位卡并滚过去，让当前条立刻是它——箭头/进度同步，且占位期间不再触发新生成
+  // 先插占位卡并滚过去
   const placeholder = {
     pending: true, creator: '', verified: false, caption: '', sound: '',
     likes: '0', commentCount: '0', shares: '0', saves: '0', content: '',
@@ -1637,6 +1711,7 @@ async function generateDyVideo() {
     vis: isPrivate ? 'private' : 'public',
     isFollowing: isPrivate || isFollowTab, isLiked: false, isSaved: false,
     searchQ: isSearch ? query : undefined,
+    type: isLive ? 'live' : 'video',
   }
   const wasEmpty = !dyVisibleFeed.value.length
   suppressDyScroll(800)
@@ -1650,6 +1725,70 @@ async function generateDyVideo() {
     if (pos >= 0) el.scrollTop = pos * el.clientHeight
   })
 
+  // ---- 直播卡分支 ----
+  if (isLive) {
+    const isLiveStranger = isR18 && Math.random() * 100 < dyStrangerPct.value
+    const livePlatform = isR18 ? '抖阴（成人向直播平台）' : '抖音（直播）'
+    const liveStyleLine = isR18
+      ? (isLiveStranger
+        ? `这是陌生成人主播的公开直播，尺度放开，可描写明显性感或裸露的直播画面，真实素人风格。`
+        : `这是与${me}亲密的红颜在直播，可撩人、可擦边；她知道${me}在看，有时会对镜头特别示意。`)
+      : `直播内容生活化、有真情实感，题材自由（聊天/才艺/游戏/美食/户外/穿搭等）。`
+    const liveSourceLine = isR18
+      ? (isLiveStranger
+        ? `主播是平台上与故事世界无关的陌生成人女性内容创作者，素人博主风格。`
+        : `主播必须是当前故事世界里与${me}关系亲密的女性角色，她以自己的账号在直播。`)
+      : (isFollowTab
+        ? `主播必须是以下已关注的创作者之一：${[...dyFollows.value].join('、')}。`
+        : `主播既可能是故事世界里的角色，也可能是陌生素人主播。`)
+    const liveChatRule = (isR18 && !isLiveStranger)
+      ? `聊天里只允许${me}和与主播亲密的其他角色出现；若没有合适的人，chat全留空。弹幕留空。`
+      : `聊天要有各种真实观众口吻，包含"来了"进场消息和普通评论。`
+    const liveInstruction =
+      `【${livePlatform}·直播卡·静默生成】现在模拟刷到的一个直播卡，绝不输出任何正文。` +
+      `\n主播来源：${liveSourceLine}` +
+      `\n直播风格：${liveStyleLine}` +
+      `\n${liveChatRule}` +
+      (seen ? `\n已出现过这些账号，主播别重复：${seen}。` : '') +
+      `\n【账号唯一】同一角色全平台只有一个固定账号名，禁用别名/小名/拼音/缩写重复出现。` +
+      `\n只输出一个 ===LIVECARD=== 数据块，块外不写字：\n===LIVECARD===\n` + DY_LIVE_FORMAT + `\n===LCEND===`
+    try {
+      let result
+      if (th.generateRaw) {
+        result = await th.generateRaw({ user_input: '刷到直播', should_silence: true, ordered_prompts: [
+          { role: 'system', content: liveInstruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
+          { role: 'user', content: '刷到一个直播卡，只输出 ===LIVECARD=== 数据块，块外不写字。' },
+        ] })
+      } else { result = await th.generate({ user_input: liveInstruction, should_silence: true }) }
+      const liveCard = parseDyLiveCard(result)
+      const idx = douyinFeed.value.indexOf(placeholder)
+      if (liveCard && idx >= 0) {
+        liveCard.vis = 'public'; liveCard.type = 'live'
+        if (isFollowTab) { liveCard.isFollowing = true; dyFollows.value.add(liveCard.creator); saveDyFollows() }
+        if (!liveCard.isFollowing && (douyinFeed.value.some(x => x.creator === liveCard.creator && x.isFollowing) || dyFollows.value.has(liveCard.creator))) liveCard.isFollowing = true
+        if (isSearch) liveCard.searchQ = query
+        douyinFeed.value.splice(idx, 1, liveCard)
+        douyinIdx.value = idx
+        if (!isSearch) { dyIdxMap.value[dyTab.value] = idx; saveDyIdxMap() }
+        saveDyFeed()
+        nextTick(() => {
+          const el = dyFeedEl.value; if (!el) return
+          const pos = dyVisibleFeed.value.findIndex(v => v._i === idx)
+          if (pos >= 0) el.scrollTop = pos * el.clientHeight
+        })
+      } else {
+        const rm = douyinFeed.value.indexOf(placeholder); if (rm >= 0) douyinFeed.value.splice(rm, 1)
+        douyinIdx.value = Math.max(0, douyinFeed.value.length - 1)
+        showToast('直播卡没生成出来，再试一次')
+      }
+    } catch (e) {
+      const rm = douyinFeed.value.indexOf(placeholder); if (rm >= 0) douyinFeed.value.splice(rm, 1)
+      douyinIdx.value = Math.max(0, douyinFeed.value.length - 1)
+      showToast('生成失败：' + ((e && e.message) || e))
+    } finally { generatingDy.value = false }
+    return
+  }
+  // ---- 普通视频分支（原有逻辑） ----
   let platform, styleLine, sourceLine, audienceLine
   if (isPrivate && !isPrivateStranger) {
     platform = '抖阴·私密（只有本人能看到的私发内容）'
@@ -1766,7 +1905,6 @@ function parseDyVideo(raw) {
   const m = raw.match(/===DYSTART===([\s\S]*?)===DYEND===/)
   if (!m) return null
   const block = m[1]
-  // 行首锚定，避免 comments: 被评论正文里的字样误匹配
   const f = (k) => { const r = block.match(new RegExp('^\\s*' + k + '\\s*:(.+)$', 'm')); return r ? r[1].trim() : '' }
   const danmakuRaw = f('danmaku')
   const commentList = []
@@ -1789,9 +1927,31 @@ function parseDyVideo(raw) {
     shares: f('shares') || '0',
     saves: f('saves') || '0',
     content,
-    pcontent: f('pcontent') || '',   // 翻转后的私密版画面（抖阴公开流才有）
+    pcontent: f('pcontent') || '',
     danmaku: danmakuRaw ? danmakuRaw.split('|').map(s=>s.trim()).filter(Boolean) : [],
     commentList, myComments: [], isLiked: false, isSaved: false, isFollowing: false,
+    type: 'video',
+  }
+}
+function parseDyLiveCard(raw) {
+  if (!raw) return null
+  const m = raw.match(/===LIVECARD===([\s\S]*?)===LCEND===/)
+  if (!m) return null
+  const block = m[1]
+  const f = (k) => { const r = block.match(new RegExp('^\\s*' + k + '\\s*:(.+)$', 'm')); return r ? r[1].trim() : '' }
+  const content = f('content'); if (!content) return null
+  const chatLog = []
+  for (let i = 1; i <= 10; i++) {
+    const c = f('chat'+i); if (!c) continue
+    const p = c.split('|||')
+    const level = p[0]?.trim(); const user = p[1]?.trim(); const text = p[2]?.trim(); const tag = (p[3]||'').trim()
+    if (user) chatLog.push({ level: /^\d+$/.test(level) ? +level : null, user, text: text||'', isJoin: tag==='join', isMe: false })
+  }
+  return {
+    creator: f('creator').replace('@',''), verified: /true|是|认证/.test(f('verified')),
+    title: f('title'), viewers: f('viewers') || '0',
+    liveLikes: Math.floor(Math.random()*5000+200) + '',
+    content, chatLog, myComments: [], isLiked: false, isSaved: false, isFollowing: false, type: 'live',
   }
 }
 // 设置里自定义数字输入的本地草稿，避免2秒轮询重渲染把没输完的值清掉
@@ -1926,110 +2086,107 @@ async function generateDyHotList() {
   } catch (e) { showToast('热榜生成失败：' + ((e && e.message) || e)) }
   finally { generatingHot.value = false }
 }
-// ---- 直播（阶段C，先做抖音全年龄骨架）----
-// 进直播页属于明确意图，空列表就自动出一次(和刷视频一致，不算霸道)；之后手动刷新
-function openDyLive() { showDyLive.value = true; dyLiveRoom.value = null; stopDanmaku(); if (!dyLiveList.value.length && !generatingLiveList.value) generateDyLiveList() }
-// 关直播页回到视频流，重挂当前视频的弹幕
-function closeDyLive() {
-  showDyLive.value = false; dyLiveRoom.value = null
+// ---- 直播（阶段C重构：直播融入视频流）----
+// 进入直播间（从feed里的直播卡或关注tab头像条）
+function enterDyLiveRoom(feedIdx) {
+  const v = douyinFeed.value[feedIdx]; if (!v || v.type !== 'live') return
+  dyLiveRoom.value = { ...v, feedIdx, chatLog: [...(v.chatLog || [])] }
+  dyLiveChatDraft.value = ''; dyLiveReplyTo.value = ''
   stopDanmaku()
-  const v = douyinFeed.value[douyinIdx.value]
-  if (v && !v.pending) startDanmaku(v)
+  nextTick(() => { const el = dyLiveChatEl.value; if (el) el.scrollTop = el.scrollHeight })
+  // 如果聊天列表不足5条，自动补一批
+  if ((dyLiveRoom.value.chatLog || []).length < 5) generateLiveChat(false)
 }
-function parseDyLiveList(raw) {
+function closeDyLiveRoom() {
+  dyLiveRoom.value = null; dyLiveChatDraft.value = ''; dyLiveReplyTo.value = ''; stopDanmaku()
+  const v = douyinFeed.value[douyinIdx.value]; if (v && !v.pending && v.type !== 'live') startDanmaku(v)
+}
+function toggleDyFollowFromLive() {
+  if (!dyLiveRoom.value) return
+  const r = dyLiveRoom.value; r.isFollowing = !r.isFollowing
+  douyinFeed.value.forEach(x => { if (x.creator === r.creator) x.isFollowing = r.isFollowing })
+  if (r.isFollowing) dyFollows.value.add(r.creator); else dyFollows.value.delete(r.creator)
+  saveDyFeed(); saveDyFollows()
+}
+// 解析直播聊天批次（===LIVECHAT=== ... ===CHATEND===）
+function parseLiveChat(raw) {
   if (!raw) return []
-  const m = raw.match(/===LIVELIST===([\s\S]*?)===LIVEEND===/); if (!m) return []
+  const m = raw.match(/===LIVECHAT===([\s\S]*?)===CHATEND===/)
+  if (!m) return []
   const out = []
   m[1].split('\n').forEach(ln => {
     const t = ln.trim(); if (!t || !t.includes('|||')) return
-    const p = t.split('|||')
-    const streamer = (p[0] || '').replace(/^@/, '').replace(/^\d+[.、\s]*/, '').trim()
-    const title = (p[1] || '').trim()
-    if (streamer && title) out.push({ streamer, title, viewers: (p[2] || '在线').trim(), verified: /true|是|认证/.test(p[3] || '') })
+    const p = t.split('|||'); const level = p[0]?.trim(); const user = p[1]?.trim(); const text = p[2]?.trim(); const tag = (p[3]||'').trim()
+    if (user) out.push({ level: /^\d+$/.test(level) ? +level : null, user, text: text||'', isJoin: tag==='join', isMe: false })
   })
-  return out.slice(0, 12)
+  return out
 }
-async function generateDyLiveList() {
-  if (generatingLiveList.value) return
+// 生成新一批聊天消息（进房间时 / 用户发言后 / 手动「主播继续」）
+async function generateLiveChat(includeUserMsg = false) {
+  if (generatingLiveChat.value || !dyLiveRoom.value) return
   const th = TH(); if (!th || (!th.generateRaw && !th.generate)) { showToast('当前环境不支持生成'); return }
-  generatingLiveList.value = true
-  const me = meName.value || '我'
-  const instruction =
-    `【抖音·直播广场·静默生成】结合下方世界观设定与当前剧情，生成当前正在直播的8个直播间，绝不输出任何正文、旁白或解释。` +
-    `\n每个直播间是这个故事世界里的人在直播：主播可能是故事中的角色，也可能是陌生素人主播。内容生活化、真实：聊天/唱歌/才艺/带${me}逛/游戏/美食/户外等皆可，全年龄向、不涉黄。` +
-    `\n主播号像真人抖音号；直播标题口语化有吸引力（15字内）；在线人数像真实数字（如 1.2万 / 3856）。` +
-    `\n【账号唯一】同一个角色只有一个固定账号名，不要用别名/小名/拼音把同一人重复列出。` +
-    `\n只输出一个 ===LIVELIST=== 数据块，块外不写任何字。每行格式：主播号|||直播标题|||在线人数|||是否认证(true/false)\n===LIVELIST===\n主播1|||标题|||人数|||true\n…(共8行)\n===LIVEEND===`
-  try {
-    let result
-    if (th.generateRaw) {
-      result = await th.generateRaw({ user_input: '看直播广场', should_silence: true, ordered_prompts: [
-        { role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
-        { role: 'user', content: '给我当前的直播列表，只输出一个 ===LIVELIST=== 数据块，块外不写字。' },
-      ] })
-    } else { result = await th.generate({ user_input: instruction, should_silence: true }) }
-    const list = parseDyLiveList(result)
-    if (list.length) dyLiveList.value = list
-    else showToast('直播没刷出来，再试一次')
-  } catch (e) { showToast('直播生成失败：' + ((e && e.message) || e)) }
-  finally { generatingLiveList.value = false }
-}
-function enterDyLiveRoom(r) {
-  dyLiveRoom.value = { streamer: r.streamer, title: r.title, verified: r.verified, viewers: r.viewers, segments: [], danmaku: [] }
-  stopDanmaku()
-  generateDyLiveSegment()   // 进房先生成开场这一段
-}
-function leaveDyLiveRoom() { stopDanmaku(); dyLiveRoom.value = null }
-function parseDyLiveSeg(raw) {
-  if (!raw) return null
-  const m = raw.match(/===LIVESEG===([\s\S]*?)===SEGEND===/); if (!m) return null
-  const block = m[1]
-  const f = (k) => { const r = block.match(new RegExp('^\\s*' + k + '\\s*:(.+)$', 'm')); return r ? r[1].trim() : '' }
-  const content = f('content'); if (!content) return null
-  const dm = f('danmaku')
-  return { content, danmaku: dm ? dm.split('|').map(s => s.trim()).filter(Boolean) : [] }
-}
-// 点「继续」：带着已播内容作上下文，生成同一主播的下一段直播，连续接上
-async function generateDyLiveSegment() {
-  if (generatingLiveSeg.value || !dyLiveRoom.value) return
-  const th = TH(); if (!th || (!th.generateRaw && !th.generate)) { showToast('当前环境不支持生成'); return }
-  generatingLiveSeg.value = true
+  generatingLiveChat.value = true
   const room = dyLiveRoom.value
   const me = meName.value || '我'
-  const recent = room.segments.slice(-3).join('\n')
-  const first = room.segments.length === 0
+  const isR18 = dyR18.value
+  const recentChat = (room.chatLog || []).slice(-8).map(c => c.isJoin ? `${c.user}来了` : `[${c.level||'?'}]${c.user}:${c.text}`).join('\n')
+  const lastMe = includeUserMsg ? (room.chatLog || []).filter(c => c.isMe).slice(-1)[0] : null
+  const styleNote = isR18
+    ? (room.isFollowing
+      ? `这是${me}关注的红颜的直播间，聊天里只有${me}和可能知情的亲密圈子；口吻亲密撩人。`
+      : `这是成人平台公开直播，观众可以有各种人，口吻成人化真实。`)
+    : `这是普通抖音直播间，观众口吻真实日常。`
+  const replyNote = lastMe ? `\n${me}刚说：「${lastMe.text}」——主播${room.creator}或其他观众要有回应（可以是直接@${me}、也可以是主播顺口回应）。` : ''
   const instruction =
-    `【抖音·直播间·静默生成】主播 @${room.streamer} 正在直播，标题「${room.title}」。你要生成这场直播接下来的一小段实况，绝不输出正文/旁白/解释。` +
-    `\n以第三人称临场描述主播此刻在说什么、做什么，2-4句，像正在直播的实时画面；全年龄向、生活化、不涉黄。` +
-    (first ? `\n这是${me}刚进直播间时的开场片段。` : `\n【已播内容，请自然承接、往下推进，别重复】\n${recent}`) +
-    `\n弹幕是观众即时反应，短促口语有梗，4-6条；若${me}刚送了礼物，主播可以顺口谢一下。` +
-    `\n只输出一个 ===LIVESEG=== 数据块，块外不写字：\n===LIVESEG===\ncontent:这一小段直播画面\ndanmaku:弹幕1|弹幕2|弹幕3|弹幕4\n===SEGEND===`
+    `【${isR18 ? '抖阴' : '抖音'}·直播聊天·静默生成】主播 @${room.creator} 正在直播「${room.title}」。` +
+    `\n${styleNote}${replyNote}` +
+    `\n生成接下来10条聊天消息，包含进场"来了"消息(少量)和普通评论，有真实观众口吻和等级差异。` +
+    (recentChat ? `\n最近的聊天：\n${recentChat}` : '') +
+    `\n只输出一个 ===LIVECHAT=== 数据块，块外不写字：\n===LIVECHAT===\n等级|||昵称|||内容（或末尾|||join表示进场消息）\n…(共10行)\n===CHATEND===`
   try {
     let result
     if (th.generateRaw) {
-      result = await th.generateRaw({ user_input: '看直播', should_silence: true, ordered_prompts: [
+      result = await th.generateRaw({ user_input: '看直播聊天', should_silence: true, ordered_prompts: [
         { role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
-        { role: 'user', content: first ? '进入直播间，生成开场片段。' : '主播继续直播，生成下一段。只输出 ===LIVESEG=== 数据块。' },
+        { role: 'user', content: '生成直播间聊天消息，只输出 ===LIVECHAT=== 数据块，块外不写字。' },
       ] })
     } else { result = await th.generate({ user_input: instruction, should_silence: true }) }
-    const seg = parseDyLiveSeg(result)
-    if (seg && dyLiveRoom.value) {
-      dyLiveRoom.value.segments.push(seg.content)
-      dyLiveRoom.value.danmaku = seg.danmaku
-      stopDanmaku(); startDanmaku(dyLiveRoom.value)
-      nextTick(() => { const el = dyLiveContentEl.value; if (el) el.scrollTop = el.scrollHeight })
-    } else showToast('直播没接上，再点一次继续')
-  } catch (e) { showToast('直播生成失败：' + ((e && e.message) || e)) }
-  finally { generatingLiveSeg.value = false }
+    const msgs = parseLiveChat(result)
+    if (msgs.length && dyLiveRoom.value) {
+      dyLiveRoom.value.chatLog = [...(dyLiveRoom.value.chatLog || []), ...msgs]
+      nextTick(() => { const el = dyLiveChatEl.value; if (el) el.scrollTop = el.scrollHeight })
+    }
+  } catch (e) { showToast('聊天生成失败：' + ((e && e.message) || e)) }
+  finally { generatingLiveChat.value = false }
 }
-// 送礼：飘一条弹幕，主播下一段可顺口感谢
-function sendDyGift(g) {
+// 用户在直播间发言 → 追加进聊天列表 → 触发AI生成主播+其他人回应
+function submitLiveChat() {
+  const txt = dyLiveChatDraft.value.trim(); if (!txt || !dyLiveRoom.value) return
+  const me = meName.value || '我'
+  const replyTo = dyLiveReplyTo.value
+  dyLiveRoom.value.chatLog.push({ level: null, user: me, text: (replyTo ? `回复@${replyTo} ` : '') + txt, isJoin: false, isMe: true })
+  dyLiveChatDraft.value = ''; dyLiveReplyTo.value = ''
+  nextTick(() => { const el = dyLiveChatEl.value; if (el) el.scrollTop = el.scrollHeight })
+  generateLiveChat(true)   // 发言即推进：AI生成回应
+}
+function sendLiveHeart() {
   if (!dyLiveRoom.value) return
   const me = meName.value || '我'
-  const key = Date.now() + Math.random()
-  activeDanmaku.value.push({ k: key, text: `${me} 送出 ${g.icon}${g.name}`, top: DM_LANES[Math.floor(Math.random() * DM_LANES.length)], dur: 7 })
-  setTimeout(() => { activeDanmaku.value = activeDanmaku.value.filter(d => d.k !== key) }, 7200)
+  dyLiveRoom.value.chatLog.push({ level: null, user: me, text: '', isJoin: false, isMe: true, isHeart: true })
+  nextTick(() => { const el = dyLiveChatEl.value; if (el) el.scrollTop = el.scrollHeight })
 }
+function sendLiveGift() {
+  if (!dyLiveRoom.value) return
+  const me = meName.value || '我'
+  dyLiveRoom.value.chatLog.push({ level: null, user: me, text: '送出了礼物 🎁', isJoin: false, isMe: true })
+  nextTick(() => { const el = dyLiveChatEl.value; if (el) el.scrollTop = el.scrollHeight })
+  generateLiveChat(true)
+}
+// 直播出现概率设置
+function setDyLivePct(p) { p = Math.round(+p); if (isNaN(p)) return; p = Math.max(0, Math.min(100, p)); dyLivePct.value = p; douyinSettings.value.livePct = p; saveDySettings() }
+function applyLivePctDraft() { const n = parseInt(livePctDraft.value, 10); if (!isNaN(n)) { setDyLivePct(n); showToast('直播概率已设为 ' + dyLivePct.value + '%') } livePctDraft.value = '' }
+// 视频评论回复
+function setDyReplyTo(c) { dyReplyTo.value = (c.user||'').replace(/^@/, ''); }
 
 // ---- 相机快门（常规模式：注入正文） ----
 function doShutter() {
@@ -2700,48 +2857,62 @@ onUnmounted(() => {
 .mp-dys-hot-rank.top{color:#fe2c55}
 .mp-dys-hot-topic{flex:1;min-width:0;font-size:14px;color:#222;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mp-dys-hot-heat{font-size:12px;color:#b0b1b6;flex-shrink:0}
-/* 直播列表 */
-.mp-dyl{position:absolute;inset:0;z-index:33;background:#f5f5f7;display:flex;flex-direction:column}
-.mp-dyl-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#fff;border-bottom:1px solid #eee;flex-shrink:0}
-.mp-dyl-hd .mp-nav-back{background:none;border:none;cursor:pointer;padding:0;width:24px;height:24px}
-.mp-dyl-hd .mp-nav-back svg{width:22px;height:22px;fill:#161823}
-.mp-dyl-title{font-size:16px;font-weight:600;color:#161823}
-.mp-dyl-refresh{background:none;border:none;cursor:pointer;color:#8a8a8e;padding:2px;display:flex}
-.mp-dyl-refresh svg{width:19px;height:19px}
-.mp-dyl-refresh.spin svg{animation:mp-dys-spin 1s linear infinite}
-.mp-dyl-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px}
-.mp-dyl-body::-webkit-scrollbar{width:0}
-.mp-dyl-none{text-align:center;color:#999;font-size:14px;padding:44px 0}
-.mp-dyl-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.mp-dyl-card{background:#fff;border-radius:12px;overflow:hidden;cursor:pointer}
-.mp-dyl-card:active{opacity:.85}
-.mp-dyl-cover{position:relative;height:104px;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:700;color:#fff;background:linear-gradient(135deg,#4a4a52,#232327)}
-.mp-dyl-live-tag{position:absolute;top:7px;left:7px;font-size:10px;font-weight:600;color:#fff;background:#fe2c55;padding:2px 7px;border-radius:9px}
-.mp-dyl-cap{font-size:13px;color:#161823;padding:7px 9px 2px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.mp-dyl-meta{display:flex;align-items:center;justify-content:space-between;padding:2px 9px 9px;font-size:11px;color:#9a9a9e}
-.mp-dyl-st{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}
-/* 直播间 */
-.mp-dylr{position:absolute;inset:0;display:flex;flex-direction:column;background:linear-gradient(160deg,#1a1320,#0d0d10)}
-.mp-dylr-top{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;flex-shrink:0}
-.mp-dylr-who{display:flex;align-items:center;gap:9px;background:rgba(0,0,0,.35);padding:5px 12px 5px 5px;border-radius:22px}
-.mp-dylr-ava{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#fe2c55,#ff6b9d);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px}
-.mp-dylr-name{font-size:13px;font-weight:600;color:#fff;display:flex;align-items:center;gap:4px}
-.mp-dylr-vw{font-size:11px;color:rgba(255,255,255,.6)}
-.mp-dylr-x{background:rgba(0,0,0,.35);border:none;cursor:pointer;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center}
-.mp-dylr-x svg{width:18px;height:18px;fill:#fff}
-.mp-dylr-stage{flex:1;position:relative;min-height:0;display:flex;flex-direction:column}
-.mp-dylr-dm-band{position:absolute;top:0;left:0;right:0;height:90px;overflow:hidden;pointer-events:none;z-index:2}
-.mp-dylr-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:100px 18px 18px;z-index:1}
-.mp-dylr-content::-webkit-scrollbar{width:0}
-.mp-dylr-title{font-size:15px;font-weight:600;color:#fff;margin-bottom:14px}
-.mp-dylr-seg{font-size:14px;line-height:1.7;color:rgba(255,255,255,.92);margin-bottom:14px;text-shadow:0 1px 4px rgba(0,0,0,.5)}
-.mp-dylr-seg-loading{font-size:13px;color:rgba(255,255,255,.5);padding:4px 0}
-.mp-dylr-bar{display:flex;align-items:center;gap:10px;padding:10px 14px 14px;flex-shrink:0}
-.mp-dylr-gifts{display:flex;gap:6px;flex:1}
-.mp-dylr-gift{width:38px;height:38px;border-radius:50%;border:none;background:rgba(255,255,255,.14);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}
-.mp-dylr-gift:active{background:rgba(255,255,255,.28)}
-.mp-dylr-next{padding:10px 26px;border:none;border-radius:22px;background:#fe2c55;color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0}
-.mp-dylr-next:disabled{opacity:.5}
+/* 直播卡（feed里） */
+.mp-dy-live-badge{position:absolute;top:20px;left:14px;z-index:10;background:#fe2c55;color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:12px;letter-spacing:.5px}
+.mp-dy-live-content{position:absolute;top:0;left:0;right:0;bottom:30%;display:flex;align-items:center;justify-content:center;padding:60px 24px 20px;text-align:center;font-size:17px;line-height:1.7;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.7);overflow:hidden;background:linear-gradient(160deg,#1a1320,#0e0b14)}
+.mp-dy-live-enter{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:8px;padding:11px 22px;border:none;border-radius:24px;background:rgba(255,255,255,.22);backdrop-filter:blur(6px);color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
+.mp-dy-live-enter:active{background:rgba(255,255,255,.35)}
+/* 关注tab直播头像条 */
+.mp-dy-live-strip{display:flex;gap:14px;padding:14px 14px 10px;overflow-x:auto;flex-shrink:0;background:transparent;-webkit-overflow-scrolling:touch}
+.mp-dy-live-strip::-webkit-scrollbar{display:none}
+.mp-dy-ls-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;flex-shrink:0}
+.mp-dy-ls-ava{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#fe2c55,#ff6b9d);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;position:relative;border:2.5px solid #fe2c55}
+.mp-dy-ls-dot{position:absolute;bottom:0;right:0;font-size:9px;color:#fe2c55;background:#fff;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;line-height:1}
+.mp-dy-ls-name{font-size:11px;color:rgba(255,255,255,.85);max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;text-shadow:0 1px 4px rgba(0,0,0,.5)}
+/* 直播间全屏 overlay */
+.mp-dylv{position:absolute;inset:0;z-index:34;display:flex;flex-direction:column;background:#0d0d10}
+.mp-dylv-top{display:flex;align-items:center;gap:8px;padding:10px 12px 8px;flex-shrink:0;z-index:2}
+.mp-dylv-who{display:flex;align-items:center;gap:7px;flex:1;min-width:0;background:rgba(0,0,0,.4);padding:4px 10px 4px 5px;border-radius:22px}
+.mp-dylv-ava{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#fe2c55,#ff6b9d);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+.mp-dylv-info{display:flex;flex-direction:column;min-width:0;flex:1}
+.mp-dylv-name{font-size:13px;font-weight:600;color:#fff;display:flex;align-items:center;gap:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mp-dylv-likes{font-size:10px;color:rgba(255,255,255,.6)}
+.mp-dylv-follow{padding:4px 12px;border:none;border-radius:14px;background:#fe2c55;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0}
+.mp-dylv-following{font-size:12px;color:rgba(255,255,255,.7);flex-shrink:0}
+.mp-dylv-viewers{display:flex;align-items:center;gap:5px;background:rgba(0,0,0,.35);padding:4px 10px;border-radius:18px;flex-shrink:0}
+.mp-dylv-vw-avas{display:flex}
+.mp-dylv-vw-ava{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#6b6b8a,#3a3a52);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;margin-left:-6px;border:1.5px solid #0d0d10}
+.mp-dylv-vw-ava:first-child{margin-left:0}
+.mp-dylv-vw-cnt{font-size:12px;color:rgba(255,255,255,.8)}
+.mp-dylv-x{width:30px;height:30px;border-radius:50%;border:none;background:rgba(0,0,0,.4);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mp-dylv-x svg{width:16px;height:16px;fill:#fff}
+.mp-dylv-screen{flex-shrink:0;height:42%;position:relative;overflow:hidden;background:#111}
+.mp-dylv-screen-txt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;font-size:15px;line-height:1.7;color:rgba(255,255,255,.9);text-align:center;text-shadow:0 2px 6px rgba(0,0,0,.6)}
+.mp-dylv-chat{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 12px 6px;background:rgba(0,0,0,.75)}
+.mp-dylv-chat::-webkit-scrollbar{width:0}
+.mp-dylv-msg{display:flex;align-items:baseline;gap:4px;padding:3px 0;flex-wrap:wrap}
+.mp-dylv-msg-join .mp-dylv-join-txt{font-size:12px;color:rgba(255,255,255,.45);font-style:italic}
+.mp-dylv-msg-me .mp-dylv-user,.mp-dylv-msg-me .mp-dylv-txt{color:#ff9eb5}
+.mp-dylv-lv{font-size:11px;color:#fff;background:linear-gradient(90deg,#7a3fff,#fe2c55);padding:1px 5px;border-radius:7px;flex-shrink:0}
+.mp-dylv-user{font-size:13px;color:#ff9eb5;font-weight:600;flex-shrink:0}
+.mp-dylv-txt{font-size:13px;color:rgba(255,255,255,.88);line-height:1.5;word-break:break-all}
+.mp-dylv-loading{display:flex;gap:4px;padding:4px 0;align-items:center}
+.mp-dylv-loading span{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.4);animation:mp-dy-spin-scale .8s ease infinite}
+.mp-dylv-loading span:nth-child(2){animation-delay:.15s}
+.mp-dylv-loading span:nth-child(3){animation-delay:.3s}
+@keyframes mp-dy-spin-scale{0%,80%,100%{transform:scale(0.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+.mp-dylv-bar{padding:8px 12px 12px;background:rgba(0,0,0,.85);flex-shrink:0}
+.mp-dylv-input-row{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border-radius:22px;padding:6px 8px 6px 14px}
+.mp-overlay .mp-dylv-in{flex:1;min-width:0;border:none!important;background:transparent!important;color:#fff!important;font-size:14px;outline:none;font-family:inherit;box-shadow:none!important;background-image:none!important}
+.mp-overlay .mp-dylv-in::placeholder{color:rgba(255,255,255,.4)!important}
+.mp-dylv-emoji,.mp-dylv-heart,.mp-dylv-gift,.mp-dylv-share{background:none;border:none;cursor:pointer;font-size:20px;padding:2px;flex-shrink:0}
+/* 评论回复 */
+.mp-dy-cmt-reply-item{margin-left:44px;padding:2px 0 4px;display:flex;flex-wrap:wrap;gap:3px;font-size:12px;color:#666}
+.mp-dy-cmt-reply-user{color:#fe2c55;font-weight:600}
+.mp-dy-cmt-reply-to{color:#888}
+.mp-dy-cmt-reply-txt{color:#444}
+.mp-dy-cm-reply-bar{font-size:12px;color:#888;padding:4px 14px 2px;display:flex;align-items:center;gap:6px;background:#f7f7f9}
+.mp-dy-cm-reply-x{cursor:pointer;color:#bbb;font-size:11px}
 
 /* 相机 */
 .mp-cam{position:absolute;inset:7px;z-index:10;display:flex;flex-direction:column;background:#000;border-radius:33px;overflow:hidden}
