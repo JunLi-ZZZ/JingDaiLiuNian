@@ -629,8 +629,8 @@
               <div v-else-if="dyCommentGap > 0" class="mp-dy-cm-more">共 {{ dyCurrentCommentClaimed }} 条评论，仅显示 {{ dyAllComments.length }} 条</div>
             </div>
             <div class="mp-dy-cm-input">
-              <div v-if="dyReplyTo" class="mp-dy-cm-reply-bar">回复 @{{ dyReplyTo }}<span @click="dyReplyTo='';dyReplyParent=null" class="mp-dy-cm-reply-x">✕</span></div>
               <input class="mp-dy-cm-in" :value="dyCommentDraft" :placeholder="dyReplyTo ? '回复 @'+dyReplyTo : '善语结善缘，恶言伤人心'" readonly @click.stop.prevent="openIMEDyComment" @keydown.enter.prevent="submitDyComment" />
+              <span v-if="dyReplyTo" class="mp-dy-cm-ic mp-dy-cm-reply-x" @click.stop="dyReplyTo='';dyReplyParent=null" title="取消回复">✕</span>
               <span class="mp-dy-cm-ic">☺</span>
               <button v-if="dyCommentDraft.trim()" class="mp-dy-cm-send" @click="submitDyComment">发送</button>
             </div>
@@ -703,8 +703,7 @@
                 <div class="mp-dylv-ava">{{ (dyLiveRoom.creator||'?').slice(0,1).toUpperCase() }}</div>
                 <div class="mp-dylv-info">
                   <div class="mp-dylv-name-row">
-                    <span v-if="curFan" class="mp-dylv-fan" :style="{background: levelColor(curFan.level)}">{{ curFan.level }}</span>
-                    <span class="mp-dylv-name">{{ dyLiveRoom.creator }}<span v-if="dyLiveRoom.verified" class="mp-dy-verified">✓</span></span>
+                      <span class="mp-dylv-name">{{ dyLiveRoom.creator }}<span v-if="dyLiveRoom.verified" class="mp-dy-verified">✓</span></span>
                   </div>
                 </div>
                 <button v-if="!dyLiveRoom.isFollowing" class="mp-dylv-follow" @click="toggleDyFollowFromLive">关注</button>
@@ -1804,12 +1803,13 @@ async function generateDyTopCommentResponse(video, myComment) {
   const me = meName.value || '我'
   const isR18 = dyR18.value
   const isPrivate = video.vis === 'private'
-  // pcontent只要存在就带进规则，不依赖用户是否翻转
+  // 红颜私发才限制评论者；陌生博主私密内容是平台公开内容，评论可有陌生人
+  const isRedYanPrivate = isPrivate && !video.stranger
   const hasPcontent = !!(video.pcontent && isR18)
   const pcontentLine = hasPcontent
     ? `\n【翻转内容规则】这条视频还有博主@${video.creator}单独发给${me}的私密版内容：「${video.pcontent.slice(0,80)}」。博主本人可以在回复里自然回应这个私密内容；其他路人绝不能表现出任何知晓私密内容的信息，只能基于公开画面「${(video.content||'').slice(0,80)}」来回应。`
     : ''
-  const audience = isPrivate
+  const audience = isRedYanPrivate
     ? `这是${me}才能看到的私密内容，回应只能来自发布者@${video.creator}，绝不能出现陌生人。`
     : `回应可来自发布者@${video.creator}或路过的真实观众，口吻简短真实，5~20字以内。`
   const instruction =
@@ -1838,7 +1838,8 @@ async function generateDyCommentReply(video, comment, myText, toUser) {
   const me = meName.value || '我'
   const isR18 = dyR18.value
   const isPrivate = video.vis === 'private'
-  const audience = isPrivate
+  const isRedYanPrivate = isPrivate && !video.stranger   // 红颜私发才限制评论者
+  const audience = isRedYanPrivate
     ? `这是${me}只有自己能看到的私密内容，回复里绝不能出现陌生人；只可能是被回复者本人、发布者@${video.creator}、或与${me}同属亲密圈子且知情的人。若没有合适的人回，就别生成任何回复。`
     : `回复可以来自被回复者@${toUser}本人、视频发布者@${video.creator}、或路过的其他观众，口吻真实。`
   const existing = (comment.replies || []).map(r => `${r.user}${r.replyTo ? '回复'+r.replyTo : ''}：${r.text}`).join('\n')
@@ -2087,6 +2088,7 @@ async function generateDyVideo() {
     const idx = douyinFeed.value.indexOf(placeholder)
     if (video && idx >= 0) {
       video.vis = isPrivate ? 'private' : 'public'
+      if (isPrivate && isPrivateStranger) video.stranger = true   // 陌生成人博主私密内容，评论可公开
       if (isPrivate && !isPrivateStranger) { video.danmaku = []; video.isFollowing = true }
       else if (isPrivate) video.isFollowing = true
       if (isFollowTab) { video.isFollowing = true; dyFollows.value.add(video.creator); saveDyFollows() }
@@ -2452,7 +2454,9 @@ async function generateLiveChat(includeUserMsg = false) {
         else if (vStr.includes('K') || vStr.includes('k')) prev = Math.round(parseFloat(vStr) * 1000)
         else prev = parseInt(vStr.replace(/[^\d]/g, '') || '0', 10)
         if (prev > 0 && prev < 1000000) {
-          dyLiveRoom.value.viewers = String(prev + joinCount + Math.floor(Math.random() * 8 + 2))
+          // 红颜直播圈子封闭，不加随机路人；普通直播随机补几个隐藏观众
+          const bonus = isRedYan ? 0 : Math.floor(Math.random() * 8 + 2)
+          dyLiveRoom.value.viewers = String(prev + joinCount + bonus)
         }
       }
       // ⑦ 点赞随每批聊天自然递增（基于观众数）
@@ -3419,7 +3423,8 @@ onUnmounted(() => {
 .mp-dylv-input-row{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border-radius:22px;padding:6px 8px 6px 14px}
 .mp-overlay .mp-dylv-in{flex:1;min-width:0;border:none!important;background:transparent!important;color:#fff!important;font-size:14px;outline:none;font-family:inherit;box-shadow:none!important;background-image:none!important}
 .mp-overlay .mp-dylv-in::placeholder{color:rgba(255,255,255,.4)!important}
-.mp-dylv-emoji,.mp-dylv-heart,.mp-dylv-gift,.mp-dylv-share{background:none;border:none;cursor:pointer;font-size:20px;padding:2px;flex-shrink:0}
+.mp-dylv-emoji,.mp-dylv-heart,.mp-dylv-gift,.mp-dylv-share{background:none;border:none;cursor:pointer;font-size:20px;padding:2px;flex-shrink:0;opacity:.9;color:#fff}
+.mp-dylv-emoji:active,.mp-dylv-heart:active,.mp-dylv-gift:active,.mp-dylv-share:active{opacity:1}
 /* 名字行 + 粉丝团等级标志 */
 .mp-dylv-name-row{display:flex;align-items:center;gap:4px;min-width:0}
 .mp-dylv-fan{font-size:10px;font-weight:800;color:#fff;min-width:18px;height:16px;padding:0 4px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;text-shadow:0 1px 1px rgba(0,0,0,.3)}
