@@ -1783,36 +1783,41 @@ function submitDyComment() {
     }
   }
   if (!v.myComments) v.myComments = []
-  v.myComments.push({ user: me, text: txt, likes: '0' })
+  const newComment = { user: me, text: txt, likes: '0', replies: [] }
+  v.myComments.push(newComment)
   dyCommentDraft.value = ''; saveDyFeed()
-  // 普通评论也触发异步生成：博主/路人可能来一两条回应
-  generateDyTopCommentResponse(v, txt)
+  // 普通评论也触发异步生成：博主/路人的回应挂成该评论的子回复
+  generateDyTopCommentResponse(v, newComment)
 }
-// 用户发顶层评论后，生成博主/路人的简短回应（追加到 myComments 区，不是 replies）
-async function generateDyTopCommentResponse(video, myText) {
+// 用户发顶层评论后，生成博主/路人的简短回应（作为子回复挂在该评论下，而非新主评论）
+async function generateDyTopCommentResponse(video, myComment) {
   const th = TH(); if (!th || (!th.generateRaw && !th.generate)) return
   const me = meName.value || '我'
-  const isR18 = video.type === 'live' ? dyR18.value : (video.vis === 'private' || dyR18.value)
+  const isR18 = dyR18.value
   const isPrivate = video.vis === 'private'
+  const isFlipped = !!(video.pcontent && dyFlipped.value[video._i])
+  const pcontentLine = isFlipped && video.pcontent
+    ? `\n【翻转内容规则】${me}看到的是博主@${video.creator}单独发给ta的私密版：「${video.pcontent.slice(0,80)}」。博主本人可以在回复里自然回应这个私密内容；其他路人绝不能表现出任何知晓私密内容的信息，只能基于公开画面「${(video.content||'').slice(0,80)}」来回应。`
+    : ''
   const audience = isPrivate
     ? `这是${me}才能看到的私密内容，回应只能来自发布者@${video.creator}，绝不能出现陌生人。`
     : `回应可来自发布者@${video.creator}或路过的真实观众，口吻简短真实，5~20字以内。`
   const instruction =
-    `【${isR18 ? '抖阴' : '抖音'}·评论回应·静默生成】在视频「${(video.content||'').slice(0,80)}」的评论区，${me}(@${me.replace(/^@/,'')})刚发表了评论：「${myText}」。${audience}` +
-    `\n生成0~2条自然的后续评论（可以是发布者回应或路人搭话），若判断无人回应则输出空块。` +
+    `【${isR18 ? '抖阴（成人向短视频平台）' : '抖音'}·评论子回复·静默生成】在视频「${(video.content||'').slice(0,80)}」的评论区，${me}(@${me.replace(/^@/,'')})刚发表了评论：「${myComment.text}」。${audience}${pcontentLine}` +
+    `\n生成0~2条自然的子回复（直接回复${me}的这条评论），若判断无人回应则输出空块。` +
     `\n只输出一个 ===DYREPLY=== 数据块，块外不写字：\n===DYREPLY===\nr1:回复者号|||被回复者号(可空)|||回复内容\nr2:...\n===REPLYEND===`
   try {
     let result
     if (th.generateRaw) {
       result = await th.generateRaw({ user_input: '看评论', should_silence: true, ordered_prompts: [
         { role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
-        { role: 'user', content: '生成评论回应，只输出 ===DYREPLY=== 数据块，块外不写字。' },
+        { role: 'user', content: '生成评论子回复，只输出 ===DYREPLY=== 数据块，块外不写字。' },
       ] })
     } else { result = await th.generate({ user_input: instruction, should_silence: true }) }
     const replies = parseDyReplies(result)
     if (replies.length) {
-      if (!video.myComments) video.myComments = []
-      for (const r of replies) video.myComments.push({ user: r.user, text: r.text, likes: '0' })
+      if (!myComment.replies) myComment.replies = []
+      for (const r of replies) myComment.replies.push({ user: r.user, text: r.text, replyTo: myComment.user, isMe: false })
       saveDyFeed()
     }
   } catch (e) {}
@@ -2354,11 +2359,19 @@ async function generateLiveChat(includeUserMsg = false) {
   const room = dyLiveRoom.value
   const me = meName.value || '我'
   const isR18 = dyR18.value
-  // dyChatBatch = 喂给AI的历史记忆条数；输出固定少量（6~12条）避免刷屏
+  // dyChatBatch = 喂给AI的历史记忆条数（含user发言，noImpersonateLine防AI扮演）
   const contextBatch = dyChatBatch.value || 50
-  const recentChat = (room.chatLog || []).filter(c => !c.isMe).slice(-contextBatch)
-    .map(c => c.isJoin ? `${c.user}来了` : `[${c.level ?? '?'}]${c.user}:${c.text}`).join('\n')
-  const lastMe = includeUserMsg ? (room.chatLog || []).filter(c => c.isMe).slice(-1)[0] : null
+  const recentChat = (room.chatLog || []).slice(-contextBatch)
+    .map(c => {
+      if (c.isJoin) return `${c.user}来了`
+      if (c.isGift || c.isLevelUp) return `[${c.level ?? '?'}]${c.user}:${c.text}`
+      return `[${c.level ?? '?'}]${c.user}:${c.text}`
+    }).join('\n')
+  // 取最近3条user操作（含礼物/升级），别只取最后1条漏掉礼物信息
+  const lastMeMsgs = includeUserMsg ? (room.chatLog || []).filter(c => c.isMe).slice(-3) : []
+  const replyNote = lastMeMsgs.length > 0
+    ? `\n${me}最近的操作：${lastMeMsgs.map(m => `「${m.text}」`).join('、')}——主播${room.creator}或观众要顺势自然回应，别无视。`
+    : ''
   const fan = dyFanClub.value[room.creator]
   const levelNote = fan && fan.level > 0
     ? `\n${me}是这个直播间 ${fan.level} 级粉丝团成员${fan.level >= 10 ? '（高等级铁粉）' : ''}，主播对${me}${fan.level >= 20 ? `非常熟悉亲近，会主动点名、记得${me}` : fan.level >= 10 ? '比较熟络，愿意多回应' : '有印象'}。`
@@ -2370,12 +2383,11 @@ async function generateLiveChat(includeUserMsg = false) {
       ? `【私密直播铁则·不可破】这是只对${me}和极少数知情亲密圈子开放的私密直播。聊天里绝对禁止任何陌生人、路人、男性观众；只允许与主播真正亲密且知情的极少数女性角色（若没有，chat留空）。口吻亲密撩人。违反即错误。`
       : `这是成人平台公开直播，观众可以有各种人，口吻成人化真实。`)
     : `这是普通抖音直播间，观众口吻真实日常。等级高的粉丝主播会更热络。`
-  // ① 明确禁止 AI 扮演 me；replyNote 单独告知 me 刚说了什么
+  // ① 明确禁止 AI 扮演 me（replyNote 已在上方构建）
   const noImpersonateLine = `\n【禁止扮演${me}】聊天输出里绝对不能出现昵称为"${me}"的发言，因为${me}是真实用户，不是AI生成的角色。`
-  const replyNote = lastMe ? `\n${me}刚发言：「${lastMe.text}」——主播${room.creator}或其他观众要自然回应这句话（可@${me}或顺口接），别无视。` : ''
   const contMustLine = `\n【连续性铁则】这是同一场直播的延续，主播始终是同一个人 @${room.creator}，正在直播「${room.title}」。在前面聊天的基础上自然往下推进，主播的状态、话题连贯，绝不能像换了个人或重开一场。`
   const instruction =
-    `【${isR18 ? '抖阴' : '抖音'}·直播聊天·静默生成】主播 @${room.creator} 正在直播「${room.title}」。当前直播画面：${room.content}` +
+    `【${isR18 ? '抖阴（成人向短视频平台）' : '抖音'}·直播聊天·静默生成】主播 @${room.creator} 正在直播「${room.title}」。当前直播画面：${room.content}` +
     contMustLine +
     `\n${styleNote}${levelNote}${replyNote}${noImpersonateLine}` +
     `\n生成接下来 6~12 条聊天消息（每条5~20字，简短口语，禁止长篇大论；包含1~2条进场消息和其余普通聊天；真实口吻，等级有高有低，内容连贯不重复）。` +
@@ -2392,11 +2404,19 @@ async function generateLiveChat(includeUserMsg = false) {
       ] })
     } else { result = await th.generate({ user_input: instruction, should_silence: true }) }
     const parsed = parseLiveChat(result, 12)
-    // ① 过滤掉 AI 伪造的 me 发言（昵称完全匹配），防止冒名导致粉丝团等级混乱
+    // ① 过滤掉 AI 伪造的 me 发言（昵称完全匹配），防止冒名
     const safeMe = me.replace(/^@/, '')
     const newMsgs = parsed.msgs.filter(m => (m.user || '').replace(/^@/, '') !== safeMe)
     if (newMsgs.length && dyLiveRoom.value) {
       dyLiveRoom.value.chatLog = [...(dyLiveRoom.value.chatLog || []), ...newMsgs]
+      // 观众数递增：每条进场消息+1，再加少量隐藏观众
+      const joinCount = newMsgs.filter(m => m.isJoin).length
+      if (joinCount > 0 && dyLiveRoom.value.viewers) {
+        const prev = parseInt(String(dyLiveRoom.value.viewers).replace(/[^\d]/g, '') || '0', 10)
+        if (prev > 0 && prev < 100000) {
+          dyLiveRoom.value.viewers = String(prev + joinCount + Math.floor(Math.random() * 8 + 2))
+        }
+      }
       // ⑦ 点赞随每批聊天自然递增（基于观众数）
       const viewers = parseInt((dyLiveRoom.value.viewers || '0').replace(/[^\d]/g, ''), 10) || 10
       const increment = Math.floor(viewers * (0.03 + Math.random() * 0.05))
@@ -2559,7 +2579,8 @@ function openIME({ placeholder = '', getValue, setValue, onSubmit, multiline = f
   imeHasSubmit.value = !!onSubmit
   imeActive.value = true
   nextTick(() => {
-    const el = document.querySelector('.mp-ime-in, .mp-ime-ta')
+    // 浮层teleport到父document，必须用doc（window.parent.document）才能找到元素
+    const el = doc.querySelector('.mp-ime-in, .mp-ime-ta')
     if (el) { el.focus(); el.setSelectionRange && el.setSelectionRange(el.value.length, el.value.length) }
   })
 }
@@ -3360,8 +3381,8 @@ onUnmounted(() => {
 .mp-dylv-rc-custom{display:flex;gap:6px}
 .mp-overlay .mp-dylv-rc-in{flex:1;padding:6px 10px;border:1px solid rgba(255,255,255,.2)!important;border-radius:8px;background:rgba(255,255,255,.08)!important;color:#fff!important;font-size:13px;outline:none;font-family:inherit}
 .mp-dylv-rc-ok{padding:6px 12px;border:none;border-radius:8px;background:#fe2c55;color:#fff;font-size:13px;cursor:pointer;font-family:inherit}
-/* 评论回复楼中楼：竖线对齐评论首字，去掉微型头像减少缩进 */
-.mp-dy-cmt-reply-item{margin-left:36px;padding:4px 0 4px 8px;border-left:2px solid #e8e8ec;display:block;font-size:12px;line-height:1.5}
+/* 评论回复楼中楼：竖线对齐评论首字（margin-left:0 = mp-dy-cmt-main 左边缘即评论文字起始处） */
+.mp-dy-cmt-reply-item{margin-left:0;padding:4px 0 4px 8px;border-left:2px solid #e8e8ec;display:block;font-size:12px;line-height:1.5}
 .mp-dy-cmt-reply-item+.mp-dy-cmt-reply-item{margin-top:2px}
 .mp-dy-cmt-reply-ava{display:none}
 .mp-dy-cmt-reply-body{display:inline}
