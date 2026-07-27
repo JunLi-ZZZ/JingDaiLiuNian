@@ -312,6 +312,13 @@
                   <input class="mp-dy-set-input" :class="{on: !DY_LIVE_PCT_OPTIONS.includes(dyLivePct)}" type="number" min="0" max="100" v-model="livePctDraft" :placeholder="DY_LIVE_PCT_OPTIONS.includes(dyLivePct) ? '自定义' : String(dyLivePct)" @keydown.enter.prevent="applyLivePctDraft" @blur="applyLivePctDraft" />
                 </div>
                 <div class="mp-dy-set-note">推荐/关注流里直播卡占的比例。0=全是视频，15=约每7条有1条直播。</div>
+                <!-- 直播每批聊天条数 -->
+                <div class="mp-dy-set-subhd">直播每批聊天（当前 {{ dyChatBatch }} 条）</div>
+                <div class="mp-dy-set-btns">
+                  <button v-for="n in DY_CHAT_BATCH_OPTIONS" :key="n" :class="['mp-dy-set-btn', {on: dyChatBatch===n}]" @click="setDyChatBatch(n)">{{ n }}</button>
+                  <input class="mp-dy-set-input" :class="{on: !DY_CHAT_BATCH_OPTIONS.includes(dyChatBatch)}" type="number" min="10" max="200" v-model="chatBatchDraft" :placeholder="DY_CHAT_BATCH_OPTIONS.includes(dyChatBatch) ? '自定义' : String(dyChatBatch)" @keydown.enter.prevent="applyChatBatchDraft" @blur="applyChatBatchDraft" />
+                </div>
+                <div class="mp-dy-set-note">直播间里每次刷新/发言生成多少条弹幕聊天。条数多主播状态更连贯，不易像"换了个人"。</div>
                 <template v-if="douyinSettings.mode==='r18'">
                   <div class="mp-dy-set-subhd">私密页·陌生人占比（当前 {{ dyStrangerPct }}%）</div>
                   <div class="mp-dy-set-btns">
@@ -487,13 +494,13 @@
             <template v-else>
             <!-- 直播卡：点击进入直播间 -->
             <template v-if="v.type==='live'">
-              <div class="mp-dy-live-badge">● 直播中</div>
               <div class="mp-dy-live-content">{{ v.content }}</div>
               <button class="mp-dy-live-enter" @click.stop="enterDyLiveRoom(v._i)">
-                <svg viewBox="0 0 24 24" style="width:16px;height:16px"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zm2.46-7.12l1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14l2.12 2.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14z"/></svg>
+                <svg viewBox="0 0 24 24" class="mp-dy-live-enter-ico"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
                 点击进入直播间
               </button>
               <div class="mp-dy-info">
+                <div class="mp-dy-live-badge">● 直播中</div>
                 <div class="mp-dy-creator-row">
                   <span class="mp-dy-creator-name">@{{ v.creator }}</span>
                   <span v-if="v.verified" class="mp-dy-verified">✓</span>
@@ -687,8 +694,11 @@
             <div class="mp-dylv-who">
               <div class="mp-dylv-ava">{{ (dyLiveRoom.creator||'?').slice(0,1).toUpperCase() }}</div>
               <div class="mp-dylv-info">
-                <span class="mp-dylv-name">{{ dyLiveRoom.creator }}<span v-if="dyLiveRoom.verified" class="mp-dy-verified">✓</span></span>
-                <span class="mp-dylv-likes">{{ dyLiveRoom.liveLikes }} 本场点赞</span>
+                <div class="mp-dylv-name-row">
+                  <span v-if="curFan" class="mp-dylv-fan" :style="{background: levelColor(curFan.level)}">{{ curFan.level }}</span>
+                  <span class="mp-dylv-name">{{ dyLiveRoom.creator }}<span v-if="dyLiveRoom.verified" class="mp-dy-verified">✓</span></span>
+                </div>
+                <span class="mp-dylv-likes">直播中 · {{ dyLiveRoom.liveLikes }} 点赞</span>
               </div>
               <button v-if="!dyLiveRoom.isFollowing" class="mp-dylv-follow" @click="toggleDyFollowFromLive">关注</button>
               <span v-else class="mp-dylv-following">已关注</span>
@@ -705,10 +715,10 @@
           </div>
           <!-- 聊天流区域 -->
           <div class="mp-dylv-chat" ref="dyLiveChatEl">
-            <div v-for="(msg, mi) in dyLiveRoom.chatLog" :key="mi" class="mp-dylv-msg" :class="{'mp-dylv-msg-join': msg.isJoin, 'mp-dylv-msg-me': msg.isMe}">
+            <div v-for="(msg, mi) in dyLiveRoom.chatLog" :key="mi" class="mp-dylv-msg" :class="{'mp-dylv-msg-join': msg.isJoin, 'mp-dylv-msg-me': msg.isMe, 'mp-dylv-msg-gift': msg.isGift || msg.isLevelUp}">
               <template v-if="msg.isJoin"><span class="mp-dylv-join-txt">{{ msg.user }} 来了</span></template>
               <template v-else>
-                <span v-if="msg.level" class="mp-dylv-lv">{{ msg.level }}</span>
+                <span v-if="msg.level != null" class="mp-dylv-lv" :style="{background: levelColor(msg.level)}">{{ msg.level }}</span>
                 <span class="mp-dylv-user">{{ msg.user }}：</span>
                 <span class="mp-dylv-txt">{{ msg.text }}</span>
               </template>
@@ -721,10 +731,25 @@
           <div class="mp-dylv-bar">
             <div class="mp-dylv-input-row">
               <input class="mp-dylv-in" v-model="dyLiveChatDraft" :placeholder="dyLiveReplyTo ? '回复 @'+dyLiveReplyTo : '说点什么...'" @keydown.enter.prevent="submitLiveChat" />
-              <button class="mp-dylv-emoji" @click.stop>😊</button>
-              <button class="mp-dylv-heart" @click.stop="sendLiveHeart">❤️</button>
-              <button class="mp-dylv-gift" @click.stop="sendLiveGift">🎁</button>
-              <button class="mp-dylv-share" @click.stop>↗️</button>
+              <button class="mp-dylv-heart" @click.stop="sendLiveHeart" :title="curFan ? '粉丝团 '+curFan.level+' 级' : '加入粉丝团'">{{ curFan ? '💖' : '🤍' }}</button>
+              <button class="mp-dylv-gift" @click.stop="openGiftPanel">🎁</button>
+              <button class="mp-dylv-share" @click.stop="showToast('转发功能即将上线')">↗️</button>
+            </div>
+          </div>
+          <!-- 礼物面板 -->
+          <div v-if="showGiftPanel" class="mp-dylv-gp-mask" @click.self="showGiftPanel=false">
+            <div class="mp-dylv-gp">
+              <div class="mp-dylv-gp-hd">
+                <span class="mp-dylv-gp-title">送礼物</span>
+                <span class="mp-dylv-gp-bal">💎 {{ dyDiamond }} <button class="mp-dylv-gp-recharge" @click="rechargeDiamond">充值</button></span>
+              </div>
+              <div class="mp-dylv-gp-grid">
+                <button v-for="g in DY_GIFTS" :key="g.k" class="mp-dylv-gp-item" :class="{dis: dyDiamond < g.price}" @click="sendGift(g)">
+                  <span class="mp-dylv-gp-ico">{{ g.icon }}</span>
+                  <span class="mp-dylv-gp-name">{{ g.name }}</span>
+                  <span class="mp-dylv-gp-price">💎{{ g.price }}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -782,8 +807,11 @@ content:视频画面内容，2-3句，第三人称客观描述镜头里发生了
 danmaku:弹幕1|弹幕2|弹幕3|弹幕4（观众即时反应，短促口语，4-6条）
 c1:评论者号|||评论内容|||赞数|||地区（如 浙江/广东/未知）
 c2:评论者号|||评论内容|||赞数|||地区
+（评论按内容热度自然给：热门视频可给到 c6，冷门或私密内容给 1~2 条甚至留空。别机械凑满，条数要像真实评论区。最多支持到 c6。）
 c3:评论者号|||评论内容|||赞数|||地区
-c4:评论者号|||评论内容|||赞数|||地区`
+c4:评论者号|||评论内容|||赞数|||地区
+c5:评论者号|||评论内容|||赞数|||地区
+c6:评论者号|||评论内容|||赞数|||地区`
 // 直播卡生成格式（type:'live'）
 const DY_LIVE_FORMAT = `creator:主播抖音号（不带@，6字内）
 verified:true或false
@@ -839,6 +867,27 @@ const dyLiveChatEl = ref(null)           // 聊天滚动容器
 const dyLiveChatDraft = ref('')          // 聊天输入草稿
 const dyLiveReplyTo = ref('')            // 正在回复的用户名
 const generatingLiveChat = ref(false)
+const dyChatBatch = ref(50)              // 每批生成的直播聊天条数（默认50，token宽松）
+const DY_CHAT_BATCH_OPTIONS = [30, 50, 80]
+const chatBatchDraft = ref('')
+// 粉丝团：{ 主播号: { level, exp } }，送礼加exp升级；等级标志每10级换渐变
+const DY_FAN_KEY = 'jdnl_dy_fanclub'
+const dyFanClub = ref({})
+// 钻石余额（假充值）
+const DY_DIAMOND_KEY = 'jdnl_dy_diamond'
+const dyDiamond = ref(1000)
+// 礼物面板
+const showGiftPanel = ref(false)
+const DY_GIFTS = [
+  { k: 'rose', icon: '🌹', name: '玫瑰', price: 10, exp: 10 },
+  { k: 'heart', icon: '💗', name: '小心心', price: 30, exp: 30 },
+  { k: 'star', icon: '⭐', name: '星星', price: 66, exp: 66 },
+  { k: 'cake', icon: '🎂', name: '生日蛋糕', price: 188, exp: 188 },
+  { k: 'ring', icon: '💍', name: '钻戒', price: 520, exp: 520 },
+  { k: 'car', icon: '🏎️', name: '跑车', price: 1314, exp: 1314 },
+  { k: 'castle', icon: '🏰', name: '梦幻城堡', price: 8888, exp: 8888 },
+  { k: 'rocket', icon: '🚀', name: '火箭', price: 28888, exp: 28888 },
+]
 // 视频评论回复
 const dyReplyTo = ref('')                // 正在回复的评论用户名
 const newContact = ref('')
@@ -1533,6 +1582,9 @@ function loadDyData() {
     const s = localStorage.getItem(DY_SETTINGS_KEY); if (s) douyinSettings.value = { ...douyinSettings.value, ...JSON.parse(s) }
     if (typeof douyinSettings.value.strangerPct === 'number') dyStrangerPct.value = douyinSettings.value.strangerPct
     if (typeof douyinSettings.value.livePct === 'number') dyLivePct.value = douyinSettings.value.livePct
+    if (typeof douyinSettings.value.chatBatch === 'number') dyChatBatch.value = douyinSettings.value.chatBatch
+    const fc = localStorage.getItem(DY_FAN_KEY); if (fc) dyFanClub.value = JSON.parse(fc)
+    const dm = localStorage.getItem(DY_DIAMOND_KEY); if (dm !== null) dyDiamond.value = +dm
     const f = localStorage.getItem(DY_FOLLOWS_KEY); if (f) dyFollows.value = new Set(JSON.parse(f))
     const im = localStorage.getItem(DY_IDXMAP_KEY); if (im) dyIdxMap.value = { ...dyIdxMap.value, ...JSON.parse(im) }
     const h = localStorage.getItem(DY_HISTORY_KEY); if (h) dyHistory.value = JSON.parse(h)
@@ -1553,7 +1605,8 @@ function clearDyCache() {
   dySearchMode.value = false; dySearchQuery.value = ''; showDySearchInput.value = false; dySearchDraft.value = ''
   dyRecentSearches.value = []; localStorage.removeItem(DY_SEARCHES_KEY)
   dyHotList.value = []; dyHotMode.value = ''; localStorage.removeItem(DY_HOT_KEY)
-  dyLiveRoom.value = null; dyLiveChatDraft.value = ''; dyLiveReplyTo.value = ''
+  dyLiveRoom.value = null; dyLiveChatDraft.value = ''; dyLiveReplyTo.value = ''; showGiftPanel.value = false
+  dyFanClub.value = {}; localStorage.removeItem(DY_FAN_KEY)
   localStorage.removeItem(DY_FEED_KEY); localStorage.removeItem(DY_IDX_KEY)
   localStorage.removeItem(DY_IDXMAP_KEY); localStorage.removeItem(DY_HISTORY_KEY)
   showToast('缓存已清理')
@@ -1654,9 +1707,65 @@ function openDyComments(vi) { dyCommentIdx.value = vi; showDyComments.value = tr
 function submitDyComment() {
   const txt = dyCommentDraft.value.trim(); if (!txt) return
   const v = douyinFeed.value[dyCommentIdx.value]; if (!v) return
+  const me = '@' + (meName.value || '我')
+  // 回复模式：挂到被回复评论的 replies，并异步生成对方回复
+  if (dyReplyTo.value) {
+    const target = dyAllComments.value.find(c => (c.user||'').replace(/^@/,'') === dyReplyTo.value)
+    if (target) {
+      if (!target.replies) target.replies = []
+      target.replies.push({ user: me, text: txt, replyTo: '@' + dyReplyTo.value, isMe: true })
+      const to = dyReplyTo.value
+      dyCommentDraft.value = ''; dyReplyTo.value = ''; saveDyFeed()
+      generateDyCommentReply(v, target, txt, to)
+      return
+    }
+  }
   if (!v.myComments) v.myComments = []
-  v.myComments.push({ user: '@' + (meName.value || '我'), text: txt, likes: '0' })
+  v.myComments.push({ user: me, text: txt, likes: '0' })
   dyCommentDraft.value = ''; saveDyFeed()
+}
+// 用户回复某条评论后，异步生成被回复者/博主/路人的回复，追加进该评论的 replies
+async function generateDyCommentReply(video, comment, myText, toUser) {
+  const th = TH(); if (!th || (!th.generateRaw && !th.generate)) return
+  const me = meName.value || '我'
+  const isR18 = dyR18.value
+  const isPrivate = video.vis === 'private'
+  const audience = isPrivate
+    ? `这是${me}只有自己能看到的私密内容，回复里绝不能出现陌生人；只可能是被回复者本人、发布者@${video.creator}、或与${me}同属亲密圈子且知情的人。若没有合适的人回，就别生成任何回复。`
+    : `回复可以来自被回复者@${toUser}本人、视频发布者@${video.creator}、或路过的其他观众，口吻真实。`
+  const existing = (comment.replies || []).map(r => `${r.user}${r.replyTo ? '回复'+r.replyTo : ''}：${r.text}`).join('\n')
+  const instruction =
+    `【${isR18 ? '抖阴' : '抖音'}·评论回复·静默生成】在一条视频的评论区里，${me}(@${me})刚回复了 @${toUser} 的评论。` +
+    `\n视频画面：${(video.content||'').slice(0,80)}` +
+    `\n@${toUser} 的原评论：「${comment.text}」` +
+    `\n${me}的回复：「${myText}」` +
+    `\n${audience}` +
+    (existing ? `\n这条评论下已有的回复：\n${existing}` : '') +
+    `\n生成 1~3 条自然的后续回复（可以是@${toUser}回应${me}、发布者插话、或其他人围观搭话），别重复已有内容。若判断无人会回则输出空块。` +
+    `\n只输出一个 ===DYREPLY=== 数据块，块外不写字：\n===DYREPLY===\nr1:回复者号|||被回复者号(可空)|||回复内容\nr2:回复者号|||被回复者号(可空)|||回复内容\nr3:...\n===REPLYEND===`
+  try {
+    let result
+    if (th.generateRaw) {
+      result = await th.generateRaw({ user_input: '看评论回复', should_silence: true, ordered_prompts: [
+        { role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
+        { role: 'user', content: '生成评论回复，只输出 ===DYREPLY=== 数据块，块外不写字。' },
+      ] })
+    } else { result = await th.generate({ user_input: instruction, should_silence: true }) }
+    const replies = parseDyReplies(result)
+    if (replies.length && comment.replies) { comment.replies.push(...replies); saveDyFeed() }
+  } catch (e) {}
+}
+function parseDyReplies(raw) {
+  if (!raw) return []
+  const m = raw.match(/===DYREPLY===([\s\S]*?)===REPLYEND===/); if (!m) return []
+  const block = m[1]
+  const out = []
+  for (let i = 1; i <= 5; i++) {
+    const r = block.match(new RegExp('^\\s*r' + i + '\\s*:(.+)$', 'm')); if (!r) continue
+    const p = r[1].split('|||'); const user = p[0]?.trim(); const to = (p[1]||'').trim(); const text = p[2]?.trim()
+    if (user && text) out.push({ user: '@' + user.replace(/^@/,''), replyTo: to ? '@' + to.replace(/^@/,'') : '', text, isMe: false })
+  }
+  return out
 }
 const DM_LANES = [4, 26, 48, 70]     // 弹幕带内的轨道（px），避免互相重叠
 function startDanmaku(video) {
@@ -1693,15 +1802,15 @@ async function generateDyVideo() {
   generatingDy.value = true
   dyLastGenMs = Date.now()
   const me = meName.value || '我'
-  // 已刷过的创作者，供 AI 参考避免重复
-  const seen = [...new Set(douyinFeed.value.slice(-8).map(v => v.creator).filter(Boolean))].join('、')
+  // 已刷过的创作者，供 AI 参考避免重复。搜索是主动找特定内容，不去重（同一博主的相关内容本就该都搜出来）
+  const seen = isSearch ? '' : [...new Set(douyinFeed.value.slice(-8).map(v => v.creator).filter(Boolean))].join('、')
 
   // 私密流：按设置的陌生人占比掷骰，默认0（全红颜私发）
   const isPrivateStranger = isPrivate && Math.random() * 100 < dyStrangerPct.value
   // 抖阴公开流（推荐/关注）要一份翻转私密版；抖音全年龄模式不要
   const wantFlip = isR18 && !isPrivate
-  // 直播卡：推荐/关注流里按概率掷骰（不在搜索/私密/follow-without-follows的情况下）
-  const isLive = !isSearch && !isPrivate && Math.random() * 100 < dyLivePct.value
+  // 直播卡：推荐/关注/搜索流里按概率掷骰（私密流不出直播）
+  const isLive = !isPrivate && Math.random() * 100 < dyLivePct.value
 
   // 先插占位卡并滚过去
   const placeholder = {
@@ -1742,13 +1851,16 @@ async function generateDyVideo() {
         ? `主播必须是以下已关注的创作者之一：${[...dyFollows.value].join('、')}。`
         : `主播既可能是故事世界里的角色，也可能是陌生素人主播。`)
     const liveChatRule = (isR18 && !isLiveStranger)
-      ? `聊天里只允许${me}和与主播亲密的其他角色出现；若没有合适的人，chat全留空。弹幕留空。`
-      : `聊天要有各种真实观众口吻，包含"来了"进场消息和普通评论。`
+      ? `【私密直播铁则】这是只对${me}和知情亲密圈子开放的私密直播，绝对禁止陌生人、路人、男性观众进入。聊天里只允许${me}本人，或与主播同属亲密圈子且知情的其他女性角色；若没有合适的人，chat全留空。观众是极小的私密圈子，viewers 只能是个位数到几十（如 3 / 12 / 27），绝不能是几百几千几万。`
+      : `聊天要有各种真实观众口吻，包含"来了"进场消息和普通评论。viewers 是公开直播的真实在线人数（几百到几万都合理）。`
+    const liveSearchLine = isSearch
+      ? `\n【搜索结果】${me}在搜索框输入了「${query}」，这个直播必须与该关键词高度相关（主播领域、直播主题都要贴合）。`
+      : ''
     const liveInstruction =
       `【${livePlatform}·直播卡·静默生成】现在模拟刷到的一个直播卡，绝不输出任何正文。` +
       `\n主播来源：${liveSourceLine}` +
       `\n直播风格：${liveStyleLine}` +
-      `\n${liveChatRule}` +
+      `\n${liveChatRule}` + liveSearchLine +
       (seen ? `\n已出现过这些账号，主播别重复：${seen}。` : '') +
       `\n【账号唯一】同一角色全平台只有一个固定账号名，禁用别名/小名/拼音/缩写重复出现。` +
       `\n只输出一个 ===LIVECARD=== 数据块，块外不写字：\n===LIVECARD===\n` + DY_LIVE_FORMAT + `\n===LCEND===`
@@ -1793,8 +1905,8 @@ async function generateDyVideo() {
   if (isPrivate && !isPrivateStranger) {
     platform = '抖阴·私密（只有本人能看到的私发内容）'
     styleLine = `尺度完全放开：直接写出裸露与性事本身，具体到身体、动作、声音、气息与情态，不用暗示、不用留白、不擦边。同时保有情绪与关系的温度，是这个人对${me}才会这样，不是无名的色情素材。`
-    sourceLine = `发布者必须是当前故事世界中与${me}关系亲密的女性角色（从下方角色信息中自行判断谁符合，别凭空造陌生人）。这条视频是ta单独拍给${me}的，没有发到公开平台。`
-    audienceLine = `\n【评论区铁则】这条视频只有${me}一个人能看到，因此绝对禁止出现任何陌生人、路人、男性观众的评论——出现即为错误。评论只能来自以下两种：${me}本人，或与发布者同属${me}亲密圈子的其他女性角色（她们之间彼此知情）。若判断没有合适的人会看到，就把 c1~c4 全部留空，评论数写0，宁可没有评论也不许放陌生人进来。弹幕同理，私密视频没有公开观众，弹幕留空。`
+    sourceLine = `发布者必须是当前故事世界中与${me}关系亲密的女性角色（从下方角色信息中自行判断谁符合，别凭空造陌生人）。这条私密内容只有${me}能看到，但内容不必都围绕${me}——可以是ta单独拍给${me}的，也可以是ta自娱自乐、独处时的私密记录、或与另一位亲密女性角色之间的百合互动，题材自然多样，别每条都写成对着${me}。`
+    audienceLine = `\n【评论区铁则】这条内容只有${me}一个人能看到，因此绝对禁止出现任何陌生人、路人、男性观众的评论——出现即为错误。评论只能来自：${me}本人，或与发布者同属${me}亲密圈子且知情的其他女性角色。若判断没有合适的人会看到，就把评论全部留空，评论数写0，宁可没有评论也不许放陌生人进来。弹幕同理，私密内容没有公开观众，弹幕留空。`
   } else if (isPrivate && isPrivateStranger) {
     platform = '抖阴·私密（成人内容平台）'
     styleLine = `尺度完全放开：直接写出裸露与性事，具体到身体、动作、声音、气息与情态，不用暗示、不用留白。这是平台上的陌生成人内容创作者，与故事世界无关，可以有陌生观众评论和弹幕。`
@@ -1817,7 +1929,7 @@ async function generateDyVideo() {
   }
   // 翻转私密版：user 独享特权。评论只能围绕公开画面，绝不能提及私密版内容
   const flipLine = wantFlip
-    ? `\n另外，${me}对这条视频有独享特权，可以翻转看到只给${me}的私密版：请额外输出一行 pcontent，写这条视频真正大尺度的版本（直接写裸露与性事本身，具体到身体、动作、声音、气息），是发布者只愿意让${me}看到的样子。【极重要】评论区(c1~c4)和弹幕只能围绕上面那条公开的擦边画面(content)，绝对不能提及、暗示或反应 pcontent 里的私密内容——因为除了${me}没人看得到私密版，谁提了就是穿帮。`
+    ? `\n另外，${me}对这条视频有独享特权，可以翻转看到只给${me}的私密版：请额外输出一行 pcontent，写这条视频真正大尺度的版本（直接写裸露与性事本身，具体到身体、动作、声音、气息），是发布者只愿意让${me}看到的样子。内容不必都是对着${me}做的——也可以是ta自己的私密画面、独处情态或与另一位亲密女性的百合场景，自然即可。【极重要】评论区和弹幕只能围绕上面那条公开的擦边画面(content)，绝对不能提及、暗示或反应 pcontent 里的私密内容——因为除了${me}没人看得到私密版，谁提了就是穿帮。`
     : ''
   // 搜索：这条必须紧扣关键词
   const searchLine = isSearch
@@ -2094,11 +2206,11 @@ function enterDyLiveRoom(feedIdx) {
   dyLiveChatDraft.value = ''; dyLiveReplyTo.value = ''
   stopDanmaku()
   nextTick(() => { const el = dyLiveChatEl.value; if (el) el.scrollTop = el.scrollHeight })
-  // 如果聊天列表不足5条，自动补一批
-  if ((dyLiveRoom.value.chatLog || []).length < 5) generateLiveChat(false)
+  // 如果聊天列表不足10条，自动补一批
+  if ((dyLiveRoom.value.chatLog || []).length < 10) generateLiveChat(false)
 }
 function closeDyLiveRoom() {
-  dyLiveRoom.value = null; dyLiveChatDraft.value = ''; dyLiveReplyTo.value = ''; stopDanmaku()
+  dyLiveRoom.value = null; dyLiveChatDraft.value = ''; dyLiveReplyTo.value = ''; showGiftPanel.value = false; stopDanmaku()
   const v = douyinFeed.value[douyinIdx.value]; if (v && !v.pending && v.type !== 'live') startDanmaku(v)
 }
 function toggleDyFollowFromLive() {
@@ -2108,18 +2220,29 @@ function toggleDyFollowFromLive() {
   if (r.isFollowing) dyFollows.value.add(r.creator); else dyFollows.value.delete(r.creator)
   saveDyFeed(); saveDyFollows()
 }
-// 解析直播聊天批次（===LIVECHAT=== ... ===CHATEND===）
-function parseLiveChat(raw) {
-  if (!raw) return []
+// 解析直播聊天批次（===LIVECHAT=== ... ===CHATEND===）：返回 {msgs, screen}
+// 兼容两种：cN:等级|||昵称|||内容 带编号，或裸行 等级|||昵称|||内容
+function parseLiveChat(raw, batch = 50) {
+  if (!raw) return { msgs: [], screen: '' }
   const m = raw.match(/===LIVECHAT===([\s\S]*?)===CHATEND===/)
-  if (!m) return []
+  if (!m) return { msgs: [], screen: '' }
+  const block = m[1]
   const out = []
-  m[1].split('\n').forEach(ln => {
-    const t = ln.trim(); if (!t || !t.includes('|||')) return
+  const sm = block.match(/^\s*screen\s*:(.+)$/m)
+  const screen = sm ? sm[1].trim() : ''
+  const pushLine = (line) => {
+    const t = line.trim(); if (!t || !t.includes('|||')) return
     const p = t.split('|||'); const level = p[0]?.trim(); const user = p[1]?.trim(); const text = p[2]?.trim(); const tag = (p[3]||'').trim()
     if (user) out.push({ level: /^\d+$/.test(level) ? +level : null, user, text: text||'', isJoin: tag==='join', isMe: false })
+  }
+  block.split('\n').forEach(ln => {
+    let t = ln.trim(); if (!t) return
+    if (/^screen\s*:/.test(t)) return
+    // 去掉行首 cN: 编号
+    t = t.replace(/^c\d+\s*:/, '')
+    if (t.includes('|||')) pushLine(t)
   })
-  return out
+  return { msgs: out, screen }
 }
 // 生成新一批聊天消息（进房间时 / 用户发言后 / 手动「主播继续」）
 async function generateLiveChat(includeUserMsg = false) {
@@ -2129,20 +2252,28 @@ async function generateLiveChat(includeUserMsg = false) {
   const room = dyLiveRoom.value
   const me = meName.value || '我'
   const isR18 = dyR18.value
-  const recentChat = (room.chatLog || []).slice(-8).map(c => c.isJoin ? `${c.user}来了` : `[${c.level||'?'}]${c.user}:${c.text}`).join('\n')
+  const batch = dyChatBatch.value || 50
+  const recentChat = (room.chatLog || []).slice(-12).map(c => c.isJoin ? `${c.user}来了` : `[${c.level||'?'}]${c.user}:${c.text}`).join('\n')
   const lastMe = includeUserMsg ? (room.chatLog || []).filter(c => c.isMe).slice(-1)[0] : null
+  const fan = dyFanClub.value[room.creator]
+  const levelNote = fan && fan.level > 0
+    ? `\n${me}是这个直播间 ${fan.level} 级粉丝团成员${fan.level >= 10 ? '（高等级铁粉）' : ''}，主播对${me}${fan.level >= 20 ? '非常熟悉亲近，会主动点名、记得${me}' : fan.level >= 10 ? '比较熟络，愿意多回应' : '有印象'}。`
+    : ''
   const styleNote = isR18
     ? (room.isFollowing
-      ? `这是${me}关注的红颜的直播间，聊天里只有${me}和可能知情的亲密圈子；口吻亲密撩人。`
+      ? `【私密直播铁则】这是${me}关注的红颜的私密直播间，只对${me}和知情的亲密圈子开放。聊天里绝对禁止陌生人、路人、男性观众；只允许${me}和与主播亲密且知情的女性角色。口吻亲密撩人。等级再高也守住私密边界。`
       : `这是成人平台公开直播，观众可以有各种人，口吻成人化真实。`)
-    : `这是普通抖音直播间，观众口吻真实日常。`
-  const replyNote = lastMe ? `\n${me}刚说：「${lastMe.text}」——主播${room.creator}或其他观众要有回应（可以是直接@${me}、也可以是主播顺口回应）。` : ''
+    : `这是普通抖音直播间，观众口吻真实日常。等级高的粉丝主播会更热络。`
+  const replyNote = lastMe ? `\n${me}刚说：「${lastMe.text}」——主播${room.creator}或其他观众要顺着这句自然回应（可以直接@${me}、也可以主播顺口回应），别无视。` : ''
+  const contMustLine = `\n【连续性铁则】这是同一场直播的延续，主播始终是同一个人 @${room.creator}，正在直播「${room.title}」。你要在前面聊天的基础上自然往下推进，主播的状态、话题要连贯，绝不能像换了个人或重开一场。`
   const instruction =
-    `【${isR18 ? '抖阴' : '抖音'}·直播聊天·静默生成】主播 @${room.creator} 正在直播「${room.title}」。` +
-    `\n${styleNote}${replyNote}` +
-    `\n生成接下来10条聊天消息，包含进场"来了"消息(少量)和普通评论，有真实观众口吻和等级差异。` +
+    `【${isR18 ? '抖阴' : '抖音'}·直播聊天·静默生成】主播 @${room.creator} 正在直播「${room.title}」。当前直播画面：${room.content}` +
+    contMustLine +
+    `\n${styleNote}${levelNote}${replyNote}` +
+    `\n生成接下来约${batch}条聊天消息，包含少量进场"来了"消息和大量普通评论，有真实观众口吻和等级差异，热闹但连贯。` +
     (recentChat ? `\n最近的聊天：\n${recentChat}` : '') +
-    `\n只输出一个 ===LIVECHAT=== 数据块，块外不写字：\n===LIVECHAT===\n等级|||昵称|||内容（或末尾|||join表示进场消息）\n…(共10行)\n===CHATEND===`
+    `\n同时更新一句直播画面的推进（主播接下来在做什么，承接上文，2-3句）。` +
+    `\n只输出一个 ===LIVECHAT=== 数据块，块外不写字：\n===LIVECHAT===\nscreen:推进后的直播画面描述\nc1:等级|||昵称|||内容（或末尾|||join表示进场消息）\nc2:...\n（共约${batch}条聊天，编号 c1..c${batch}）\n===CHATEND===`
   try {
     let result
     if (th.generateRaw) {
@@ -2151,9 +2282,19 @@ async function generateLiveChat(includeUserMsg = false) {
         { role: 'user', content: '生成直播间聊天消息，只输出 ===LIVECHAT=== 数据块，块外不写字。' },
       ] })
     } else { result = await th.generate({ user_input: instruction, should_silence: true }) }
-    const msgs = parseLiveChat(result)
-    if (msgs.length && dyLiveRoom.value) {
-      dyLiveRoom.value.chatLog = [...(dyLiveRoom.value.chatLog || []), ...msgs]
+    const parsed = parseLiveChat(result, batch)
+    if (parsed.msgs.length && dyLiveRoom.value) {
+      dyLiveRoom.value.chatLog = [...(dyLiveRoom.value.chatLog || []), ...parsed.msgs]
+      if (parsed.screen) {
+        dyLiveRoom.value.content = parsed.screen
+        // 回写 feed 里的直播卡，保持一致
+        const fi = dyLiveRoom.value.feedIdx
+        if (fi != null && douyinFeed.value[fi] && douyinFeed.value[fi].type === 'live') {
+          douyinFeed.value[fi].content = parsed.screen
+          douyinFeed.value[fi].chatLog = dyLiveRoom.value.chatLog.slice(-8)
+          saveDyFeed()
+        }
+      }
       nextTick(() => { const el = dyLiveChatEl.value; if (el) el.scrollTop = el.scrollHeight })
     }
   } catch (e) { showToast('聊天生成失败：' + ((e && e.message) || e)) }
@@ -2169,22 +2310,77 @@ function submitLiveChat() {
   nextTick(() => { const el = dyLiveChatEl.value; if (el) el.scrollTop = el.scrollHeight })
   generateLiveChat(true)   // 发言即推进：AI生成回应
 }
+// ---- 粉丝团 & 等级 ----
+function saveDyFanClub() { try { localStorage.setItem(DY_FAN_KEY, JSON.stringify(dyFanClub.value)) } catch (e) {} }
+function saveDyDiamond() { try { localStorage.setItem(DY_DIAMOND_KEY, String(dyDiamond.value)) } catch (e) {} }
+// 当前直播间的粉丝团信息
+const curFan = computed(() => {
+  const c = dyLiveRoom.value && dyLiveRoom.value.creator
+  return c ? (dyFanClub.value[c] || null) : null
+})
+// exp → level：每级所需经验递增（简单：level = floor(sqrt(exp/50))，够用）
+function expToLevel(exp) { return Math.max(0, Math.floor(Math.sqrt((exp || 0) / 50))) }
+// 等级 → 渐变色：每10级一档
+function levelColor(lv) {
+  const tiers = [
+    ['#9aa0a6', '#c7ccd1'],   // 0-9 银灰
+    ['#4a90d9', '#6fb1e8'],   // 10-19 蓝
+    ['#39b57a', '#5fd39a'],   // 20-29 绿
+    ['#c084e8', '#a05fd3'],   // 30-39 紫
+    ['#f0a030', '#f5c060'],   // 40-49 金
+    ['#fe2c55', '#ff6b8a'],   // 50-59 红
+    ['#ff8c00', '#ffd700'],   // 60+ 橙金
+  ]
+  const t = tiers[Math.min(tiers.length - 1, Math.floor((lv || 0) / 10))]
+  return `linear-gradient(135deg, ${t[0]}, ${t[1]})`
+}
+// 点❤️：加入/已加入粉丝团（0级起步）
 function sendLiveHeart() {
   if (!dyLiveRoom.value) return
-  const me = meName.value || '我'
-  dyLiveRoom.value.chatLog.push({ level: null, user: me, text: '', isJoin: false, isMe: true, isHeart: true })
-  nextTick(() => { const el = dyLiveChatEl.value; if (el) el.scrollTop = el.scrollHeight })
+  const c = dyLiveRoom.value.creator
+  if (!dyFanClub.value[c]) {
+    dyFanClub.value = { ...dyFanClub.value, [c]: { level: 0, exp: 0 } }
+    saveDyFanClub()
+    const me = meName.value || '我'
+    dyLiveRoom.value.chatLog.push({ level: 0, user: me, text: '加入了粉丝团', isJoin: false, isMe: true })
+    nextTick(() => { const el = dyLiveChatEl.value; if (el) el.scrollTop = el.scrollHeight })
+    showToast('已加入 @' + c + ' 的粉丝团')
+  } else {
+    showToast('送礼可以提升粉丝团等级哦')
+  }
 }
-function sendLiveGift() {
+// 打开礼物面板
+function openGiftPanel() { if (dyLiveRoom.value) showGiftPanel.value = true }
+// 送出礼物：扣钻、加经验/升级、聊天飘消息、触发主播反应
+function sendGift(g) {
   if (!dyLiveRoom.value) return
+  if (dyDiamond.value < g.price) { showToast('钻石不足，先充值吧'); return }
+  const c = dyLiveRoom.value.creator
   const me = meName.value || '我'
-  dyLiveRoom.value.chatLog.push({ level: null, user: me, text: '送出了礼物 🎁', isJoin: false, isMe: true })
+  dyDiamond.value -= g.price; saveDyDiamond()
+  const cur = dyFanClub.value[c] || { level: 0, exp: 0 }
+  const newExp = cur.exp + g.exp
+  const oldLevel = cur.level
+  const newLevel = expToLevel(newExp)
+  dyFanClub.value = { ...dyFanClub.value, [c]: { level: newLevel, exp: newExp } }
+  saveDyFanClub()
+  dyLiveRoom.value.chatLog.push({ level: newLevel, user: me, text: `送出了 ${g.icon}${g.name}`, isJoin: false, isMe: true, isGift: true })
+  if (newLevel > oldLevel) {
+    dyLiveRoom.value.chatLog.push({ level: newLevel, user: me, text: `粉丝团升到 ${newLevel} 级！`, isJoin: false, isMe: true, isLevelUp: true })
+    showToast('粉丝团升到 ' + newLevel + ' 级')
+  }
+  showGiftPanel.value = false
   nextTick(() => { const el = dyLiveChatEl.value; if (el) el.scrollTop = el.scrollHeight })
-  generateLiveChat(true)
+  generateLiveChat(true)   // 主播当场感谢礼物
 }
+// 假充值：直接加钻
+function rechargeDiamond() { dyDiamond.value += 1000; saveDyDiamond(); showToast('已充值 1000 钻（演示）') }
 // 直播出现概率设置
 function setDyLivePct(p) { p = Math.round(+p); if (isNaN(p)) return; p = Math.max(0, Math.min(100, p)); dyLivePct.value = p; douyinSettings.value.livePct = p; saveDySettings() }
 function applyLivePctDraft() { const n = parseInt(livePctDraft.value, 10); if (!isNaN(n)) { setDyLivePct(n); showToast('直播概率已设为 ' + dyLivePct.value + '%') } livePctDraft.value = '' }
+// 聊天条数设置
+function setDyChatBatch(n) { n = Math.round(+n); if (isNaN(n)) return; n = Math.max(10, Math.min(200, n)); dyChatBatch.value = n; douyinSettings.value.chatBatch = n; saveDySettings() }
+function applyChatBatchDraft() { const n = parseInt(chatBatchDraft.value, 10); if (!isNaN(n)) { setDyChatBatch(n); showToast('每批聊天已设为 ' + dyChatBatch.value + ' 条') } chatBatchDraft.value = '' }
 // 视频评论回复
 function setDyReplyTo(c) { dyReplyTo.value = (c.user||'').replace(/^@/, ''); }
 
@@ -2858,9 +3054,10 @@ onUnmounted(() => {
 .mp-dys-hot-topic{flex:1;min-width:0;font-size:14px;color:#222;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mp-dys-hot-heat{font-size:12px;color:#b0b1b6;flex-shrink:0}
 /* 直播卡（feed里） */
-.mp-dy-live-badge{position:absolute;top:20px;left:14px;z-index:10;background:#fe2c55;color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:12px;letter-spacing:.5px}
+.mp-dy-live-badge{display:inline-block;align-self:flex-start;background:#fe2c55;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:.5px;margin-bottom:6px}
+.mp-dy-live-enter-ico{width:16px;height:16px;fill:#fff;flex-shrink:0}
 .mp-dy-live-content{position:absolute;top:0;left:0;right:0;bottom:30%;display:flex;align-items:center;justify-content:center;padding:60px 24px 20px;text-align:center;font-size:17px;line-height:1.7;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.7);overflow:hidden;background:linear-gradient(160deg,#1a1320,#0e0b14)}
-.mp-dy-live-enter{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:8px;padding:11px 22px;border:none;border-radius:24px;background:rgba(255,255,255,.22);backdrop-filter:blur(6px);color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
+.mp-dy-live-enter{position:absolute;top:60%;left:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:8px;padding:11px 22px;border:none;border-radius:24px;background:rgba(255,255,255,.22);backdrop-filter:blur(6px);color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
 .mp-dy-live-enter:active{background:rgba(255,255,255,.35)}
 /* 关注tab直播头像条 */
 .mp-dy-live-strip{display:flex;gap:14px;padding:14px 14px 10px;overflow-x:auto;flex-shrink:0;background:transparent;-webkit-overflow-scrolling:touch}
@@ -2906,6 +3103,24 @@ onUnmounted(() => {
 .mp-overlay .mp-dylv-in{flex:1;min-width:0;border:none!important;background:transparent!important;color:#fff!important;font-size:14px;outline:none;font-family:inherit;box-shadow:none!important;background-image:none!important}
 .mp-overlay .mp-dylv-in::placeholder{color:rgba(255,255,255,.4)!important}
 .mp-dylv-emoji,.mp-dylv-heart,.mp-dylv-gift,.mp-dylv-share{background:none;border:none;cursor:pointer;font-size:20px;padding:2px;flex-shrink:0}
+/* 名字行 + 粉丝团等级标志 */
+.mp-dylv-name-row{display:flex;align-items:center;gap:4px;min-width:0}
+.mp-dylv-fan{font-size:10px;font-weight:800;color:#fff;min-width:18px;height:16px;padding:0 4px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;text-shadow:0 1px 1px rgba(0,0,0,.3)}
+.mp-dylv-msg-gift .mp-dylv-txt{color:#ffd24d;font-weight:600}
+/* 礼物面板 */
+.mp-dylv-gp-mask{position:absolute;inset:0;z-index:6;background:rgba(0,0,0,.4);display:flex;align-items:flex-end}
+.mp-dylv-gp{width:100%;background:#1c1c22;border-radius:16px 16px 0 0;padding:14px 14px 18px;max-height:60%;overflow-y:auto}
+.mp-dylv-gp-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.mp-dylv-gp-title{font-size:15px;font-weight:700;color:#fff}
+.mp-dylv-gp-bal{font-size:13px;color:#ffd24d;display:flex;align-items:center;gap:8px}
+.mp-dylv-gp-recharge{padding:3px 10px;border:none;border-radius:12px;background:#fe2c55;color:#fff;font-size:11px;cursor:pointer;font-family:inherit}
+.mp-dylv-gp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mp-dylv-gp-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px;border:none;border-radius:12px;background:rgba(255,255,255,.06);cursor:pointer;font-family:inherit}
+.mp-dylv-gp-item:active{background:rgba(255,255,255,.14)}
+.mp-dylv-gp-item.dis{opacity:.4}
+.mp-dylv-gp-ico{font-size:26px;line-height:1}
+.mp-dylv-gp-name{font-size:11px;color:rgba(255,255,255,.85)}
+.mp-dylv-gp-price{font-size:10px;color:#ffd24d}
 /* 评论回复 */
 .mp-dy-cmt-reply-item{margin-left:44px;padding:2px 0 4px;display:flex;flex-wrap:wrap;gap:3px;font-size:12px;color:#666}
 .mp-dy-cmt-reply-user{color:#fe2c55;font-weight:600}
