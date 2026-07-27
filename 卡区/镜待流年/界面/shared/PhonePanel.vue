@@ -73,7 +73,7 @@
               <svg v-else viewBox="0 0 640 640"><path fill="none" stroke="currentColor" stroke-width="40" stroke-linecap="round" stroke-linejoin="round" d="M160 224h320v192H160zM224 160h192"/></svg>
             </button>
             <button v-if="voiceMode" class="mp-in-voicebtn">按住 说话</button>
-            <textarea v-else v-model="draft" class="mp-ta" rows="1" @focus="showEmoji = false" @keydown.enter.exact.prevent="send"></textarea>
+            <textarea v-else :value="draft" class="mp-ta" rows="1" readonly @click.stop.prevent="openIMEWechat" @focus="showEmoji = false" @keydown.enter.exact.prevent="send"></textarea>
             <button class="mp-in-ico" @click="toggleEmoji" title="表情">
               <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10s-4.477 10-10 10m0-2a8 8 0 1 0 0-16a8 8 0 0 0 0 16m-4-7h8a4 4 0 0 1-8 0m0-2a1.5 1.5 0 1 1 0-3a1.5 1.5 0 0 1 0 3m8 0a1.5 1.5 0 1 1 0-3a1.5 1.5 0 0 1 0 3"/></svg>
             </button>
@@ -124,7 +124,7 @@
             <template v-if="wxTab === 'chats'">
               <div v-if="showSearch" class="mp-search"><span class="mp-search-box"><svg viewBox="0 0 24 24" class="mp-search-ico"><path fill="currentColor" d="m18.031 16.617l4.283 4.282l-1.415 1.415l-4.282-4.283A8.96 8.96 0 0 1 11 20c-4.968 0-9-4.032-9-9s4.032-9 9-9s9 4.032 9 9a8.96 8.96 0 0 1-1.969 5.617m-2.006-.742A6.98 6.98 0 0 0 18 11c0-3.867-3.133-7-7-7s-7 3.133-7 7s3.133 7 7 7a6.98 6.98 0 0 0 4.875-1.975z"/></svg><input v-model="searchQuery" class="mp-search-inp" placeholder="搜索" /></span></div>
               <div v-if="showNew" class="mp-newchat">
-                <input v-model="newContact" class="mp-nc-in" placeholder="输入联系人名开始对话" @keydown.enter="startChat" />
+                <input :value="newContact" class="mp-nc-in" placeholder="输入联系人名开始对话" readonly @click.stop.prevent="openIMENewContact" @keydown.enter="startChat" />
                 <button class="mp-nc-btn" @click="startChat">发起</button>
               </div>
               <div v-if="!contacts.length" class="mp-hint">还没有对话，点右上角 + 发起</div>
@@ -137,7 +137,7 @@
             </template>
             <!-- 通讯录 -->
             <template v-else-if="wxTab === 'contacts'">
-              <div class="mp-search"><span class="mp-search-box"><svg viewBox="0 0 24 24" class="mp-search-ico"><path fill="currentColor" d="m18.031 16.617l4.283 4.282l-1.415 1.415l-4.282-4.283A8.96 8.96 0 0 1 11 20c-4.968 0-9-4.032-9-9s4.032-9 9-9s9 4.032 9 9a8.96 8.96 0 0 1-1.969 5.617m-2.006-.742A6.98 6.98 0 0 0 18 11c0-3.867-3.133-7-7-7s-7 3.133-7 7s3.133 7 7 7a6.98 6.98 0 0 0 4.875-1.975z"/></svg><input v-model="searchQuery" class="mp-search-inp" placeholder="搜索" /></span></div>
+              <div class="mp-search"><span class="mp-search-box"><svg viewBox="0 0 24 24" class="mp-search-ico"><path fill="currentColor" d="m18.031 16.617l4.283 4.282l-1.415 1.415l-4.282-4.283A8.96 8.96 0 0 1 11 20c-4.968 0-9-4.032-9-9s4.032-9 9-9s9 4.032 9 9a8.96 8.96 0 0 1-1.969 5.617m-2.006-.742A6.98 6.98 0 0 0 18 11c0-3.867-3.133-7-7-7s-7 3.133-7 7s3.133 7 7 7a6.98 6.98 0 0 0 4.875-1.975z"/></svg><input :value="searchQuery" class="mp-search-inp" placeholder="搜索" readonly @click.stop.prevent="openIMESearch" /></span></div>
               <div v-if="!searchQuery" class="mp-cx-special">
                 <div v-for="r in cxSpecial" :key="r.k" class="mp-cx-row"><span class="mp-cx-ico" :style="{ background: r.bg }" v-html="ic[r.k]"></span><span class="mp-cx-lbl">{{ r.l }}</span></div>
               </div>
@@ -206,7 +206,7 @@
             <div class="mp-prof-sec">
               <label class="mp-prof-row">
                 <span class="mp-prof-lbl">备注名</span>
-                <input class="mp-prof-rmk" v-model="remarkDraft" @blur="saveRemarkDraft" @keydown.enter="e => e.target.blur()" placeholder="未设置" />
+                <input class="mp-prof-rmk" :value="remarkDraft" readonly @click.stop.prevent="openIMERemark" @keydown.enter="e => e.target.blur()" placeholder="未设置" />
                 <span class="mp-prof-arrow">›</span>
               </label>
               <div class="mp-prof-row"><span class="mp-prof-lbl">标签</span><span class="mp-prof-val ph">未设置</span><span class="mp-prof-arrow">›</span></div>
@@ -369,7 +369,7 @@
         <!-- 纯手机模式输入区 -->
         <div v-if="silentMap['相机']" class="mp-cam-input">
           <span v-if="cameraMode === '透视'" class="mp-cam-tag">透视</span>
-          <textarea v-model="cameraDraft" class="mp-cam-ta" rows="1" placeholder="描述拍摄对象…" @focus="showCameraSettings = false"></textarea>
+          <textarea :value="cameraDraft" class="mp-cam-ta" rows="1" placeholder="描述拍摄对象…" readonly @click.stop.prevent="openIMECamera" @focus="showCameraSettings = false"></textarea>
         </div>
         <!-- 底部操作栏 -->
         <div class="mp-cam-bar">
@@ -630,7 +630,7 @@
             </div>
             <div class="mp-dy-cm-input">
               <div v-if="dyReplyTo" class="mp-dy-cm-reply-bar">回复 @{{ dyReplyTo }}<span @click="dyReplyTo='';dyReplyParent=null" class="mp-dy-cm-reply-x">✕</span></div>
-              <input class="mp-dy-cm-in" v-model="dyCommentDraft" :placeholder="dyReplyTo ? '回复 @'+dyReplyTo : '善语结善缘，恶言伤人心'" @keydown.enter.prevent="submitDyComment" />
+              <input class="mp-dy-cm-in" :value="dyCommentDraft" :placeholder="dyReplyTo ? '回复 @'+dyReplyTo : '善语结善缘，恶言伤人心'" readonly @click.stop.prevent="openIMEDyComment" @keydown.enter.prevent="submitDyComment" />
               <span class="mp-dy-cm-ic">@</span>
               <span class="mp-dy-cm-ic">☺</span>
               <button v-if="dyCommentDraft.trim()" class="mp-dy-cm-send" @click="submitDyComment">发送</button>
@@ -661,7 +661,7 @@
             <button class="mp-nav-back" @click="closeDySearchInput"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
             <div class="mp-dys-box">
               <svg viewBox="0 0 24 24"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"/></svg>
-              <input class="mp-dys-in" v-model="dySearchDraft" placeholder="搜索你感兴趣的内容" @keydown.enter.prevent="submitDySearch" />
+              <input class="mp-dys-in" :value="dySearchDraft" placeholder="搜索你感兴趣的内容" readonly @click.stop.prevent="openIMEDySearch" @keydown.enter.prevent="submitDySearch" />
               <button v-if="dySearchDraft.trim()" class="mp-dys-clr" @click="dySearchDraft=''">✕</button>
             </div>
             <button class="mp-dys-btn" @click="submitDySearch">搜索</button>
@@ -742,7 +742,7 @@
           <!-- 底部输入栏 -->
           <div class="mp-dylv-bar">
             <div class="mp-dylv-input-row">
-              <input class="mp-dylv-in" v-model="dyLiveChatDraft" :placeholder="dyLiveReplyTo ? '回复 @'+dyLiveReplyTo : '说点什么...'" @keydown.enter.prevent="submitLiveChat" />
+              <input class="mp-dylv-in" :value="dyLiveChatDraft" :placeholder="dyLiveReplyTo ? '回复 @'+dyLiveReplyTo : '说点什么...'" readonly @click.stop.prevent="openIMELiveChat" @keydown.enter.prevent="submitLiveChat" />
               <button class="mp-dylv-heart" @click.stop="sendLiveHeart" :title="curFan ? '粉丝团 '+curFan.level+' 级' : '加入粉丝团'">{{ curFan ? '💖' : '🤍' }}</button>
               <button class="mp-dylv-gift" @click.stop="openGiftPanel">🎁</button>
               <button class="mp-dylv-share" @click.stop="showToast('转发功能即将上线')">↗️</button>
@@ -778,6 +778,23 @@
         </div>
       </div>
 
+    </div>
+    <!-- ===手机输入法浮层=== 必须是 mp-phone 的 sibling，不在 transform 缩放节点内 -->
+    <div v-if="imeActive" class="mp-ime" @click.self="closeIME">
+      <div class="mp-ime-panel">
+        <div class="mp-ime-hint-row">
+          <span class="mp-ime-ph">{{ imePlaceholder }}</span>
+          <button class="mp-ime-cancel" @click="closeIME">取消</button>
+        </div>
+        <textarea v-if="imeMultiline" class="mp-ime-ta" v-model="imeDraft" :placeholder="imePlaceholder" @input="imeSync" rows="3" autofocus></textarea>
+        <input v-else class="mp-ime-in" v-model="imeDraft" :placeholder="imePlaceholder" @input="imeSync" @keydown.enter.prevent="submitIME" autofocus />
+        <div class="mp-ime-emojis">
+          <span v-for="e in IME_EMOJIS" :key="e" class="mp-ime-ej" @click.stop="imeAppendEmoji(e)">{{ e }}</span>
+        </div>
+        <div class="mp-ime-foot">
+          <button class="mp-ime-send" :disabled="imeHasSubmit && !imeDraft.trim()" @click="submitIME">{{ imeHasSubmit ? '发送' : '确定' }}</button>
+        </div>
+      </div>
     </div>
   </div>
   </Teleport>
@@ -2467,6 +2484,76 @@ function setDyReplyToFromReply(parentComment, replyItem) {
   dyReplyParent.value = parentComment
 }
 
+// ---- 手机输入法浮层（移动端键盘适配） ----
+// 原理：手机端点输入框→不触发系统键盘→弹自绘 IME 面板（位于 mp-phone 缩放节点之外，不受transform影响）
+const imeActive = ref(false)
+const imeDraft = ref('')
+const imePlaceholder = ref('')
+const imeMultiline = ref(false)
+const imeHasSubmit = ref(false)     // 控制"发送"/"确定"按钮文字和禁用态（let变量非响应式，用ref代理）
+let _imeSetValue = null
+let _imeOnSubmit = null
+
+const IME_EMOJIS = ['😊','😂','🥰','😍','🤔','👍','🙏','💕','❤️','😭','😅','🎉','🔥','✨','💪','😏','😈','👀','💋','🫶','🥹','😘','🤗','🤩','🥳','😌','😴','🤭','💔','🫰']
+
+function openIME({ placeholder = '', getValue, setValue, onSubmit, multiline = false } = {}) {
+  imeDraft.value = getValue ? getValue() : ''
+  imePlaceholder.value = placeholder
+  imeMultiline.value = !!multiline
+  _imeSetValue = setValue || null
+  _imeOnSubmit = onSubmit || null
+  imeHasSubmit.value = !!onSubmit
+  imeActive.value = true
+  nextTick(() => {
+    const el = document.querySelector('.mp-ime-in, .mp-ime-ta')
+    if (el) { el.focus(); el.setSelectionRange && el.setSelectionRange(el.value.length, el.value.length) }
+  })
+}
+function imeSync() { if (_imeSetValue) _imeSetValue(imeDraft.value) }
+function submitIME() {
+  if (_imeSetValue) _imeSetValue(imeDraft.value)
+  if (_imeOnSubmit) _imeOnSubmit()
+  closeIME()
+}
+function closeIME() { imeActive.value = false; imeDraft.value = ''; imeHasSubmit.value = false; _imeSetValue = null; _imeOnSubmit = null }
+function imeAppendEmoji(e) { imeDraft.value += e; imeSync() }
+
+// 各输入框对应的 openIME 入口（自带上下文）
+function openIMEWechat() {
+  openIME({ placeholder: '发送消息', getValue: () => draft.value, setValue: v => { draft.value = v }, onSubmit: send, multiline: true })
+}
+function openIMENewContact() {
+  openIME({ placeholder: '输入联系人名开始对话', getValue: () => newContact.value, setValue: v => { newContact.value = v }, onSubmit: startChat })
+}
+function openIMESearch() {
+  openIME({ placeholder: '搜索', getValue: () => searchQuery.value, setValue: v => { searchQuery.value = v } })
+}
+function openIMERemark() {
+  openIME({ placeholder: '未设置', getValue: () => remarkDraft.value, setValue: v => { remarkDraft.value = v }, onSubmit: saveRemarkDraft })
+}
+function openIMECamera() {
+  openIME({ placeholder: '描述拍摄对象…', getValue: () => cameraDraft.value, setValue: v => { cameraDraft.value = v }, multiline: true })
+}
+function openIMEDyComment() {
+  openIME({
+    placeholder: dyReplyTo.value ? '回复 @' + dyReplyTo.value : '善语结善缘，恶言伤人心',
+    getValue: () => dyCommentDraft.value,
+    setValue: v => { dyCommentDraft.value = v },
+    onSubmit: submitDyComment,
+  })
+}
+function openIMEDySearch() {
+  openIME({ placeholder: '搜索你感兴趣的内容', getValue: () => dySearchDraft.value, setValue: v => { dySearchDraft.value = v }, onSubmit: submitDySearch })
+}
+function openIMELiveChat() {
+  openIME({
+    placeholder: dyLiveReplyTo.value ? '回复 @' + dyLiveReplyTo.value : '说点什么...',
+    getValue: () => dyLiveChatDraft.value,
+    setValue: v => { dyLiveChatDraft.value = v },
+    onSubmit: submitLiveChat,
+  })
+}
+
 // ---- 相机快门（常规模式：注入正文） ----
 function doShutter() {
   if (sendingCamera.value) return
@@ -3301,4 +3388,25 @@ onUnmounted(() => {
 .mp-sticker-btn{background:none;border:none;cursor:pointer;border-radius:8px;padding:4px;display:flex;align-items:center;justify-content:center}
 .mp-sticker-btn:active{background:rgba(0,0,0,.08)}
 .mp-sticker-sel{width:60px;height:60px;object-fit:contain;display:block}
+/* 手机IME浮层：插在 mp-phone 外（不受缩放影响），全屏蒙层+底部面板 */
+.mp-ime{position:absolute;inset:0;z-index:60;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(0,0,0,.35);-webkit-tap-highlight-color:transparent}
+.mp-ime-panel{background:#f2f2f7;border-radius:18px 18px 0 0;padding:12px 14px 24px;display:flex;flex-direction:column;gap:8px;max-height:65vh;overflow-y:auto}
+.mp-ime-hint-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+.mp-ime-ph{font-size:12px;color:#8e8e93;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mp-ime-cancel{background:none;border:none;color:#007aff;font-size:15px;cursor:pointer;padding:0 0 0 12px;flex-shrink:0;font-family:inherit}
+/* 输入框：font-size≥16px防iOS自动缩放 */
+.mp-ime-in{width:100%;border:1.5px solid #e0e0e7;border-radius:12px;padding:10px 14px;font-size:16px;line-height:1.5;background:#fff;outline:none;color:#111;font-family:inherit;box-sizing:border-box;caret-color:#007aff}
+.mp-ime-in:focus{border-color:#007aff}
+.mp-ime-ta{width:100%;border:1.5px solid #e0e0e7;border-radius:12px;padding:10px 14px;font-size:16px;line-height:1.6;min-height:80px;background:#fff;outline:none;resize:none;color:#111;font-family:inherit;box-sizing:border-box;caret-color:#007aff}
+.mp-ime-ta:focus{border-color:#007aff}
+/* 表情栏：横向滚动 */
+.mp-ime-emojis{display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:2px 0}
+.mp-ime-emojis::-webkit-scrollbar{display:none}
+.mp-ime-ej{font-size:24px;padding:4px;cursor:pointer;flex-shrink:0;user-select:none;-webkit-user-select:none;border-radius:8px;transition:background .1s}
+.mp-ime-ej:active{background:rgba(0,0,0,.1)}
+/* 底部发送按钮 */
+.mp-ime-foot{display:flex;justify-content:flex-end}
+.mp-ime-send{padding:10px 28px;border:none;border-radius:22px;background:#007aff;color:#fff;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit;min-width:80px}
+.mp-ime-send:disabled{background:#b0c8f0;cursor:default}
+.mp-ime-send:active:not(:disabled){background:#0066d6}
 </style>
