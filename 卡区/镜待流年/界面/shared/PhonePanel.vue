@@ -582,7 +582,7 @@
           <button class="mp-dy-tb on">首页</button>
           <button class="mp-dy-tb" @click="showToast('该功能暂未开放')">朋友</button>
           <button class="mp-dy-tb mp-dy-tb-add" @click="showToast('该功能暂未开放')"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg></button>
-          <button class="mp-dy-tb" @click="showToast('该功能暂未开放')">消息</button>
+          <button class="mp-dy-tb" style="position:relative" @click="showDyMsgCenter=true">消息<span v-if="dyUnreadCount" class="mp-badge tb">{{ dyUnreadCount > 99 ? '99+' : dyUnreadCount }}</span></button>
           <button class="mp-dy-tb" @click="showDyHistory=true">我</button>
         </div>
         <!-- 评论弹层 -->
@@ -650,6 +650,27 @@
               <div class="mp-dyh-info">
                 <div class="mp-dyh-author">@{{ h.creator }}<span v-if="h.vis==='private'" class="mp-dyh-pvtag">私密</span><span v-if="h.type==='live'" class="mp-dyh-livetag">直播</span></div>
                 <div class="mp-dyh-txt">{{ h.content }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 消息中心 -->
+        <div v-if="showDyMsgCenter" class="mp-dym">
+          <div class="mp-dym-hd">
+            <button class="mp-nav-back" @click="showDyMsgCenter=false"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
+            <span class="mp-dym-title">消息</span>
+            <button v-if="dyNotifs.length" class="mp-dym-readall" @click="markAllDyNotifsRead">全部已读</button>
+            <span v-else></span>
+          </div>
+          <div class="mp-dym-body">
+            <div v-if="!dyNotifs.length" class="mp-dyh-none">还没有互动消息</div>
+            <div v-for="(n, ni) in dyNotifs" :key="n.id" class="mp-dym-item" :class="{unread:!n.read}" @click="openDyFromNotif(n)">
+              <div class="mp-dym-dot" v-if="!n.read"></div>
+              <div class="mp-dym-ava">{{ (n.replierUser||'?').replace('@','').slice(0,1).toUpperCase() }}</div>
+              <div class="mp-dym-info">
+                <div class="mp-dym-user">@{{ n.replierUser }} <span class="mp-dym-verb">回复了你</span><span class="mp-dym-time">{{ formatDyNotifTime(n.ts) }}</span></div>
+                <div class="mp-dym-reply">{{ n.replyText }}</div>
+                <div class="mp-dym-ctx">在「{{ n.videoContent }}」</div>
               </div>
             </div>
           </div>
@@ -897,6 +918,10 @@ let dySuppressTimer = null
 function suppressDyScroll(ms = 500) { dySuppressScroll = true; clearTimeout(dySuppressTimer); dySuppressTimer = setTimeout(() => { dySuppressScroll = false }, ms) }
 const dyFlipped = ref({})                 // { _i: true } 该视频文字已翻转到私密版
 const showDyHistory = ref(false)          // 「我」页观看历史弹层
+const showDyMsgCenter = ref(false)        // 消息中心弹层
+const DY_NOTIF_KEY = 'jdnl_dy_notif'
+const dyNotifs = ref([])                  // 消息通知列表 [{id,videoCreator,videoContent,commentText,replierUser,replyText,ts,read}]
+const dyUnreadCount = computed(() => dyNotifs.value.filter(n => !n.read).length)
 const dySearchMode = ref(false)           // 搜索结果流是否激活（独立于推荐/关注/私密三tab）
 const dySearchQuery = ref('')             // 当前搜索关键词
 const dySearchDraft = ref('')             // 搜索输入框草稿
@@ -1645,6 +1670,7 @@ function loadDyData(modeChanged = false) {
       dyHistory.value = []; dyFlipped.value = {}
       dyFollows.value = new Set(); dyFanClub.value = {}; dyDiamond.value = 1000
       dyHotList.value = []; dyHotMode.value = ''; dyRecentSearches.value = []
+      dyNotifs.value = []
     }
     const raw = localStorage.getItem(dyModeKey(DY_FEED_KEY)); if (raw) douyinFeed.value = JSON.parse(raw).slice(-50)
     const idx = localStorage.getItem(dyModeKey(DY_IDX_KEY)); if (idx !== null) douyinIdx.value = Math.min(+idx, douyinFeed.value.length - 1)
@@ -1657,6 +1683,7 @@ function loadDyData(modeChanged = false) {
     const f = localStorage.getItem(dyModeKey(DY_FOLLOWS_KEY)); if (f) dyFollows.value = new Set(JSON.parse(f))
     const im = localStorage.getItem(dyModeKey(DY_IDXMAP_KEY)); if (im) dyIdxMap.value = { ...dyIdxMap.value, ...JSON.parse(im) }
     const h = localStorage.getItem(dyModeKey(DY_HISTORY_KEY)); if (h) dyHistory.value = JSON.parse(h)
+    const nt = localStorage.getItem(dyModeKey(DY_NOTIF_KEY)); if (nt) dyNotifs.value = JSON.parse(nt)
     const sq = localStorage.getItem(dyModeKey(DY_SEARCHES_KEY)); if (sq) dyRecentSearches.value = JSON.parse(sq)
     const hot = localStorage.getItem(dyModeKey(DY_HOT_KEY)); if (hot) { const h = JSON.parse(hot); dyHotList.value = h.list || []; dyHotMode.value = h.mode || '' }
   } catch (e) {}
@@ -1678,6 +1705,7 @@ function clearDyCache() {
   dyFanClub.value = {}; localStorage.removeItem(dyModeKey(DY_FAN_KEY))
   localStorage.removeItem(dyModeKey(DY_FEED_KEY)); localStorage.removeItem(dyModeKey(DY_IDX_KEY))
   localStorage.removeItem(dyModeKey(DY_IDXMAP_KEY)); localStorage.removeItem(dyModeKey(DY_HISTORY_KEY))
+  dyNotifs.value = []; localStorage.removeItem(dyModeKey(DY_NOTIF_KEY))
   showToast('缓存已清理')
 }
 function onDyScroll() {
@@ -1827,7 +1855,10 @@ async function generateDyTopCommentResponse(video, myComment) {
     const replies = parseDyReplies(result)
     if (replies.length) {
       if (!myComment.replies) myComment.replies = []
-      for (const r of replies) myComment.replies.push({ user: r.user, text: r.text, replyTo: myComment.user, isMe: false })
+      for (const r of replies) {
+        myComment.replies.push({ user: r.user, text: r.text, replyTo: myComment.user, isMe: false })
+        pushDyNotif(video, myComment.text, r.user, r.text)
+      }
       saveDyFeed()
     }
   } catch (e) {}
@@ -1867,7 +1898,11 @@ async function generateDyCommentReply(video, comment, myText, toUser) {
       ] })
     } else { result = await th.generate({ user_input: instruction, should_silence: true }) }
     const replies = parseDyReplies(result)
-    if (replies.length && comment.replies) { comment.replies.push(...replies); saveDyFeed() }
+    if (replies.length && comment.replies) {
+      comment.replies.push(...replies)
+      for (const r of replies) pushDyNotif(video, comment.text, r.user, r.text)
+      saveDyFeed()
+    }
   } catch (e) {}
 }
 function parseDyReplies(raw) {
@@ -2199,6 +2234,38 @@ function pushDyHistory(v) {
   dyHistory.value.unshift(entry)
   if (dyHistory.value.length > 80) dyHistory.value = dyHistory.value.slice(0, 80)
   try { localStorage.setItem(dyModeKey(DY_HISTORY_KEY), JSON.stringify(dyHistory.value)) } catch (e) {}
+}
+// ---- 消息通知 ----
+function saveDyNotifs() { try { localStorage.setItem(dyModeKey(DY_NOTIF_KEY), JSON.stringify(dyNotifs.value)) } catch (e) {} }
+function pushDyNotif(video, commentText, replierUser, replyText) {
+  if (!replierUser || !replyText) return
+  dyNotifs.value.unshift({ id: Date.now() + Math.random(), videoCreator: video.creator, videoContent: (video.content || '').slice(0, 20), commentText, replierUser, replyText, ts: Date.now(), read: false })
+  if (dyNotifs.value.length > 100) dyNotifs.value = dyNotifs.value.slice(0, 100)
+  saveDyNotifs()
+}
+function markAllDyNotifsRead() { dyNotifs.value.forEach(n => { n.read = true }); saveDyNotifs() }
+// 从消息通知跳回对应视频并打开评论
+function openDyFromNotif(n) {
+  n.read = true; saveDyNotifs()
+  const idx = douyinFeed.value.findIndex(v => !v.pending && v.creator === n.videoCreator && (v.content || '').slice(0, 20) === n.videoContent)
+  if (idx < 0) { showToast('这条视频已不在缓存里了'); return }
+  showDyMsgCenter.value = false
+  const v = douyinFeed.value[idx]
+  dySearchMode.value = false
+  dyTab.value = v.vis === 'private' ? (dyR18.value ? '私密' : '推荐') : (v.isFollowing ? dyTab.value : (dyTab.value === '关注' ? '推荐' : dyTab.value))
+  if (dyTab.value === '私密' && !dyR18.value) dyTab.value = '推荐'
+  dyIdxMap.value[dyTab.value] = idx; saveDyIdxMap()
+  douyinIdx.value = idx
+  dyRestorePos()
+  nextTick(() => { dyCommentIdx.value = idx; showDyComments.value = true })
+}
+function formatDyNotifTime(ts) {
+  if (!ts) return ''
+  const diff = Date.now() - ts
+  if (diff < 60000) return '刚刚'
+  if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前'
+  if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前'
+  return Math.floor(diff / 86400000) + '天前'
 }
 function toggleDyFlip(vi) {
   const v = douyinFeed.value[vi]
@@ -3333,6 +3400,26 @@ onUnmounted(() => {
 .mp-dyh-livetag{font-size:10px;padding:1px 6px;border-radius:8px;background:rgba(254,44,85,.15);color:#fe2c55;margin-left:4px}
 .mp-dyh-thumb.live{background:linear-gradient(135deg,#fe2c55,#ff6b3b)}
 .mp-dyh-txt{font-size:13px;color:#888;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 消息中心 */
+.mp-dym{position:absolute;inset:0;z-index:30;background:#fff;display:flex;flex-direction:column}
+.mp-dym-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #eee;flex-shrink:0}
+.mp-dym-hd .mp-nav-back{background:none;border:none;cursor:pointer;padding:0;width:24px;height:24px}
+.mp-dym-hd .mp-nav-back svg{width:22px;height:22px;fill:#161823}
+.mp-dym-title{font-size:16px;font-weight:600;color:#161823}
+.mp-dym-readall{background:none;border:none;cursor:pointer;color:#fe2c55;font-size:13px;font-weight:500;padding:0;font-family:inherit}
+.mp-dym-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.mp-dym-body::-webkit-scrollbar{width:0}
+.mp-dym-item{display:flex;gap:10px;padding:12px 14px;cursor:pointer;align-items:flex-start;position:relative;border-bottom:1px solid #f5f5f7}
+.mp-dym-item:active{background:#f5f5f7}
+.mp-dym-item.unread{background:#fffaf8}
+.mp-dym-dot{position:absolute;left:6px;top:18px;width:6px;height:6px;border-radius:50%;background:#fe2c55;flex-shrink:0}
+.mp-dym-ava{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#fe2c55,#ff6b3b);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0}
+.mp-dym-info{flex:1;min-width:0}
+.mp-dym-user{font-size:13px;font-weight:600;color:#161823;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.mp-dym-verb{font-weight:400;color:#888}
+.mp-dym-time{margin-left:auto;font-size:11px;color:#bbb;font-weight:400}
+.mp-dym-reply{font-size:13px;color:#333;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mp-dym-ctx{font-size:11px;color:#bbb;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* 抖音搜索 */
 .mp-dy-search-pill{flex:1;display:flex;align-items:center;gap:6px;margin:0 8px;min-width:0;height:30px;padding:0 12px;border-radius:16px;background:rgba(255,255,255,.16);cursor:pointer}
 .mp-dy-search-pill svg{width:16px;height:16px;fill:#fff;opacity:.85;flex-shrink:0}
