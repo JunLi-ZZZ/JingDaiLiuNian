@@ -122,7 +122,7 @@
           <div class="mp-wx-body">
             <!-- 聊天 -->
             <template v-if="wxTab === 'chats'">
-              <div v-if="showSearch" class="mp-search"><span class="mp-search-box"><svg viewBox="0 0 24 24" class="mp-search-ico"><path fill="currentColor" d="m18.031 16.617l4.283 4.282l-1.415 1.415l-4.282-4.283A8.96 8.96 0 0 1 11 20c-4.968 0-9-4.032-9-9s4.032-9 9-9s9 4.032 9 9a8.96 8.96 0 0 1-1.969 5.617m-2.006-.742A6.98 6.98 0 0 0 18 11c0-3.867-3.133-7-7-7s-7 3.133-7 7s3.133 7 7 7a6.98 6.98 0 0 0 4.875-1.975z"/></svg><input v-model="searchQuery" class="mp-search-inp" placeholder="搜索" /></span></div>
+              <div v-if="showSearch" class="mp-search"><span class="mp-search-box"><svg viewBox="0 0 24 24" class="mp-search-ico"><path fill="currentColor" d="m18.031 16.617l4.283 4.282l-1.415 1.415l-4.282-4.283A8.96 8.96 0 0 1 11 20c-4.968 0-9-4.032-9-9s4.032-9 9-9s9 4.032 9 9a8.96 8.96 0 0 1-1.969 5.617m-2.006-.742A6.98 6.98 0 0 0 18 11c0-3.867-3.133-7-7-7s-7 3.133-7 7s3.133 7 7 7a6.98 6.98 0 0 0 4.875-1.975z"/></svg><input :value="searchQuery" class="mp-search-inp" placeholder="搜索" readonly @click.stop.prevent="openIMESearch" /></span></div>
               <div v-if="showNew" class="mp-newchat">
                 <input :value="newContact" class="mp-nc-in" placeholder="输入联系人名开始对话" readonly @click.stop.prevent="openIMENewContact" @keydown.enter="startChat" />
                 <button class="mp-nc-btn" @click="startChat">发起</button>
@@ -810,7 +810,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 
 defineEmits(['close'])
 const props = defineProps({ owner: { type: String, default: '' } })   // 指定机主（状态栏点某角色手机时传入），空=看<user>自己
@@ -1636,40 +1636,50 @@ const dyCurrentPos = computed(() => {
   return pos >= 0 ? pos + 1 : 1
 })
 const DY_FOLLOWS_KEY = 'jdnl_dy_follows'
-function loadDyData() {
+// 数据分离：抖音(_n)和抖阴(_r)各自独立存储，切换模式不互相污染
+function dyModeKey(base) { return base + (dyR18.value ? '_r' : '_n') }
+function loadDyData(modeChanged = false) {
   try {
-    const raw = localStorage.getItem(DY_FEED_KEY); if (raw) douyinFeed.value = JSON.parse(raw).slice(-50)
-    const idx = localStorage.getItem(DY_IDX_KEY); if (idx !== null) douyinIdx.value = Math.min(+idx, douyinFeed.value.length - 1)
+    if (modeChanged) {
+      // 模式切换：先清空内存中的内容，再加载新模式的数据
+      douyinFeed.value = []; douyinIdx.value = 0
+      dyIdxMap.value = { 推荐: 0, 关注: 0, 私密: 0 }
+      dyHistory.value = []; dyFlipped.value = {}
+      dyFollows.value = new Set(); dyFanClub.value = {}; dyDiamond.value = 1000
+      dyHotList.value = []; dyHotMode.value = ''; dyRecentSearches.value = []
+    }
+    const raw = localStorage.getItem(dyModeKey(DY_FEED_KEY)); if (raw) douyinFeed.value = JSON.parse(raw).slice(-50)
+    const idx = localStorage.getItem(dyModeKey(DY_IDX_KEY)); if (idx !== null) douyinIdx.value = Math.min(+idx, douyinFeed.value.length - 1)
     const s = localStorage.getItem(DY_SETTINGS_KEY); if (s) douyinSettings.value = { ...douyinSettings.value, ...JSON.parse(s) }
     if (typeof douyinSettings.value.strangerPct === 'number') dyStrangerPct.value = douyinSettings.value.strangerPct
     if (typeof douyinSettings.value.livePct === 'number') dyLivePct.value = douyinSettings.value.livePct
     if (typeof douyinSettings.value.chatBatch === 'number') dyChatBatch.value = douyinSettings.value.chatBatch
-    const fc = localStorage.getItem(DY_FAN_KEY); if (fc) dyFanClub.value = JSON.parse(fc)
-    const dm = localStorage.getItem(DY_DIAMOND_KEY); if (dm !== null) dyDiamond.value = +dm
-    const f = localStorage.getItem(DY_FOLLOWS_KEY); if (f) dyFollows.value = new Set(JSON.parse(f))
-    const im = localStorage.getItem(DY_IDXMAP_KEY); if (im) dyIdxMap.value = { ...dyIdxMap.value, ...JSON.parse(im) }
-    const h = localStorage.getItem(DY_HISTORY_KEY); if (h) dyHistory.value = JSON.parse(h)
-    const sq = localStorage.getItem(DY_SEARCHES_KEY); if (sq) dyRecentSearches.value = JSON.parse(sq)
-    const hot = localStorage.getItem(DY_HOT_KEY); if (hot) { const h = JSON.parse(hot); dyHotList.value = h.list || []; dyHotMode.value = h.mode || '' }
+    const fc = localStorage.getItem(dyModeKey(DY_FAN_KEY)); if (fc) dyFanClub.value = JSON.parse(fc)
+    const dm = localStorage.getItem(dyModeKey(DY_DIAMOND_KEY)); if (dm !== null) dyDiamond.value = +dm
+    const f = localStorage.getItem(dyModeKey(DY_FOLLOWS_KEY)); if (f) dyFollows.value = new Set(JSON.parse(f))
+    const im = localStorage.getItem(dyModeKey(DY_IDXMAP_KEY)); if (im) dyIdxMap.value = { ...dyIdxMap.value, ...JSON.parse(im) }
+    const h = localStorage.getItem(dyModeKey(DY_HISTORY_KEY)); if (h) dyHistory.value = JSON.parse(h)
+    const sq = localStorage.getItem(dyModeKey(DY_SEARCHES_KEY)); if (sq) dyRecentSearches.value = JSON.parse(sq)
+    const hot = localStorage.getItem(dyModeKey(DY_HOT_KEY)); if (hot) { const h = JSON.parse(hot); dyHotList.value = h.list || []; dyHotMode.value = h.mode || '' }
   } catch (e) {}
 }
 // 存feed时剔除未完成的占位卡，避免刷新后残留空卡
 // 持久化feed：只剔除未完成的占位卡。搜索结果照常存(靠dyVisibleFeed的!v.searchQ隐藏，不靠丢弃)，否则重开手机就没了、历史也点不开
-function saveDyFeed() { try { const clean = douyinFeed.value.filter(v => !v.pending).slice(-50); localStorage.setItem(DY_FEED_KEY, JSON.stringify(clean)); localStorage.setItem(DY_IDX_KEY, String(douyinIdx.value)) } catch (e) {} }
-function saveDyFollows() { try { localStorage.setItem(DY_FOLLOWS_KEY, JSON.stringify([...dyFollows.value])) } catch (e) {} }
-function saveDyIdxMap() { try { localStorage.setItem(DY_IDXMAP_KEY, JSON.stringify(dyIdxMap.value)) } catch (e) {} }
+function saveDyFeed() { try { const clean = douyinFeed.value.filter(v => !v.pending).slice(-50); localStorage.setItem(dyModeKey(DY_FEED_KEY), JSON.stringify(clean)); localStorage.setItem(dyModeKey(DY_IDX_KEY), String(douyinIdx.value)) } catch (e) {} }
+function saveDyFollows() { try { localStorage.setItem(dyModeKey(DY_FOLLOWS_KEY), JSON.stringify([...dyFollows.value])) } catch (e) {} }
+function saveDyIdxMap() { try { localStorage.setItem(dyModeKey(DY_IDXMAP_KEY), JSON.stringify(dyIdxMap.value)) } catch (e) {} }
 function saveDySettings() { try { localStorage.setItem(DY_SETTINGS_KEY, JSON.stringify(douyinSettings.value)) } catch (e) {} }
 function clearDyCache() {
   douyinFeed.value = []; douyinIdx.value = 0
   dyIdxMap.value = { 推荐: 0, 关注: 0, 私密: 0 }
   dyHistory.value = []; dyFlipped.value = {}
   dySearchMode.value = false; dySearchQuery.value = ''; showDySearchInput.value = false; dySearchDraft.value = ''
-  dyRecentSearches.value = []; localStorage.removeItem(DY_SEARCHES_KEY)
-  dyHotList.value = []; dyHotMode.value = ''; localStorage.removeItem(DY_HOT_KEY)
+  dyRecentSearches.value = []; localStorage.removeItem(dyModeKey(DY_SEARCHES_KEY))
+  dyHotList.value = []; dyHotMode.value = ''; localStorage.removeItem(dyModeKey(DY_HOT_KEY))
   dyLiveRoom.value = null; dyLiveChatDraft.value = ''; dyLiveReplyTo.value = ''; showGiftPanel.value = false
-  dyFanClub.value = {}; localStorage.removeItem(DY_FAN_KEY)
-  localStorage.removeItem(DY_FEED_KEY); localStorage.removeItem(DY_IDX_KEY)
-  localStorage.removeItem(DY_IDXMAP_KEY); localStorage.removeItem(DY_HISTORY_KEY)
+  dyFanClub.value = {}; localStorage.removeItem(dyModeKey(DY_FAN_KEY))
+  localStorage.removeItem(dyModeKey(DY_FEED_KEY)); localStorage.removeItem(dyModeKey(DY_IDX_KEY))
+  localStorage.removeItem(dyModeKey(DY_IDXMAP_KEY)); localStorage.removeItem(dyModeKey(DY_HISTORY_KEY))
   showToast('缓存已清理')
 }
 function onDyScroll() {
@@ -2185,7 +2195,7 @@ function pushDyHistory(v) {
   dyHistory.value = dyHistory.value.filter(h => !(h.creator === entry.creator && h.content === entry.content))
   dyHistory.value.unshift(entry)
   if (dyHistory.value.length > 80) dyHistory.value = dyHistory.value.slice(0, 80)
-  try { localStorage.setItem(DY_HISTORY_KEY, JSON.stringify(dyHistory.value)) } catch (e) {}
+  try { localStorage.setItem(dyModeKey(DY_HISTORY_KEY), JSON.stringify(dyHistory.value)) } catch (e) {}
 }
 function toggleDyFlip(vi) {
   const v = douyinFeed.value[vi]
@@ -2227,11 +2237,11 @@ function closeDySearchInput() { showDySearchInput.value = false }
 // 记一条最近搜索（去重置顶，最多12条）
 function pushRecentSearch(q) {
   dyRecentSearches.value = [q, ...dyRecentSearches.value.filter(x => x !== q)].slice(0, 12)
-  try { localStorage.setItem(DY_SEARCHES_KEY, JSON.stringify(dyRecentSearches.value)) } catch (e) {}
+  try { localStorage.setItem(dyModeKey(DY_SEARCHES_KEY), JSON.stringify(dyRecentSearches.value)) } catch (e) {}
 }
 function removeRecentSearch(q) {
   dyRecentSearches.value = dyRecentSearches.value.filter(x => x !== q)
-  try { localStorage.setItem(DY_SEARCHES_KEY, JSON.stringify(dyRecentSearches.value)) } catch (e) {}
+  try { localStorage.setItem(dyModeKey(DY_SEARCHES_KEY), JSON.stringify(dyRecentSearches.value)) } catch (e) {}
 }
 function submitDySearch() { runDySearch(dySearchDraft.value) }
 // 提交搜索：进独立搜索流，已有该词结果则直接展示，否则生成
@@ -2262,7 +2272,7 @@ function exitDySearch() {
   dyRestorePos()
 }
 // ---- 热榜（阶段B）：抖音/抖阴两套，AI生成话题+热度，点条目=带该话题搜索 ----
-function saveDyHot() { try { localStorage.setItem(DY_HOT_KEY, JSON.stringify({ mode: dyHotMode.value, list: dyHotList.value })) } catch (e) {} }
+function saveDyHot() { try { localStorage.setItem(dyModeKey(DY_HOT_KEY), JSON.stringify({ mode: dyHotMode.value, list: dyHotList.value })) } catch (e) {} }
 function parseDyHot(raw) {
   if (!raw) return []
   const m = raw.match(/===HOTSTART===([\s\S]*?)===HOTEND===/); if (!m) return []
@@ -2449,8 +2459,8 @@ function submitLiveChat() {
   generateLiveChat(true)   // 发言即推进：AI生成回应
 }
 // ---- 粉丝团 & 等级 ----
-function saveDyFanClub() { try { localStorage.setItem(DY_FAN_KEY, JSON.stringify(dyFanClub.value)) } catch (e) {} }
-function saveDyDiamond() { try { localStorage.setItem(DY_DIAMOND_KEY, String(dyDiamond.value)) } catch (e) {} }
+function saveDyFanClub() { try { localStorage.setItem(dyModeKey(DY_FAN_KEY), JSON.stringify(dyFanClub.value)) } catch (e) {} }
+function saveDyDiamond() { try { localStorage.setItem(dyModeKey(DY_DIAMOND_KEY), String(dyDiamond.value)) } catch (e) {} }
 // 当前直播间的粉丝团信息
 const curFan = computed(() => {
   const c = dyLiveRoom.value && dyLiveRoom.value.creator
@@ -2780,7 +2790,7 @@ function copyStyles() {
   } catch (e) {}
 }
 onMounted(() => {
-  if (props.owner) activeOwner.value = props.owner   // 状态栏点某角色手机 → 直接定位到该机主
+  if (props.owner) activeOwner.value = props.owner
   copyStyles()
   tick(); loadLogs(); loadRemarks(); loadPhotos(); loadDyData(); syncScrape(); syncScrapePhotos()
   timer = setInterval(() => { tick(); loadLogs(); loadRemarks(); loadPhotos(); syncScrape(); syncScrapePhotos(); healPending() }, 2000)
@@ -2790,6 +2800,27 @@ onMounted(() => {
     vvRef = window.parent && window.parent.visualViewport
     if (vvRef) { vvHandler = () => applyVV(); vvRef.addEventListener('resize', vvHandler); vvRef.addEventListener('scroll', vvHandler); applyVV() }
   } catch (e) {}
+  // 监听模式切换（抖音 ↔ 抖阴），自动存旧模式、加载新模式独立数据
+  watch(dyR18, (newVal, oldVal) => {
+    if (newVal === oldVal) return
+    // 切模式前先存一下当前模式的数据（用 oldVal 对应的 key）
+    const oldKey = (base) => base + (oldVal ? '_r' : '_n')
+    try {
+      const clean = douyinFeed.value.filter(v => !v.pending).slice(-50)
+      localStorage.setItem(oldKey(DY_FEED_KEY), JSON.stringify(clean))
+      localStorage.setItem(oldKey(DY_IDX_KEY), String(douyinIdx.value))
+      localStorage.setItem(oldKey(DY_FOLLOWS_KEY), JSON.stringify([...dyFollows.value]))
+      localStorage.setItem(oldKey(DY_IDXMAP_KEY), JSON.stringify(dyIdxMap.value))
+      localStorage.setItem(oldKey(DY_FAN_KEY), JSON.stringify(dyFanClub.value))
+      localStorage.setItem(oldKey(DY_DIAMOND_KEY), String(dyDiamond.value))
+    } catch (e) {}
+    // 关闭直播间，重置 tab
+    dyLiveRoom.value = null; showGiftPanel.value = false
+    if (dyTab.value === '私密' && !newVal) dyTab.value = '推荐'
+    // 加载新模式数据（modeChanged=true → 先清内存再读）
+    loadDyData(true)
+    showToast(newVal ? '已切换到抖阴模式' : '已切换到抖音模式')
+  })
 })
 onUnmounted(() => {
   try { if (tpStyle && tpStyle.parentNode) tpStyle.parentNode.removeChild(tpStyle); tpStyle = null } catch (e) {}
