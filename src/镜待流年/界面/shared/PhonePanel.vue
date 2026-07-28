@@ -51,8 +51,7 @@
               <div v-if="showSep(i)" class="mp-timesep"><span>{{ fmtTime(m.time) }}</span></div>
               <div :class="['mp-row', m.dir === '发出' ? 'out' : m.dir === '系统' ? 'sys' : 'in']">
                 <div v-if="m.dir !== '系统'" class="mp-ava">{{ initial(m.dir === '发出' ? curOwner : activeContact) }}</div>
-                <div v-if="wxMultiSelect" class="mp-ms-chk" :class="{on: wxSelectedMsgs.has(i)}" @click.stop="toggleWxMsgSelect(i)"></div>
-                <div :class="['mp-bub', 'mt-' + (m.type || '文字'), {selected: wxMultiSelect && wxSelectedMsgs.has(i)}]" @click.stop="wxMultiSelect ? toggleWxMsgSelect(i) : openCtxMenu(i, m.dir)">
+                <div :class="['mp-bub', 'mt-' + (m.type || '文字')]" @click.stop="openCtxMenu(i, m.dir)">
                   <template v-if="m.type === '语音'"><span class="mp-voice" :style="{ width: voiceWidth(m.text) }"><span class="mp-voice-ico"><i></i><i></i><i></i></span><span class="mp-voice-len">{{ voiceLen(m.text) }}″</span></span><span class="mp-vtext">{{ m.text }}</span></template>
                   <template v-else-if="m.type === '图片'"><span class="mp-media"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M128 128c-35 0-64 29-64 64v256c0 35 29 64 64 64h384c35 0 64-29 64-64V192c0-35-29-64-64-64zm80 80a48 48 0 110 96 48 48 0 010-96m304 240H128l96-128 64 80 80-112z"/></svg></span><span class="mp-cap">{{ m.text }}</span></template>
                   <template v-else-if="m.type === '视频'"><span class="mp-media mp-video"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M320 128a192 192 0 100 384 192 192 0 000-384m-40 120l112 72-112 72z"/></svg></span><span class="mp-cap">{{ m.text }}</span></template>
@@ -236,8 +235,6 @@
           <div class="mp-ctx-sheet">
             <button v-if="ctxMenu.dir === '发出'" class="mp-ctx-item" @click="recallMsg">撤回</button>
             <button v-if="ctxMenu.dir === '发出'" class="mp-ctx-item" @click="resendCtx">重发</button>
-            <button class="mp-ctx-item" @click="shareWxMsgToStory">分享到故事</button>
-            <button class="mp-ctx-item" @click="startWxMultiSelect">多选</button>
             <button class="mp-ctx-item danger" @click="deleteMsg">删除</button>
             <button class="mp-ctx-cancel" @click="closeCtxMenu">取消</button>
           </div>
@@ -403,7 +400,6 @@
         <!-- 照片详情 -->
         <div v-if="selectedPhoto" class="mp-photo-detail">
           <button class="mp-nav-back" style="position:absolute;top:14px;left:12px;color:#fff;z-index:2" @click="selectedPhoto = null"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
-          <button class="mp-nav-back" style="position:absolute;top:14px;right:12px;color:#fff;z-index:2;font-size:18px" @click="openDyShareMenu('photo', selectedPhoto)">↗️</button>
           <div class="mp-detail-bg"></div>
           <div class="mp-detail-meta"><span class="mp-detail-subj">{{ selectedPhoto.对象 }}</span><span v-if="selectedPhoto.模式 === '透视'" class="mp-detail-mode">透视</span><span class="mp-detail-time">{{ selectedPhoto.时间 }}</span></div>
           <div class="mp-detail-cap">{{ selectedPhoto.画面 }}</div>
@@ -558,7 +554,7 @@
                 <svg viewBox="0 0 24 24"><path fill="currentColor" d="m12 17.27l4.15 2.51c.76.46 1.69-.22 1.49-1.08l-1.1-4.72l3.67-3.18c.67-.58.31-1.68-.57-1.75l-4.83-.41l-1.89-4.46c-.34-.81-1.5-.81-1.84 0L9.19 8.63l-4.83.41c-.88.07-1.24 1.17-.57 1.75l3.67 3.18l-1.1 4.72c-.2.86.73 1.54 1.49 1.08z"/></svg>
                 <span>{{ v.saves || '收藏' }}</span>
               </button>
-              <button class="mp-dy-act-btn" @click.stop="openDyShareMenu('video', v)">
+              <button class="mp-dy-act-btn" @click.stop>
                 <svg viewBox="0 0 24 24"><path fill="currentColor" d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.51 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.3 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
                 <span>{{ v.shares }}</span>
               </button>
@@ -603,7 +599,7 @@
                 <div class="mp-dy-cmt-main">
                   <div class="mp-dy-cmt-user">{{ c.user }}</div>
                   <div class="mp-dy-cmt-text">{{ c.text }}</div>
-                  <div class="mp-dy-cmt-meta"><span>{{ c.region || '刚刚' }}</span><span class="mp-dy-cmt-reply" @click.stop="setDyReplyTo(c)">回复</span><span class="mp-dy-cmt-reply mp-dy-cmt-share-btn" @click.stop="openDyShareMenu('comment',{video:douyinFeed[dyCommentIdx],comment:c})">↗️</span></div>
+                  <div class="mp-dy-cmt-meta"><span>{{ c.region || '刚刚' }}</span><span class="mp-dy-cmt-reply" @click.stop="setDyReplyTo(c)">回复</span></div>
                   <!-- 楼中楼回复列表：每条回复也可以继续回复 -->
                   <div v-for="(r, ri) in (c.replies||[])" :key="'r'+ri" class="mp-dy-cmt-reply-item">
                     <div class="mp-dy-cmt-reply-ava">{{ (r.user||'?').replace('@','').slice(0,1).toUpperCase() }}</div>
@@ -615,7 +611,6 @@
                         <span>刚刚</span>
                         <!-- 对回复本身继续回复，接在同一 replies 里 -->
                         <span class="mp-dy-cmt-reply-btn" @click.stop="setDyReplyToFromReply(c, r)">回复</span>
-                        <span class="mp-dy-cmt-reply-btn mp-dy-cmt-share-btn" @click.stop="openDyShareMenu('reply',{video:douyinFeed[dyCommentIdx],comment:c,reply:r})">↗️</span>
                       </div>
                     </div>
                   </div>
@@ -773,7 +768,7 @@
               <button class="mp-dylv-heart" @click.stop="sendLiveHeart" :title="curFan ? '粉丝团 '+curFan.level+' 级' : '加入粉丝团'">{{ curFan ? '💖' : '🤍' }}</button>
               <button class="mp-dylv-gift" @click.stop="openGiftPanel">🎁</button>
               <button class="mp-dylv-more" @click.stop="generateLiveChat(false)" :disabled="generatingLiveChat" title="主播继续推进直播">{{ generatingLiveChat ? '⏳' : '▶' }}</button>
-              <button class="mp-dylv-share" @click.stop="openDyShareMenu('live', dyLiveRoom)">↗️</button>
+              <button class="mp-dylv-share" @click.stop="showToast('转发功能即将上线')">↗️</button>
             </div>
           </div>
           <!-- 礼物面板 -->
@@ -810,22 +805,6 @@
           </div>
         </div>
       </div>
-
-        <!-- 通用分享菜单（视频/直播/评论/照片通用） -->
-        <div v-if="dyShareMenu" class="mp-ctx-overlay" @click.self="dyShareMenu=null">
-          <div class="mp-ctx-sheet">
-            <div class="mp-ctx-title">{{ dyShareMenu.type==='photo' ? '相册照片' : dyShareMenu.type==='live' ? '直播' : dyShareMenu.type==='comment'||dyShareMenu.type==='reply' ? '评论' : '视频' }}</div>
-            <button class="mp-ctx-item" @click="shareToStory(dyShareMenu.type, dyShareMenu.data)">📤 分享到故事</button>
-            <button class="mp-ctx-item" @click="showToast('转发到微信（即将上线）')">💬 发给…</button>
-            <button class="mp-ctx-cancel" @click="dyShareMenu=null">取消</button>
-          </div>
-        </div>
-        <!-- 微信多选底部确认栏 -->
-        <div v-if="wxMultiSelect" class="mp-ms-bar">
-          <button class="mp-ms-cancel" @click="cancelWxMultiSelect">取消</button>
-          <span class="mp-ms-count">{{ wxSelectedMsgs.size > 0 ? `已选 ${wxSelectedMsgs.size} 条` : '点消息选择' }}</span>
-          <button class="mp-ms-send" :disabled="!wxSelectedMsgs.size" @click="shareWxMultiToStory">分享到故事</button>
-        </div>
 
     </div>
     <!-- ===手机输入法浮层=== 必须是 mp-phone 的 sibling，不在 transform 缩放节点内 -->
@@ -943,11 +922,6 @@ const showDyMsgCenter = ref(false)        // 消息中心弹层
 const DY_NOTIF_KEY = 'jdnl_dy_notif'
 const dyNotifs = ref([])                  // 消息通知列表 [{id,videoCreator,videoContent,commentText,replierUser,replyText,ts,read}]
 const dyUnreadCount = computed(() => dyNotifs.value.filter(n => !n.read).length)
-// ---- 分享菜单（视频/直播/评论/照片） ----
-const dyShareMenu = ref(null)             // { type:'video'|'live'|'comment'|'reply'|'photo', data }
-// ---- 微信多选模式 ----
-const wxMultiSelect = ref(false)
-const wxSelectedMsgs = ref(new Set())
 const dySearchMode = ref(false)           // 搜索结果流是否激活（独立于推荐/关注/私密三tab）
 const dySearchQuery = ref('')             // 当前搜索关键词
 const dySearchDraft = ref('')             // 搜索输入框草稿
@@ -2302,88 +2276,6 @@ function formatDyNotifTime(ts) {
   if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前'
   return Math.floor(diff / 86400000) + '天前'
 }
-// ---- 分享功能 ----
-function openDyShareMenu(type, data) { dyShareMenu.value = { type, data } }
-// 根据内容类型组装注入正文的文本
-function buildShareToStoryText(type, data) {
-  const me = meName.value || '我'
-  if (type === 'video') {
-    const v = data
-    const isR18 = dyR18.value
-    const isPrivate = v.vis === 'private'
-    const isStranger = !!v.stranger
-    const isRedYan = isPrivate && !isStranger
-    const hasPcontent = !!(v.pcontent && isR18)
-    if (isRedYan) {
-      // 红颜私发：vis=private, stranger=false，无pcontent（content本身就是私密视频内容）
-      return `（${me}把手机递过去——这是她私下只发给${me}看的抖阴（成人向短视频平台）私密视频「${v.caption || ''}」：${v.content}）`
-    } else if (isPrivate && isStranger) {
-      // 陌生成人博主：公开发布的成人内容，只因内容性质归入私密tab，无观众限制
-      return `（${me}悄悄翻出抖阴（成人向短视频平台）上的成人内容——博主@${v.creator}「${v.caption || ''}」：${v.content}）`
-    } else if (hasPcontent) {
-      // 抖阴推荐/关注流，带翻转私密版（只有user看得到pcontent）
-      return `（${me}悄悄把手机凑过去——抖阴（成人向短视频平台）博主@${v.creator}的视频「${v.caption || ''}」\n公开画面：${v.content}\n【只给${me}看的私密版】${v.pcontent}）`
-    } else {
-      // 普通抖音，或无pcontent的抖阴
-      const platform = isR18 ? '抖阴（成人向短视频平台）' : '抖音'
-      return `（${me}把手机屏幕转过来——${platform}博主@${v.creator}的视频「${v.caption || ''}」：${v.content}）`
-    }
-  } else if (type === 'live') {
-    const room = data
-    const platform = dyR18.value ? '抖阴（成人向短视频平台）' : '抖音'
-    return `（${me}把手机举起来——@${room.creator}正在${platform}直播「${room.title || ''}」，当前画面：${room.content || ''}）`
-  } else if (type === 'comment') {
-    const { video, comment } = data
-    const platform = dyR18.value ? '抖阴（成人向短视频平台）' : '抖音'
-    return `（${me}指着手机上的评论——在${platform}@${video.creator}「${video.caption || ''}」视频下，${comment.user}评论道：「${comment.text}」）`
-  } else if (type === 'reply') {
-    const { video, comment, reply } = data
-    const platform = dyR18.value ? '抖阴（成人向短视频平台）' : '抖音'
-    return `（${me}指着手机上的评论——在${platform}@${video.creator}「${video.caption || ''}」视频下，${reply.user}回复${reply.replyTo || comment.user}：「${reply.text}」）`
-  } else if (type === 'photo') {
-    const p = data
-    return `（${me}打开相册给她看——${p.时间}拍的，${p.画面}）`
-  } else if (type === 'wxmsg') {
-    // 单条消息
-    const { msg, contact } = data
-    const name = msg.dir === '发出' ? me : contact
-    return `（${me}把手机里的消息给她看——和${contact}的对话，${name}说：「${msg.text}」）`
-  } else if (type === 'wxmsgs') {
-    // 多条消息（多选模式）
-    const { msgs, contact } = data
-    const lines = msgs.map(m => `${m.dir === '发出' ? me : contact}: 「${m.text}」`).join('\n')
-    return `（${me}把手机里和${contact}的聊天记录给她看——\n${lines}）`
-  }
-  return ''
-}
-async function shareToStory(type, data) {
-  const th = TH(); if (!th || (!th.generateRaw && !th.generate)) { showToast('当前环境不支持'); return }
-  const text = buildShareToStoryText(type, data)
-  if (!text) { showToast('无内容可分享'); return }
-  dyShareMenu.value = null
-  try { await th.generate({ user_input: text, should_silence: false }) }
-  catch (e) { showToast('分享失败：' + ((e && e.message) || e)) }
-}
-// 微信：从点击菜单分享单条消息到故事
-function shareWxMsgToStory() {
-  if (!ctxMenu.value) return
-  const arr = ownerLogs.value[activeContact.value]; if (!arr) return
-  const msg = arr[ctxMenu.value.idx]; if (!msg) return
-  closeCtxMenu()
-  shareToStory('wxmsg', { msg, contact: activeContact.value })
-}
-// 微信：多选模式
-function startWxMultiSelect() { closeCtxMenu(); wxMultiSelect.value = true; wxSelectedMsgs.value = new Set() }
-function cancelWxMultiSelect() { wxMultiSelect.value = false; wxSelectedMsgs.value = new Set() }
-function toggleWxMsgSelect(i) { const s = new Set(wxSelectedMsgs.value); if (s.has(i)) s.delete(i); else s.add(i); wxSelectedMsgs.value = s }
-function shareWxMultiToStory() {
-  const arr = ownerLogs.value[activeContact.value]; if (!arr) return
-  const idxs = [...wxSelectedMsgs.value].sort((a, b) => a - b)
-  const msgs = idxs.map(i => arr[i]).filter(Boolean)
-  if (!msgs.length) return
-  cancelWxMultiSelect()
-  shareToStory('wxmsgs', { msgs, contact: activeContact.value })
-}
 function toggleDyFlip(vi) {
   const v = douyinFeed.value[vi]
   if (!v || !v.pcontent) return
@@ -3233,19 +3125,6 @@ onUnmounted(() => {
 .mp-ctx-item.danger{color:#fa5151}
 .mp-ctx-cancel{display:block;width:100%;margin-top:8px;padding:13px 18px;border:none;background:#fff;text-align:center;font-size:15px;font-weight:600;color:#0d0d0d;cursor:pointer;font-family:inherit}
 .mp-ctx-cancel:active{background:#e8e8e8}
-.mp-ctx-title{padding:10px 18px 6px;font-size:12px;color:#999;border-bottom:1px solid rgba(0,0,0,.06);background:#f7f7f7}
-/* 多选模式 */
-.mp-ms-bar{position:absolute;bottom:0;left:0;right:0;z-index:35;display:flex;align-items:center;justify-content:space-between;padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));background:#fff;border-top:1px solid #eee;gap:8px}
-.mp-ms-cancel{flex-shrink:0;background:none;border:none;font-size:14px;color:#888;cursor:pointer;padding:4px 0;font-family:inherit}
-.mp-ms-count{flex:1;text-align:center;font-size:13px;color:#555}
-.mp-ms-send{flex-shrink:0;background:#07c160;border:none;border-radius:6px;color:#fff;font-size:14px;font-weight:600;padding:6px 14px;cursor:pointer;font-family:inherit;opacity:1}
-.mp-ms-send:disabled{opacity:.4;cursor:default}
-.mp-ms-chk{width:20px;height:20px;border-radius:50%;border:1.5px solid #ccc;background:#fff;flex-shrink:0;cursor:pointer;position:relative;margin-right:2px}
-.mp-ms-chk.on{background:#07c160;border-color:#07c160}
-.mp-ms-chk.on::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700}
-.mp-bub.selected{outline:2px solid #07c160;outline-offset:2px}
-/* 评论分享按钮 */
-.mp-dy-cmt-share-btn{opacity:.5;font-size:11px}
 
 /* 输入栏 */
 .mp-inbar{display:flex;gap:8px;align-items:center;padding:7px 10px 15px;background:#f7f7f7;border-top:1px solid rgba(0,0,0,.06);flex-shrink:0}
