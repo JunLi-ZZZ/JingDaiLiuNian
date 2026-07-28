@@ -1910,9 +1910,13 @@ function parseDyReplies(raw) {
   const m = raw.match(/===DYREPLY===([\s\S]*?)===REPLYEND===/); if (!m) return []
   const block = m[1]
   const out = []
-  for (let i = 1; i <= 5; i++) {
-    const r = block.match(new RegExp('^\\s*r' + i + '\\s*:(.+)$', 'm')); if (!r) continue
-    const p = r[1].split('|||'); const user = p[0]?.trim(); const to = (p[1]||'').trim(); const text = p[2]?.trim()
+  // 按行扫描：同时支持 r1:user|||to|||text 和裸行 user|||to|||text（AI有时省略编号前缀）
+  for (const ln of block.split('\n')) {
+    if (out.length >= 5) break
+    let t = ln.trim(); if (!t || t.startsWith('===')) continue
+    t = t.replace(/^r\d+\s*:\s*/, '')           // 去掉 rN: 前缀（如有）
+    if (!t.includes('|||')) continue
+    const p = t.split('|||'); const user = p[0]?.trim(); const to = (p[1]||'').trim(); const text = p[2]?.trim()
     if (user && text) out.push({ user: '@' + user.replace(/^@/,''), replyTo: to ? '@' + to.replace(/^@/,'') : '', text, isMe: false })
   }
   return out
@@ -2173,13 +2177,16 @@ function parseDyVideo(raw) {
   const f = (k) => { const r = block.match(new RegExp('^\\s*' + k + '\\s*:(.+)$', 'm')); return r ? r[1].trim() : '' }
   const danmakuRaw = f('danmaku')
   const commentList = []
-  for (let i = 1; i <= 6; i++) {
-    const c = f('c'+i); if (!c) continue
-    const p = c.split('|||')
+  // 按行扫描：同时支持 c1:user|||text|||likes 和裸行 user|||text（AI有时省略编号前缀）
+  block.split('\n').forEach(ln => {
+    if (commentList.length >= 6) return
+    let t = ln.trim(); if (!t || t.startsWith('===') || !t.includes('|||')) return
+    t = t.replace(/^c\d+\s*:\s*/, '')           // 去掉 cN: 前缀（如有）
+    const p = t.split('|||')
     if (p.length >= 2 && p[0].trim() && p[1].trim()) {
       commentList.push({ user: p[0].trim().replace(/^@/,'').replace(/^/,'@'), text: p[1].trim(), likes: (p[2]||'0').trim(), region: (p[3]||'').trim() })
     }
-  }
+  })
   const content = f('content')
   if (!content && !f('caption')) return null
   return {
@@ -2206,12 +2213,14 @@ function parseDyLiveCard(raw) {
   const f = (k) => { const r = block.match(new RegExp('^\\s*' + k + '\\s*:(.+)$', 'm')); return r ? r[1].trim() : '' }
   const content = f('content'); if (!content) return null
   const chatLog = []
-  for (let i = 1; i <= 10; i++) {
-    const c = f('chat'+i); if (!c) continue
-    const p = c.split('|||')
-    const level = p[0]?.trim(); const user = p[1]?.trim(); const text = p[2]?.trim(); const tag = (p[3]||'').trim()
+  // 按行扫描：同时支持 chat1:level|||user|||text 和裸行 level|||user|||text（AI有时省略前缀）
+  block.split('\n').forEach(ln => {
+    if (chatLog.length >= 10) return
+    let t = ln.trim(); if (!t || t.startsWith('===') || !t.includes('|||')) return
+    t = t.replace(/^chat\d+\s*:\s*/, '')        // 去掉 chatN: 前缀（如有）
+    const p = t.split('|||'); const level = p[0]?.trim(); const user = p[1]?.trim(); const text = p[2]?.trim(); const tag = (p[3]||'').trim()
     if (user) chatLog.push({ level: /^\d+$/.test(level) ? +level : null, user, text: text||'', isJoin: tag==='join', isMe: false })
-  }
+  })
   return {
     creator: f('creator').replace('@',''), verified: /true|是|认证/.test(f('verified')),
     title: f('title'), viewers: f('viewers') || '0',
