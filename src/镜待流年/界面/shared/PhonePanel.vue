@@ -49,9 +49,11 @@
             <div v-if="!messages.length" class="mp-chat-empty"></div>
             <template v-for="(m, i) in messages" :key="i">
               <div v-if="showSep(i)" class="mp-timesep"><span>{{ fmtTime(m.time) }}</span></div>
-              <div :class="['mp-row', m.dir === '发出' ? 'out' : m.dir === '系统' ? 'sys' : 'in']">
+              <div class="mp-msrow-wrap" :class="{ ms: wxMultiSelect }">
+                <div v-if="wxMultiSelect && m.dir !== '系统'" class="mp-ms-chk" :class="{on: wxSelectedMsgs.has(i)}" @click.stop="toggleWxMsgSelect(i)"></div>
+              <div :class="['mp-row', m.dir === '发出' ? 'out' : m.dir === '系统' ? 'sys' : 'in']" @click="wxMultiSelect && m.dir !== '系统' ? toggleWxMsgSelect(i) : null">
                 <div v-if="m.dir !== '系统'" class="mp-ava">{{ initial(m.dir === '发出' ? curOwner : activeContact) }}</div>
-                <div :class="['mp-bub', 'mt-' + (m.type || '文字')]" @click.stop="openCtxMenu(i, m.dir)">
+                <div :class="['mp-bub', 'mt-' + (m.type || '文字'), {selected: wxMultiSelect && wxSelectedMsgs.has(i)}]" @click.stop="wxMultiSelect ? toggleWxMsgSelect(i) : openCtxMenu(i, m.dir)">
                   <template v-if="m.type === '语音'"><span class="mp-voice" :style="{ width: voiceWidth(m.text) }"><span class="mp-voice-ico"><i></i><i></i><i></i></span><span class="mp-voice-len">{{ voiceLen(m.text) }}″</span></span><span class="mp-vtext">{{ m.text }}</span></template>
                   <template v-else-if="m.type === '图片'"><span class="mp-media"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M128 128c-35 0-64 29-64 64v256c0 35 29 64 64 64h384c35 0 64-29 64-64V192c0-35-29-64-64-64zm80 80a48 48 0 110 96 48 48 0 010-96m304 240H128l96-128 64 80 80-112z"/></svg></span><span class="mp-cap">{{ m.text }}</span></template>
                   <template v-else-if="m.type === '视频'"><span class="mp-media mp-video"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M320 128a192 192 0 100 384 192 192 0 000-384m-40 120l112 72-112 72z"/></svg></span><span class="mp-cap">{{ m.text }}</span></template>
@@ -63,11 +65,12 @@
                 <button v-if="m.status === 'failed'" class="mp-fail" title="发送失败，点击重发" @click="resend(m)">!</button>
                 <span v-else-if="m.status === 'pending'" class="mp-pending"></span>
               </div>
+              </div>
             </template>
             <div v-if="sendingContact === activeContact" class="mp-row in"><div class="mp-ava">{{ initial(activeContact) }}</div><div class="mp-bub mp-typing"><span></span><span></span><span></span></div></div>
           </div>
           <div v-if="sendError" class="mp-toast">{{ sendError }}</div>
-          <div class="mp-inbar">
+          <div v-show="!wxMultiSelect" class="mp-inbar">
             <button class="mp-in-ico" @click="voiceMode = !voiceMode" title="语音">
               <svg v-if="!voiceMode" viewBox="0 0 24 24"><path fill="currentColor" d="M12 3a3 3 0 0 0-3 3v4a3 3 0 1 0 6 0V6a3 3 0 0 0-3-3m0-2a5 5 0 0 1 5 5v4a5 5 0 0 1-10 0V6a5 5 0 0 1 5-5M3.055 11H5.07a7.002 7.002 0 0 0 13.858 0h2.016A9.004 9.004 0 0 1 13 18.945V23h-2v-4.055A9.004 9.004 0 0 1 3.055 11"/></svg>
               <svg v-else viewBox="0 0 640 640"><path fill="none" stroke="currentColor" stroke-width="40" stroke-linecap="round" stroke-linejoin="round" d="M160 224h320v192H160zM224 160h192"/></svg>
@@ -230,11 +233,20 @@
           </div>
         </div>
 
-        <!-- 长按消息菜单 -->
+        <!-- 微信多选底部确认栏（在微信场景内，不上移整机） -->
+        <div v-if="wxMultiSelect && activeContact" class="mp-ms-bar">
+          <button class="mp-ms-cancel" @click="cancelWxMultiSelect">取消</button>
+          <span class="mp-ms-count">{{ wxSelectedMsgs.size > 0 ? `已选 ${wxSelectedMsgs.size} 条` : '点消息选择' }}</span>
+          <button class="mp-ms-send" :disabled="!wxSelectedMsgs.size" @click="shareWxMultiToStory">分享到故事</button>
+        </div>
+
+        <!-- 消息菜单 -->
         <div v-if="ctxMenu" class="mp-ctx-overlay" @click.self="closeCtxMenu">
           <div class="mp-ctx-sheet">
             <button v-if="ctxMenu.dir === '发出'" class="mp-ctx-item" @click="recallMsg">撤回</button>
             <button v-if="ctxMenu.dir === '发出'" class="mp-ctx-item" @click="resendCtx">重发</button>
+            <button class="mp-ctx-item" @click="shareWxMsgToStory">分享到故事</button>
+            <button class="mp-ctx-item" @click="startWxMultiSelect">多选</button>
             <button class="mp-ctx-item danger" @click="deleteMsg">删除</button>
             <button class="mp-ctx-cancel" @click="closeCtxMenu">取消</button>
           </div>
@@ -400,6 +412,7 @@
         <!-- 照片详情 -->
         <div v-if="selectedPhoto" class="mp-photo-detail">
           <button class="mp-nav-back" style="position:absolute;top:14px;left:12px;color:#fff;z-index:2" @click="selectedPhoto = null"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
+          <button class="mp-nav-back" style="position:absolute;top:14px;right:12px;color:#fff;z-index:2;font-size:18px" @click="openDyShareMenu('photo', selectedPhoto)">↗️</button>
           <div class="mp-detail-bg"></div>
           <div class="mp-detail-meta"><span class="mp-detail-subj">{{ selectedPhoto.对象 }}</span><span v-if="selectedPhoto.模式 === '透视'" class="mp-detail-mode">透视</span><span class="mp-detail-time">{{ selectedPhoto.时间 }}</span></div>
           <div class="mp-detail-cap">{{ selectedPhoto.画面 }}</div>
@@ -504,6 +517,7 @@
                 <div class="mp-dy-creator-row">
                   <span class="mp-dy-creator-name">@{{ v.creator }}</span>
                   <span v-if="v.verified" class="mp-dy-verified">✓</span>
+                  <span v-if="v.realName" class="mp-dy-realname" @click.stop="showToast('已实名认证：' + v.realName)">已实名</span>
                   <button v-if="!v.isFollowing" class="mp-dy-follow-btn" @click.stop="toggleDyFollow(v._i)">关注</button>
                   <span v-else class="mp-dy-followed" @click.stop="toggleDyFollow(v._i)">已关注</span>
                 </div>
@@ -531,6 +545,7 @@
               <div class="mp-dy-creator-row">
                 <span class="mp-dy-creator-name">@{{ v.creator }}</span>
                 <span v-if="v.verified" class="mp-dy-verified">✓</span>
+                <span v-if="v.realName" class="mp-dy-realname" @click.stop="showToast('已实名认证：' + v.realName)">已实名</span>
                 <button v-if="!v.isFollowing" class="mp-dy-follow-btn" @click.stop="toggleDyFollow(v._i)">关注</button>
                 <span v-else class="mp-dy-followed" @click.stop="toggleDyFollow(v._i)">已关注</span>
               </div>
@@ -554,7 +569,7 @@
                 <svg viewBox="0 0 24 24"><path fill="currentColor" d="m12 17.27l4.15 2.51c.76.46 1.69-.22 1.49-1.08l-1.1-4.72l3.67-3.18c.67-.58.31-1.68-.57-1.75l-4.83-.41l-1.89-4.46c-.34-.81-1.5-.81-1.84 0L9.19 8.63l-4.83.41c-.88.07-1.24 1.17-.57 1.75l3.67 3.18l-1.1 4.72c-.2.86.73 1.54 1.49 1.08z"/></svg>
                 <span>{{ v.saves || '收藏' }}</span>
               </button>
-              <button class="mp-dy-act-btn" @click.stop>
+              <button class="mp-dy-act-btn" @click.stop="openDyShareMenu('video', v)">
                 <svg viewBox="0 0 24 24"><path fill="currentColor" d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.51 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.3 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
                 <span>{{ v.shares }}</span>
               </button>
@@ -599,7 +614,7 @@
                 <div class="mp-dy-cmt-main">
                   <div class="mp-dy-cmt-user">{{ c.user }}</div>
                   <div class="mp-dy-cmt-text">{{ c.text }}</div>
-                  <div class="mp-dy-cmt-meta"><span>{{ c.region || '刚刚' }}</span><span class="mp-dy-cmt-reply" @click.stop="setDyReplyTo(c)">回复</span></div>
+                  <div class="mp-dy-cmt-meta"><span>{{ c.region || '刚刚' }}</span><span class="mp-dy-cmt-reply" @click.stop="setDyReplyTo(c)">回复</span><span class="mp-dy-cmt-reply mp-dy-cmt-share-btn" @click.stop="openDyShareMenu('comment',{video:douyinFeed[dyCommentIdx],comment:c})">↗️</span></div>
                   <!-- 楼中楼回复列表：每条回复也可以继续回复 -->
                   <div v-for="(r, ri) in (c.replies||[])" :key="'r'+ri" class="mp-dy-cmt-reply-item">
                     <div class="mp-dy-cmt-reply-ava">{{ (r.user||'?').replace('@','').slice(0,1).toUpperCase() }}</div>
@@ -611,6 +626,7 @@
                         <span>刚刚</span>
                         <!-- 对回复本身继续回复，接在同一 replies 里 -->
                         <span class="mp-dy-cmt-reply-btn" @click.stop="setDyReplyToFromReply(c, r)">回复</span>
+                        <span class="mp-dy-cmt-reply-btn mp-dy-cmt-share-btn" @click.stop="openDyShareMenu('reply',{video:douyinFeed[dyCommentIdx],comment:c,reply:r})">↗️</span>
                       </div>
                     </div>
                   </div>
@@ -724,7 +740,7 @@
                 <div class="mp-dylv-ava">{{ (dyLiveRoom.creator||'?').slice(0,1).toUpperCase() }}</div>
                 <div class="mp-dylv-info">
                   <div class="mp-dylv-name-row">
-                      <span class="mp-dylv-name">{{ dyLiveRoom.creator }}<span v-if="dyLiveRoom.verified" class="mp-dy-verified">✓</span></span>
+                      <span class="mp-dylv-name">{{ dyLiveRoom.creator }}<span v-if="dyLiveRoom.verified" class="mp-dy-verified">✓</span><span v-if="dyLiveRoom.realName" class="mp-dy-realname" @click.stop="showToast('已实名认证：' + dyLiveRoom.realName)">已实名</span></span>
                   </div>
                 </div>
                 <button v-if="!dyLiveRoom.isFollowing" class="mp-dylv-follow" @click="toggleDyFollowFromLive">关注</button>
@@ -768,7 +784,7 @@
               <button class="mp-dylv-heart" @click.stop="sendLiveHeart" :title="curFan ? '粉丝团 '+curFan.level+' 级' : '加入粉丝团'">{{ curFan ? '💖' : '🤍' }}</button>
               <button class="mp-dylv-gift" @click.stop="openGiftPanel">🎁</button>
               <button class="mp-dylv-more" @click.stop="generateLiveChat(false)" :disabled="generatingLiveChat" title="主播继续推进直播">{{ generatingLiveChat ? '⏳' : '▶' }}</button>
-              <button class="mp-dylv-share" @click.stop="showToast('转发功能即将上线')">↗️</button>
+              <button class="mp-dylv-share" @click.stop="openDyShareMenu('live', dyLiveRoom)">↗️</button>
             </div>
           </div>
           <!-- 礼物面板 -->
@@ -803,6 +819,16 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- 通用分享菜单（视频/直播/评论/照片通用）——放在所有 view 之上（z-60），避免被抖音/相册层覆盖 -->
+      <div v-if="dyShareMenu" class="mp-ctx-overlay mp-share-overlay" @click.self="dyShareMenu=null">
+        <div class="mp-ctx-sheet">
+          <div class="mp-ctx-title">{{ dyShareMenu.type==='photo' ? '相册照片' : dyShareMenu.type==='live' ? '直播' : dyShareMenu.type==='comment'||dyShareMenu.type==='reply' ? '评论' : '视频' }}</div>
+          <button class="mp-ctx-item" @click="shareToStory(dyShareMenu.type, dyShareMenu.data)">📤 分享到故事</button>
+          <button class="mp-ctx-item" @click="showToast('转发到微信（即将上线）')">💬 发给…</button>
+          <button class="mp-ctx-cancel" @click="dyShareMenu=null">取消</button>
         </div>
       </div>
 
@@ -864,6 +890,7 @@ const DY_IDXMAP_KEY = 'jdnl_dy_idxmap'   // 各tab独立记忆的当前下标
 const DY_HOT_KEY = 'jdnl_dy_hot'         // 热榜缓存 { mode, list:[{topic,heat}] }
 // content 是公开画面；pcontent 只在抖阴公开流要求，是点文字翻转后只给user看的私密版
 const DY_FORMAT_BASE = `creator:创作者抖音号（不带@，6字内）
+realName:该博主的真实姓名。若发布者是本故事世界里已存在的角色，必须用ta的正式全名；同一个人无论用什么抖音号/花名，realName 永远一致。若是与故事无关的陌生博主，就新创一个符合本世界观的真实姓名。
 verified:true或false（是否蓝V认证）
 caption:视频文案（20字内，可带#话题）
 sound:配乐（歌名-歌手，或"原声-创作者号"）
@@ -882,6 +909,7 @@ c5:评论者号|||评论内容|||赞数|||地区
 c6:评论者号|||评论内容|||赞数|||地区`
 // 直播卡生成格式（type:'live'）
 const DY_LIVE_FORMAT = `creator:主播抖音号（不带@，6字内）
+realName:该主播的真实姓名。若是本故事世界里已存在的角色，必须用ta的正式全名；同一个人无论用什么抖音号/花名，realName 永远一致。若是与故事无关的陌生主播，就新创一个符合本世界观的真实姓名。
 verified:true或false
 title:直播标题（15字内，有吸引力）
 viewers:当前在线人数（如 1929 / 2.3万）
@@ -922,6 +950,11 @@ const showDyMsgCenter = ref(false)        // 消息中心弹层
 const DY_NOTIF_KEY = 'jdnl_dy_notif'
 const dyNotifs = ref([])                  // 消息通知列表 [{id,videoCreator,videoContent,commentText,replierUser,replyText,ts,read}]
 const dyUnreadCount = computed(() => dyNotifs.value.filter(n => !n.read).length)
+// ---- 分享菜单（视频/直播/评论/照片） ----
+const dyShareMenu = ref(null)             // { type:'video'|'live'|'comment'|'reply'|'photo', data }
+// ---- 微信多选模式 ----
+const wxMultiSelect = ref(false)
+const wxSelectedMsgs = ref(new Set())
 const dySearchMode = ref(false)           // 搜索结果流是否激活（独立于推荐/关注/私密三tab）
 const dySearchQuery = ref('')             // 当前搜索关键词
 const dySearchDraft = ref('')             // 搜索输入框草稿
@@ -1200,6 +1233,37 @@ function storyTime() {                         // 剧情当前时间原始串（
     }
   } catch (e) {}
   return ''
+}
+// 抖音生成用：摘要当前世界客观状态（时间/地点），降低内容重复率、贴合当下剧情
+// 不含关系/好感度，避免把内容框死、保留"刷到未知"的新鲜感
+function dyWorldContext() {
+  try {
+    let sd = null
+    const w = window.parent
+    if (w && w.Mvu && w.Mvu.getMvuData) { try { const v = w.Mvu.getMvuData({ type: 'chat' }); sd = v && v.stat_data } catch (e) {} }
+    if (!sd) { const th = TH(); if (th && th.getVariables) sd = (th.getVariables({ type: 'chat' }) || {}).stat_data }
+    if (!sd) return ''
+    const parts = []
+    const t = sd.世界 && sd.世界.当前时间
+    if (t) parts.push(`当前时间：${t}`)
+    const loc = sd.主角 || {}
+    const locStr = [loc.位面, loc.城市, loc.区域, loc.场景].filter(Boolean).join('·')
+    if (locStr) parts.push(`所在：${locStr}`)
+    return parts.length ? `\n【当前世界状态（供贴合参考，别照抄进内容）】${parts.join('；')}。` : ''
+  } catch (e) { return '' }
+}
+// generateRaw 的 user_input 在 0 层、权重高。这里塞入博主真实姓名+话题当"检索关键词"以激活相关人设世界书，
+// 同时明确标注这是检索意图、非用户发言，避免 AI 当成 user 的话去回应或被带偏。
+function dyRetrievalHint(video, extra) {
+  const bits = []
+  if (video) {
+    if (video.realName) bits.push(video.realName)
+    if (video.creator) bits.push('@' + video.creator)
+    if (video.caption) bits.push(video.caption)
+  }
+  if (extra) bits.push(extra)
+  const kw = bits.filter(Boolean).join(' ')
+  return `（系统检索：为手机短视频功能生成内容，检索相关资料 ${kw}。这是检索关键词，不是用户发言，无需回应，直接按系统指令产出数据块。）`
 }
 function displayName(c) {                       // 备注优先，无则本名
   const r = remarks.value[curOwner.value]
@@ -1843,11 +1907,12 @@ async function generateDyTopCommentResponse(video, myComment) {
   const instruction =
     `【${isR18 ? '抖阴（成人向短视频平台）' : '抖音'}·评论子回复·静默生成】在视频「${(video.content||'').slice(0,80)}」的评论区，${me}(@${me.replace(/^@/,'')})刚发表了评论：「${myComment.text}」。${audience}${pcontentLine}` +
     `\n生成0~2条自然的子回复（直接回复${me}的这条评论），若判断无人回应则输出空块。` +
+    `\n【禁止扮演${me}】${me}是真实用户，不是AI生成的角色；回复里绝不能出现昵称为"${me}"的发言，也不得替${me}生成任何想法、心理或反应。` +
     `\n只输出一个 ===DYREPLY=== 数据块，块外不写字：\n===DYREPLY===\nr1:回复者号|||被回复者号(可空)|||回复内容\nr2:...\n===REPLYEND===`
   try {
     let result
     if (th.generateRaw) {
-      result = await th.generateRaw({ user_input: '看评论', should_silence: true, ordered_prompts: [
+      result = await th.generateRaw({ user_input: dyRetrievalHint(video), should_silence: true, ordered_prompts: [
         { role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
         { role: 'user', content: '生成评论子回复，只输出 ===DYREPLY=== 数据块，块外不写字。' },
       ] })
@@ -1888,11 +1953,12 @@ async function generateDyCommentReply(video, comment, myText, toUser) {
     `\n${audience}` +
     (existing ? `\n这条评论下已有的回复：\n${existing}` : '') +
     `\n生成 1~3 条自然的后续回复（每条5~20字简短口语），若判断无人会回则输出空块。` +
+    `\n【禁止扮演${me}】${me}是真实用户，不是AI生成的角色；回复里绝不能出现昵称为"${me}"的发言，也不得替${me}生成任何想法、心理或反应。` +
     `\n只输出一个 ===DYREPLY=== 数据块，块外不写字：\n===DYREPLY===\nr1:回复者号|||被回复者号(可空)|||回复内容\nr2:回复者号|||被回复者号(可空)|||回复内容\nr3:...\n===REPLYEND===`
   try {
     let result
     if (th.generateRaw) {
-      result = await th.generateRaw({ user_input: '看评论回复', should_silence: true, ordered_prompts: [
+      result = await th.generateRaw({ user_input: dyRetrievalHint(video, toUser), should_silence: true, ordered_prompts: [
         { role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
         { role: 'user', content: '生成评论回复，只输出 ===DYREPLY=== 数据块，块外不写字。' },
       ] })
@@ -1957,7 +2023,10 @@ async function generateDyVideo() {
   dyLastGenMs = Date.now()
   const me = meName.value || '我'
   // 已刷过的创作者，供 AI 参考避免重复。搜索是主动找特定内容，不去重（同一博主的相关内容本就该都搜出来）
-  const seen = isSearch ? '' : [...new Set(douyinFeed.value.slice(-8).map(v => v.creator).filter(Boolean))].join('、')
+  // 已刷过的博主：带上真实姓名对照，供 AI 判断"同一个人"避免换号重复
+  const seenPairs = new Map()
+  if (!isSearch) douyinFeed.value.slice(-12).forEach(v => { if (v.creator) seenPairs.set(v.creator, v.realName || '') })
+  const seen = [...seenPairs.entries()].map(([id, rn]) => rn ? `${id}（${rn}）` : id).join('、')
 
   // 私密流：按设置的陌生人占比掷骰，默认0（全红颜私发）
   const isPrivateStranger = isPrivate && Math.random() * 100 < dyStrangerPct.value
@@ -2012,17 +2081,19 @@ async function generateDyVideo() {
       : ''
     const liveInstruction =
       `【${livePlatform}·直播卡·静默生成】现在模拟刷到的一个直播卡，绝不输出任何正文。` +
+      dyWorldContext() +
       `\n主播来源：${liveSourceLine}` +
       `\n直播风格：${liveStyleLine}` +
+      `\n【贴合优先】主播与直播主题应贴合。当已有角色都不契合这个主题时，可以合理创建一个符合本世界观的新角色来直播，而不是让现有角色勉强扮演不属于ta设定的形象。` +
       `\n${liveChatRule}` + liveSearchLine +
-      (seen ? `\n已出现过这些账号，主播别重复：${seen}。` : '') +
+      (seen ? `\n最近已出现过这些博主（括号内是其真实姓名）：${seen}。真实姓名相同=同一个人，主播别用新号重复同一个人。` : '') +
       `\n【账号唯一】同一角色全平台只有一个固定账号名，禁用别名/小名/拼音/缩写重复出现。` +
       `\n【禁止扮演${me}】chat 字段里绝不能出现昵称为"${me}"的发言，${me}是真实用户，不是AI生成的角色。` +
       `\n只输出一个 ===LIVECARD=== 数据块，块外不写字：\n===LIVECARD===\n` + DY_LIVE_FORMAT + `\n===LCEND===`
     try {
       let result
       if (th.generateRaw) {
-        result = await th.generateRaw({ user_input: '刷到直播', should_silence: true, ordered_prompts: [
+        result = await th.generateRaw({ user_input: isSearch ? dyRetrievalHint(null, query) : '刷到直播', should_silence: true, ordered_prompts: [
           { role: 'system', content: liveInstruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
           { role: 'user', content: '刷到一个直播卡，只输出 ===LIVECARD=== 数据块，块外不写字。' },
         ] })
@@ -2098,13 +2169,15 @@ async function generateDyVideo() {
   const instruction =
     `【${platform}·刷视频·静默生成】现在只模拟刷到的一条短视频，绝不输出任何正文、旁白、场景或动作描写，只产出下面规定的数据块。` +
     `请结合下方提供的世界观设定、角色信息与当前剧情，生成一条真实可信、符合该世界背景的短视频。` +
+    dyWorldContext() +
     `\n发布来源：${sourceLine}` +
     `\n内容风格：${styleLine}` +
+    `\n【贴合优先】发布者与内容应贴合视频主题。当已有角色都不契合这个主题时，可以合理创建一个符合本世界观的新角色来发布，而不是让现有角色勉强扮演不属于ta设定的形象。` +
     audienceLine + flipLine + searchLine +
     // 关注tab要求"从已关注里选"，与"换新人别重复"冲突，故关注tab不加seen；只提示换新题材
     (isFollowTab
       ? `\n可以从已关注的这几个人里任选，题材尽量换新、别和最近重复。`
-      : (seen ? `\n最近已刷到过这些创作者，请换新的人和新的题材，别重复：${seen}。` : '')) +
+      : (seen ? `\n最近已刷到过这些博主（括号内是其真实姓名）：${seen}。\n【实名去重铁则】括号里真实姓名相同 = 同一个人。这些人已经出现过，请优先换全新的人和新题材；若确实要让某个已出现的人再出镜，必须沿用ta原来的抖音号，绝不能换一个新号把同一个真实姓名的人重复刷出来。` : '')) +
     `\n真实感要求：创作者名像真人抖音号（可含字母数字emoji）；【账号唯一】同一个角色在整个平台只有一个固定账号，出现时始终用同一个名字，绝不能用别名、小名、拼音、缩写、外号或换个称呼把同一个人包装成不同的新博主重复刷出；文案口语化、可带#话题；弹幕是观众即时反应、短促随意有梗；评论有不同性格与立场，别千篇一律；点赞/评论/分享数符合内容热度` +
     (isPrivate ? `（私密视频数据极低或为0，因为只有一个人看）` : '') + `。` +
     `\n只输出一个 ===DYSTART=== 数据块，块外不写任何字：\n===DYSTART===\n` + fmt + `\n===DYEND===`
@@ -2119,7 +2192,7 @@ async function generateDyVideo() {
         'world_info_after',
         { role: 'user', content: `刷到下一条视频，只输出一个 ===DYSTART=== 数据块，块外不写任何字。` },
       ]
-      result = await th.generateRaw({ user_input: '刷抖音', should_silence: true, ordered_prompts: ordered })
+      result = await th.generateRaw({ user_input: isSearch ? dyRetrievalHint(null, query) : '刷抖音', should_silence: true, ordered_prompts: ordered })
     } else {
       result = await th.generate({ user_input: instruction, should_silence: true })
     }
@@ -2191,6 +2264,7 @@ function parseDyVideo(raw) {
   if (!content && !f('caption')) return null
   return {
     creator: f('creator').replace('@',''),
+    realName: f('realName').replace('@',''),
     verified: /true|是|认证/.test(f('verified')),
     caption: f('caption'),
     sound: f('sound') || '原声',
@@ -2222,7 +2296,7 @@ function parseDyLiveCard(raw) {
     if (user) chatLog.push({ level: /^\d+$/.test(level) ? +level : null, user, text: text||'', isJoin: tag==='join', isMe: false })
   })
   return {
-    creator: f('creator').replace('@',''), verified: /true|是|认证/.test(f('verified')),
+    creator: f('creator').replace('@',''), realName: f('realName').replace('@',''), verified: /true|是|认证/.test(f('verified')),
     title: f('title'), viewers: f('viewers') || '0',
     liveLikes: Math.floor(Math.random()*5000+200) + '',
     content, chatLog, myComments: [], isLiked: false, isSaved: false, isFollowing: false, type: 'live',
@@ -2275,6 +2349,93 @@ function formatDyNotifTime(ts) {
   if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前'
   if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前'
   return Math.floor(diff / 86400000) + '天前'
+}
+// ---- 分享功能 ----
+function openDyShareMenu(type, data) { dyShareMenu.value = { type, data } }
+// 根据内容类型组装注入正文的文本
+// 客观第三人称·上帝视角叙述——不以 user 口吻，避免被预设当成"user自述可疑"；
+// 写成可供正文接续的场景快照，AI 可据此展开剧情。
+function buildShareToStoryText(type, data) {
+  const me = meName.value || '我'
+  if (type === 'video') {
+    const v = data
+    const isR18 = dyR18.value
+    const isPrivate = v.vis === 'private'
+    const isStranger = !!v.stranger
+    const isRedYan = isPrivate && !isStranger
+    const hasPcontent = !!(v.pcontent && isR18)
+    if (isRedYan) {
+      return `（${me}的手机屏幕上，是一条只发给${me}看的抖阴（成人向短视频平台）私密视频，发布者@${v.creator}「${v.caption || ''}」。画面：${v.content}）`
+    } else if (isPrivate && isStranger) {
+      return `（${me}的手机屏幕上，是抖阴（成人向短视频平台）上的一条成人内容，博主@${v.creator}「${v.caption || ''}」。画面：${v.content}）`
+    } else if (hasPcontent) {
+      return `（${me}的手机屏幕上，是抖阴（成人向短视频平台）博主@${v.creator}的视频「${v.caption || ''}」。公开画面：${v.content}\n而${me}翻转看到了只对${me}可见的私密版：${v.pcontent}）`
+    } else {
+      const platform = isR18 ? '抖阴（成人向短视频平台）' : '抖音'
+      return `（${me}的手机屏幕上，是${platform}博主@${v.creator}的视频「${v.caption || ''}」。画面：${v.content}）`
+    }
+  } else if (type === 'live') {
+    const room = data
+    const platform = dyR18.value ? '抖阴（成人向短视频平台）' : '抖音'
+    return `（${me}的手机屏幕上，@${room.creator}正在${platform}直播「${room.title || ''}」。当前画面：${room.content || ''}）`
+  } else if (type === 'comment') {
+    const { video, comment } = data
+    const platform = dyR18.value ? '抖阴（成人向短视频平台）' : '抖音'
+    return `（${me}的手机屏幕上，是${platform}博主@${video.creator}「${video.caption || ''}」视频的评论区，${comment.user}评论道：「${comment.text}」）`
+  } else if (type === 'reply') {
+    const { video, comment, reply } = data
+    const platform = dyR18.value ? '抖阴（成人向短视频平台）' : '抖音'
+    return `（${me}的手机屏幕上，是${platform}博主@${video.creator}「${video.caption || ''}」视频的评论区，${reply.user}回复${reply.replyTo || comment.user}：「${reply.text}」）`
+  } else if (type === 'photo') {
+    const p = data
+    return `（${me}的手机相册里，是${p.时间}拍下的一张照片：${p.画面}）`
+  } else if (type === 'wxmsg') {
+    const { msg, contact } = data
+    const name = msg.dir === '发出' ? me : contact
+    return `（${me}的手机屏幕上，是与${contact}的微信对话，其中一条：${name}说「${msg.text}」）`
+  } else if (type === 'wxmsgs') {
+    const { msgs, contact } = data
+    const lines = msgs.map(m => `${m.dir === '发出' ? me : contact}：「${m.text}」`).join('\n')
+    return `（${me}的手机屏幕上，是与${contact}的一段微信对话：\n${lines}）`
+  }
+  return ''
+}
+// 分享到故事：塞进酒馆主输入框并自动发送（与开场白/微信常规发送同一通道，可与记忆插件等联动），
+// 而不是后台静默 generate。
+function shareToStory(type, data) {
+  const text = buildShareToStoryText(type, data)
+  if (!text) { showToast('无内容可分享'); return }
+  dyShareMenu.value = null
+  try {
+    const ta = doc.querySelector('#send_textarea')
+    if (!ta) { showToast('未找到输入框，无法分享'); return }
+    const cur = (ta.value || '').replace(/\s+$/, '')
+    ta.value = cur ? cur + '\n\n' + text : text
+    ta.dispatchEvent(new Event('input', { bubbles: true }))
+    const btn = doc.querySelector('#send_but')
+    if (btn) { btn.click(); showToast('已分享到故事') }
+    else showToast('已填入输入框，请手动发送')
+  } catch (e) { showToast('分享失败：' + ((e && e.message) || e)) }
+}
+// 微信：从点击菜单分享单条消息到故事
+function shareWxMsgToStory() {
+  if (!ctxMenu.value) return
+  const arr = ownerLogs.value[activeContact.value]; if (!arr) return
+  const msg = arr[ctxMenu.value.idx]; if (!msg) return
+  closeCtxMenu()
+  shareToStory('wxmsg', { msg, contact: activeContact.value })
+}
+// 微信：多选模式
+function startWxMultiSelect() { closeCtxMenu(); wxMultiSelect.value = true; wxSelectedMsgs.value = new Set() }
+function cancelWxMultiSelect() { wxMultiSelect.value = false; wxSelectedMsgs.value = new Set() }
+function toggleWxMsgSelect(i) { const s = new Set(wxSelectedMsgs.value); if (s.has(i)) s.delete(i); else s.add(i); wxSelectedMsgs.value = s }
+function shareWxMultiToStory() {
+  const arr = ownerLogs.value[activeContact.value]; if (!arr) return
+  const idxs = [...wxSelectedMsgs.value].sort((a, b) => a - b)
+  const msgs = idxs.map(i => arr[i]).filter(Boolean)
+  if (!msgs.length) return
+  cancelWxMultiSelect()
+  shareToStory('wxmsgs', { msgs, contact: activeContact.value })
 }
 function toggleDyFlip(vi) {
   const v = douyinFeed.value[vi]
@@ -2482,7 +2643,8 @@ async function generateLiveChat(includeUserMsg = false) {
   // 取最近3条user操作（含礼物/升级），别只取最后1条漏掉礼物信息
   const lastMeMsgs = includeUserMsg ? (room.chatLog || []).filter(c => c.isMe).slice(-3) : []
   const replyNote = lastMeMsgs.length > 0
-    ? `\n${me}最近的操作：${lastMeMsgs.map(m => `「${m.text}」`).join('、')}——主播${room.creator}或观众要顺势自然回应，别无视。`
+    ? `\n${me}最近的操作：${lastMeMsgs.map(m => `「${m.text}」`).join('、')}——主播${room.creator}或观众要顺势自然回应，别无视。` +
+      `\n【点名必应】若${me}的发言里点名、@ 或直接称呼了某个人（主播或某位观众），被点到的那个人必须在这批聊天里优先、明确地回应${me}，不能被无关弹幕淹没或跳过。`
     : ''
   const fan = dyFanClub.value[room.creator]
   const levelNote = fan && fan.level > 0
@@ -2510,7 +2672,7 @@ async function generateLiveChat(includeUserMsg = false) {
   try {
     let result
     if (th.generateRaw) {
-      result = await th.generateRaw({ user_input: '看直播聊天', should_silence: true, ordered_prompts: [
+      result = await th.generateRaw({ user_input: dyRetrievalHint(room, room.title), should_silence: true, ordered_prompts: [
         { role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
         { role: 'user', content: '生成直播间聊天消息，只输出 ===LIVECHAT=== 数据块，块外不写字。' },
       ] })
@@ -3119,12 +3281,31 @@ onUnmounted(() => {
 .mp-bub.mt-系统::before{display:none}
 .mp-sys-text{font-size:12px;color:#888}
 .mp-ctx-overlay{position:absolute;inset:0;z-index:30;display:flex;align-items:flex-end;background:rgba(0,0,0,.38);animation:mp-fade .15s ease-out}
+.mp-share-overlay{z-index:58}
 .mp-ctx-sheet{width:100%;background:#f7f7f7;border-radius:12px 12px 0 0;overflow:hidden;padding-bottom:env(safe-area-inset-bottom,8px)}
 .mp-ctx-item{display:block;width:100%;padding:13px 18px;border:none;border-bottom:1px solid rgba(0,0,0,.06);background:#fff;text-align:left;font-size:15px;color:#0d0d0d;cursor:pointer;font-family:inherit}
 .mp-ctx-item:active{background:#e8e8e8}
 .mp-ctx-item.danger{color:#fa5151}
 .mp-ctx-cancel{display:block;width:100%;margin-top:8px;padding:13px 18px;border:none;background:#fff;text-align:center;font-size:15px;font-weight:600;color:#0d0d0d;cursor:pointer;font-family:inherit}
 .mp-ctx-cancel:active{background:#e8e8e8}
+.mp-ctx-title{padding:10px 18px 6px;font-size:12px;color:#999;border-bottom:1px solid rgba(0,0,0,.06);background:#f7f7f7}
+/* 多选模式 */
+.mp-ms-bar{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:10px 14px 16px;background:#f7f7f7;border-top:1px solid rgba(0,0,0,.06);gap:8px}
+.mp-ms-cancel{flex-shrink:0;background:none;border:none;font-size:14px;color:#888;cursor:pointer;padding:4px 0;font-family:inherit}
+.mp-ms-count{flex:1;text-align:center;font-size:13px;color:#555}
+.mp-ms-send{flex-shrink:0;background:#07c160;border:none;border-radius:6px;color:#fff;font-size:14px;font-weight:600;padding:6px 14px;cursor:pointer;font-family:inherit;opacity:1}
+.mp-ms-send:disabled{opacity:.4;cursor:default}
+.mp-msrow-wrap{display:flex;align-items:center;gap:0}
+.mp-msrow-wrap.ms{gap:8px}
+.mp-msrow-wrap .mp-row{flex:1;min-width:0;margin-bottom:0}
+.mp-msrow-wrap{margin-bottom:14px}
+.mp-msrow-wrap.ms{cursor:pointer}
+.mp-ms-chk{width:20px;height:20px;border-radius:50%;border:1.5px solid #c6c6c6;background:#fff;flex-shrink:0;cursor:pointer;position:relative;align-self:center}
+.mp-ms-chk.on{background:#07c160;border-color:#07c160}
+.mp-ms-chk.on::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700}
+.mp-bub.selected{outline:2px solid #07c160;outline-offset:2px}
+/* 评论分享按钮 */
+.mp-dy-cmt-share-btn{opacity:.5;font-size:11px}
 
 /* 输入栏 */
 .mp-inbar{display:flex;gap:8px;align-items:center;padding:7px 10px 15px;background:#f7f7f7;border-top:1px solid rgba(0,0,0,.06);flex-shrink:0}
@@ -3310,6 +3491,7 @@ onUnmounted(() => {
 .mp-dy-creator-row{display:flex;align-items:center;gap:6px}
 .mp-dy-creator-name{color:#fff;font-size:15px;font-weight:700}
 .mp-dy-verified{color:#20d5ec;font-size:12px;font-weight:700}
+.mp-dy-realname{margin-left:5px;font-size:10px;color:#20d5ec;border:1px solid rgba(32,213,236,.5);border-radius:4px;padding:0 4px;line-height:15px;cursor:pointer;opacity:.9}
 .mp-dy-follow-btn{padding:1px 8px;border:1px solid #fff;border-radius:3px;background:transparent;color:#fff;font-size:12px;cursor:pointer;font-family:inherit}
 .mp-dy-followed{padding:1px 8px;border:1px solid rgba(255,255,255,.35);border-radius:3px;color:rgba(255,255,255,.6);font-size:12px;cursor:pointer}
 .mp-dy-caption{color:rgba(255,255,255,.9);font-size:13px;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
