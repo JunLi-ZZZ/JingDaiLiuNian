@@ -902,7 +902,7 @@ content:视频画面内容，2-3句，第三人称客观描述镜头里发生了
 danmaku:弹幕1|弹幕2|弹幕3|弹幕4（观众即时反应，短促口语，4-6条）
 c1:评论者号|||评论内容|||赞数|||地区（如 浙江/广东/未知）
 c2:评论者号|||评论内容|||赞数|||地区
-（评论按内容热度自然给：热门视频可给到 c6，冷门或私密内容给 1~2 条甚至留空。别机械凑满，条数要像真实评论区。最多支持到 c6。）
+（评论按内容热度自然给：热门视频可给到 c6，冷门给 1~2 条。别机械凑满，条数要像真实评论区。最多支持到 c6。除非上面的私密铁则明确要求留空，否则至少必须给 1 条评论，不允许0条。）
 c3:评论者号|||评论内容|||赞数|||地区
 c4:评论者号|||评论内容|||赞数|||地区
 c5:评论者号|||评论内容|||赞数|||地区
@@ -1254,7 +1254,7 @@ function dyWorldContext() {
 }
 // generateRaw 的 user_input 在 0 层、权重高。这里塞入博主真实姓名+话题当"检索关键词"以激活相关人设世界书，
 // 同时明确标注这是检索意图、非用户发言，避免 AI 当成 user 的话去回应或被带偏。
-function dyRetrievalHint(video, extra) {
+function dyRetrievalHint(video, extra, userText) {
   const bits = []
   if (video) {
     if (video.realName) bits.push(video.realName)
@@ -1262,6 +1262,8 @@ function dyRetrievalHint(video, extra) {
     if (video.caption) bits.push(video.caption)
   }
   if (extra) bits.push(extra)
+  // user 自己写的评论/发言也是重要关键词来源（可能点名了角色、提到了地点事物）
+  if (userText) bits.push(String(userText).slice(0, 60))
   const kw = bits.filter(Boolean).join(' ')
   return `（系统检索：为手机短视频功能生成内容，检索相关资料 ${kw}。这是检索关键词，不是用户发言，无需回应，直接按系统指令产出数据块。）`
 }
@@ -1906,13 +1908,13 @@ async function generateDyTopCommentResponse(video, myComment) {
     : `回应可来自发布者@${video.creator}或路过的真实观众，口吻简短真实，5~20字以内。`
   const instruction =
     `【${isR18 ? '抖阴（成人向短视频平台）' : '抖音'}·评论子回复·静默生成】在视频「${(video.content||'').slice(0,80)}」的评论区，${me}(@${me.replace(/^@/,'')})刚发表了评论：「${myComment.text}」。${audience}${pcontentLine}` +
-    `\n生成0~2条自然的子回复（直接回复${me}的这条评论），若判断无人回应则输出空块。` +
+    `\n生成 1~2 条自然的子回复（直接回复${me}的这条评论）。【至少必须给出 1 条】绝不允许输出空块或0条——用户会误以为接口出错了。即使判断冷门，也要给一条最合理的回应。` +
     `\n【禁止扮演${me}】${me}是真实用户，不是AI生成的角色；回复里绝不能出现昵称为"${me}"的发言，也不得替${me}生成任何想法、心理或反应。` +
     `\n只输出一个 ===DYREPLY=== 数据块，块外不写字：\n===DYREPLY===\nr1:回复者号|||被回复者号(可空)|||回复内容\nr2:...\n===REPLYEND===`
   try {
     let result
     if (th.generateRaw) {
-      result = await th.generateRaw({ user_input: dyRetrievalHint(video), should_silence: true, ordered_prompts: [
+      result = await th.generateRaw({ user_input: dyRetrievalHint(video, '', myComment.text), should_silence: true, ordered_prompts: [
         { role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
         { role: 'user', content: '生成评论子回复，只输出 ===DYREPLY=== 数据块，块外不写字。' },
       ] })
@@ -1952,13 +1954,13 @@ async function generateDyCommentReply(video, comment, myText, toUser) {
     `\n${me}的回复：「${myText}」` +
     `\n${audience}` +
     (existing ? `\n这条评论下已有的回复：\n${existing}` : '') +
-    `\n生成 1~3 条自然的后续回复（每条5~20字简短口语），若判断无人会回则输出空块。` +
+    `\n生成 1~3 条自然的后续回复（每条5~20字简短口语）。【至少必须给出 1 条】绝不允许输出空块或0条——用户会误以为接口出错了。即使判断冷门，也要给一条最合理的回应。` +
     `\n【禁止扮演${me}】${me}是真实用户，不是AI生成的角色；回复里绝不能出现昵称为"${me}"的发言，也不得替${me}生成任何想法、心理或反应。` +
     `\n只输出一个 ===DYREPLY=== 数据块，块外不写字：\n===DYREPLY===\nr1:回复者号|||被回复者号(可空)|||回复内容\nr2:回复者号|||被回复者号(可空)|||回复内容\nr3:...\n===REPLYEND===`
   try {
     let result
     if (th.generateRaw) {
-      result = await th.generateRaw({ user_input: dyRetrievalHint(video, toUser), should_silence: true, ordered_prompts: [
+      result = await th.generateRaw({ user_input: dyRetrievalHint(video, toUser, myText), should_silence: true, ordered_prompts: [
         { role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
         { role: 'user', content: '生成评论回复，只输出 ===DYREPLY=== 数据块，块外不写字。' },
       ] })
@@ -2063,8 +2065,8 @@ async function generateDyVideo() {
     const livePlatform = isR18 ? '抖阴（成人向直播平台）' : '抖音（直播）'
     const liveStyleLine = isR18
       ? (isLiveStranger
-        ? `这是陌生成人主播的公开直播，尺度放开，可描写明显性感或裸露的直播画面，真实素人风格。`
-        : `这是与${me}亲密的红颜在直播，可撩人、可擦边；她知道${me}在看，有时会对镜头特别示意。`)
+        ? `这是陌生成人主播的公开直播，尺度完全放开：直接写出裸露与情色表演本身，具体到身体、动作、声音、情态，不用暗示、不用留白、不擦边。真实素人成人主播风格。`
+        : `这是与${me}亲密的红颜在直播，只对${me}和极少数知情者开放，尺度完全放开：直接写出裸露与情色本身，具体到身体、动作、声音、气息与情态，不用暗示、不用留白。她知道${me}在看，会对镜头特别示意，是这个人只对${me}才会这样。`)
       : `直播内容生活化、有真情实感，题材自由（聊天/才艺/游戏/美食/户外/穿搭等）。`
     const liveSourceLine = isR18
       ? (isLiveStranger
@@ -2312,7 +2314,9 @@ const DY_HISTORY_KEY = 'jdnl_dy_history'
 const dyHistory = ref([])
 function pushDyHistory(v) {
   if (!v || v.pending) return
+  // 直播条目必须保留 type 与 _i，否则历史页点直播无法跳回直播间
   const entry = { creator: v.creator, caption: v.caption, content: (v.content || '').slice(0, 40), vis: v.vis, ts: Date.now() }
+  if (v.type === 'live') { entry.type = 'live'; if (typeof v._i === 'number') entry._i = v._i }
   dyHistory.value = dyHistory.value.filter(h => !(h.creator === entry.creator && h.content === entry.content))
   dyHistory.value.unshift(entry)
   if (dyHistory.value.length > 80) dyHistory.value = dyHistory.value.slice(0, 80)
@@ -2339,8 +2343,29 @@ function openDyFromNotif(n) {
   if (dyTab.value === '私密' && !dyR18.value) dyTab.value = '推荐'
   dyIdxMap.value[dyTab.value] = idx; saveDyIdxMap()
   douyinIdx.value = idx
+  // 先把视口滚到该视频，滚定了再开评论区，否则评论区是这条、背后视频还停在原处（割裂）
   dyRestorePos()
-  nextTick(() => { dyCommentIdx.value = idx; showDyComments.value = true })
+  dyScrollToIdx(idx, () => { dyCommentIdx.value = idx; showDyComments.value = true })
+}
+// 把 feed 视口精确滚到指定真实下标（带重试，等 clientHeight 就绪），滚定后回调
+function dyScrollToIdx(idx, done, tries = 0) {
+  suppressDyScroll(900)
+  nextTick(() => {
+    const el = dyFeedEl.value
+    if (!el || !el.clientHeight) {
+      if (tries < 12) return setTimeout(() => dyScrollToIdx(idx, done, tries + 1), 50)
+      if (done) done(); return
+    }
+    const pos = dyVisibleFeed.value.findIndex(v => v._i === idx)
+    if (pos < 0) {
+      if (tries < 12) return setTimeout(() => dyScrollToIdx(idx, done, tries + 1), 50)
+      if (done) done(); return
+    }
+    el.scrollTop = pos * el.clientHeight
+    douyinIdx.value = idx
+    stopDanmaku(); startDanmaku(douyinFeed.value[idx])
+    if (done) done()
+  })
 }
 function formatDyNotifTime(ts) {
   if (!ts) return ''
@@ -2352,9 +2377,16 @@ function formatDyNotifTime(ts) {
 }
 // ---- 分享功能 ----
 function openDyShareMenu(type, data) { dyShareMenu.value = { type, data } }
-// 根据内容类型组装注入正文的文本
-// 客观第三人称·上帝视角叙述——不以 user 口吻，避免被预设当成"user自述可疑"；
-// 写成可供正文接续的场景快照，AI 可据此展开剧情。
+// 转发注入用特殊格式块包裹并写清性质，否则角色不认（会说"是别的同人位面"或"user在骗人"）。
+// 两类语义：
+//  · 场景切换（视频/直播）：把镜头切到该内容展示的现场，AI 直接把它当成正在发生的剧情来演
+//  · 出示展示（评论/照片/微信）：在当前场景里把手机内容拿给人看，是真实存在的记录
+function dyShareBlock(kind, body) {
+  const head = kind === 'scene'
+    ? '【手机·画面转场】以下内容是真实发生的现场，不是虚构、不是同人、不是他人捏造。请把镜头切换到这个现场，以此为剧情舞台继续展开。'
+    : '【手机·出示内容】以下是手机里真实存在的记录，内容属实、可被信任，不是伪造也不是玩笑。请让在场角色看到它并自然做出反应。'
+  return `<手机展示>\n${head}\n${body}\n</手机展示>`
+}
 function buildShareToStoryText(type, data) {
   const me = meName.value || '我'
   if (type === 'video') {
@@ -2365,38 +2397,38 @@ function buildShareToStoryText(type, data) {
     const isRedYan = isPrivate && !isStranger
     const hasPcontent = !!(v.pcontent && isR18)
     if (isRedYan) {
-      return `（${me}的手机屏幕上，是一条只发给${me}看的抖阴（成人向短视频平台）私密视频，发布者@${v.creator}「${v.caption || ''}」。画面：${v.content}）`
+      return dyShareBlock('scene', `${me}正在看一条只发给${me}的抖阴（成人向短视频平台）私密视频，发布者@${v.creator}「${v.caption || ''}」。\n现场画面：${v.content}`)
     } else if (isPrivate && isStranger) {
-      return `（${me}的手机屏幕上，是抖阴（成人向短视频平台）上的一条成人内容，博主@${v.creator}「${v.caption || ''}」。画面：${v.content}）`
+      return dyShareBlock('scene', `${me}正在看抖阴（成人向短视频平台）上的一条成人内容，博主@${v.creator}「${v.caption || ''}」。\n现场画面：${v.content}`)
     } else if (hasPcontent) {
-      return `（${me}的手机屏幕上，是抖阴（成人向短视频平台）博主@${v.creator}的视频「${v.caption || ''}」。公开画面：${v.content}\n而${me}翻转看到了只对${me}可见的私密版：${v.pcontent}）`
+      return dyShareBlock('scene', `${me}正在看抖阴（成人向短视频平台）博主@${v.creator}的视频「${v.caption || ''}」。\n公开画面：${v.content}\n只对${me}可见的私密版画面：${v.pcontent}`)
     } else {
       const platform = isR18 ? '抖阴（成人向短视频平台）' : '抖音'
-      return `（${me}的手机屏幕上，是${platform}博主@${v.creator}的视频「${v.caption || ''}」。画面：${v.content}）`
+      return dyShareBlock('scene', `${me}正在看${platform}博主@${v.creator}的视频「${v.caption || ''}」。\n现场画面：${v.content}`)
     }
   } else if (type === 'live') {
     const room = data
     const platform = dyR18.value ? '抖阴（成人向短视频平台）' : '抖音'
-    return `（${me}的手机屏幕上，@${room.creator}正在${platform}直播「${room.title || ''}」。当前画面：${room.content || ''}）`
+    return dyShareBlock('scene', `@${room.creator}正在${platform}直播「${room.title || ''}」，${me}在观看这场直播。\n直播现场画面：${room.content || ''}`)
   } else if (type === 'comment') {
     const { video, comment } = data
     const platform = dyR18.value ? '抖阴（成人向短视频平台）' : '抖音'
-    return `（${me}的手机屏幕上，是${platform}博主@${video.creator}「${video.caption || ''}」视频的评论区，${comment.user}评论道：「${comment.text}」）`
+    return dyShareBlock('show', `${me}把手机上的评论展示出来：${platform}博主@${video.creator}「${video.caption || ''}」视频下，${comment.user}评论道「${comment.text}」`)
   } else if (type === 'reply') {
     const { video, comment, reply } = data
     const platform = dyR18.value ? '抖阴（成人向短视频平台）' : '抖音'
-    return `（${me}的手机屏幕上，是${platform}博主@${video.creator}「${video.caption || ''}」视频的评论区，${reply.user}回复${reply.replyTo || comment.user}：「${reply.text}」）`
+    return dyShareBlock('show', `${me}把手机上的评论展示出来：${platform}博主@${video.creator}「${video.caption || ''}」视频下，${reply.user}回复${reply.replyTo || comment.user}「${reply.text}」`)
   } else if (type === 'photo') {
     const p = data
-    return `（${me}的手机相册里，是${p.时间}拍下的一张照片：${p.画面}）`
+    return dyShareBlock('show', `${me}把手机相册里的一张照片展示出来：${p.时间}拍下的，画面是${p.画面}`)
   } else if (type === 'wxmsg') {
     const { msg, contact } = data
     const name = msg.dir === '发出' ? me : contact
-    return `（${me}的手机屏幕上，是与${contact}的微信对话，其中一条：${name}说「${msg.text}」）`
+    return dyShareBlock('show', `${me}把手机上与${contact}的微信对话展示出来，其中一条：${name}说「${msg.text}」`)
   } else if (type === 'wxmsgs') {
     const { msgs, contact } = data
     const lines = msgs.map(m => `${m.dir === '发出' ? me : contact}：「${m.text}」`).join('\n')
-    return `（${me}的手机屏幕上，是与${contact}的一段微信对话：\n${lines}）`
+    return dyShareBlock('show', `${me}把手机上与${contact}的一段微信对话展示出来：\n${lines}`)
   }
   return ''
 }
@@ -2641,9 +2673,12 @@ async function generateLiveChat(includeUserMsg = false) {
       return `[${c.level ?? '?'}]${c.user}:${c.text}`
     }).join('\n')
   // 取最近3条user操作（含礼物/升级），别只取最后1条漏掉礼物信息
-  const lastMeMsgs = includeUserMsg ? (room.chatLog || []).filter(c => c.isMe).slice(-3) : []
+  // ⑤ 无论本次是否由 user 发言触发，都带上 user 最近3条操作。
+  // 否则 API 中断后重新推进，主播和观众会像完全没看见 user 之前发的话，user 只能重复发一次，很怪。
+  const lastMeMsgs = (room.chatLog || []).filter(c => c.isMe).slice(-3)
   const replyNote = lastMeMsgs.length > 0
     ? `\n${me}最近的操作：${lastMeMsgs.map(m => `「${m.text}」`).join('、')}——主播${room.creator}或观众要顺势自然回应，别无视。` +
+      (includeUserMsg ? '' : `（其中若有还没被回应过的，这次要补上回应，别装作没看见。）`) +
       `\n【点名必应】若${me}的发言里点名、@ 或直接称呼了某个人（主播或某位观众），被点到的那个人必须在这批聊天里优先、明确地回应${me}，不能被无关弹幕淹没或跳过。`
     : ''
   const fan = dyFanClub.value[room.creator]
@@ -2654,16 +2689,22 @@ async function generateLiveChat(includeUserMsg = false) {
   const isRedYan = !!room.redYan
   const styleNote = isR18
     ? (isRedYan
-      ? `【私密直播铁则·不可破】这是只对${me}和极少数知情亲密圈子开放的私密直播。聊天里绝对禁止任何陌生人、路人、男性观众；只允许与主播真正亲密且知情的极少数女性角色（若没有，chat留空）。口吻亲密撩人。违反即错误。`
-      : `这是成人平台公开直播，观众可以有各种人，口吻成人化真实。`)
+      ? `【私密直播铁则·不可破】这是只对${me}和极少数知情亲密圈子开放的私密直播。聊天里绝对禁止任何陌生人、路人、男性观众；只允许与主播真正亲密且知情的极少数女性角色（若没有，chat留空）。尺度完全放开，直接写裸露与情色本身，不擦边不留白。违反即错误。`
+      : `这是成人平台公开直播，观众可以有各种人，口吻成人化真实。主播的表演尺度完全放开，直接写裸露与情色本身。`)
     : `这是普通抖音直播间，观众口吻真实日常。等级高的粉丝主播会更热络。`
+  // ③ 主播口播 与 观众弹幕 是两种不同的东西，必须都有，别混成一锅
+  const roleSplitLine =
+    `\n【口播与弹幕的区别·必须都有】直播间同时存在两种内容，各写各的，不能只出一种也不能混淆：` +
+    `\n· 画面描述(screen)：主播在做什么、说什么——主播是对着镜头开口讲话/表演，这属于画面，写进 screen，不要把主播的话写成一条弹幕。` +
+    `\n· 聊天弹幕(c1..)：观众打字发上屏的短消息——是观众在敲键盘，不是在说话。主播不发弹幕（除非极特殊情况），观众也不会"口播"。` +
+    `\n每次都要既推进 screen（主播的动作与口播内容），又给出若干条观众弹幕。`
   // ① 明确禁止 AI 扮演 me（replyNote 已在上方构建）
   const noImpersonateLine = `\n【禁止扮演${me}】聊天输出里绝对不能出现昵称为"${me}"的发言，因为${me}是真实用户，不是AI生成的角色。`
   const contMustLine = `\n【连续性铁则】这是同一场直播的延续，主播始终是同一个人 @${room.creator}，正在直播「${room.title}」。在前面聊天的基础上自然往下推进，主播的状态、话题连贯，绝不能像换了个人或重开一场。`
   const instruction =
     `【${isR18 ? '抖阴（成人向短视频平台）' : '抖音'}·直播聊天·静默生成】主播 @${room.creator} 正在直播「${room.title}」。当前直播画面：${room.content}` +
     contMustLine +
-    `\n${styleNote}${levelNote}${replyNote}${noImpersonateLine}` +
+    `\n${styleNote}${levelNote}${replyNote}${noImpersonateLine}${roleSplitLine}` +
     `\n生成接下来 6~12 条聊天消息（每条5~20字，简短口语，禁止长篇大论；包含1~2条进场消息和其余普通聊天；真实口吻，等级有高有低，内容连贯不重复）。` +
     `\n进场消息固定格式：文本写"来了"并在末尾加|||join；普通聊天不加|||join。` +
     (recentChat ? `\n近期聊天记录（${contextBatch}条历史上下文，供连贯参考）：\n${recentChat}` : '') +
@@ -2672,7 +2713,7 @@ async function generateLiveChat(includeUserMsg = false) {
   try {
     let result
     if (th.generateRaw) {
-      result = await th.generateRaw({ user_input: dyRetrievalHint(room, room.title), should_silence: true, ordered_prompts: [
+      result = await th.generateRaw({ user_input: dyRetrievalHint(room, room.title, lastMeMsgs.map(m => m.text).join(' ')), should_silence: true, ordered_prompts: [
         { role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
         { role: 'user', content: '生成直播间聊天消息，只输出 ===LIVECHAT=== 数据块，块外不写字。' },
       ] })
@@ -3281,7 +3322,8 @@ onUnmounted(() => {
 .mp-bub.mt-系统::before{display:none}
 .mp-sys-text{font-size:12px;color:#888}
 .mp-ctx-overlay{position:absolute;inset:0;z-index:30;display:flex;align-items:flex-end;background:rgba(0,0,0,.38);animation:mp-fade .15s ease-out}
-.mp-share-overlay{z-index:58}
+/* 分享菜单：盖在抖音/相册之上，半透明浅灰底可透出后面的界面 */
+.mp-share-overlay{z-index:59;background:rgba(210,210,214,.42);backdrop-filter:blur(2px)}
 .mp-ctx-sheet{width:100%;background:#f7f7f7;border-radius:12px 12px 0 0;overflow:hidden;padding-bottom:env(safe-area-inset-bottom,8px)}
 .mp-ctx-item{display:block;width:100%;padding:13px 18px;border:none;border-bottom:1px solid rgba(0,0,0,.06);background:#fff;text-align:left;font-size:15px;color:#0d0d0d;cursor:pointer;font-family:inherit}
 .mp-ctx-item:active{background:#e8e8e8}
