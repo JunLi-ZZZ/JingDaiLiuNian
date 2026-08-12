@@ -55,15 +55,22 @@ const 空位数 = computed(() => Math.max(0, 4 - store.data.蛋.length));
   padding: 14px 10px 12px;
   color: var(--ptxt);
   background:
-    radial-gradient(80% 50% at 50% 0%, color-mix(in srgb, var(--tier) 16%, transparent), transparent),
-    linear-gradient(175deg, #f7f1e0, #ede2c8);
-  border: 1px solid color-mix(in srgb, var(--tier) 45%, var(--pline));
-  border-radius: 14px 20px 14px 20px;
+    radial-gradient(ellipse 70% 60% at 50% 22%, rgba(255, 250, 240, 0.4), transparent 50%),
+    radial-gradient(ellipse at 50% 90%, color-mix(in srgb, var(--tier) 6%, transparent), transparent 45%),
+    radial-gradient(ellipse at 82% 80%, rgba(90, 60, 30, 0.05), transparent 40%),
+    linear-gradient(135deg, #ebe0c5, #e0d3b8);
+  border: 2px solid color-mix(in srgb, var(--tier) 50%, rgba(139, 111, 71, 0.4));
+  border-radius: 10px;
+  box-shadow:
+    inset 0 0 0 1px rgba(212, 175, 55, 0.18),
+    inset 2px 2px 5px rgba(90, 60, 30, 0.1),
+    inset -6px -6px 12px rgba(90, 60, 30, 0.06),
+    0 2px 8px rgba(26, 15, 30, 0.35);
 }
 .egg-visual i {
   font-size: 38px;
   color: var(--tier);
-  text-shadow: 0 0 18px var(--tier);
+  text-shadow: 0 0 16px color-mix(in srgb, var(--tier) 70%, transparent), 0 2px 4px rgba(0, 0, 0, 0.25);
 }
 .egg-visual.ready i {
   animation: shake 0.8s ease-in-out infinite;
@@ -111,14 +118,22 @@ const 空位数 = computed(() => Math.max(0, 4 - store.data.蛋.length));
 }
 .egg-btn {
   width: 100%;
-  padding: 6px;
+  padding: 7px;
   font-size: 11px;
   font-family: inherit;
-  color: #4a6b3a;
-  background: rgba(157, 200, 141, 0.2);
-  border: 1px solid rgba(74, 107, 58, 0.5);
-  border-radius: 7px;
+  color: var(--ptxt);
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid rgba(139, 111, 71, 0.4);
+  border-radius: 6px;
   cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: inset 0 1px 0 rgba(255, 250, 240, 0.3);
+}
+.egg-btn:hover:not(:disabled) {
+  background: rgba(212, 175, 55, 0.25);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 240, 0.4),
+    0 2px 6px rgba(212, 175, 55, 0.25);
 }
 .egg-btn:disabled {
   opacity: 0.4;
@@ -130,19 +145,20 @@ const 空位数 = computed(() => Math.max(0, 4 - store.data.蛋.length));
   color: var(--ptxt-dim);
 }
 .egg-btn.hatch {
-  color: #fff;
-  background: linear-gradient(90deg, var(--tier-deep), var(--tier));
-  border: none;
+  color: #f3ecd9;
+  background: linear-gradient(135deg, var(--tier-deep), var(--tier));
+  border: 1px solid color-mix(in srgb, var(--tier) 80%, rgba(0, 0, 0, 0.3));
   font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   animation: glow 1.2s ease-in-out infinite;
 }
 @keyframes glow {
-  0%, 100% { box-shadow: 0 0 6px var(--tier); }
-  50% { box-shadow: 0 0 18px var(--tier); }
+  0%, 100% { box-shadow: 0 0 8px var(--tier), 0 2px 8px rgba(26, 15, 30, 0.4); }
+  50% { box-shadow: 0 0 20px var(--tier), 0 4px 12px rgba(26, 15, 30, 0.5); }
 }
 .egg-cell.empty {
-  border: 1px dashed var(--pline);
-  background: rgba(243, 236, 217, 0.35);
+  border: 2px dashed rgba(139, 111, 71, 0.3);
+  background: rgba(235, 224, 197, 0.25);
   color: var(--ptxt-faint);
   justify-content: center;
   gap: 4px;

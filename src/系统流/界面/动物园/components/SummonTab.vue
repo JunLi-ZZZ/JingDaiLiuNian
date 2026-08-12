@@ -185,49 +185,66 @@ const 概率段 = computed(() => {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 7px 14px;
-  background: #f3ecd9;
-  border: 1px solid var(--pline);
-  border-radius: 999px;
-  color: var(--ptxt-dim);
+  padding: 7px 16px;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(212, 175, 55, 0.08));
+  border: 1px solid rgba(139, 111, 71, 0.4);
+  border-radius: 20px;
+  color: var(--ptxt);
   font-size: 12px;
   font-family: inherit;
   cursor: pointer;
   transition: all 0.2s;
+  box-shadow: inset 0 1px 0 rgba(255, 250, 240, 0.3);
 }
 .pool-chip i {
   font-size: 11px;
 }
+.pool-chip:hover:not(.active) {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.25), rgba(212, 175, 55, 0.15));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 240, 0.4),
+    0 2px 8px rgba(212, 175, 55, 0.2);
+}
 .pool-chip.active {
-  color: #f7f1e0;
-  border-color: #4a6b3a;
-  background: linear-gradient(160deg, #5c7f45, #4a6b3a);
-  box-shadow: 0 2px 8px rgba(20, 26, 12, 0.35);
+  color: #f5ead6;
+  border-color: rgba(139, 111, 71, 0.7);
+  background: linear-gradient(135deg, #8b6f47, #6b5438);
+  box-shadow:
+    inset 0 1px 0 rgba(212, 175, 55, 0.3),
+    0 3px 10px rgba(26, 15, 30, 0.4);
 }
 .pool-chip.add {
   border-style: dashed;
-  color: #b57a1f;
-  border-color: rgba(217, 164, 65, 0.6);
-  background: rgba(243, 236, 217, 0.5);
+  color: #8b6f47;
+  border-color: rgba(212, 175, 55, 0.5);
+  background: rgba(243, 236, 217, 0.3);
 }
 .custom-mark {
   font-style: normal;
   font-size: 9px;
-  color: #b57a1f;
-  border: 1px solid rgba(181, 122, 31, 0.5);
-  border-radius: 4px;
+  color: #d4af37;
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  border-radius: 3px;
   padding: 0 4px;
   line-height: 14px;
+  background: rgba(212, 175, 55, 0.1);
 }
 .pool-editor {
   display: flex;
   flex-direction: column;
   gap: 9px;
-  padding: 11px 12px;
-  background: linear-gradient(175deg, #f7f1e0, #ede2c8);
-  border: 1px dashed rgba(181, 122, 31, 0.55);
-  border-radius: 12px 16px 12px 16px;
+  padding: 12px 13px;
+  background:
+    radial-gradient(ellipse 70% 65% at 18% 25%, rgba(255, 250, 240, 0.35), transparent 45%),
+    radial-gradient(ellipse at 82% 75%, rgba(90, 60, 30, 0.05), transparent 40%),
+    linear-gradient(135deg, #ebe0c5, #e0d3b8);
+  border: 2px dashed rgba(139, 111, 71, 0.45);
+  border-radius: 10px;
   color: var(--ptxt);
+  box-shadow:
+    inset 0 0 0 1px rgba(212, 175, 55, 0.15),
+    inset 2px 2px 5px rgba(90, 60, 30, 0.08),
+    inset -6px -6px 12px rgba(90, 60, 30, 0.05);
 }
 .pe-row {
   display: flex;
@@ -245,13 +262,14 @@ const 概率段 = computed(() => {
 .pe-row select {
   flex: 1;
   min-width: 120px;
-  padding: 5px 8px;
+  padding: 5px 9px;
   background: #fbf7ea;
-  border: 1px solid var(--pline);
-  border-radius: 6px;
+  border: 1px solid rgba(139, 111, 71, 0.4);
+  border-radius: 5px;
   color: var(--ptxt);
   font-size: 12px;
   font-family: inherit;
+  box-shadow: inset 0 1px 3px rgba(90, 60, 30, 0.15);
 }
 .pe-row select {
   flex: 0 1 auto;
@@ -270,7 +288,7 @@ const 概率段 = computed(() => {
   cursor: pointer;
 }
 .pe-cat input {
-  accent-color: #4a6b3a;
+  accent-color: #8b6f47;
 }
 .pe-hint {
   font-size: 10px;
@@ -283,28 +301,44 @@ const 概率段 = computed(() => {
   gap: 10px;
 }
 .pe-create {
-  padding: 6px 20px;
-  background: linear-gradient(160deg, #d9a441, #b57a1f);
-  border: none;
-  border-radius: 7px;
+  padding: 7px 22px;
+  background: linear-gradient(135deg, #d4af37, #b8942a);
+  border: 1px solid rgba(90, 60, 30, 0.3);
+  border-radius: 6px;
   color: #3d2f14;
   font-size: 12px;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
+  transition: all 0.2s;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 240, 0.5),
+    0 2px 6px rgba(212, 175, 55, 0.3);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 .pe-create:hover {
-  box-shadow: 0 0 12px rgba(217, 164, 65, 0.45);
+  background: linear-gradient(135deg, #ddb942, #c49f2e);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 240, 0.6),
+    0 3px 12px rgba(212, 175, 55, 0.5);
 }
 .pool-body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 12px;
-  background: linear-gradient(175deg, #f7f1e0, #ede2c8);
-  border: 1px solid var(--pline);
-  border-radius: 14px 18px 14px 18px;
+  padding: 13px 14px;
+  background:
+    radial-gradient(ellipse 70% 65% at 18% 25%, rgba(255, 250, 240, 0.35), transparent 45%),
+    radial-gradient(ellipse at 82% 75%, rgba(90, 60, 30, 0.05), transparent 40%),
+    linear-gradient(135deg, #ebe0c5, #e0d3b8);
+  border: 2px solid rgba(139, 111, 71, 0.5);
+  border-radius: 10px;
   color: var(--ptxt);
+  box-shadow:
+    inset 0 0 0 1px rgba(212, 175, 55, 0.18),
+    inset 2px 2px 5px rgba(90, 60, 30, 0.1),
+    inset -6px -6px 12px rgba(90, 60, 30, 0.06),
+    0 2px 8px rgba(26, 15, 30, 0.35);
 }
 .pool-title-row {
   display: flex;
@@ -318,25 +352,32 @@ const 概率段 = computed(() => {
 }
 .pool-del {
   flex-shrink: 0;
-  padding: 3px 10px;
-  background: none;
-  border: 1px solid rgba(178, 74, 54, 0.5);
-  border-radius: 6px;
-  color: #b24a36;
+  padding: 4px 11px;
+  background: rgba(139, 58, 42, 0.1);
+  border: 1px solid rgba(139, 58, 42, 0.4);
+  border-radius: 5px;
+  color: #8b3a2a;
   font-size: 10px;
   font-family: inherit;
   cursor: pointer;
+  transition: all 0.2s;
+}
+.pool-del:hover {
+  background: rgba(139, 58, 42, 0.18);
+  box-shadow: 0 2px 6px rgba(139, 58, 42, 0.25);
 }
 .pool-del i {
   margin-right: 4px;
 }
 .pool-theme {
   font-size: 11px;
-  color: #b57a1f;
+  color: #8b6f47;
+  font-weight: 600;
 }
 .pool-theme i {
   margin-right: 5px;
   font-size: 10px;
+  color: #d4af37;
 }
 .rate-block {
   display: flex;
@@ -382,23 +423,26 @@ const 概率段 = computed(() => {
   color: var(--ptxt-dim);
 }
 .pity > i {
-  color: #b57a1f;
+  color: #d4af37;
 }
 .pity-track {
   flex: 1;
-  height: 6px;
-  border-radius: 3px;
+  height: 7px;
+  border-radius: 4px;
   background: var(--pinset);
   overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 .pity-fill {
   height: 100%;
-  background: linear-gradient(90deg, #b57a1f, #d9a441);
+  background: linear-gradient(90deg, #b8942a, #d4af37);
+  box-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
 }
 .pity-num {
   font-family: var(--font-num);
   font-size: 11px;
-  color: #b57a1f;
+  color: #d4af37;
+  font-weight: 600;
 }
 .draw-row {
   display: grid;
@@ -409,31 +453,55 @@ const 概率段 = computed(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 12px;
-  background: linear-gradient(160deg, #5c7f45, #4a6b3a);
-  border: 1px solid #40582f;
-  border-radius: 12px 16px 12px 16px;
-  color: #f7f1e0;
+  gap: 4px;
+  padding: 13px;
+  background: linear-gradient(135deg, #8b6f47, #6b5438);
+  border: 2px solid rgba(139, 111, 71, 0.6);
+  border-radius: 8px;
+  color: #f5ead6;
   cursor: pointer;
   font-family: inherit;
   transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(212, 175, 55, 0.25),
+    inset 0 -1px 3px rgba(0, 0, 0, 0.3),
+    0 3px 8px rgba(26, 15, 30, 0.4);
+}
+.draw-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.15), transparent 60%);
+  pointer-events: none;
 }
 .draw-btn:hover:not(:disabled) {
-  box-shadow: 0 4px 14px rgba(74, 107, 58, 0.5);
+  background: linear-gradient(135deg, #9d7d52, #7a5f42);
+  border-color: rgba(212, 175, 55, 0.7);
+  box-shadow:
+    inset 0 1px 0 rgba(212, 175, 55, 0.35),
+    inset 0 -1px 3px rgba(0, 0, 0, 0.35),
+    0 4px 14px rgba(139, 111, 71, 0.5);
   transform: translateY(-1px);
 }
 .draw-btn:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 .draw-btn.ten {
-  background: linear-gradient(160deg, #d9a441, #b57a1f);
-  border-color: #9c6a1a;
+  background: linear-gradient(135deg, #d4af37, #b8942a);
+  border-color: rgba(90, 60, 30, 0.6);
   color: #3d2f14;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 240, 0.5),
+    0 3px 10px rgba(212, 175, 55, 0.4);
 }
 .draw-btn.ten:hover:not(:disabled) {
-  box-shadow: 0 4px 14px rgba(217, 164, 65, 0.45);
+  background: linear-gradient(135deg, #ddb942, #c49f2e);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 240, 0.6),
+    0 4px 14px rgba(212, 175, 55, 0.6);
 }
 .db-main {
   font-size: 14px;

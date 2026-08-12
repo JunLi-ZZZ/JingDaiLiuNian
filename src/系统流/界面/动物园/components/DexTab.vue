@@ -150,15 +150,20 @@ const 已收集 = computed(() => 分组.value.reduce((s, g) => s + g.已获得, 
   padding: 12px 6px 9px;
   color: var(--ptxt);
   background:
-    radial-gradient(80% 50% at 50% 0%, color-mix(in srgb, var(--tier) 14%, transparent), transparent),
-    linear-gradient(175deg, #f7f1e0, #ede2c8);
-  border: 1px solid color-mix(in srgb, var(--tier) 45%, var(--pline));
+    radial-gradient(ellipse 75% 60% at 50% 10%, color-mix(in srgb, var(--tier) 10%, transparent), transparent 55%),
+    radial-gradient(ellipse at 85% 80%, rgba(90, 60, 30, 0.06), transparent 50%),
+    linear-gradient(140deg, #f7f1e0, #ede2c8);
+  border: 1px solid color-mix(in srgb, var(--tier) 45%, rgba(139, 111, 71, 0.5));
   border-radius: 12px 16px 12px 16px;
+  box-shadow:
+    inset 0 1px 3px rgba(255, 250, 240, 0.4),
+    inset 0 -2px 6px rgba(90, 60, 30, 0.08),
+    0 2px 6px rgba(26, 15, 30, 0.25);
 }
 .dex-cell > i {
   font-size: 22px;
   color: var(--tier);
-  text-shadow: 0 0 10px color-mix(in srgb, var(--tier) 60%, transparent);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--tier) 50%, transparent), 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 .dc-name {
   font-size: 12px;

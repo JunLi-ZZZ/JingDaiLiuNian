@@ -1,0 +1,18 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --c-bg-start: #1a1a2e;
+  --c-bg-end: #16213e;
+  --c-gold: #c9a96e;
+  --c-gold-light: #d4b87a;
+  --c-text: #e8e0d5;
+  --c-text-dim: #8b8795;
+  --c-card-bg: rgba(255, 255, 255, 0.04);
+  --c-card-border: rgba(255, 255, 255, 0.08);
+  --c-card-hover: rgba(255, 255, 255, 0.08);
+  --font-main: 'Noto Serif SC', 'Source Han Serif SC', 'STSong', 'SimSun', 'Microsoft YaHei', serif;
+}

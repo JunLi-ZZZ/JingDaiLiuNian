@@ -76,58 +76,82 @@ const 当前组件 = computed(() => TAB_COMPONENTS[当前页.value] ?? BeastTab)
   flex-direction: column;
   gap: 10px;
   background:
-    radial-gradient(120% 60% at 50% -10%, rgba(157, 200, 141, 0.1), transparent 60%),
-    radial-gradient(48px 48px at 92% 8%, rgba(157, 200, 141, 0.06), transparent 70%),
-    radial-gradient(64px 64px at 4% 88%, rgba(217, 164, 65, 0.05), transparent 70%),
-    linear-gradient(165deg, #18250f, #0e1509 70%);
-  border: 1px solid var(--line);
-  border-radius: 18px 26px 18px 26px;
+    radial-gradient(100% 50% at 50% 0%, rgba(212, 175, 55, 0.08), transparent 55%),
+    radial-gradient(80px 80px at 90% 12%, rgba(155, 123, 167, 0.06), transparent 65%),
+    radial-gradient(60px 60px at 8% 85%, rgba(139, 111, 71, 0.08), transparent 70%),
+    linear-gradient(135deg, #2a1b2e, #1a0f1e 75%);
+  border: 1px solid rgba(139, 111, 71, 0.4);
+  border-radius: 12px;
+  box-shadow:
+    inset 0 1px 0 rgba(212, 175, 55, 0.15),
+    0 8px 24px rgba(0, 0, 0, 0.7);
   overflow: hidden;
   min-height: 480px;
 }
 .top-glow {
   position: absolute;
   top: 0;
-  left: 8%;
-  right: 8%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--acc), var(--gold), transparent);
-  opacity: 0.75;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.6), transparent);
+  box-shadow: 0 0 8px rgba(212, 175, 55, 0.4);
+  opacity: 0.8;
   pointer-events: none;
-  border-radius: 2px;
 }
+/* 书脊式 Tab */
 .tabs {
   display: flex;
-  gap: 4px;
+  gap: 2px;
   overflow-x: auto;
   padding-bottom: 2px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid rgba(139, 111, 71, 0.3);
 }
 .tab-btn {
   flex-shrink: 0;
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 13px;
-  background: none;
+  padding: 8px 14px;
+  background: linear-gradient(180deg, rgba(212, 175, 55, 0.08), transparent);
   border: none;
   border-bottom: 2px solid transparent;
   color: var(--txt-dim);
   font-size: 12px;
-  font-family: inherit;
+  font-family: var(--font-title);
+  letter-spacing: 1px;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: all 0.25s;
+  clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%);
+}
+.tab-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent, rgba(212, 175, 55, 0.12));
+  opacity: 0;
+  transition: opacity 0.25s;
 }
 .tab-btn i {
   font-size: 11px;
+  filter: drop-shadow(0 0 3px rgba(212, 175, 55, 0.3));
 }
 .tab-btn:hover {
   color: var(--txt);
+  background: linear-gradient(180deg, rgba(212, 175, 55, 0.15), rgba(139, 111, 71, 0.08));
+}
+.tab-btn:hover::before {
+  opacity: 1;
 }
 .tab-btn.active {
-  color: var(--acc);
-  border-bottom-color: var(--acc);
-  text-shadow: 0 0 10px rgba(157, 200, 141, 0.6);
+  color: var(--gold);
+  background: linear-gradient(180deg, rgba(212, 175, 55, 0.22), rgba(139, 111, 71, 0.12));
+  border-bottom-color: var(--gold);
+  box-shadow:
+    inset 0 1px 0 rgba(212, 175, 55, 0.25),
+    0 2px 8px rgba(212, 175, 55, 0.2);
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
 }
 .tab-count {
   font-style: normal;
@@ -140,6 +164,7 @@ const 当前组件 = computed(() => TAB_COMPONENTS[当前页.value] ?? BeastTab)
 }
 .tab-btn.active .tab-count {
   border-color: var(--line-strong);
+  background: rgba(212, 175, 55, 0.15);
 }
 .tab-body {
   min-height: 200px;

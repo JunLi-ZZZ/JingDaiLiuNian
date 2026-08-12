@@ -80,25 +80,30 @@ function 限购余量(g: 商品): number | null {
 }
 .sh-refresh {
   flex-shrink: 0;
-  padding: 5px 14px;
-  background: #f3ecd9;
-  border: 1px solid var(--pline-strong);
-  border-radius: 999px;
+  padding: 6px 16px;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.12));
+  border: 1px solid rgba(139, 111, 71, 0.5);
+  border-radius: 6px;
   color: var(--ptxt);
   font-size: 11px;
   font-family: inherit;
   cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: inset 0 1px 0 rgba(255, 250, 240, 0.4);
 }
 .sh-refresh:hover:not(:disabled) {
-  box-shadow: 0 2px 8px rgba(20, 26, 12, 0.35);
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.3), rgba(212, 175, 55, 0.18));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 240, 0.5),
+    0 3px 10px rgba(212, 175, 55, 0.25);
 }
 .sh-refresh:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 .sh-refresh i {
   margin-right: 5px;
-  color: #b57a1f;
+  color: #8b6f47;
 }
 .sh-refresh em {
   font-style: normal;
@@ -118,14 +123,20 @@ function 限购余量(g: 商品): number | null {
   padding: 10px 12px;
   color: var(--ptxt);
   background:
-    linear-gradient(150deg, color-mix(in srgb, var(--tier) 10%, transparent), transparent 45%),
-    linear-gradient(175deg, #f7f1e0, #ede2c8);
-  border: 1px solid color-mix(in srgb, var(--tier) 45%, var(--pline));
-  border-radius: 12px 16px 12px 16px;
+    radial-gradient(ellipse 70% 65% at 18% 25%, rgba(255, 250, 240, 0.35), transparent 45%),
+    radial-gradient(ellipse at 82% 75%, rgba(90, 60, 30, 0.05), transparent 40%),
+    linear-gradient(135deg, #ebe0c5, #e0d3b8);
+  border: 2px solid color-mix(in srgb, var(--tier) 50%, rgba(139, 111, 71, 0.4));
+  border-radius: 8px;
+  box-shadow:
+    inset 0 0 0 1px rgba(212, 175, 55, 0.18),
+    inset 2px 2px 5px rgba(90, 60, 30, 0.1),
+    inset -6px -6px 12px rgba(90, 60, 30, 0.06),
+    0 2px 8px rgba(26, 15, 30, 0.35);
 }
 .good-card.sold {
   filter: grayscale(0.8);
-  opacity: 0.55;
+  opacity: 0.5;
 }
 .gd-head {
   display: flex;
@@ -133,15 +144,17 @@ function 限购余量(g: 商品): number | null {
   gap: 7px;
 }
 .gd-icon {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--tier) 18%, transparent);
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--tier) 20%, transparent), color-mix(in srgb, var(--tier) 10%, transparent));
+  border: 1px solid color-mix(in srgb, var(--tier) 35%, rgba(139, 111, 71, 0.4));
   color: var(--tier);
   font-size: 11px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 .gd-name {
   flex: 1;
@@ -150,8 +163,12 @@ function 限购余量(g: 商品): number | null {
 }
 .gd-effect {
   font-size: 11px;
-  color: #4a6b3a;
+  color: #8b6f47;
   font-weight: 600;
+  padding: 2px 6px;
+  background: rgba(212, 175, 55, 0.12);
+  border-radius: 4px;
+  align-self: flex-start;
 }
 .gd-desc {
   font-size: 11px;
@@ -168,21 +185,41 @@ function 限购余量(g: 商品): number | null {
   color: var(--ptxt-faint);
 }
 .gd-buy {
-  padding: 4px 14px;
-  background: linear-gradient(160deg, #d9a441, #b57a1f);
-  border: none;
-  border-radius: 6px;
+  padding: 5px 16px;
+  background: linear-gradient(135deg, #d4af37, #b8942a);
+  border: 2px solid rgba(90, 60, 30, 0.4);
+  border-radius: 5px;
   color: #3d2f14;
   font-size: 12px;
   font-weight: 700;
   font-family: var(--font-num);
   cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 240, 0.5),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+    0 2px 6px rgba(212, 175, 55, 0.3);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.gd-buy::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(255, 250, 240, 0.2), transparent 60%);
+  pointer-events: none;
 }
 .gd-buy:hover:not(:disabled) {
-  box-shadow: 0 2px 10px rgba(217, 164, 65, 0.45);
+  background: linear-gradient(135deg, #ddb942, #c49f2e);
+  border-color: rgba(139, 111, 71, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 240, 0.6),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.25),
+    0 3px 12px rgba(212, 175, 55, 0.5);
 }
 .gd-buy:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 .gd-buy i {

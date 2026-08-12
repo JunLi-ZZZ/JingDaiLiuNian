@@ -31,7 +31,8 @@ const data = computed(() => store.data);
 <style scoped>
 .zoo-head {
   padding: 2px 2px 10px;
-  border-bottom: 1px dashed rgba(157, 200, 141, 0.3);
+  border-bottom: 1px solid rgba(139, 111, 71, 0.35);
+  box-shadow: 0 1px 0 rgba(212, 175, 55, 0.1);
 }
 .zh-top {
   display: flex;
@@ -40,60 +41,76 @@ const data = computed(() => store.data);
   flex-wrap: wrap;
   gap: 8px;
 }
-/* 木质园牌 */
+/* 炼金术封印圆环园牌 */
 .zh-sign {
   position: relative;
   display: flex;
   align-items: baseline;
   gap: 9px;
-  padding: 9px 20px 10px;
+  padding: 10px 22px 11px;
   background:
-    linear-gradient(160deg, rgba(255, 235, 200, 0.12), transparent 40%),
-    linear-gradient(170deg, #6b4f2e, #4d3a1d 75%);
-  border: 1px solid #8a6b3f;
-  border-radius: 8px 14px 8px 14px;
+    radial-gradient(ellipse at center, rgba(212, 175, 55, 0.08), transparent 70%),
+    linear-gradient(135deg, #2a1b2e, #3d2a42);
+  border: 2px solid #8b6f47;
+  border-radius: 6px;
   box-shadow:
-    inset 0 1px 0 rgba(255, 235, 200, 0.22),
-    0 3px 8px rgba(0, 0, 0, 0.45);
+    inset 0 0 20px rgba(212, 175, 55, 0.12),
+    inset 0 1px 0 rgba(212, 175, 55, 0.25),
+    0 4px 12px rgba(0, 0, 0, 0.6);
 }
-/* 木牌钉 */
-.zh-sign::before,
-.zh-sign::after {
+/* 封印圆环装饰 */
+.zh-sign::before {
   content: '';
   position: absolute;
-  top: 5px;
-  width: 5px;
-  height: 5px;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  border: 1.5px solid rgba(212, 175, 55, 0.5);
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #d8c9a3, #7a6238);
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+  background:
+    radial-gradient(circle at center, transparent 30%, rgba(212, 175, 55, 0.15) 30%, transparent 50%),
+    conic-gradient(from 45deg, transparent 0deg, rgba(212, 175, 55, 0.2) 90deg, transparent 180deg);
 }
-.zh-sign::before {
-  left: 7px;
-}
+/* 右侧符文点缀 */
 .zh-sign::after {
-  right: 7px;
+  content: '⬢';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: rgba(212, 175, 55, 0.4);
+  text-shadow: 0 0 6px rgba(212, 175, 55, 0.3);
 }
 .zh-sign > i {
-  color: #b9d99a;
+  color: #d4af37;
   font-size: 13px;
+  filter: drop-shadow(0 0 4px rgba(212, 175, 55, 0.5));
 }
 .zh-title {
   font-family: var(--font-title);
   font-size: 20px;
   font-weight: 700;
-  letter-spacing: 5px;
-  color: #f7efdc;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  letter-spacing: 8px;
+  color: #f5ead6;
+  text-transform: uppercase;
+  font-variant: small-caps;
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.7),
+    0 0 12px rgba(212, 175, 55, 0.3);
 }
 .zh-lv {
   font-size: 10px;
-  color: #f0d9a8;
-  border: 1px solid rgba(240, 217, 168, 0.5);
-  border-radius: 4px;
+  font-family: var(--font-num);
+  color: #d4af37;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 3px;
   padding: 0 6px;
   line-height: 16px;
   white-space: nowrap;
+  background: rgba(212, 175, 55, 0.08);
 }
 .zh-gem {
   display: flex;

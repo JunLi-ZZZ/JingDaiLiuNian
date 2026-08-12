@@ -5,33 +5,33 @@
 }
 
 :root {
-  /* ---- 深林铬件区（面板底、页签、提示条） ---- */
-  --bg-deep: #10170d;
-  --bg-panel: #16210f;
-  --txt: #ece7d3;
-  --txt-dim: #a9b39a;
-  --txt-faint: #7c876e;
-  --acc: #9dc88d; /* 苔绿 */
-  --acc-deep: #4a6b3a;
-  --gold: #d9a441; /* 暖琥珀 */
-  --violet: #b39ddb;
-  --hp: #e57373;
-  --line: rgba(157, 200, 141, 0.18);
-  --line-strong: rgba(157, 200, 141, 0.45);
-  --bg-inset: rgba(7, 11, 6, 0.55); /* 铬件区内凹 */
+  /* ---- 档案馆主区（面板底、页签、提示条） ---- */
+  --bg-deep: #1a0f1e; /* 深紫褐夜空 */
+  --bg-panel: #2a1b2e;
+  --txt: #d4c5b9;
+  --txt-dim: #a89384;
+  --txt-faint: #7d6b5e;
+  --acc: #d4af37; /* 深金箔 */
+  --acc-deep: #8b6f47; /* 古铜锈迹 */
+  --gold: #d4af37;
+  --violet: #9b7ba7;
+  --hp: #8b3a3a;
+  --line: rgba(139, 111, 71, 0.25);
+  --line-strong: rgba(212, 175, 55, 0.4);
+  --bg-inset: rgba(26, 15, 30, 0.65);
 
-  /* ---- 羊皮纸卡片区 ---- */
-  --bg-card: #f3ecd9; /* 羊皮纸 */
-  --ptxt: #443a2a; /* 纸上深棕 */
-  --ptxt-dim: #7d6f52;
-  --ptxt-faint: #a89a7a;
-  --pinset: rgba(133, 106, 58, 0.14);
-  --pline: rgba(150, 117, 62, 0.38);
-  --pline-strong: rgba(150, 117, 62, 0.6);
+  /* ---- 做旧羊皮纸档案卡片区 ---- */
+  --bg-card: #e8d7b8; /* 泛黄古纸 */
+  --ptxt: #3a2f1e; /* 墨迹深棕 */
+  --ptxt-dim: #6b5438;
+  --ptxt-faint: #8d7555;
+  --pinset: rgba(90, 60, 30, 0.18); /* 烧灼暗角 */
+  --pline: rgba(139, 111, 71, 0.45); /* 古铜边线 */
+  --pline-strong: rgba(212, 175, 55, 0.65); /* 烫金边框 */
 
   --font-main: 'Microsoft YaHei', 'PingFang SC', sans-serif;
   --font-num: 'Cascadia Mono', 'JetBrains Mono', Consolas, monospace;
-  --font-title: 'KaiTi', 'STKaiti', 'Microsoft YaHei', serif; /* 标题用楷体添自然气 */
+  --font-title: 'Noto Serif SC', 'Source Han Serif SC', 'STSong', 'SimSun', serif; /* 档案风衬线体 */
 }
 
 html,
@@ -51,8 +51,11 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(157, 200, 141, 0.3);
+  background: rgba(139, 111, 71, 0.4);
   border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.5);
 }
 ::-webkit-scrollbar-track {
   background: transparent;

@@ -207,20 +207,29 @@ function 改概率(池: 卡池, 品阶: string, e: Event) {
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  padding: 36px 20px;
-  background: linear-gradient(175deg, #f7f1e0, #ede2c8);
-  border: 1px solid var(--pline);
-  border-radius: 14px 18px 14px 18px;
+  padding: 40px 20px;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(255, 250, 240, 0.4), transparent 40%),
+    linear-gradient(135deg, #ebe0c5, #e0d3b8);
+  border: 2px solid rgba(139, 111, 71, 0.5);
+  border-radius: 10px;
   color: var(--ptxt);
   text-align: center;
+  box-shadow:
+    inset 0 0 0 1px rgba(212, 175, 55, 0.2),
+    inset 2px 2px 6px rgba(90, 60, 30, 0.12),
+    0 3px 10px rgba(26, 15, 30, 0.4);
 }
 .lock-screen > i {
-  font-size: 26px;
-  color: #b57a1f;
+  font-size: 28px;
+  color: #d4af37;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 .lock-screen h4 {
-  font-size: 15px;
-  letter-spacing: 3px;
+  font-size: 16px;
+  letter-spacing: 4px;
+  color: var(--ptxt);
+  font-weight: 700;
 }
 .ls-text {
   font-size: 11px;
@@ -229,61 +238,102 @@ function 改概率(池: 卡池, 品阶: string, e: Event) {
 }
 .ls-warn {
   font-size: 11px;
-  color: #b24a36;
+  color: #8b3a2a;
+  font-weight: 600;
 }
 .ls-row {
   display: flex;
   gap: 10px;
 }
 .ls-btn {
-  padding: 7px 18px;
-  background: linear-gradient(160deg, #5c7f45, #4a6b3a);
-  border: 1px solid #40582f;
-  border-radius: 8px;
-  color: #f7f1e0;
+  padding: 8px 20px;
+  background: linear-gradient(135deg, #8b6f47, #6b5438);
+  border: 2px solid rgba(90, 60, 30, 0.5);
+  border-radius: 6px;
+  color: #f5ead6;
   font-size: 12px;
   font-family: inherit;
   cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(212, 175, 55, 0.3),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.25),
+    0 2px 6px rgba(26, 15, 30, 0.3);
+}
+.ls-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.15), transparent 60%);
+  pointer-events: none;
+}
+.ls-btn:hover {
+  background: linear-gradient(135deg, #9d7d52, #7a5f42);
+  border-color: rgba(139, 111, 71, 0.6);
+  box-shadow:
+    inset 0 1px 0 rgba(212, 175, 55, 0.4),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.3),
+    0 3px 10px rgba(139, 111, 71, 0.4);
 }
 .ls-btn.ghost {
   background: none;
-  border: 1px solid var(--pline-strong);
+  border: 1px solid rgba(139, 111, 71, 0.5);
   color: var(--ptxt-dim);
+  box-shadow: none;
+}
+.ls-btn.ghost:hover {
+  background: rgba(139, 111, 71, 0.1);
+  box-shadow: 0 2px 6px rgba(26, 15, 30, 0.2);
 }
 .ls-btn.danger {
-  background: linear-gradient(160deg, #b24a36, #8d3a2a);
-  border-color: #7a3222;
+  background: linear-gradient(135deg, #8b3a2a, #6d2e21);
+  border-color: rgba(139, 58, 42, 0.7);
+}
+.ls-btn.danger:hover {
+  background: linear-gradient(135deg, #9d4a38, #7f3628);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 200, 180, 0.2),
+    0 3px 10px rgba(139, 58, 42, 0.5);
 }
 /* ---- 设置主体 ---- */
 .st-note {
-  padding: 9px 12px;
+  padding: 10px 13px;
   font-size: 11px;
   color: var(--ptxt-dim);
-  background: rgba(157, 200, 141, 0.25);
-  border: 1px solid var(--pline);
-  border-radius: 8px;
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(139, 111, 71, 0.35);
+  border-radius: 6px;
 }
 .st-note i {
   margin-right: 6px;
-  color: #4a6b3a;
+  color: #d4af37;
 }
 .st-pool {
-  padding: 11px 12px;
-  background: linear-gradient(175deg, #f7f1e0, #ede2c8);
-  border: 1px solid var(--pline);
-  border-radius: 12px 16px 12px 16px;
+  padding: 12px 13px;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(255, 250, 240, 0.4), transparent 40%),
+    linear-gradient(135deg, #ebe0c5, #e0d3b8);
+  border: 2px solid rgba(139, 111, 71, 0.4);
+  border-radius: 10px;
   color: var(--ptxt);
+  box-shadow:
+    inset 0 0 0 1px rgba(212, 175, 55, 0.15),
+    inset 2px 2px 6px rgba(90, 60, 30, 0.1);
 }
 .st-pool-title {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 13px;
+  font-weight: 700;
   margin-bottom: 10px;
+  color: var(--ptxt);
 }
 .st-pool-title i {
-  color: #4a6b3a;
-  font-size: 11px;
+  color: #8b6f47;
+  font-size: 12px;
 }
 .st-rates {
   display: flex;
@@ -302,18 +352,19 @@ function 改概率(池: 卡池, 品阶: string, e: Event) {
 }
 .st-rate-row input[type='range'] {
   flex: 1;
-  height: 4px;
-  accent-color: #4a6b3a;
+  height: 5px;
+  accent-color: #8b6f47;
 }
 .st-num {
   width: 62px;
-  padding: 3px 6px;
+  padding: 4px 7px;
   background: #fbf7ea;
-  border: 1px solid var(--pline);
-  border-radius: 5px;
+  border: 1px solid rgba(139, 111, 71, 0.4);
+  border-radius: 4px;
   color: var(--ptxt);
   font-family: var(--font-num);
   font-size: 11px;
+  box-shadow: inset 0 1px 2px rgba(90, 60, 30, 0.1);
 }
 .st-num.wide {
   width: 56px;
@@ -331,12 +382,13 @@ function 改概率(池: 卡池, 品阶: string, e: Event) {
   color: var(--ptxt-faint);
 }
 .st-sum.warn {
-  color: #b57a1f;
+  color: #d4af37;
+  font-weight: 600;
 }
 .st-pity {
   margin-top: 10px;
   padding-top: 10px;
-  border-top: 1px dashed var(--pline);
+  border-top: 1px dashed rgba(139, 111, 71, 0.3);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -350,31 +402,33 @@ function 改概率(池: 卡池, 品阶: string, e: Event) {
   cursor: pointer;
 }
 .st-switch input {
-  accent-color: #4a6b3a;
+  accent-color: #8b6f47;
 }
 .st-pity select {
-  padding: 3px 6px;
+  padding: 4px 7px;
   background: #fbf7ea;
-  border: 1px solid var(--pline);
-  border-radius: 5px;
+  border: 1px solid rgba(139, 111, 71, 0.4);
+  border-radius: 4px;
   color: var(--ptxt);
   font-size: 11px;
   font-family: inherit;
+  box-shadow: inset 0 1px 2px rgba(90, 60, 30, 0.1);
 }
 .st-reset {
   align-self: center;
-  padding: 7px 18px;
-  background: none;
-  border: 1px solid var(--pline);
-  border-radius: 8px;
+  padding: 8px 20px;
+  background: rgba(139, 58, 42, 0.08);
+  border: 1px solid rgba(139, 58, 42, 0.3);
+  border-radius: 6px;
   color: var(--ptxt-dim);
   font-size: 12px;
   font-family: inherit;
   cursor: pointer;
 }
 .st-reset:hover {
-  color: #b24a36;
-  border-color: rgba(178, 74, 54, 0.5);
+  background: rgba(139, 58, 42, 0.15);
+  border-color: rgba(139, 58, 42, 0.5);
+  color: #8b3a2a;
 }
 .st-reset i {
   margin-right: 6px;
@@ -382,11 +436,12 @@ function 改概率(池: 卡池, 品阶: string, e: Event) {
 .custom-mark {
   font-style: normal;
   font-size: 9px;
-  color: #b57a1f;
-  border: 1px solid rgba(181, 122, 31, 0.5);
-  border-radius: 4px;
-  padding: 0 4px;
-  line-height: 14px;
+  color: #d4af37;
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  border-radius: 3px;
+  padding: 0 5px;
+  line-height: 15px;
+  background: rgba(212, 175, 55, 0.1);
 }
 .st-theme {
   font-size: 10px;
@@ -411,19 +466,29 @@ function 改概率(池: 卡池, 品阶: string, e: Event) {
   flex-shrink: 0;
 }
 .cr-btn {
-  padding: 4px 14px;
-  background: rgba(157, 200, 141, 0.25);
-  border: 1px solid rgba(74, 107, 58, 0.5);
-  border-radius: 6px;
-  color: #4a6b3a;
+  padding: 5px 15px;
+  background: rgba(139, 111, 71, 0.15);
+  border: 1px solid rgba(139, 111, 71, 0.4);
+  border-radius: 5px;
+  color: #8b6f47;
   font-size: 11px;
   font-family: inherit;
   cursor: pointer;
+  transition: all 0.2s;
+}
+.cr-btn:hover {
+  background: rgba(139, 111, 71, 0.25);
+  border-color: rgba(139, 111, 71, 0.6);
 }
 .cr-btn.gold {
-  color: #b57a1f;
-  border-color: rgba(181, 122, 31, 0.5);
-  background: rgba(217, 164, 65, 0.15);
+  color: #d4af37;
+  border-color: rgba(212, 175, 55, 0.5);
+  background: rgba(212, 175, 55, 0.15);
+  font-weight: 600;
+}
+.cr-btn.gold:hover {
+  background: rgba(212, 175, 55, 0.25);
+  border-color: rgba(212, 175, 55, 0.7);
 }
 .cr-btn i {
   margin-right: 4px;
@@ -445,11 +510,12 @@ function 改概率(池: 卡池, 品阶: string, e: Event) {
 .creator textarea {
   padding: 5px 8px;
   background: #fbf7ea;
-  border: 1px solid var(--pline);
-  border-radius: 6px;
+  border: 1px solid rgba(139, 111, 71, 0.35);
+  border-radius: 5px;
   color: var(--ptxt);
   font-size: 12px;
   font-family: inherit;
+  box-shadow: inset 0 1px 2px rgba(90, 60, 30, 0.08);
 }
 .creator textarea {
   width: 100%;

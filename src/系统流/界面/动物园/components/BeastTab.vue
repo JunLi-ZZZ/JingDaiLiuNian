@@ -162,32 +162,59 @@ function 喂(兽名: string, 食物名: string) {
   display: flex;
   flex-direction: column;
   color: var(--ptxt);
-  border-radius: 16px 22px 16px 22px;
-  border: 1px solid color-mix(in srgb, var(--tier) 45%, var(--pline));
+  border-radius: 10px;
+  border: 2px solid color-mix(in srgb, var(--tier) 50%, rgba(139, 111, 71, 0.6));
   background:
-    linear-gradient(165deg, color-mix(in srgb, var(--tier) 10%, transparent), transparent 45%),
-    linear-gradient(175deg, #f7f1e0, #ede2c8);
-  box-shadow: 0 2px 8px rgba(20, 26, 12, 0.35);
+    radial-gradient(circle at 15% 20%, rgba(255, 250, 240, 0.4), transparent 40%),
+    radial-gradient(ellipse 90% 90% at 85% 85%, color-mix(in srgb, var(--tier) 6%, transparent), transparent 50%),
+    linear-gradient(135deg, #ebe0c5, #e0d3b8);
+  box-shadow:
+    inset 0 0 0 1px rgba(212, 175, 55, 0.2),
+    inset 2px 2px 6px rgba(90, 60, 30, 0.12),
+    inset -8px -8px 16px rgba(90, 60, 30, 0.08),
+    0 3px 10px rgba(26, 15, 30, 0.4);
   overflow: hidden;
+}
+.face::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  background:
+    radial-gradient(ellipse at 95% 95%, rgba(90, 60, 30, 0.15), transparent 40%),
+    radial-gradient(ellipse at 5% 5%, rgba(255, 250, 240, 0.2), transparent 35%);
+  pointer-events: none;
+}
+.face::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 8px;
+  pointer-events: none;
 }
 .face.back {
   transform: rotateY(180deg);
   padding: 12px;
 }
-/* 拱门形兽栏画像位 */
+/* 椭圆画框形兽栏画像位 */
 .portrait {
   position: relative;
   height: 108px;
-  margin: 9px 9px 0;
+  margin: 11px 11px 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 60px 60px 10px 10px;
+  border-radius: 50% / 45%;
   background:
-    radial-gradient(80% 90% at 50% 100%, color-mix(in srgb, var(--tier) 24%, transparent), transparent),
+    radial-gradient(ellipse 65% 75% at 50% 55%, color-mix(in srgb, var(--tier) 12%, transparent), transparent 60%),
+    radial-gradient(ellipse at center, rgba(58, 47, 30, 0.15), transparent 70%),
     var(--pinset);
-  border: 1px solid color-mix(in srgb, var(--tier) 30%, var(--pline));
-  border-bottom: none;
+  border: 2px solid color-mix(in srgb, var(--tier) 45%, rgba(139, 111, 71, 0.6));
+  box-shadow:
+    inset 0 3px 8px rgba(90, 60, 30, 0.3),
+    inset 0 -2px 6px rgba(255, 250, 240, 0.15),
+    0 2px 8px rgba(0, 0, 0, 0.35);
 }
 .portrait img {
   max-width: 100%;
@@ -196,8 +223,9 @@ function 喂(兽名: string, 食物名: string) {
 }
 .portrait > i {
   font-size: 40px;
-  opacity: 0.9;
-  text-shadow: 0 0 18px var(--tier);
+  opacity: 0.85;
+  color: var(--tier);
+  text-shadow: 0 0 18px var(--tier), 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 .rate {
   position: absolute;
@@ -316,10 +344,11 @@ function 喂(兽名: string, 食物名: string) {
   border-radius: 3px;
 }
 .mb-fill.mood {
-  background: linear-gradient(90deg, #b57a1f, #d9a441);
+  background: linear-gradient(90deg, #8b6f47, #d4af37);
+  box-shadow: 0 0 6px rgba(212, 175, 55, 0.4);
 }
 .mb-fill.food {
-  background: linear-gradient(90deg, #4a6b3a, #9dc88d);
+  background: linear-gradient(90deg, #7d6b5e, #a89384);
 }
 .b-foot {
   margin-top: auto;
@@ -334,20 +363,42 @@ function 喂(兽名: string, 食物名: string) {
 .b-status i {
   margin-right: 4px;
   font-size: 7px;
-  color: #4a6b3a;
+  color: #8b6f47;
 }
 .feed {
   position: relative;
   display: flex;
   gap: 6px;
 }
+.feed-btn {
+  padding: 4px 11px;
+  font-size: 11px;
+  color: var(--ptxt);
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(139, 111, 71, 0.4);
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  box-shadow: inset 0 1px 0 rgba(255, 250, 240, 0.3);
+}
+.feed-btn:hover {
+  background: rgba(212, 175, 55, 0.22);
+  border-color: rgba(212, 175, 55, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 240, 0.4),
+    0 2px 6px rgba(212, 175, 55, 0.2);
+}
 .feed-btn.pet {
-  color: #b57a1f;
-  border-color: rgba(181, 122, 31, 0.5);
-  background: rgba(217, 164, 65, 0.15);
+  color: #8b6f47;
+  border-color: rgba(212, 175, 55, 0.5);
+  background: rgba(212, 175, 55, 0.18);
 }
 .feed-btn.pet:hover {
-  background: rgba(217, 164, 65, 0.28);
+  background: rgba(212, 175, 55, 0.3);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 240, 0.5),
+    0 2px 8px rgba(212, 175, 55, 0.3);
 }
 .name-edit {
   cursor: text;
@@ -360,26 +411,33 @@ function 喂(兽名: string, 食物名: string) {
 .name-input {
   width: 110px;
   padding: 1px 6px;
-  background: #fbf7ea;
+  background: rgba(251, 247, 234, 0.95);
   border: 1px solid var(--pline-strong);
-  border-radius: 5px;
+  border-radius: 4px;
   color: var(--ptxt);
   font-size: 14px;
   font-weight: 700;
   font-family: inherit;
+  box-shadow: inset 0 1px 3px rgba(90, 60, 30, 0.2);
 }
 .feed-btn {
-  padding: 3px 10px;
+  padding: 4px 11px;
   font-size: 11px;
-  color: #4a6b3a;
-  background: rgba(157, 200, 141, 0.2);
-  border: 1px solid rgba(74, 107, 58, 0.5);
-  border-radius: 6px;
+  color: var(--ptxt);
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(139, 111, 71, 0.4);
+  border-radius: 5px;
   cursor: pointer;
   font-family: inherit;
+  transition: all 0.2s;
+  box-shadow: inset 0 1px 0 rgba(255, 250, 240, 0.3);
 }
 .feed-btn:hover {
-  background: rgba(157, 200, 141, 0.35);
+  background: rgba(212, 175, 55, 0.22);
+  border-color: rgba(212, 175, 55, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 240, 0.4),
+    0 2px 6px rgba(212, 175, 55, 0.2);
 }
 .feed-btn i {
   margin-right: 4px;
@@ -391,12 +449,14 @@ function 喂(兽名: string, 食物名: string) {
   min-width: 132px;
   display: flex;
   flex-direction: column;
-  background: #f7f1e0;
-  border: 1px solid var(--pline-strong);
-  border-radius: 8px;
+  background: linear-gradient(165deg, #f7f1e0, #ebe0c5);
+  border: 1px solid rgba(139, 111, 71, 0.5);
+  border-radius: 6px;
   overflow: hidden;
   z-index: 20;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    inset 0 0 0 1px rgba(212, 175, 55, 0.2),
+    0 6px 20px rgba(26, 15, 30, 0.45);
 }
 .fm-empty {
   padding: 8px 10px;
@@ -407,22 +467,24 @@ function 喂(兽名: string, 食物名: string) {
   padding: 7px 10px;
   background: none;
   border: none;
-  border-bottom: 1px solid var(--pline);
+  border-bottom: 1px solid rgba(150, 117, 62, 0.25);
   color: var(--ptxt);
   font-size: 11px;
   text-align: left;
   cursor: pointer;
   font-family: inherit;
+  transition: background 0.15s;
+}
+.fm-item:hover {
+  background: rgba(212, 175, 55, 0.15);
 }
 .fm-item:last-child {
   border-bottom: none;
 }
-.fm-item:hover {
-  background: rgba(157, 200, 141, 0.25);
-}
 .fm-item em {
-  font-style: normal;
-  color: var(--ptxt-faint);
+  float: right;
   font-family: var(--font-num);
+  color: var(--ptxt-dim);
+  font-style: normal;
 }
 </style>
