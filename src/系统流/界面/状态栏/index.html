@@ -1,19 +1,9 @@
 <head>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <script>
-    // 独立浏览器预览引导：酒馆环境自带 Vue / lodash 等全局变量，纯浏览器打开时从 CDN 补齐
+    // 酒馆环境自带 Vue；纯浏览器预览时只补 Vue，其余依赖由 index.ts 在挂载前异步准备
     if (typeof window.Vue === 'undefined') {
       document.write('<script src="https://testingcf.jsdelivr.net/npm/vue@3.5.40/dist/vue.global.prod.js"><\/script>');
-    }
-    if (typeof window._ === 'undefined') {
-      document.write('<script src="https://testingcf.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"><\/script>');
-    }
-  </script>
-  <script type="module">
-    // zod 4 没有 UMD 构建，只能用 ESM；module 脚本按文档顺序延迟执行，早于 body 末尾的内联 bundle
-    if (typeof window.z === 'undefined') {
-      const zod = await import('https://testingcf.jsdelivr.net/npm/zod@4.4.3/+esm');
-      window.z = zod;
     }
   </script>
 </head>

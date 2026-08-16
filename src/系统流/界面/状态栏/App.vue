@@ -1,28 +1,37 @@
 <template>
   <div class="sys-panel">
-    <div class="top-glow"></div>
-    <HeaderBar />
-    <LevelCard />
-    <VitalBars />
-    <AttrGrid />
+    <template v-if="已初始化">
+      <div class="top-glow"></div>
+      <HeaderBar />
+      <LevelCard />
+      <VitalBars />
+      <AttrGrid />
 
-    <nav class="tabs">
-      <button
-        v-for="t in tabs"
-        :key="t.key"
-        class="tab-btn"
-        :class="{ active: 当前页 === t.key }"
-        @click="当前页 = t.key"
-      >
-        <i :class="t.icon"></i>{{ t.label }}
-        <em v-if="t.count" class="tab-count">{{ t.count }}</em>
-      </button>
-    </nav>
+      <nav class="tabs" role="tablist" aria-label="系统资料页">
+        <button
+          v-for="t in tabs"
+          :key="t.key"
+          class="tab-btn"
+          :class="{ active: 当前页 === t.key }"
+          role="tab"
+          :aria-selected="当前页 === t.key"
+          @click="当前页 = t.key"
+        >
+          <i :class="t.icon" aria-hidden="true"></i>{{ t.label }}
+          <em v-if="t.count" class="tab-count">{{ t.count }}</em>
+        </button>
+      </nav>
 
-    <section class="tab-body">
-      <KeepAlive>
-        <component :is="当前组件" />
-      </KeepAlive>
+      <section class="tab-body" role="tabpanel">
+        <KeepAlive>
+          <component :is="当前组件" />
+        </KeepAlive>
+      </section>
+    </template>
+    <section v-else class="initializing" aria-live="polite">
+      <i class="fa-solid fa-circle-notch" aria-hidden="true"></i>
+      <strong>系统尚未初始化</strong>
+      <span>等待世界书与变量完成接入</span>
     </section>
   </div>
 </template>
@@ -42,6 +51,7 @@ import HostInfo from './components/HostInfo.vue';
 
 const store = useDataStore();
 
+const 已初始化 = computed(() => store.data.初始化完成);
 const 当前页 = ref('技能');
 
 const tabs = computed(() => [
@@ -79,6 +89,30 @@ const 当前组件 = computed(() => TAB_COMPONENTS[当前页.value] ?? SkillList
   border: 1px solid var(--line);
   border-radius: 14px;
   overflow: hidden;
+}
+.initializing {
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: var(--txt-dim);
+  text-align: center;
+}
+.initializing i {
+  margin-bottom: 4px;
+  color: var(--cyan);
+  font-size: 20px;
+  animation: spin 1.4s linear infinite;
+}
+.initializing strong {
+  color: var(--txt);
+  font-size: 13px;
+}
+.initializing span {
+  color: var(--txt-faint);
+  font-size: 11px;
 }
 .top-glow {
   position: absolute;
@@ -137,5 +171,26 @@ const 当前组件 = computed(() => TAB_COMPONENTS[当前页.value] ?? SkillList
 }
 .tab-body {
   min-height: 160px;
+}
+
+@media (max-width: 460px) {
+  .sys-panel {
+    padding: 10px;
+    gap: 8px;
+    border-radius: 10px;
+  }
+  .tabs {
+    margin-inline: -2px;
+    padding-inline: 2px;
+  }
+  .tab-btn {
+    padding-inline: 10px;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

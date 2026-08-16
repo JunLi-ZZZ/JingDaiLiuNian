@@ -66,11 +66,15 @@ const 熟练度百分比 = (v: number) => Math.max(0, Math.min(100, v));
 .sk-head {
   display: flex;
   align-items: center;
+  min-width: 0;
+  flex-wrap: wrap;
   gap: 8px;
 }
 .sk-name {
+  min-width: 0;
   font-size: 14px;
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 .sk-lv {
   font-family: var(--font-num);

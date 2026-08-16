@@ -58,6 +58,7 @@ const 宿主 = computed(() => store.data.宿主);
   margin-top: 2px;
   font-size: 13px;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 .h-look {
   padding: 10px 12px;

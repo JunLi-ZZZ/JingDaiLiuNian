@@ -106,11 +106,15 @@ const 分组 = computed(() => {
 .tk-head {
   display: flex;
   align-items: center;
+  min-width: 0;
+  flex-wrap: wrap;
   gap: 8px;
 }
 .tk-name {
+  min-width: 0;
   font-size: 13px;
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 .tk-type {
   font-size: 10px;

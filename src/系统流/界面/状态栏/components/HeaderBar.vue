@@ -7,11 +7,14 @@
     </div>
     <div class="world">
       <span v-if="世界.当前时间" class="w-item">
-        <i class="fa-regular fa-clock"></i>{{ 世界.当前时间
-        }}<template v-if="世界.周几"> · {{ 世界.周几 }}</template>
+        <i class="fa-regular fa-clock"></i>{{ 世界.当前时间 }}<template v-if="世界.周几"> · {{ 世界.周几 }}</template>
       </span>
       <span v-if="世界.天气" class="w-item"><i :class="weatherIcon"></i>{{ 世界.天气 }}</span>
       <span v-if="世界.地点" class="w-item"><i class="fa-solid fa-location-dot"></i>{{ 世界.地点 }}</span>
+      <span class="mode-badge" :class="{ active: R18模式 }" :aria-label="R18模式 ? 'R18 模式已开启' : 'R18 模式已关闭'">
+        <i :class="R18模式 ? 'fa-solid fa-lock' : 'fa-solid fa-lock-open'" aria-hidden="true"></i>
+        R18 {{ R18模式 ? '开启' : '关闭' }}
+      </span>
     </div>
   </header>
 </template>
@@ -21,6 +24,7 @@ import { useDataStore } from '../store';
 
 const store = useDataStore();
 const 世界 = computed(() => store.data.世界);
+const R18模式 = computed(() => store.data.R18模式);
 
 const WEATHER_ICONS: Record<string, string> = {
   晴: 'fa-solid fa-sun',
@@ -68,15 +72,51 @@ const weatherIcon = computed(() => {
   color: var(--txt-faint);
 }
 .world {
+  min-width: 0;
+  flex: 1 1 260px;
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 4px 12px;
   font-size: 11px;
   color: var(--txt-dim);
+}
+.w-item {
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 .w-item i {
   margin-right: 4px;
   color: var(--cyan);
   opacity: 0.8;
+}
+.mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border: 1px solid rgba(139, 152, 171, 0.28);
+  border-radius: 999px;
+  color: var(--txt-faint);
+  white-space: nowrap;
+}
+.mode-badge i {
+  color: currentColor;
+  font-size: 9px;
+}
+.mode-badge.active {
+  border-color: rgba(244, 114, 182, 0.45);
+  color: #f0abfc;
+  background: rgba(244, 114, 182, 0.08);
+}
+
+@media (max-width: 460px) {
+  .brand-sub {
+    display: none;
+  }
+  .world {
+    flex-basis: 100%;
+    justify-content: flex-start;
+  }
 }
 </style>

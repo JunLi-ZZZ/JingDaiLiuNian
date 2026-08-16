@@ -30,7 +30,7 @@ const 宿主 = computed(() => store.data.宿主);
 
 const 经验百分比 = computed(() => {
   const need = 系统.value.升级所需经验 || 1;
-  return Math.min(100, Math.round((系统.value.经验 / need) * 100));
+  return Math.max(0, Math.min(100, Math.round((系统.value.经验 / need) * 100)));
 });
 const 积分文本 = computed(() => 系统.value.积分.toLocaleString());
 </script>
@@ -79,12 +79,15 @@ const 积分文本 = computed(() => 系统.value.积分.toLocaleString());
 .lv-row {
   display: flex;
   align-items: baseline;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 7px;
 }
 .host-name {
+  min-width: 0;
   font-size: 16px;
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 .title-chip {
   font-size: 11px;
@@ -144,10 +147,13 @@ const 积分文本 = computed(() => 系统.value.积分.toLocaleString());
   .lv-side {
     flex-direction: row;
     width: 100%;
-    justify-content: flex-end;
+    justify-content: space-between;
   }
   .lv-card {
     flex-wrap: wrap;
+  }
+  .pill {
+    padding-inline: 7px;
   }
 }
 </style>
