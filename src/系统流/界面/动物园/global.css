@@ -5,37 +5,39 @@
 }
 
 :root {
-  /* ---- 档案馆主区（面板底、页签、提示条） ---- */
-  --bg-deep: #1a0f1e; /* 深紫褐夜空 */
-  --bg-panel: #2a1b2e;
-  --txt: #d4c5b9;
-  --txt-dim: #a89384;
-  --txt-faint: #7d6b5e;
-  --acc: #d4af37; /* 深金箔 */
-  --acc-deep: #8b6f47; /* 古铜锈迹 */
-  --gold: #d4af37;
-  --violet: #9b7ba7;
-  --hp: #8b3a3a;
-  --line: rgba(139, 111, 71, 0.25);
-  --line-strong: rgba(212, 175, 55, 0.4);
-  --bg-inset: rgba(26, 15, 30, 0.65);
+  --bg-deep: #0d1111;
+  --bg-panel: #151b1a;
+  --bg-raised: #1b2321;
+  --bg-inset: #101615;
+  --txt: #e7e7df;
+  --txt-dim: #a8aaa3;
+  --txt-faint: #737b76;
+  --acc: #62a899;
+  --acc-deep: #295f57;
+  --gold: #c8a968;
+  --violet: #8e86a8;
+  --hp: #a85b5b;
+  --line: rgba(173, 186, 178, 0.14);
+  --line-strong: rgba(98, 168, 153, 0.42);
+  --danger: #b96666;
 
-  /* ---- 做旧羊皮纸档案卡片区 ---- */
-  --bg-card: #e8d7b8; /* 泛黄古纸 */
-  --ptxt: #3a2f1e; /* 墨迹深棕 */
-  --ptxt-dim: #6b5438;
-  --ptxt-faint: #8d7555;
-  --pinset: rgba(90, 60, 30, 0.18); /* 烧灼暗角 */
-  --pline: rgba(139, 111, 71, 0.45); /* 古铜边线 */
-  --pline-strong: rgba(212, 175, 55, 0.65); /* 烫金边框 */
+  --bg-card: #1a211f;
+  --ptxt: #e7e7df;
+  --ptxt-dim: #a8aaa3;
+  --ptxt-faint: #737b76;
+  --pinset: #111715;
+  --pline: rgba(173, 186, 178, 0.16);
+  --pline-strong: rgba(98, 168, 153, 0.48);
 
-  --font-main: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  --font-main: 'Microsoft YaHei UI', 'PingFang SC', sans-serif;
   --font-num: 'Cascadia Mono', 'JetBrains Mono', Consolas, monospace;
-  --font-title: 'Noto Serif SC', 'Source Han Serif SC', 'STSong', 'SimSun', serif; /* 档案风衬线体 */
+  --font-title: 'Microsoft YaHei UI', 'PingFang SC', sans-serif;
 }
 
 html,
-body {
+body,
+#app {
+  min-height: 100%;
   background: var(--bg-deep);
 }
 
@@ -44,19 +46,40 @@ body {
   color: var(--txt);
   font-size: 13px;
   line-height: 1.55;
+  letter-spacing: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  letter-spacing: 0;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(98, 168, 153, 0.8);
+  outline-offset: 2px;
 }
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: rgba(139, 111, 71, 0.4);
-  border-radius: 3px;
+  background: rgba(98, 168, 153, 0.34);
+  border: 2px solid var(--bg-deep);
+  border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(212, 175, 55, 0.5);
+  background: rgba(98, 168, 153, 0.55);
 }
+
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--bg-deep);
 }
