@@ -96,7 +96,7 @@
         <input type="checkbox" v-model="withPhone" @change="savePhoneOpt" />
         <span class="phone-opt-txt">开局随身带手机</span>
       </label>
-      <p class="phone-opt-note">开启后，任意开场白（含自由开局）会附加一条合理要求，让你身上带着手机，省得开局摸不到手机界面。</p>
+      <p class="phone-opt-note">开启后，仅在变量初始化中把手机加入随身物品；剧情没有自然涉及时，正文不会特意描写它。</p>
     </div>
     <div class="tools-section">
       <ProtagonistPanel v-show="toolsTab === 'protag'" />
@@ -271,9 +271,9 @@ function savePhoneOpt() {
     localStorage.setItem(PHONE_OPT_KEY, withPhone.value ? '1' : '0');
   } catch (e) {}
 }
-// 追加"带手机"要求。对 user 而言合理即可，不写死具体型号/来源
+// 只初始化随身物品，避免手机喧宾夺主地进入开场正文
 const PHONE_REQ =
-  '\n\n（附加设定要求：{{user}} 身上随身带着一部属于自己的手机，开局时它就在{{user}}身上或触手可及之处，请在开场描写里以合乎当前情境的方式自然带到它的存在。）';
+  '\n\n（开局初始化：仅在变量更新中将“手机”加入{{user}}的随身物品；除非本次剧情自然涉及，否则正文不要提及或描写手机。）';
 function withPhoneReq(msg: string) {
   return withPhone.value ? msg + PHONE_REQ : msg;
 }
