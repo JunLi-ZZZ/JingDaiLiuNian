@@ -515,9 +515,9 @@
               <div class="mp-dy-info">
                 <div class="mp-dy-live-badge">● 直播中</div>
                 <div class="mp-dy-creator-row">
-                  <span class="mp-dy-creator-name">@{{ v.creator }}</span>
+                  <span class="mp-dy-creator-name mp-dy-clickable" @click.stop="openDyCreatorProfile(v)">@{{ v.creator }}</span>
                   <span v-if="v.verified" class="mp-dy-verified">✓</span>
-                  <span v-if="v.realName" class="mp-dy-realname" @click.stop="showToast('已实名认证：' + v.realName)">已实名</span>
+                  <span v-if="v.realName" class="mp-dy-realname" @click.stop="openDyCreatorProfile(v)">已实名</span>
                   <button v-if="!v.isFollowing" class="mp-dy-follow-btn" @click.stop="toggleDyFollow(v._i)">关注</button>
                   <span v-else class="mp-dy-followed" @click.stop="toggleDyFollow(v._i)">已关注</span>
                 </div>
@@ -543,9 +543,9 @@
             </div>
             <div class="mp-dy-info">
               <div class="mp-dy-creator-row">
-                <span class="mp-dy-creator-name">@{{ v.creator }}</span>
+                <span class="mp-dy-creator-name mp-dy-clickable" @click.stop="openDyCreatorProfile(v)">@{{ v.creator }}</span>
                 <span v-if="v.verified" class="mp-dy-verified">✓</span>
-                <span v-if="v.realName" class="mp-dy-realname" @click.stop="showToast('已实名认证：' + v.realName)">已实名</span>
+                <span v-if="v.realName" class="mp-dy-realname" @click.stop="openDyCreatorProfile(v)">已实名</span>
                 <button v-if="!v.isFollowing" class="mp-dy-follow-btn" @click.stop="toggleDyFollow(v._i)">关注</button>
                 <span v-else class="mp-dy-followed" @click.stop="toggleDyFollow(v._i)">已关注</span>
               </div>
@@ -554,7 +554,7 @@
             </div>
             <div class="mp-dy-actions">
               <div class="mp-dy-ava-wrap">
-                <div class="mp-dy-ava">{{ (v.creator||'?').replace('@','').slice(0,1).toUpperCase() }}</div>
+                <div class="mp-dy-ava mp-dy-clickable" @click.stop="openDyCreatorProfile(v)">{{ (v.creator||'?').replace('@','').slice(0,1).toUpperCase() }}</div>
                 <div v-if="!v.isFollowing" class="mp-dy-ava-plus" @click.stop="toggleDyFollow(v._i)">+</div>
               </div>
               <button class="mp-dy-act-btn" :class="{on:v.isLiked}" @click.stop="toggleDyLike(v._i)">
@@ -737,10 +737,10 @@
           <div class="mp-dylv-top">
             <div class="mp-dylv-top-row">
               <div class="mp-dylv-who">
-                <div class="mp-dylv-ava">{{ (dyLiveRoom.creator||'?').slice(0,1).toUpperCase() }}</div>
+                <div class="mp-dylv-ava mp-dy-clickable" @click.stop="openDyCreatorProfile(dyLiveRoom)">{{ (dyLiveRoom.creator||'?').slice(0,1).toUpperCase() }}</div>
                 <div class="mp-dylv-info">
                   <div class="mp-dylv-name-row">
-                      <span class="mp-dylv-name">{{ dyLiveRoom.creator }}<span v-if="dyLiveRoom.verified" class="mp-dy-verified">✓</span><span v-if="dyLiveRoom.realName" class="mp-dy-realname" @click.stop="showToast('已实名认证：' + dyLiveRoom.realName)">已实名</span></span>
+                      <span class="mp-dylv-name mp-dy-clickable" @click.stop="openDyCreatorProfile(dyLiveRoom)">{{ dyLiveRoom.creator }}<span v-if="dyLiveRoom.verified" class="mp-dy-verified">✓</span><span v-if="dyLiveRoom.realName" class="mp-dy-realname">已实名</span></span>
                   </div>
                 </div>
                 <button v-if="!dyLiveRoom.isFollowing" class="mp-dylv-follow" @click="toggleDyFollowFromLive">关注</button>
@@ -818,6 +818,24 @@
                 <button v-for="n in [1,5,10,50,99]" :key="n" :class="['mp-dylv-gp-qty-btn', {on: giftQty===n}]" @click="giftQty=n">×{{ n }}</button>
               </div>
             </div>
+          </div>
+        </div>
+        <!-- 抖音个人资料页：先点头像进入，再点“已实名”查看实名 -->
+        <div v-if="dyCreatorProfile" class="mp-dy-profile" @click.self="closeDyCreatorProfile">
+          <div class="mp-dy-profile-page">
+            <div class="mp-dy-profile-nav">
+              <button class="mp-nav-back" @click="closeDyCreatorProfile"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
+              <span>个人资料</span><span></span>
+            </div>
+            <div class="mp-dy-profile-hero">
+              <div class="mp-dy-profile-ava">{{ (dyCreatorProfile.creator||'?').replace('@','').slice(0,1).toUpperCase() }}</div>
+              <div class="mp-dy-profile-name">{{ dyCreatorProfile.creator }}</div>
+              <div class="mp-dy-profile-id">抖音号：{{ dyCreatorProfile.creator }}</div>
+              <div class="mp-dy-profile-tags"><span v-if="dyCreatorProfile.verified" class="mp-dy-profile-tag verified">认证账号</span><button v-if="dyCreatorProfile.realName" class="mp-dy-profile-tag real" @click.stop="revealDyRealName(dyCreatorProfile)">已实名</button></div>
+              <div v-if="dyRealNameRevealed && dyCreatorProfile.realName" class="mp-dy-profile-real">实名：{{ dyCreatorProfile.realName }}</div>
+            </div>
+            <div class="mp-dy-profile-sec"><span>简介</span><p>{{ dyCreatorProfile.caption || dyCreatorProfile.title || '暂无简介' }}</p></div>
+            <div class="mp-dy-profile-sec"><span>账号说明</span><p>同一真实人物在平台内沿用同一个账号和实名，不因昵称、花名或内容变化而更换身份。</p></div>
           </div>
         </div>
       </div>
@@ -914,6 +932,7 @@ verified:true或false
 title:直播标题（15字内，有吸引力）
 viewers:当前在线人数（如 1929 / 2.3万）
 content:当前直播画面描述（2-3句，主播在做什么，有临场感）
+memory:本场直播连续性记忆（单行，最多300字：主播身份、当前场景、正在进行的事、已发生的关键互动、user最新发言及未回应事项；只写客观事实，不写user内心）
 chat1:等级数字|||昵称|||聊天内容（每条5~20字，简短口语，禁止长篇大论）
 chat2:等级数字|||昵称|||聊天内容
 chat3:等级数字|||昵称|||来了|||join（进场消息固定格式：文本写"来了"，末尾加|||join）
@@ -969,6 +988,8 @@ const dyLivePct = ref(15)                // 推荐/关注流里直播卡出现�
 const DY_LIVE_PCT_OPTIONS = [0, 10, 15, 30]
 const livePctDraft = ref('')
 const dyLiveRoom = ref(null)             // 当前打开的直播间 {creator,verified,title,viewers,liveLikes,content,chatLog,isFollowing,feedIdx}
+const dyCreatorProfile = ref(null)        // 抖音资料页当前主播
+const dyRealNameRevealed = ref(false)
 const dyLiveChatEl = ref(null)           // 聊天滚动容器
 const dyLiveChatDraft = ref('')          // 聊天输入草稿
 const dyLiveReplyTo = ref('')            // 正在回复的用户名
@@ -1234,37 +1255,23 @@ function storyTime() {                         // 剧情当前时间原始串（
   } catch (e) {}
   return ''
 }
-// 抖音生成用：摘要当前世界客观状态（时间/地点），降低内容重复率、贴合当下剧情
-// 不含关系/好感度，避免把内容框死、保留"刷到未知"的新鲜感
-function dyWorldContext() {
-  try {
-    let sd = null
-    const w = window.parent
-    if (w && w.Mvu && w.Mvu.getMvuData) { try { const v = w.Mvu.getMvuData({ type: 'chat' }); sd = v && v.stat_data } catch (e) {} }
-    if (!sd) { const th = TH(); if (th && th.getVariables) sd = (th.getVariables({ type: 'chat' }) || {}).stat_data }
-    if (!sd) return ''
-    const parts = []
-    const t = sd.世界 && sd.世界.当前时间
-    if (t) parts.push(`当前时间：${t}`)
-    const loc = sd.主角 || {}
-    const locStr = [loc.位面, loc.城市, loc.区域, loc.场景].filter(Boolean).join('·')
-    if (locStr) parts.push(`所在：${locStr}`)
-    return parts.length ? `\n【当前世界状态（供贴合参考，别照抄进内容）】${parts.join('；')}。` : ''
-  } catch (e) { return '' }
-}
 // generateRaw 的 user_input 在 0 层、权重高。这里塞入博主真实姓名+话题当"检索关键词"以激活相关人设世界书，
 // 同时明确标注这是检索意图、非用户发言，避免 AI 当成 user 的话去回应或被带偏。
 function dyRetrievalHint(video, extra, userText) {
-  const bits = []
+  const bits = [dyR18.value ? '抖阴 成人向短视频平台' : '抖音 短视频平台']
   if (video) {
     if (video.realName) bits.push(video.realName)
     if (video.creator) bits.push('@' + video.creator)
-    if (video.caption) bits.push(video.caption)
+    if (video.caption) bits.push(`标题文案：${video.caption}`)
+    if (video.title) bits.push(`直播标题：${video.title}`)
+    if (video.content) bits.push(`当前内容：${String(video.content).slice(0, 280)}`)
+    if (video.pcontent) bits.push(`私密内容：${String(video.pcontent).slice(0, 280)}`)
+    if (video.memory) bits.push(`连续性记忆：${String(video.memory).slice(0, 600)}`)
   }
   if (extra) bits.push(extra)
   // user 自己写的评论/发言也是重要关键词来源（可能点名了角色、提到了地点事物）
-  if (userText) bits.push(String(userText).slice(0, 60))
-  const kw = bits.filter(Boolean).join(' ')
+  if (userText) bits.push(`用户消息：${String(userText).slice(0, 500)}`)
+  const kw = [...new Set(bits.filter(Boolean))].join(' ')
   return `（系统检索：为手机短视频功能生成内容，检索相关资料 ${kw}。这是检索关键词，不是用户发言，无需回应，直接按系统指令产出数据块。）`
 }
 function displayName(c) {                       // 备注优先，无则本名
@@ -1288,7 +1295,7 @@ function loadLogs() {
   const th = TH(); if (!th || !th.getVariables) return
   try {
     const v = th.getVariables({ type: 'chat' }) || {}
-    if (v[VAR_KEY] && typeof v[VAR_KEY] === 'object') logs.value = migrate(v[VAR_KEY])
+    if (v[VAR_KEY] && typeof v[VAR_KEY] === 'object') logs.value = normalizeLogOrder(migrate(v[VAR_KEY]))
     if (v[DELETED_KEY] && typeof v[DELETED_KEY] === 'object') deleted.value = v[DELETED_KEY]
     const sv = v[SILENT_KEY]
     if (typeof sv === 'boolean') silentMap.value = { [CUR_APP]: sv }        // 旧布尔 → 迁移成按 app
@@ -1307,6 +1314,45 @@ function migrate(data) {                         // 旧格式 {联系人:[消息
   const out = { ...rest }
   out[me] = { ...(out[me] || {}), ...moved }
   return out
+}
+function compareMessageTime(a, b) {
+  const ta = absMin(parseTime(a && a.time)), tb = absMin(parseTime(b && b.time))
+  if (ta == null && tb == null) return 0
+  if (ta == null) return 1
+  if (tb == null) return -1
+  return ta - tb
+}
+function sortLogArray(arr) {
+  const sorted = arr.map((msg, index) => ({ msg, index })).sort((a, b) => compareMessageTime(a.msg, b.msg) || a.index - b.index)
+  arr.splice(0, arr.length, ...sorted.map(item => item.msg))
+}
+function normalizeLogOrder(data) {
+  Object.values(data).forEach(ownerLogs => {
+    if (!ownerLogs || typeof ownerLogs !== 'object' || Array.isArray(ownerLogs)) return
+    Object.values(ownerLogs).forEach(arr => { if (Array.isArray(arr)) sortLogArray(arr) })
+  })
+  return data
+}
+function insertLogMessage(arr, msg) {
+  const at = absMin(parseTime(msg && msg.time))
+  if (at == null) { arr.push(msg); return }
+  let i = arr.length
+  while (i > 0) {
+    const pt = absMin(parseTime(arr[i - 1] && arr[i - 1].time))
+    if (pt == null) { i--; continue }
+    if (pt <= at) break
+    i--
+  }
+  arr.splice(i, 0, msg)
+}
+function sameMessage(a, b) {
+  const baseA = a.dir + '|' + (a.type || '文字') + '|' + a.text
+  const baseB = b.dir + '|' + (b.type || '文字') + '|' + b.text
+  if (baseA !== baseB) return false
+  const ta = String(a.time || '').trim(), tb = String(b.time || '').trim()
+  if (!ta || !tb) return true
+  const ma = absMin(parseTime(ta)), mb = absMin(parseTime(tb))
+  return ma != null && mb != null ? ma === mb : ta === tb
 }
 // 用 replaceVariables 整体覆盖该 key，避免 insertOrAssign 深合并导致删除的联系人被旧值复活
 function putVar(key, val) {
@@ -1329,15 +1375,14 @@ function delKey(o, c) { return o + '→' + c } //+ '' + c }
 function isDeleted(o, c) { return !!deleted.value[delKey(o, c)] }
 const swapDir = d => (d === '发出' ? '收到' : d === '收到' ? '发出' : d)
 
-// 往 logs[owner][contact] 写一条（墓碑跳过、按内容去重、仅自己手机计未读）。返回是否有变化。
+// 往 logs[owner][contact] 写一条（墓碑跳过、保守去重、按时间插入、仅自己手机计未读）。返回是否有变化。
 function putMsg(owner, contact, msg, countUnread) {
   if (!owner || !contact || isDeleted(owner, contact)) return false
   if (!logs.value[owner]) logs.value[owner] = {}
   if (!logs.value[owner][contact]) logs.value[owner][contact] = []
   const arr = logs.value[owner][contact]
-  const sig = msg.dir + '|' + (msg.type || '文字') + '|' + msg.text   // 忽略时间去重，兼容乐观写/镜像重复
-  if (arr.some(m => (m.dir + '|' + (m.type || '文字') + '|' + m.text) === sig)) return false
-  arr.push(msg)
+  if (arr.some(m => sameMessage(m, msg))) return false
+  insertLogMessage(arr, msg)
   if (countUnread && msg.dir === '收到' && owner === meName.value && activeContact.value !== contact) {
     if (!unread.value[owner]) unread.value[owner] = {}
     unread.value[owner][contact] = (unread.value[owner][contact] || 0) + 1
@@ -1382,6 +1427,7 @@ function openWeChat() { view.value = 'wechat'; wxTab.value = 'chats'; activeCont
 function togglePlus() { showPlus.value = !showPlus.value; showSearch.value = false }
 function startAddFriend() { showPlus.value = false; showNew.value = true; showSearch.value = false }
 function goHome() {
+  if (dyCreatorProfile.value) { closeDyCreatorProfile(); return }
   if (showPhoneSettings.value) { showPhoneSettings.value = false; return }
   if (showCameraSettings.value) { showCameraSettings.value = false; return }
   if (selectedPhoto.value) { selectedPhoto.value = null; return }
@@ -1441,7 +1487,7 @@ function putPending(owner, contact, text, type, time) {
   if (!logs.value[owner][contact]) logs.value[owner][contact] = []
   const sid = 's' + Date.now() + Math.random().toString(36).slice(2, 6)
   const msg = { dir: '发出', type: type || '文字', text, time, status: 'pending', sid }
-  logs.value[owner][contact].push(msg)
+  insertLogMessage(logs.value[owner][contact], msg)
   pendingRef = { owner, contact, sid }
   return sid
 }
@@ -1768,6 +1814,7 @@ function clearDyCache() {
   dyRecentSearches.value = []; localStorage.removeItem(dyModeKey(DY_SEARCHES_KEY))
   dyHotList.value = []; dyHotMode.value = ''; localStorage.removeItem(dyModeKey(DY_HOT_KEY))
   dyLiveRoom.value = null; dyLiveChatDraft.value = ''; dyLiveReplyTo.value = ''; showGiftPanel.value = false
+  closeDyCreatorProfile()
   dyFanClub.value = {}; localStorage.removeItem(dyModeKey(DY_FAN_KEY))
   localStorage.removeItem(dyModeKey(DY_FEED_KEY)); localStorage.removeItem(dyModeKey(DY_IDX_KEY))
   localStorage.removeItem(dyModeKey(DY_IDXMAP_KEY)); localStorage.removeItem(dyModeKey(DY_HISTORY_KEY))
@@ -2083,7 +2130,6 @@ async function generateDyVideo() {
       : ''
     const liveInstruction =
       `【${livePlatform}·直播卡·静默生成】现在模拟刷到的一个直播卡，绝不输出任何正文。` +
-      dyWorldContext() +
       `\n主播来源：${liveSourceLine}` +
       `\n直播风格：${liveStyleLine}` +
       `\n【贴合优先】主播与直播主题应贴合。当已有角色都不契合这个主题时，可以合理创建一个符合本世界观的新角色来直播，而不是让现有角色勉强扮演不属于ta设定的形象。` +
@@ -2092,12 +2138,16 @@ async function generateDyVideo() {
       `\n【账号唯一】同一角色全平台只有一个固定账号名，禁用别名/小名/拼音/缩写重复出现。` +
       `\n【禁止扮演${me}】chat 字段里绝不能出现昵称为"${me}"的发言，${me}是真实用户，不是AI生成的角色。` +
       `\n只输出一个 ===LIVECARD=== 数据块，块外不写字：\n===LIVECARD===\n` + DY_LIVE_FORMAT + `\n===LCEND===`
+    const liveUserInput = dyRetrievalHint(
+      null,
+      `${livePlatform} 直播卡 ${isSearch ? `搜索词：${query}` : isFollowTab ? `已关注主播：${[...dyFollows.value].join('、')}` : '推荐直播'}`,
+    )
     try {
       let result
       if (th.generateRaw) {
-        result = await th.generateRaw({ user_input: isSearch ? dyRetrievalHint(null, query) : '刷到直播', should_silence: true, ordered_prompts: [
+        result = await th.generateRaw({ user_input: liveUserInput, should_silence: true, ordered_prompts: [
           { role: 'system', content: liveInstruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
-          { role: 'user', content: '刷到一个直播卡，只输出 ===LIVECARD=== 数据块，块外不写字。' },
+          { role: 'user', content: `生成${isSearch ? `与「${query}」直接相关的` : ''}直播卡。严格沿用上面的身份、受众与私密范围，只输出 ===LIVECARD=== 数据块，块外不写字。` },
         ] })
       } else { result = await th.generate({ user_input: liveInstruction, should_silence: true }) }
       const liveCard = parseDyLiveCard(result)
@@ -2171,7 +2221,6 @@ async function generateDyVideo() {
   const instruction =
     `【${platform}·刷视频·静默生成】现在只模拟刷到的一条短视频，绝不输出任何正文、旁白、场景或动作描写，只产出下面规定的数据块。` +
     `请结合下方提供的世界观设定、角色信息与当前剧情，生成一条真实可信、符合该世界背景的短视频。` +
-    dyWorldContext() +
     `\n发布来源：${sourceLine}` +
     `\n内容风格：${styleLine}` +
     `\n【贴合优先】发布者与内容应贴合视频主题。当已有角色都不契合这个主题时，可以合理创建一个符合本世界观的新角色来发布，而不是让现有角色勉强扮演不属于ta设定的形象。` +
@@ -2183,6 +2232,10 @@ async function generateDyVideo() {
     `\n真实感要求：创作者名像真人抖音号（可含字母数字emoji）；【账号唯一】同一个角色在整个平台只有一个固定账号，出现时始终用同一个名字，绝不能用别名、小名、拼音、缩写、外号或换个称呼把同一个人包装成不同的新博主重复刷出；文案口语化、可带#话题；弹幕是观众即时反应、短促随意有梗；评论有不同性格与立场，别千篇一律；点赞/评论/分享数符合内容热度` +
     (isPrivate ? `（私密视频数据极低或为0，因为只有一个人看）` : '') + `。` +
     `\n只输出一个 ===DYSTART=== 数据块，块外不写任何字：\n===DYSTART===\n` + fmt + `\n===DYEND===`
+  const videoUserInput = dyRetrievalHint(
+    null,
+    `${platform} ${isSearch ? `搜索词：${query}` : isPrivate ? '私密流' : isFollowTab ? `关注流账号：${[...dyFollows.value].join('、')}` : '推荐流'}`,
+  )
   try {
     let result
     if (th.generateRaw) {
@@ -2192,9 +2245,9 @@ async function generateDyVideo() {
         'char_description',
         'world_info_before',
         'world_info_after',
-        { role: 'user', content: `刷到下一条视频，只输出一个 ===DYSTART=== 数据块，块外不写任何字。` },
+        { role: 'user', content: `生成${isSearch ? `与「${query}」直接相关的搜索结果` : isPrivate ? '严格遵守私密可见范围的视频' : isFollowTab ? '由已关注账号发布的新视频' : '下一条推荐视频'}。沿用上面的身份、受众和内容边界，只输出一个 ===DYSTART=== 数据块，块外不写任何字。` },
       ]
-      result = await th.generateRaw({ user_input: isSearch ? dyRetrievalHint(null, query) : '刷抖音', should_silence: true, ordered_prompts: ordered })
+      result = await th.generateRaw({ user_input: videoUserInput, should_silence: true, ordered_prompts: ordered })
     } else {
       result = await th.generate({ user_input: instruction, should_silence: true })
     }
@@ -2301,7 +2354,7 @@ function parseDyLiveCard(raw) {
     creator: f('creator').replace('@',''), realName: f('realName').replace('@',''), verified: /true|是|认证/.test(f('verified')),
     title: f('title'), viewers: f('viewers') || '0',
     liveLikes: Math.floor(Math.random()*5000+200) + '',
-    content, chatLog, myComments: [], isLiked: false, isSaved: false, isFollowing: false, type: 'live',
+    content, memory: f('memory') || '', chatLog, myComments: [], isLiked: false, isSaved: false, isFollowing: false, type: 'live',
   }
 }
 // 设置里自定义数字输入的本地草稿，避免2秒轮询重渲染把没输完的值清掉
@@ -2377,15 +2430,26 @@ function formatDyNotifTime(ts) {
 }
 // ---- 分享功能 ----
 function openDyShareMenu(type, data) { dyShareMenu.value = { type, data } }
+function openDyCreatorProfile(data) {
+  if (!data || !data.creator) return
+  dyCreatorProfile.value = data
+  dyRealNameRevealed.value = false
+}
+function closeDyCreatorProfile() { dyCreatorProfile.value = null; dyRealNameRevealed.value = false }
+function revealDyRealName(data) {
+  if (!data || !data.realName) return
+  dyRealNameRevealed.value = true
+  showToast('已实名认证：' + data.realName)
+}
 // 转发注入用特殊格式块包裹并写清性质，否则角色不认（会说"是别的同人位面"或"user在骗人"）。
 // 两类语义：
 //  · 场景切换（视频/直播）：把镜头切到该内容展示的现场，AI 直接把它当成正在发生的剧情来演
 //  · 出示展示（评论/照片/微信）：在当前场景里把手机内容拿给人看，是真实存在的记录
-function dyShareBlock(kind, body) {
+function dyShareBlock(kind, body, context = '') {
   const head = kind === 'scene'
-    ? '【手机·画面转场】以下内容是真实发生的现场，不是虚构、不是同人、不是他人捏造。请把镜头切换到这个现场，以此为剧情舞台继续展开。'
+    ? '【手机·画面转场】以下内容来自小手机里真实存在的抖音/抖阴记录，不是虚构、不是同人、不是他人捏造。本次分享就是明确的镜头切换指令：把正文当前场景转入这个视频或直播所展示的现场，以画面中的地点、人物与关系状态作为新的剧情起点，从此刻往后创造新剧情。不要停留在原场景讨论手机内容，也不要把它当成用户的一句概括来敷衍。{{user}}是否在新现场、以何种方式出现，只能依据画面和已有剧情，不得擅自补写{{user}}的动作、对白、反应或决定。'
     : '【手机·出示内容】以下是手机里真实存在的记录，内容属实、可被信任，不是伪造也不是玩笑。请让在场角色看到它并自然做出反应。'
-  return `<手机展示>\n${head}\n${body}\n</手机展示>`
+  return `<手机展示>\n${head}\n${context ? `【可见性与身份定义】${context}\n` : ''}${body}\n</手机展示>`
 }
 function buildShareToStoryText(type, data) {
   const me = meName.value || '我'
@@ -2396,39 +2460,50 @@ function buildShareToStoryText(type, data) {
     const isStranger = !!v.stranger
     const isRedYan = isPrivate && !isStranger
     const hasPcontent = !!(v.pcontent && isR18)
+    const publisher = v.realName ? `${v.realName}（抖音号 @${v.creator}）` : `抖音号 @${v.creator}`
     if (isRedYan) {
-      return dyShareBlock('scene', `${me}正在看一条只发给${me}的抖阴（成人向短视频平台）私密视频，发布者@${v.creator}「${v.caption || ''}」。\n现场画面：${v.content}`)
+      return dyShareBlock('scene', `转场来源：一条只发给${me}的抖阴（成人向短视频平台）私密视频，发布者${publisher}，文案「${v.caption || ''}」。\n新剧情现场：${v.content}`, `${publisher}是当前故事世界中与${me}关系亲密的红颜。此内容由她只发给${me}，默认只有${me}与她本人知道并能确认其真实性；画面中若明确有其他参与者，该参与者只知道自己亲历的部分。陌生人、路人和未被告知的角色都不应知道这条私密视频，更不能凭空评论或质疑来源。正文继续时请保留这层可见范围；发布者知道这是自己的私密内容。`)
     } else if (isPrivate && isStranger) {
-      return dyShareBlock('scene', `${me}正在看抖阴（成人向短视频平台）上的一条成人内容，博主@${v.creator}「${v.caption || ''}」。\n现场画面：${v.content}`)
+      return dyShareBlock('scene', `转场来源：抖阴（成人向短视频平台）博主${publisher}发布的成人内容，文案「${v.caption || ''}」。\n新剧情现场：${v.content}`, `这是平台上陌生成人创作者的公开内容，与当前故事角色没有既定关系；不要把陌生博主误认成故事人物，也不要替${me}或任何角色补写未表达的想法。`)
     } else if (hasPcontent) {
-      return dyShareBlock('scene', `${me}正在看抖阴（成人向短视频平台）博主@${v.creator}的视频「${v.caption || ''}」。\n公开画面：${v.content}\n只对${me}可见的私密版画面：${v.pcontent}`)
+      return dyShareBlock('scene', `转场来源：抖阴（成人向短视频平台）博主${publisher}发布的视频，文案「${v.caption || ''}」。\n公开现场画面：${v.content}\n只对${me}可见的私密版现场：${v.pcontent}`, `公开画面可被正常看到；私密版只由${publisher}单独发给${me}，只有${me}和${publisher}知道其内容。其他角色只能依据公开画面反应，不能提及、暗示或质疑私密版，也不能因为私密版内容而突然认识${publisher}。`)
     } else {
       const platform = isR18 ? '抖阴（成人向短视频平台）' : '抖音'
-      return dyShareBlock('scene', `${me}正在看${platform}博主@${v.creator}的视频「${v.caption || ''}」。\n现场画面：${v.content}`)
+      return dyShareBlock('scene', `转场来源：${platform}博主${publisher}发布的视频，文案「${v.caption || ''}」。\n新剧情现场：${v.content}`, `这是平台公开内容；若实名对应故事中的已有角色，沿用其既有身份与关系；若是陌生博主，不要强行与当前角色建立关系，也不要让其知道${me}的未公开信息。`)
     }
   } else if (type === 'live') {
     const room = data
     const platform = dyR18.value ? '抖阴（成人向短视频平台）' : '抖音'
-    return dyShareBlock('scene', `@${room.creator}正在${platform}直播「${room.title || ''}」，${me}在观看这场直播。\n直播现场画面：${room.content || ''}`)
+    const publisher = room.realName ? `${room.realName}（抖音号 @${room.creator}）` : `抖音号 @${room.creator}`
+    const context = room.redYan
+      ? `${publisher}是与${me}关系亲密的红颜；这是只让${me}和她及极少数知情亲密圈子看到的私密直播，陌生人、路人和男性观众都不知道直播内容，也不能凭空进入聊天或质疑真实性。`
+      : room.realName
+        ? `这是平台公开直播；主播实名为${room.realName}。若该实名对应故事中的已有角色，必须沿用她既有的身份与关系；若她是陌生主播，则不要强行建立与当前角色的关系。`
+        : `这是平台公开直播；除非正文已有依据，不要强行把陌生主播认成已有角色，也不要替任何角色补写与主播的关系。`
+    const recentLiveChat = (room.chatLog || []).slice(-8).map((msg, index) => {
+      if (msg.isJoin) return `${index + 1}. ${msg.user}进入直播间`
+      return `${index + 1}. ${msg.user}：${msg.text}`
+    }).join('\n')
+    return dyShareBlock('scene', `转场来源：${publisher}正在${platform}直播「${room.title || ''}」。\n新剧情现场：${room.content || ''}${room.memory ? `\n本场直播连续性记忆：${room.memory}` : ''}${recentLiveChat ? `\n最近直播消息（从较早到较新）：\n${recentLiveChat}` : ''}`, context)
   } else if (type === 'comment') {
     const { video, comment } = data
     const platform = dyR18.value ? '抖阴（成人向短视频平台）' : '抖音'
-    return dyShareBlock('show', `${me}把手机上的评论展示出来：${platform}博主@${video.creator}「${video.caption || ''}」视频下，${comment.user}评论道「${comment.text}」`)
+    return dyShareBlock('show', `${me}把手机上的评论展示出来：${platform}博主@${video.creator}「${video.caption || ''}」视频下，${comment.user}评论道「${comment.text}」`, `这是该视频评论区的公开文字记录，不等于评论者出现在当前现场；角色只知道这段记录中明确写出的内容。`)
   } else if (type === 'reply') {
     const { video, comment, reply } = data
     const platform = dyR18.value ? '抖阴（成人向短视频平台）' : '抖音'
-    return dyShareBlock('show', `${me}把手机上的评论展示出来：${platform}博主@${video.creator}「${video.caption || ''}」视频下，${reply.user}回复${reply.replyTo || comment.user}「${reply.text}」`)
+    return dyShareBlock('show', `${me}把手机上的评论展示出来：${platform}博主@${video.creator}「${video.caption || ''}」视频下，${reply.user}回复${reply.replyTo || comment.user}「${reply.text}」`, `这是评论区已有的公开回复记录，不等于回复者就在当前现场。`)
   } else if (type === 'photo') {
     const p = data
-    return dyShareBlock('show', `${me}把手机相册里的一张照片展示出来：${p.时间}拍下的，画面是${p.画面}`)
+    return dyShareBlock('show', `${me}把手机相册里的一张照片展示出来：${p.时间}拍下的，画面是${p.画面}`, `这是相册中真实存在的照片记录；时间和画面指向照片拍摄时刻，不要把查看照片的现在误写成拍摄时刻。`)
   } else if (type === 'wxmsg') {
     const { msg, contact } = data
     const name = msg.dir === '发出' ? me : contact
-    return dyShareBlock('show', `${me}把手机上与${contact}的微信对话展示出来，其中一条：${name}说「${msg.text}」`)
+    return dyShareBlock('show', `${me}把手机上与${contact}的微信对话展示出来，其中一条：${name}说「${msg.text}」`, `这是手机里真实保存的聊天记录；只有这条记录明确出现的发送者、接收者和内容可被当作事实，不替${me}补写未表达的反应。`)
   } else if (type === 'wxmsgs') {
     const { msgs, contact } = data
     const lines = msgs.map(m => `${m.dir === '发出' ? me : contact}：「${m.text}」`).join('\n')
-    return dyShareBlock('show', `${me}把手机上与${contact}的一段微信对话展示出来：\n${lines}`)
+    return dyShareBlock('show', `${me}把手机上与${contact}的一段微信对话展示出来：\n${lines}`, `这是按发送先后排列的真实聊天记录；不要把记录中的旧时间、旧地点或旧情绪强行改成当前场景。`)
   }
   return ''
 }
@@ -2582,10 +2657,10 @@ async function generateDyHotList() {
     `\n只输出一个 ===HOTSTART=== 数据块，块外不写任何字。每行格式：话题|||热度\n===HOTSTART===\n话题1|||热度\n话题2|||热度\n…(共10行)\n===HOTEND===`
   try {
     let result
-    if (th.generateRaw) {
-      result = await th.generateRaw({ user_input: '看抖音热榜', should_silence: true, ordered_prompts: [
+  if (th.generateRaw) {
+      result = await th.generateRaw({ user_input: dyRetrievalHint(null, `${platform} 热榜`), should_silence: true, ordered_prompts: [
         { role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
-        { role: 'user', content: '给我当前的热搜榜，只输出一个 ===HOTSTART=== 数据块，块外不写字。' },
+        { role: 'user', content: `给出符合${platform}和当前世界背景的热搜榜，只输出一个 ===HOTSTART=== 数据块，块外不写字。` },
       ] })
     } else { result = await th.generate({ user_input: instruction, should_silence: true }) }
     const list = parseDyHot(result)
@@ -2598,7 +2673,7 @@ async function generateDyHotList() {
 // 进入直播间（从feed里的直播卡或关注tab头像条）
 function enterDyLiveRoom(feedIdx) {
   const v = douyinFeed.value[feedIdx]; if (!v || v.type !== 'live') return
-  dyLiveRoom.value = { ...v, feedIdx, chatLog: [...(v.chatLog || [])] }
+  dyLiveRoom.value = { ...v, feedIdx, memory: v.memory || `主播${v.realName || v.creator}正在直播「${v.title || ''}」，上一版画面：${v.content || ''}`, chatLog: [...(v.chatLog || [])] }
   dyLiveChatDraft.value = ''; dyLiveReplyTo.value = ''
   stopDanmaku()
   nextTick(() => { const el = dyLiveChatEl.value; if (el) el.scrollTop = el.scrollHeight })
@@ -2612,6 +2687,7 @@ function closeDyLiveRoom() {
     const fi = dyLiveRoom.value.feedIdx
     if (fi != null && douyinFeed.value[fi] && douyinFeed.value[fi].type === 'live') {
       douyinFeed.value[fi].chatLog = [...(dyLiveRoom.value.chatLog || [])]
+      douyinFeed.value[fi].memory = dyLiveRoom.value.memory || ''
       douyinFeed.value[fi].liveLikes = dyLiveRoom.value.liveLikes
       douyinFeed.value[fi].viewers = dyLiveRoom.value.viewers
       saveDyFeed()
@@ -2627,16 +2703,18 @@ function toggleDyFollowFromLive() {
   if (r.isFollowing) dyFollows.value.add(r.creator); else dyFollows.value.delete(r.creator)
   saveDyFeed(); saveDyFollows()
 }
-// 解析直播聊天批次（===LIVECHAT=== ... ===CHATEND===）：返回 {msgs, screen}
+// 解析直播聊天批次（===LIVECHAT=== ... ===CHATEND===）：返回 {msgs, screen, memory}
 // 兼容两种：cN:等级|||昵称|||内容 带编号，或裸行 等级|||昵称|||内容
 function parseLiveChat(raw, batch = 50) {
-  if (!raw) return { msgs: [], screen: '' }
+  if (!raw) return { msgs: [], screen: '', memory: '' }
   const m = raw.match(/===LIVECHAT===([\s\S]*?)===CHATEND===/)
-  if (!m) return { msgs: [], screen: '' }
+  if (!m) return { msgs: [], screen: '', memory: '' }
   const block = m[1]
   const out = []
   const sm = block.match(/^\s*screen\s*:(.+)$/m)
   const screen = sm ? sm[1].trim() : ''
+  const mm = block.match(/^\s*memory\s*:(.+)$/m)
+  const memory = mm ? mm[1].trim().slice(0, 300) : ''
   const pushLine = (line) => {
     const t = line.trim(); if (!t || !t.includes('|||')) return
     const p = t.split('|||'); const level = p[0]?.trim(); const user = p[1]?.trim(); const text = p[2]?.trim(); const tag = (p[3]||'').trim()
@@ -2649,12 +2727,12 @@ function parseLiveChat(raw, batch = 50) {
   }
   block.split('\n').forEach(ln => {
     let t = ln.trim(); if (!t) return
-    if (/^screen\s*:/.test(t)) return
+    if (/^(screen|memory)\s*:/.test(t)) return
     // 去掉行首 cN: 编号
     t = t.replace(/^c\d+\s*:/, '')
     if (t.includes('|||')) pushLine(t)
   })
-  return { msgs: out, screen }
+  return { msgs: out, screen, memory }
 }
 // 生成新一批聊天消息（进房间时 / 用户发言后 / 手动「主播继续」）
 async function generateLiveChat(includeUserMsg = false) {
@@ -2666,21 +2744,28 @@ async function generateLiveChat(includeUserMsg = false) {
   const isR18 = dyR18.value
   // dyChatBatch = 喂给AI的历史记忆条数（含user发言，noImpersonateLine防AI扮演）
   const contextBatch = dyChatBatch.value || 50
-  const recentChat = (room.chatLog || []).slice(-contextBatch)
-    .map(c => {
-      if (c.isJoin) return `${c.user}来了`
-      if (c.isGift || c.isLevelUp) return `[${c.level ?? '?'}]${c.user}:${c.text}`
-      return `[${c.level ?? '?'}]${c.user}:${c.text}`
-    }).join('\n')
-  // 取最近3条user操作（含礼物/升级），别只取最后1条漏掉礼物信息
-  // ⑤ 无论本次是否由 user 发言触发，都带上 user 最近3条操作。
-  // 否则 API 中断后重新推进，主播和观众会像完全没看见 user 之前发的话，user 只能重复发一次，很怪。
-  const lastMeMsgs = (room.chatLog || []).filter(c => c.isMe).slice(-3)
+  const allChat = room.chatLog || []
+  const recentSlice = allChat.slice(-contextBatch)
+  const recentStart = allChat.length - recentSlice.length
+  const recentChat = recentSlice.map((c, i) => {
+    const seq = recentStart + i + 1
+    if (c.isJoin) return `第${seq}条｜${c.user}进入直播间`
+    const kind = c.isMe ? '用户消息' : c.isGift ? '用户送礼' : c.isLevelUp ? '粉丝团升级' : '观众弹幕'
+    return `第${seq}条｜${kind}｜[等级${c.level ?? '?'}] ${c.user}：${c.text}`
+  }).join('\n')
+  // 最近三条用户操作必须保留原始先后顺序，并单独点明最新一条，避免模型把三句当成并列指令。
+  const lastMeMsgs = allChat.map((msg, index) => ({ msg, seq: index + 1 })).filter(item => item.msg.isMe).slice(-3)
+  const lastMeMsg = lastMeMsgs.length ? lastMeMsgs[lastMeMsgs.length - 1] : null
+  const orderedMeMsgs = lastMeMsgs.map((item, index) => {
+    const pos = index === lastMeMsgs.length - 1 ? '最近一条' : index === 0 ? '较早' : '随后'
+    return `${index + 1}. ${pos}（全场第${item.seq}条）：${item.msg.text}`
+  }).join('\n')
   const replyNote = lastMeMsgs.length > 0
-    ? `\n${me}最近的操作：${lastMeMsgs.map(m => `「${m.text}」`).join('、')}——主播${room.creator}或观众要顺势自然回应，别无视。` +
-      (includeUserMsg ? '' : `（其中若有还没被回应过的，这次要补上回应，别装作没看见。）`) +
-      `\n【点名必应】若${me}的发言里点名、@ 或直接称呼了某个人（主播或某位观众），被点到的那个人必须在这批聊天里优先、明确地回应${me}，不能被无关弹幕淹没或跳过。`
-    : ''
+    ? `\n【${me}最近三条操作·按较早到较新排列】\n${orderedMeMsgs}` +
+      `\n【上一条用户消息】${me}最近一条、也就是当前最需要承接的消息是：「${lastMeMsg.msg.text}」。主播或被点名的观众先回应这一条，再自然承接更早但尚未解决的事项。` +
+      (includeUserMsg ? '' : `若记忆摘要表明其中仍有未回应事项，这次要补上，不能假装没看见。`) +
+      `\n【点名必应】若${me}的发言里点名、@ 或直接称呼了某个人（主播或某位观众），被点到的人必须在这批内容里优先、明确回应。`
+    : '\n【上一条用户消息】当前没有用户发言需要回应。'
   const fan = dyFanClub.value[room.creator]
   const levelNote = fan && fan.level > 0
     ? `\n${me}是这个直播间 ${fan.level} 级粉丝团成员${fan.level >= 10 ? '（高等级铁粉）' : ''}，主播对${me}${fan.level >= 20 ? `非常熟悉亲近，会主动点名、记得${me}` : fan.level >= 10 ? '比较熟络，愿意多回应' : '有印象'}。`
@@ -2694,36 +2779,58 @@ async function generateLiveChat(includeUserMsg = false) {
     : `这是普通抖音直播间，观众口吻真实日常。等级高的粉丝主播会更热络。`
   // ③ 主播口播 与 观众弹幕 是两种不同的东西，必须都有，别混成一锅
   const roleSplitLine =
-    `\n【口播与弹幕的区别·必须都有】直播间同时存在两种内容，各写各的，不能只出一种也不能混淆：` +
+    `\n【口播与弹幕的区别】直播间存在两种内容，各写各的，不能混淆：` +
     `\n· 画面描述(screen)：主播在做什么、说什么——主播是对着镜头开口讲话/表演，这属于画面，写进 screen，不要把主播的话写成一条弹幕。` +
     `\n· 聊天弹幕(c1..)：观众打字发上屏的短消息——是观众在敲键盘，不是在说话。主播不发弹幕（除非极特殊情况），观众也不会"口播"。` +
-    `\n每次都要既推进 screen（主播的动作与口播内容），又给出若干条观众弹幕。`
+    (isRedYan
+      ? `\n每次必须推进 screen；只有存在符合私密范围的真实观众时才输出 c 行，没有就只更新 screen 与 memory。`
+      : `\n每次都要既推进 screen（主播的动作与口播内容），又给出若干条观众弹幕。`)
   // ① 明确禁止 AI 扮演 me（replyNote 已在上方构建）
   const noImpersonateLine = `\n【禁止扮演${me}】聊天输出里绝对不能出现昵称为"${me}"的发言，因为${me}是真实用户，不是AI生成的角色。`
   const contMustLine = `\n【连续性铁则】这是同一场直播的延续，主播始终是同一个人 @${room.creator}，正在直播「${room.title}」。在前面聊天的基础上自然往下推进，主播的状态、话题连贯，绝不能像换了个人或重开一场。`
+  const priorMemory = room.memory || `主播${room.realName || room.creator}正在直播「${room.title || ''}」。`
+  const previousScreen = room.content || '暂无上一版画面'
+  const chatAmountLine = isRedYan
+    ? `\n生成 0~6 条聊天消息。只允许已知且知情的亲密女性角色发出新消息；${me}的既有消息只作为上下文，绝不能由AI复刻或代发。如果没有合适的新观众发言，可以不输出 c 行，绝不能为了凑数创造陌生人或进场消息。`
+    : `\n生成接下来 6~12 条聊天消息（每条5~20字，简短口语；包含1~2条进场消息和其余普通聊天；等级有高有低，内容连贯不重复）。`
   const instruction =
-    `【${isR18 ? '抖阴（成人向短视频平台）' : '抖音'}·直播聊天·静默生成】主播 @${room.creator} 正在直播「${room.title}」。当前直播画面：${room.content}` +
+    `【${isR18 ? '抖阴（成人向短视频平台）' : '抖音'}·直播聊天·静默生成】继续同一场直播，只推进主播画面与观众聊天，不写故事正文。主播 @${room.creator}${room.realName ? `（实名：${room.realName}）` : ''} 正在直播「${room.title}」。` +
     contMustLine +
+    `\n【上一版直播画面】${previousScreen}` +
+    `\n【本场连续性记忆】${priorMemory}` +
+    `\n记忆是此前各轮压缩后的事实依据；与最近聊天合并理解，不能丢失其中尚未回应的人、话题、动作和约定。` +
     `\n${styleNote}${levelNote}${replyNote}${noImpersonateLine}${roleSplitLine}` +
-    `\n生成接下来 6~12 条聊天消息（每条5~20字，简短口语，禁止长篇大论；包含1~2条进场消息和其余普通聊天；真实口吻，等级有高有低，内容连贯不重复）。` +
+    chatAmountLine +
     `\n进场消息固定格式：文本写"来了"并在末尾加|||join；普通聊天不加|||join。` +
-    (recentChat ? `\n近期聊天记录（${contextBatch}条历史上下文，供连贯参考）：\n${recentChat}` : '') +
-    `\n同时写一句直播画面推进（主播接下来在做什么，承接上文，2-3句）。` +
-    `\n只输出一个 ===LIVECHAT=== 数据块，块外不写字：\n===LIVECHAT===\nscreen:推进后的直播画面描述\nc1:等级|||昵称|||来了|||join（进场消息）\nc2:等级|||昵称|||聊天内容（普通消息，不加|||join）\n...\n（共6~12条，编号 c1..c12）\n===CHATEND===`
+    (recentChat ? `\n【近期聊天记录·严格按编号从小到大发生】\n${recentChat}` : '\n【近期聊天记录】暂无。') +
+    `\n输出 screen：承接“上一版直播画面”，写主播接下来具体做什么、说什么，2-3句。` +
+    `\n输出 memory：在旧记忆基础上写一份更新后的、自包含的本场连续性摘要，最多300字。保留主播身份、场景、正在做的事、已发生的关键互动、${me}最近一条消息和未回应事项；已解决事项可压缩。只写客观事实，不写${me}的内心、反应、对白或决定。` +
+    `\n只输出一个 ===LIVECHAT=== 数据块，块外不写字：\n===LIVECHAT===\nscreen:承接上一版后的直播画面描述\nmemory:更新后的本场连续性记忆\nc1:等级|||昵称|||来了|||join（进场消息）\nc2:等级|||昵称|||聊天内容（普通消息，不加|||join）\n...\n===CHATEND===`
+  const liveUserInput = dyRetrievalHint(
+    room,
+    recentChat ? `最近直播消息（按发生顺序）：${recentChat.slice(-1200)}` : '最近直播消息：暂无',
+    lastMeMsgs.map(item => item.msg.text).join('；'),
+  )
+  const finalLivePrompt =
+    `承接上一版直播画面：「${previousScreen}」。` +
+    (lastMeMsg ? `上一条用户消息是：「${lastMeMsg.msg.text}」，先处理它和记忆中的未回应事项。` : '当前没有上一条用户消息。') +
+    `更新 screen 与 memory，并严格只输出 ===LIVECHAT=== 数据块；不得输出故事正文、解释或块外文字。`
   try {
     let result
     if (th.generateRaw) {
-      result = await th.generateRaw({ user_input: dyRetrievalHint(room, room.title, lastMeMsgs.map(m => m.text).join(' ')), should_silence: true, ordered_prompts: [
+      result = await th.generateRaw({ user_input: liveUserInput, should_silence: true, ordered_prompts: [
         { role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
-        { role: 'user', content: '生成直播间聊天消息，只输出 ===LIVECHAT=== 数据块，块外不写字。' },
+        { role: 'user', content: finalLivePrompt },
       ] })
     } else { result = await th.generate({ user_input: instruction, should_silence: true }) }
     const parsed = parseLiveChat(result, 12)
     // ① 过滤掉 AI 伪造的 me 发言（昵称完全匹配），防止冒名
     const safeMe = me.replace(/^@/, '')
     const newMsgs = parsed.msgs.filter(m => (m.user || '').replace(/^@/, '') !== safeMe)
-    if (newMsgs.length && dyLiveRoom.value) {
-      dyLiveRoom.value.chatLog = [...(dyLiveRoom.value.chatLog || []), ...newMsgs]
+    if (dyLiveRoom.value && (newMsgs.length || parsed.screen || parsed.memory)) {
+      if (newMsgs.length) dyLiveRoom.value.chatLog = [...(dyLiveRoom.value.chatLog || []), ...newMsgs]
+      if (parsed.screen) dyLiveRoom.value.content = parsed.screen
+      if (parsed.memory) dyLiveRoom.value.memory = parsed.memory
       // 观众数递增：修复万/K格式解析 + 每条进场消息+1
       const joinCount = newMsgs.filter(m => m.isJoin).length
       if (joinCount > 0 && dyLiveRoom.value.viewers) {
@@ -2739,19 +2846,21 @@ async function generateLiveChat(includeUserMsg = false) {
         }
       }
       // ⑦ 点赞随每批聊天自然递增（基于观众数）
-      const vNum = (() => { const s = String(dyLiveRoom.value.viewers || '0'); return s.includes('万') ? Math.round(parseFloat(s)*10000) : parseInt(s.replace(/[^\d]/g,''),10)||10 })()
-      const increment = Math.floor(vNum * (0.03 + Math.random() * 0.05))
-      const oldLikes = parseInt((dyLiveRoom.value.liveLikes || '0').replace(/[,万]/g, '') || '0', 10)
-      dyLiveRoom.value.liveLikes = String(oldLikes + increment)
+      if (newMsgs.length) {
+        const vNum = (() => { const s = String(dyLiveRoom.value.viewers || '0'); return s.includes('万') ? Math.round(parseFloat(s)*10000) : parseInt(s.replace(/[^\d]/g,''),10)||10 })()
+        const increment = Math.floor(vNum * (0.03 + Math.random() * 0.05))
+        const oldLikes = parseInt((dyLiveRoom.value.liveLikes || '0').replace(/[,万]/g, '') || '0', 10)
+        dyLiveRoom.value.liveLikes = String(oldLikes + increment)
+      }
       // 每批都同步回 feed（保存全量chatLog，不限8条）
       const fi = dyLiveRoom.value.feedIdx
       if (fi != null && douyinFeed.value[fi] && douyinFeed.value[fi].type === 'live') {
-        if (parsed.screen) douyinFeed.value[fi].content = parsed.screen
+        douyinFeed.value[fi].content = dyLiveRoom.value.content
+        douyinFeed.value[fi].memory = dyLiveRoom.value.memory || ''
         douyinFeed.value[fi].liveLikes = dyLiveRoom.value.liveLikes
         douyinFeed.value[fi].chatLog = [...(dyLiveRoom.value.chatLog || [])]
         saveDyFeed()
       }
-      if (parsed.screen) dyLiveRoom.value.content = parsed.screen
       nextTick(() => { const el = dyLiveChatEl.value; if (el) el.scrollTop = el.scrollHeight })
     }
   } catch (e) { showToast('聊天生成失败：' + ((e && e.message) || e)) }
@@ -3156,7 +3265,8 @@ onUnmounted(() => {
 .mp-phone{position:relative;height:min(92vh,812px);aspect-ratio:9/19;max-width:96vw;background:#050505;border-radius:40px;padding:7px;box-shadow:0 24px 70px rgba(0,0,0,.6),0 4px 14px rgba(0,0,0,.4),inset 0 0 0 2px rgba(120,120,130,.3);display:flex;flex-direction:column;overflow:hidden;animation:mp-pop .32s cubic-bezier(.2,.9,.3,1.2)}
 @keyframes mp-pop{0%{opacity:0;transform:scale(.93) translateY(14px)}100%{opacity:1;transform:scale(1) translateY(0)}}
 .mp-power{position:absolute;right:-3px;top:180px;width:3px;height:74px;border:none;background:linear-gradient(180deg,#3a3a40,#141416);border-radius:3px;cursor:pointer;z-index:9}
-.mp-phone > *:not(.mp-power):not(.mp-island):not(.mp-cam):not(.mp-album):not(.mp-wp-panel):not(.mp-dy){position:relative;z-index:2}
+.mp-phone > *:not(.mp-power):not(.mp-island):not(.mp-cam):not(.mp-album):not(.mp-wp-panel):not(.mp-dy):not(.mp-share-overlay){position:relative;z-index:2}
+.mp-phone > .mp-share-overlay{position:absolute;z-index:59}
 .mp-island{position:absolute;left:50%;top:10px;transform:translateX(-50%);width:86px;height:23px;background:#000;border-radius:12px;z-index:8}
 
 /* 状态栏 */
@@ -3534,6 +3644,7 @@ onUnmounted(() => {
 .mp-dy-creator-name{color:#fff;font-size:15px;font-weight:700}
 .mp-dy-verified{color:#20d5ec;font-size:12px;font-weight:700}
 .mp-dy-realname{margin-left:5px;font-size:10px;color:#20d5ec;border:1px solid rgba(32,213,236,.5);border-radius:4px;padding:0 4px;line-height:15px;cursor:pointer;opacity:.9}
+.mp-dy-clickable{cursor:pointer}
 .mp-dy-follow-btn{padding:1px 8px;border:1px solid #fff;border-radius:3px;background:transparent;color:#fff;font-size:12px;cursor:pointer;font-family:inherit}
 .mp-dy-followed{padding:1px 8px;border:1px solid rgba(255,255,255,.35);border-radius:3px;color:rgba(255,255,255,.6);font-size:12px;cursor:pointer}
 .mp-dy-caption{color:rgba(255,255,255,.9);font-size:13px;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
@@ -3562,6 +3673,22 @@ onUnmounted(() => {
 .mp-dy-cm-overlay{position:absolute;inset:0;z-index:25;background:rgba(0,0,0,.4);display:flex;align-items:flex-end}
 .mp-dy-cm-sheet{width:100%;height:68%;background:#fff;border-radius:14px 14px 0 0;display:flex;flex-direction:column;overflow:hidden;animation:mp-dy-cm-up .28s cubic-bezier(.2,.8,.3,1)}
 @keyframes mp-dy-cm-up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.mp-dy-profile{position:absolute;inset:0;z-index:45;background:#f5f5f7;color:#111;overflow-y:auto;-webkit-overflow-scrolling:touch;animation:mp-fade .18s ease-out}
+.mp-dy-profile-page{min-height:100%;background:#f5f5f7}
+.mp-dy-profile-nav{position:sticky;top:0;z-index:2;height:48px;display:grid;grid-template-columns:40px 1fr 40px;align-items:center;padding:24px 10px 0;background:rgba(245,245,247,.96);border-bottom:1px solid rgba(0,0,0,.08);font-size:16px;font-weight:650;text-align:center}
+.mp-dy-profile-nav .mp-nav-back{color:#111}
+.mp-dy-profile-hero{display:flex;flex-direction:column;align-items:center;padding:28px 20px 22px;background:#fff;border-bottom:1px solid rgba(0,0,0,.07)}
+.mp-dy-profile-ava{width:76px;height:76px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#fe2c55,#ff7798);color:#fff;font-size:30px;font-weight:750;box-shadow:0 4px 14px rgba(254,44,85,.22)}
+.mp-dy-profile-name{margin-top:12px;font-size:21px;font-weight:750;word-break:break-word;text-align:center}
+.mp-dy-profile-id{margin-top:4px;font-size:12px;color:#777}
+.mp-dy-profile-tags{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:12px;flex-wrap:wrap}
+.mp-dy-profile-tag{display:inline-flex;align-items:center;min-height:24px;padding:3px 8px;border:1px solid #d6d6dc;border-radius:4px;background:#fff;color:#555;font:inherit;font-size:11px;line-height:1;letter-spacing:0}
+.mp-dy-profile-tag.verified{color:#168fa0;border-color:rgba(32,213,236,.45);background:#effcfd}
+button.mp-dy-profile-tag.real{color:#fe2c55;border-color:rgba(254,44,85,.4);background:#fff5f7;cursor:pointer}
+.mp-dy-profile-real{margin-top:12px;padding:8px 14px;border-left:3px solid #fe2c55;background:#fff5f7;color:#333;font-size:14px;font-weight:650}
+.mp-dy-profile-sec{margin-top:10px;padding:14px 18px;background:#fff;border-top:1px solid rgba(0,0,0,.05);border-bottom:1px solid rgba(0,0,0,.05)}
+.mp-dy-profile-sec>span{display:block;margin-bottom:6px;color:#999;font-size:11px}
+.mp-dy-profile-sec p{margin:0;color:#333;font-size:13px;line-height:1.65;white-space:pre-wrap;word-break:break-word}
 .mp-dy-cm-handle{width:34px;height:4px;border-radius:2px;background:#e0e0e0;margin:8px auto 0}
 .mp-dy-cm-hd{position:relative;display:flex;align-items:center;justify-content:center;padding:10px 16px 8px}
 .mp-dy-cm-count{color:#161823;font-size:14px;font-weight:600}
