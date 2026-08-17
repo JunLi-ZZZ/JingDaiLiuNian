@@ -1,0 +1,12 @@
+<head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <script>
+    // 酒馆环境自带 Vue；纯浏览器预览时只补 Vue，其余依赖由 index.ts 在挂载前异步准备
+    if (typeof window.Vue === 'undefined') {
+      document.write('<script src="https://testingcf.jsdelivr.net/npm/vue@3.5.40/dist/vue.global.prod.js"><\/script>');
+    }
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+</body>

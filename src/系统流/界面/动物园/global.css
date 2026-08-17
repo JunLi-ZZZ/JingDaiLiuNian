@@ -1,0 +1,85 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg-deep: #0d1111;
+  --bg-panel: #151b1a;
+  --bg-raised: #1b2321;
+  --bg-inset: #101615;
+  --txt: #e7e7df;
+  --txt-dim: #a8aaa3;
+  --txt-faint: #737b76;
+  --acc: #62a899;
+  --acc-deep: #295f57;
+  --gold: #c8a968;
+  --violet: #8e86a8;
+  --hp: #a85b5b;
+  --line: rgba(173, 186, 178, 0.14);
+  --line-strong: rgba(98, 168, 153, 0.42);
+  --danger: #b96666;
+
+  --bg-card: #1a211f;
+  --ptxt: #e7e7df;
+  --ptxt-dim: #a8aaa3;
+  --ptxt-faint: #737b76;
+  --pinset: #111715;
+  --pline: rgba(173, 186, 178, 0.16);
+  --pline-strong: rgba(98, 168, 153, 0.48);
+
+  --font-main: 'Microsoft YaHei UI', 'PingFang SC', sans-serif;
+  --font-num: 'Cascadia Mono', 'JetBrains Mono', Consolas, monospace;
+  --font-title: 'Microsoft YaHei UI', 'PingFang SC', sans-serif;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+  background: var(--bg-deep);
+}
+
+body {
+  font-family: var(--font-main);
+  color: var(--txt);
+  font-size: 13px;
+  line-height: 1.55;
+  letter-spacing: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  letter-spacing: 0;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(98, 168, 153, 0.8);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(98, 168, 153, 0.34);
+  border: 2px solid var(--bg-deep);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(98, 168, 153, 0.55);
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-deep);
+}
