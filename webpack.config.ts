@@ -431,7 +431,7 @@ function parse_configuration(entry: Entry): (_env: any, argv: any) => webpack.Co
           new MiniCssExtractPlugin(),
           new HTMLInlineCSSWebpackPlugin({
             styleTagFactory({ style }: { style: string }) {
-              return `<style>${style}</style>`;
+              return `<style>${style.replaceAll('\uFEFF', '')}</style>`;
             },
           }),
         ]

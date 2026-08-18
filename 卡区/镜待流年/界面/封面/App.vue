@@ -90,14 +90,6 @@
         自定义剧情
       </button>
     </div>
-    <!-- 手机开关：开启后所有开场白（含自由开局）都会追加"随身带手机"的要求 -->
-    <div class="phone-opt">
-      <label class="phone-opt-row">
-        <input type="checkbox" v-model="withPhone" @change="savePhoneOpt" />
-        <span class="phone-opt-txt">开局随身带手机</span>
-      </label>
-      <p class="phone-opt-note">开启后，仅在变量初始化中把手机加入随身物品；剧情没有自然涉及时，正文不会特意描写它。</p>
-    </div>
     <div class="tools-section">
       <ProtagonistPanel v-show="toolsTab === 'protag'" />
       <MirrorPanel v-show="toolsTab === 'mirror'" @close="toolsTab = 'protag'" />
@@ -260,24 +252,6 @@ onUnmounted(() => {
 const page = ref('intro');
 const showCustom = ref(false);
 const customMsg = ref('');
-// 开局随身带手机（默认关闭），开启后给开场白追加要求
-const PHONE_OPT_KEY = 'jdnl_cover_with_phone';
-const withPhone = ref(false);
-try {
-  withPhone.value = localStorage.getItem(PHONE_OPT_KEY) === '1';
-} catch (e) {}
-function savePhoneOpt() {
-  try {
-    localStorage.setItem(PHONE_OPT_KEY, withPhone.value ? '1' : '0');
-  } catch (e) {}
-}
-// 只初始化随身物品，避免手机喧宾夺主地进入开场正文
-const PHONE_REQ =
-  '\n\n（开局初始化：仅在变量更新中将“手机”加入{{user}}的随身物品；除非本次剧情自然涉及，否则正文不要提及或描写手机。）';
-function withPhoneReq(msg: string) {
-  return withPhone.value ? msg + PHONE_REQ : msg;
-}
-
 async function toggleCustom() {
   showCustom.value = !showCustom.value;
   if (showCustom.value) {
@@ -535,7 +509,7 @@ async function startScene(i: number) {
       }
     }
   }
-  $p('#send_textarea').val(withPhoneReq(activeScenes.value[i].message)).trigger('input');
+  $p('#send_textarea').val(activeScenes.value[i].message).trigger('input');
   setTimeout(() => $p('#send_but').trigger('click'), 50);
 }
 
@@ -629,7 +603,7 @@ function sendCustom() {
   if (!msg) return;
   const $p = (window as any).parent?.$;
   if (!$p) return;
-  $p('#send_textarea').val(withPhoneReq(msg)).trigger('input');
+  $p('#send_textarea').val(msg).trigger('input');
   setTimeout(() => $p('#send_but').trigger('click'), 50);
   customMsg.value = '';
   showCustom.value = false;
@@ -974,35 +948,6 @@ function sendCustom() {
   width: 100%;
   max-width: 360px;
   margin: 0 auto;
-}
-.phone-opt {
-  width: 100%;
-  max-width: 360px;
-  margin: 0 auto 12px;
-  padding: 8px 10px;
-  border: 1px solid rgba(var(--c-accent-rgb, 201, 169, 110), 0.2);
-  background: rgba(var(--c-accent-rgb, 201, 169, 110), 0.05);
-}
-.phone-opt-row {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  cursor: pointer;
-  input {
-    cursor: pointer;
-    accent-color: var(--c-gold, #8b7355);
-  }
-}
-.phone-opt-txt {
-  font-family: '寒蝉全圆体', var(--font-main);
-  font-size: 12px;
-  color: var(--c-text);
-}
-.phone-opt-note {
-  margin: 5px 0 0;
-  font-size: 10px;
-  line-height: 1.5;
-  color: var(--c-text-dim);
 }
 .tools-tabs {
   display: flex;

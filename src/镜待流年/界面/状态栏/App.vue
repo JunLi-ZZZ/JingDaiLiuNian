@@ -11,6 +11,8 @@
         <button class="gear-btn" @click="showThemes = !showThemes">⚙ 主题</button
         ><button class="gear-btn r18-btn" :class="{ active: r18Mode }" @click="toggleR18()">
           {{ r18Mode ? '🔞' : '🔒' }} R18
+        </button><button class="gear-btn phone-btn" :class="{ active: phoneEnabled }" @click="togglePhone()">
+          {{ phoneEnabled ? '📱 手机' : '📵 手机' }}
         </button>
       </div>
       <div v-if="showThemes" class="theme-picker">
@@ -507,6 +509,28 @@ function toggleR18() {
     /* ignore */
   }
 }
+const phoneEnabled = computed(() => Object.keys(data.value.主角?.随身物品 || {}).some(name => name.includes('手机')));
+function togglePhone() {
+  try {
+    const Mvu = (window as any).Mvu;
+    const mid = (window as any).getCurrentMessageId?.() ?? -1;
+    if (!Mvu?.getMvuData || !Mvu?.replaceMvuData) return;
+    const variables = Mvu.getMvuData({ type: 'message', message_id: mid });
+    const statData = variables.stat_data || (variables.stat_data = {});
+    const protagonist = statData.主角 || (statData.主角 = {});
+    const items = { ...(protagonist.随身物品 || {}) };
+    const phoneKeys = Object.keys(items).filter(name => name.includes('手机'));
+    if (phoneKeys.length) {
+      phoneKeys.forEach(name => delete items[name]);
+    } else {
+      items['手机'] = { 描述: '可用于通讯、拍照和浏览应用的智能手机', 数量: 1, 品阶: '普通', 能力: '通讯、拍照与使用小手机应用' };
+    }
+    protagonist.随身物品 = items;
+    Mvu.replaceMvuData(variables, { type: 'message', message_id: mid });
+  } catch (e) {
+    console.warn('[镜待流年] 手机开关更新失败', e);
+  }
+}
 const mirrorOpen = ref(false);
 const bestiaryOpen = ref(false);
 const phoneOpen = ref(false);
@@ -953,6 +977,10 @@ function getCharRelations(char: NearbyChar): [string, string][] {
     color: var(--t-accent);
     background: var(--t-accent-dim);
   }
+}
+.gear-btn.active {
+  color: var(--t-accent);
+  background: var(--t-accent-dim);
 }
 .theme-picker {
   display: flex;

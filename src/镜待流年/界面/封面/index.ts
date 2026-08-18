@@ -2,7 +2,9 @@ import { createApp } from 'vue';
 import App from './App.vue';
 import './global.css';
 
-$(() => {
-  const app = createApp(App);
-  app.mount('#app');
-});
+const mount = () => createApp(App).mount('#app');
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', mount, { once: true });
+} else {
+  mount();
+}

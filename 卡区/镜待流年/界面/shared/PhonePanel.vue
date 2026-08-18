@@ -317,6 +317,9 @@
                   </div>
                 </div>
                 <div class="mp-dy-set-note">抖阴模式下顶栏会多出「私密」页。公开流（推荐/关注）里点视频文字可翻转看只给你的私密版。直播卡也会混入推荐/关注流。</div>
+                <div class="mp-dy-set-subhd">抖阴风格（可选）</div>
+                <textarea class="mp-dy-style-input" :value="douyinSettings.style || ''" rows="2" readonly @click.stop.prevent="openIMEDyStyle" placeholder="未设置，使用默认风格"></textarea>
+                <div class="mp-dy-set-note">只在抖阴模式生效，会放在视频与直播生成提示词前部；留空使用有韵味、情境化的默认风格。</div>
                 <!-- 直播出现概率 -->
                 <div class="mp-dy-set-subhd">直播出现概率（当前 {{ dyLivePct }}%）</div>
                 <div class="mp-dy-set-btns">
@@ -944,7 +947,8 @@ chat8:等级数字|||昵称|||聊天内容
 （进场消息统一格式：文本写"来了"并在末尾加|||join；普通聊天不加|||join）`
 const douyinFeed = ref([])
 const douyinIdx = ref(0)
-const douyinSettings = ref({ mode: 'normal' })
+const douyinSettings = ref({ mode: 'normal', style: '' })
+const DY_DEFAULT_STYLE = '整体保持有韵味、暧昧、情境化和人物关系感；用镜头、衣物、体态、声音、停顿与情绪制造张力，内容每次换一种场景和节奏，避免机械重复的器官或动作清单。私密成人内容可以直白，但必须服务于人物、关系和当下情境。'
 const dyStrangerPct = ref(0)             // 私密页陌生美女占比，默认0（全红颜私发）
 const DY_STRANGER_OPTIONS = [0, 25, 50, 75, 100]
 const dyIdxMap = ref({ 推荐: 0, 关注: 0, 私密: 0 })   // 各tab记住看到哪条(_i)
@@ -1806,6 +1810,7 @@ function saveDyFeed() { try { const clean = douyinFeed.value.filter(v => !v.pend
 function saveDyFollows() { try { localStorage.setItem(dyModeKey(DY_FOLLOWS_KEY), JSON.stringify([...dyFollows.value])) } catch (e) {} }
 function saveDyIdxMap() { try { localStorage.setItem(dyModeKey(DY_IDXMAP_KEY), JSON.stringify(dyIdxMap.value)) } catch (e) {} }
 function saveDySettings() { try { localStorage.setItem(DY_SETTINGS_KEY, JSON.stringify(douyinSettings.value)) } catch (e) {} }
+function dyStylePrompt() { return (douyinSettings.value.style || '').trim() || DY_DEFAULT_STYLE }
 function clearDyCache() {
   douyinFeed.value = []; douyinIdx.value = 0
   dyIdxMap.value = { 推荐: 0, 关注: 0, 私密: 0 }
@@ -2112,8 +2117,8 @@ async function generateDyVideo() {
     const livePlatform = isR18 ? '抖阴（成人向直播平台）' : '抖音（直播）'
     const liveStyleLine = isR18
       ? (isLiveStranger
-        ? `这是陌生成人主播的公开直播，尺度完全放开：直接写出裸露与情色表演本身，具体到身体、动作、声音、情态，不用暗示、不用留白、不擦边。真实素人成人主播风格。`
-        : `这是与${me}亲密的红颜在直播，只对${me}和极少数知情者开放，尺度完全放开：直接写出裸露与情色本身，具体到身体、动作、声音、气息与情态，不用暗示、不用留白。她知道${me}在看，会对镜头特别示意，是这个人只对${me}才会这样。`)
+        ? `这是陌生成人主播的公开直播。${dyStylePrompt()} 直播尺度按成人平台设定执行，可直接写出与表演相符的裸露、动作、声音和情态。`
+        : `这是与${me}亲密的红颜在直播，只对${me}和极少数知情者开放。${dyStylePrompt()} 她知道${me}在看，会对镜头特别示意，是这个人只对${me}才会这样。`)
       : `直播内容生活化、有真情实感，题材自由（聊天/才艺/游戏/美食/户外/穿搭等）。`
     const liveSourceLine = isR18
       ? (isLiveStranger
@@ -2130,6 +2135,7 @@ async function generateDyVideo() {
       : ''
     const liveInstruction =
       `【${livePlatform}·直播卡·静默生成】现在模拟刷到的一个直播卡，绝不输出任何正文。` +
+      (isR18 ? `\n【抖阴风格设定·置于前部】${dyStylePrompt()}` : '') +
       `\n主播来源：${liveSourceLine}` +
       `\n直播风格：${liveStyleLine}` +
       `\n【贴合优先】主播与直播主题应贴合。当已有角色都不契合这个主题时，可以合理创建一个符合本世界观的新角色来直播，而不是让现有角色勉强扮演不属于ta设定的形象。` +
@@ -2183,25 +2189,25 @@ async function generateDyVideo() {
   let platform, styleLine, sourceLine, audienceLine
   if (isPrivate && !isPrivateStranger) {
     platform = '抖阴·私密（只有本人能看到的私发内容）'
-    styleLine = `尺度完全放开：直接写出裸露与性事本身，具体到身体、动作、声音、气息与情态，不用暗示、不用留白、不擦边。同时保有情绪与关系的温度，是这个人对${me}才会这样，不是无名的色情素材。`
+    styleLine = `${dyStylePrompt()} 这是只给${me}看的私密内容，按情境需要可以直白呈现成人性事，但不要堆砌无意义的动作。`
     sourceLine = `发布者必须是当前故事世界中与${me}关系亲密的女性角色（从下方角色信息中自行判断谁符合，别凭空造陌生人）。这条私密内容只有${me}能看到，但内容不必都围绕${me}——可以是ta单独拍给${me}的，也可以是ta自娱自乐、独处时的私密记录、或与另一位亲密女性角色之间的百合互动，题材自然多样，别每条都写成对着${me}。`
     audienceLine = `\n【评论区铁则】这条内容只有${me}一个人能看到，因此绝对禁止出现任何陌生人、路人、男性观众的评论——出现即为错误。评论只能来自：${me}本人，或与发布者同属${me}亲密圈子且知情的其他女性角色。若判断没有合适的人会看到，就把评论全部留空，评论数写0，宁可没有评论也不许放陌生人进来。弹幕同理，私密内容没有公开观众，弹幕留空。`
   } else if (isPrivate && isPrivateStranger) {
     platform = '抖阴·私密（成人内容平台）'
-    styleLine = `尺度完全放开：直接写出裸露与性事，具体到身体、动作、声音、气息与情态，不用暗示、不用留白。这是平台上的陌生成人内容创作者，与故事世界无关，可以有陌生观众评论和弹幕。`
+    styleLine = `${dyStylePrompt()} 这是平台上的陌生成人内容，可按成人平台尺度直接呈现裸露与性事，保持真实情境和内容变化。`
     sourceLine = `发布者是平台上的陌生女性成人内容创作者，与当前故事人物无关，是真实存在感强的素人博主或成人up主。`
     audienceLine = `\n评论区可以有陌生的成人观众评论，口吻符合成人平台真实氛围。`
   } else if (isFollowTab) {
     platform = isR18 ? '抖阴（成人向短视频平台）' : '抖音（短视频平台）'
     styleLine = isR18
-      ? `公开画面擦边风格：性感、撩人、若隐若现，靠体态、衣物、角度、氛围撩拨，呼之欲出但不真正露出、不直接描写性行为。`
+      ? `${dyStylePrompt()} 公开画面仍保持性感、撩人、若隐若现，靠体态、衣物、角度和氛围撩拨，不真正露出、不直接描写性行为。`
       : `内容生活化、有真情实感或趣味，题材自由（日常/情感/才艺/风景/美食/知识/搞笑/宠物/穿搭等皆可）。`
     sourceLine = `发布者必须是以下已关注的创作者之一，从中选一个来发新视频：${[...dyFollows.value].join('、')}。`
     audienceLine = `\n评论区可以有各种陌生观众，立场性格各异；若发布者是故事中的角色，其他角色也可能出现在评论里。`
   } else {
     platform = isR18 ? '抖阴（成人向短视频平台）' : '抖音（短视频平台）'
     styleLine = isR18
-      ? `公开画面擦边风格：性感、撩人、若隐若现，靠体态、衣物、角度、氛围撩拨，呼之欲出但不真正露出、不直接描写性行为。`
+      ? `${dyStylePrompt()} 公开画面仍保持性感、撩人、若隐若现，靠体态、衣物、角度和氛围撩拨，不真正露出、不直接描写性行为。`
       : `内容生活化、有真情实感或趣味，题材自由（日常/情感/才艺/风景/美食/知识/搞笑/宠物/穿搭等皆可）。`
     sourceLine = `发布者既可能是当前故事世界里的角色，也可能是与故事无关的陌生博主、路人、素人——由内容自然决定，不必偏向任何人。`
     audienceLine = `\n评论区可以有各种陌生观众，立场性格各异；若发布者是故事中的角色，其他角色也可能出现在评论里。`
@@ -2221,6 +2227,7 @@ async function generateDyVideo() {
   const instruction =
     `【${platform}·刷视频·静默生成】现在只模拟刷到的一条短视频，绝不输出任何正文、旁白、场景或动作描写，只产出下面规定的数据块。` +
     `请结合下方提供的世界观设定、角色信息与当前剧情，生成一条真实可信、符合该世界背景的短视频。` +
+    (isR18 ? `\n【抖阴风格设定·置于前部】${dyStylePrompt()}` : '') +
     `\n发布来源：${sourceLine}` +
     `\n内容风格：${styleLine}` +
     `\n【贴合优先】发布者与内容应贴合视频主题。当已有角色都不契合这个主题时，可以合理创建一个符合本世界观的新角色来发布，而不是让现有角色勉强扮演不属于ta设定的形象。` +
@@ -2760,12 +2767,16 @@ async function generateLiveChat(includeUserMsg = false) {
     const pos = index === lastMeMsgs.length - 1 ? '最近一条' : index === 0 ? '较早' : '随后'
     return `${index + 1}. ${pos}（全场第${item.seq}条）：${item.msg.text}`
   }).join('\n')
-  const replyNote = lastMeMsgs.length > 0
-    ? `\n【${me}最近三条操作·按较早到较新排列】\n${orderedMeMsgs}` +
-      `\n【上一条用户消息】${me}最近一条、也就是当前最需要承接的消息是：「${lastMeMsg.msg.text}」。主播或被点名的观众先回应这一条，再自然承接更早但尚未解决的事项。` +
-      (includeUserMsg ? '' : `若记忆摘要表明其中仍有未回应事项，这次要补上，不能假装没看见。`) +
-      `\n【点名必应】若${me}的发言里点名、@ 或直接称呼了某个人（主播或某位观众），被点到的人必须在这批内容里优先、明确回应。`
-    : '\n【上一条用户消息】当前没有用户发言需要回应。'
+  const replyNote = includeUserMsg && lastMeMsg
+    ? `\n【本次操作】${me}刚刚发送了一条新的直播消息。` +
+      `\n【${me}最近三条操作·按较早到较新排列】\n${orderedMeMsgs}` +
+      `\n【本轮新消息】全场第${lastMeMsg.seq}条：「${lastMeMsg.msg.text}」。主播或被点名的观众先回应这一条，再自然承接更早但尚未解决的事项。` +
+      `\n【点名必应】若本轮新消息里点名、@ 或直接称呼了某个人，被点到的人必须在这批内容里优先、明确回应。`
+    : `\n【本次操作·主播继续】本轮用户没有发送任何新消息。` +
+      (lastMeMsg
+        ? `最近一条用户消息「${lastMeMsg.msg.text}」只是已经发生过的历史记录，不得复制、重发或当作本轮新输入；只在连续性记忆标明它仍未回应时，才自然补完回应。`
+        : `当前也没有历史用户消息需要回应。`) +
+      `请依据上一版直播画面、连续性记忆和后续观众弹幕继续推动直播，绝不虚构${me}的新发言、动作或决定。`
   const fan = dyFanClub.value[room.creator]
   const levelNote = fan && fan.level > 0
     ? `\n${me}是这个直播间 ${fan.level} 级粉丝团成员${fan.level >= 10 ? '（高等级铁粉）' : ''}，主播对${me}${fan.level >= 20 ? `非常熟悉亲近，会主动点名、记得${me}` : fan.level >= 10 ? '比较熟络，愿意多回应' : '有印象'}。`
@@ -2774,8 +2785,8 @@ async function generateLiveChat(includeUserMsg = false) {
   const isRedYan = !!room.redYan
   const styleNote = isR18
     ? (isRedYan
-      ? `【私密直播铁则·不可破】这是只对${me}和极少数知情亲密圈子开放的私密直播。聊天里绝对禁止任何陌生人、路人、男性观众；只允许与主播真正亲密且知情的极少数女性角色（若没有，chat留空）。尺度完全放开，直接写裸露与情色本身，不擦边不留白。违反即错误。`
-      : `这是成人平台公开直播，观众可以有各种人，口吻成人化真实。主播的表演尺度完全放开，直接写裸露与情色本身。`)
+      ? `【抖阴风格】${dyStylePrompt()}【私密直播铁则·不可破】这是只对${me}和极少数知情亲密圈子开放的私密直播。聊天里绝对禁止任何陌生人、路人、男性观众；只允许与主播真正亲密且知情的极少数女性角色（若没有，chat留空）。违反即错误。`
+      : `【抖阴风格】${dyStylePrompt()}这是成人平台公开直播，观众可以有各种人，口吻成人化真实。`)
     : `这是普通抖音直播间，观众口吻真实日常。等级高的粉丝主播会更热络。`
   // ③ 主播口播 与 观众弹幕 是两种不同的东西，必须都有，别混成一锅
   const roleSplitLine =
@@ -2809,11 +2820,13 @@ async function generateLiveChat(includeUserMsg = false) {
   const liveUserInput = dyRetrievalHint(
     room,
     recentChat ? `最近直播消息（按发生顺序）：${recentChat.slice(-1200)}` : '最近直播消息：暂无',
-    lastMeMsgs.map(item => item.msg.text).join('；'),
+    includeUserMsg && lastMeMsg ? lastMeMsg.msg.text : '',
   )
   const finalLivePrompt =
     `承接上一版直播画面：「${previousScreen}」。` +
-    (lastMeMsg ? `上一条用户消息是：「${lastMeMsg.msg.text}」，先处理它和记忆中的未回应事项。` : '当前没有上一条用户消息。') +
+    (includeUserMsg && lastMeMsg
+      ? `本轮新用户消息是：「${lastMeMsg.msg.text}」，先处理它和记忆中的未回应事项。`
+      : `本轮没有新的用户消息；历史用户消息不得复刻为本轮输入，直接继续推进主播画面与直播发展。`) +
     `更新 screen 与 memory，并严格只输出 ===LIVECHAT=== 数据块；不得输出故事正文、解释或块外文字。`
   try {
     let result
@@ -3057,6 +3070,9 @@ function openIMELiveChat() {
     setValue: v => { dyLiveChatDraft.value = v },
     onSubmit: submitLiveChat,
   })
+}
+function openIMEDyStyle() {
+  openIME({ placeholder: '输入抖阴风格', getValue: () => douyinSettings.value.style || '', setValue: v => { douyinSettings.value.style = v }, onSubmit: saveDySettings, multiline: true })
 }
 // 数字输入框也走IME浮层（数字键盘也会顶缩手机）
 function openIMEHistDraft() { openIME({ placeholder: '输入历史条数', getValue: () => histDraft.value, setValue: v => { histDraft.value = v }, onSubmit: applyHistDraft }) }
@@ -3730,6 +3746,9 @@ button.mp-dy-profile-tag.real{color:#fe2c55;border-color:rgba(254,44,85,.4);back
 .mp-dy-set-btn.on{background:#fe2c55;border-color:#fe2c55;color:#fff}
 .mp-dy-set-note{font-size:12px;color:#8a8a90;line-height:1.5;padding:2px 0 8px}
 .mp-dy-set-note b{color:#666;font-weight:600}
+.mp-dy-style-input{display:block;width:100%;min-height:48px;box-sizing:border-box;padding:6px 8px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#333;font-size:12px;line-height:1.5;resize:none;font-family:inherit;outline:none}
+.mp-dy-style-input:focus{border-color:#fe2c55}
+.mp-dy-style-input::placeholder{color:#b0b0b0}
 .mp-dy-set-subhd{font-size:13px;font-weight:600;color:#444;padding:8px 0 4px;border-top:1px solid #ececf0;margin-top:6px}
 .mp-dy-set-warn{font-size:12px;color:#c0392b;line-height:1.55;padding:4px 0 8px}
 .mp-dy-set-warn b{font-weight:700}
