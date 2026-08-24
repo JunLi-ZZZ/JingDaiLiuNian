@@ -1185,7 +1185,7 @@ async function mxSaveGenResult() {
     if (alias) keys.push(alias);
     let wbName: string = TH.getCharLorebooks()?.primary;
     if (!wbName) {
-      wbName = '镜待流年v210';
+      wbName = '镜待流年v211';
       await TH.createLorebook(wbName);
       await TH.setCurrentCharLorebooks({ primary: wbName });
     }
@@ -1436,7 +1436,7 @@ async function plSaveGenResult() {
     if (!planeName) planeName = '新位面';
     let wbName: string = TH.getCharLorebooks()?.primary;
     if (!wbName) {
-      wbName = '镜待流年v210';
+      wbName = '镜待流年v211';
       await TH.createLorebook(wbName);
       await TH.setCurrentCharLorebooks({ primary: wbName });
     }

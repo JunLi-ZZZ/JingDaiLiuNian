@@ -545,7 +545,8 @@ const expandedSubs = ref(new Set<string>());
 const clothDetail = ref(new Set<string>());
 function toggleClothDetail(k: string) {
   const s = new Set(clothDetail.value);
-  s.has(k) ? s.delete(k) : s.add(k);
+  if (s.has(k)) s.delete(k);
+  else s.add(k);
   clothDetail.value = s;
 }
 
@@ -553,7 +554,8 @@ const deleteMode = ref(false);
 const deleteSelection = ref(new Set<string>());
 function toggleCharDelete(k: string) {
   const s = new Set(deleteSelection.value);
-  s.has(k) ? s.delete(k) : s.add(k);
+  if (s.has(k)) s.delete(k);
+  else s.add(k);
   deleteSelection.value = s;
 }
 async function confirmDelete() {
@@ -624,7 +626,8 @@ function loveIcon(val: number): string {
 }
 function toggleChar(k: string) {
   const s = new Set(expandedChars.value);
-  s.has(k) ? s.delete(k) : s.add(k);
+  if (s.has(k)) s.delete(k);
+  else s.add(k);
   expandedChars.value = s;
 }
 function sub(k: string) {
@@ -632,7 +635,8 @@ function sub(k: string) {
 }
 function toggleSub(k: string) {
   const s = new Set(expandedSubs.value);
-  s.has(k) ? s.delete(k) : s.add(k);
+  if (s.has(k)) s.delete(k);
+  else s.add(k);
   expandedSubs.value = s;
 }
 

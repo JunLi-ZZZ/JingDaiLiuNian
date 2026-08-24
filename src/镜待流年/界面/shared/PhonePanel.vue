@@ -506,7 +506,7 @@
             <div class="mp-dy-load-txt">正在为你推荐…</div>
           </div>
           <!-- 视频卡片列表 -->
-          <div v-for="(v, vi) in dyVisibleFeed" :key="v._i" class="mp-dy-slide">
+          <div v-for="v in dyVisibleFeed" :key="v._i" class="mp-dy-slide">
             <div class="mp-dy-grad-top"></div>
             <div class="mp-dy-grad-bot"></div>
             <!-- 占位卡：正在生成 -->
@@ -700,7 +700,7 @@
           </div>
           <div class="mp-dym-body">
             <div v-if="!dyNotifs.length" class="mp-dyh-none">还没有互动消息</div>
-            <div v-for="(n, ni) in dyNotifs" :key="n.id" class="mp-dym-item" :class="{unread:!n.read}" @click="openDyFromNotif(n)">
+            <div v-for="n in dyNotifs" :key="n.id" class="mp-dym-item" :class="{unread:!n.read}" @click="openDyFromNotif(n)">
               <div class="mp-dym-dot" v-if="!n.read"></div>
               <div class="mp-dym-ava">{{ (n.replierUser||'?').replace('@','').slice(0,1).toUpperCase() }}</div>
               <div class="mp-dym-info">
@@ -1249,7 +1249,7 @@ function parseTime(s) {                       // 兼容「2024年03月05日 20:1
   if (!s) return null
   s = String(s).trim()
   let y = null, mo = null, d = null, h = null, mi = null
-  const dm = s.match(/(\d{2,4})\s*[年\/\-]\s*(\d{1,2})\s*[月\/\-]\s*(\d{1,2})/)
+  const dm = s.match(new RegExp('(\\d{2,4})\\s*[年/-]\\s*(\\d{1,2})\\s*[月/-]\\s*(\\d{1,2})'))
   if (dm) { y = +dm[1]; mo = +dm[2]; d = +dm[3] }
   const tm = s.match(/(\d{1,2})\s*[:：]\s*(\d{2})/)
   if (tm) { h = +tm[1]; mi = +tm[2] }
@@ -1427,7 +1427,12 @@ function latestStoryReference() {
     const getMessages = (th && th.getChatMessages) || (window.parent && window.parent.TavernHelper && window.parent.TavernHelper.getChatMessages)
     if (!getMessages) return ''
     const messages = getMessages('0-{{lastMessageId}}', { role: 'assistant', hide_state: 'unhidden' }) || []
-    const latest = [...messages].reverse().find(message => stripStoryFormats(message && message.message))
+    // 不假设酒馆宿主返回顺序：按真实楼层号挑最新一条，缺少楼层号时才退回数组末项。
+    const usable = messages.filter(message => stripStoryFormats(message && message.message))
+    const withIds = usable.filter(message => Number.isFinite(Number(message && message.message_id)))
+    const latest = withIds.length
+      ? withIds.reduce((best, message) => Number(message.message_id) > Number(best.message_id) ? message : best)
+      : usable[usable.length - 1]
     if (!latest) return ''
     return stripStoryFormats(latest.message).slice(-2400)
   } catch (e) { return '' }
@@ -1437,7 +1442,7 @@ function storyReferencePrompt() {
   return text ? `【最近正文参考】以下仅用于对齐当前世界状态、人物处境与已经确认的事实，不代表这些事情发生在手机应用内，也不要复述正文：\n${text}` : ''
 }
 function setHistLimit(n) { n = Math.round(+n); if (!n || n < 1) return; n = Math.min(n, 500); histLimit.value = n; putVar(HIST_KEY, n) }
-function delKey(o, c) { return o + '→' + c } //+ '' + c }
+function delKey(o, c) { return o + '→' + c }
 function isDeleted(o, c) { return !!deleted.value[delKey(o, c)] }
 const swapDir = d => (d === '发出' ? '收到' : d === '收到' ? '发出' : d)
 
@@ -1840,6 +1845,24 @@ const dyCurrentCommentTotal = computed(() => {
   const v = douyinFeed.value[dyCommentIdx.value]
   return v ? (v.commentList || []).length + (v.myComments || []).length : 0
 })
+function formatDyCommentContext(video, target = null) {
+  const roots = [...(video && video.commentList || []), ...(video && video.myComments || [])]
+  const lines = ['【当前完整评论区（主楼/楼中楼均按页面顺序）】']
+  const walk = (comment, depth, parentUser = '') => {
+    if (!comment) return
+    const user = String(comment.user || '匿名用户')
+    const text = String(comment.text || '').replace(/\s+/g, ' ').trim()
+    if (!text) return
+    const mark = comment === target ? ' ←【本次回复目标】' : ''
+    const prefix = depth ? `${'  '.repeat(Math.min(depth, 4))}楼中楼` : '主楼'
+    const replyTo = comment.replyTo ? ` 回复${comment.replyTo}` : parentUser ? ` 回复${parentUser}` : ''
+    lines.push(`${prefix} ${user}${replyTo}：${text}${mark}`)
+    ;(comment.replies || []).forEach(reply => walk(reply, depth + 1, user))
+  }
+  roots.forEach(comment => walk(comment, 0))
+  if (lines.length === 1) lines.push('（当前评论区暂无其他已加载评论）')
+  return lines.join('\n')
+}
 // AI 声称的评论总数（视频卡上显示的数字），可能远大于实际加载的几条
 const dyCurrentCommentClaimed = computed(() => {
   const v = douyinFeed.value[dyCommentIdx.value]
@@ -2059,19 +2082,18 @@ async function generateDyTopCommentResponse(video, myComment) {
     : `回应可来自发布者@${video.creator}或路过的真实观众，口吻简短真实，5~20字以内。`
   const instruction =
     `【${isR18 ? '抖阴（成人向短视频平台）' : '抖音'}·评论子回复·静默生成】在视频「${(video.content||'').slice(0,80)}」的评论区，${me}(@${me.replace(/^@/,'')})刚发表了评论：「${myComment.text}」。${audience}${pcontentLine}` +
+    `\n${formatDyCommentContext(video, myComment)}` +
     `\n生成 1~2 条自然的子回复（直接回复${me}的这条评论）。【至少必须给出 1 条】绝不允许输出空块或0条——用户会误以为接口出错了。即使判断冷门，也要给一条最合理的回应。` +
     `\n【禁止扮演${me}】${me}是真实用户，不是AI生成的角色；回复里绝不能出现昵称为"${me}"的发言，也不得替${me}生成任何想法、心理或反应。` +
     `\n只输出一个 ===DYREPLY=== 数据块，块外不写字：\n===DYREPLY===\nr1:回复者号|||被回复者号(可空)|||回复内容\nr2:...\n===REPLYEND===`
   try {
     let result
       if (th.generateRaw) {
-      const storyRef = storyReferencePrompt()
-        result = await th.generateRaw({ user_input: dyRetrievalHint(video, '', myComment.text), should_silence: true, ordered_prompts: [
+      result = await th.generateRaw({ user_input: dyRetrievalHint(video, '', myComment.text), should_silence: true, ordered_prompts: [
           { role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
-          ...(storyRef ? [{ role: 'system', content: storyRef }] : []),
           { role: 'user', content: '生成评论子回复，只输出 ===DYREPLY=== 数据块，块外不写字。' },
         ] })
-    } else { result = await th.generate({ user_input: storyReferencePrompt() ? instruction + '\n' + storyReferencePrompt() : instruction, should_silence: true }) }
+    } else { result = await th.generate({ user_input: instruction, should_silence: true }) }
     const replies = parseDyReplies(result)
     if (replies.length) {
       if (!myComment.replies) myComment.replies = []
@@ -2106,6 +2128,7 @@ async function generateDyCommentReply(video, comment, myText, toUser) {
     `\n@${toUser} 的原评论：「${comment.text}」` +
     `\n${me}的回复：「${myText}」` +
     `\n${audience}` +
+    `\n${formatDyCommentContext(video, comment)}` +
     (existing ? `\n这条评论下已有的回复：\n${existing}` : '') +
     `\n生成 1~3 条自然的后续回复（每条5~20字简短口语）。【至少必须给出 1 条】绝不允许输出空块或0条——用户会误以为接口出错了。即使判断冷门，也要给一条最合理的回应。` +
     `\n【禁止扮演${me}】${me}是真实用户，不是AI生成的角色；回复里绝不能出现昵称为"${me}"的发言，也不得替${me}生成任何想法、心理或反应。` +
@@ -2113,13 +2136,11 @@ async function generateDyCommentReply(video, comment, myText, toUser) {
   try {
     let result
     if (th.generateRaw) {
-      const storyRef = storyReferencePrompt()
       result = await th.generateRaw({ user_input: dyRetrievalHint(video, toUser, myText), should_silence: true, ordered_prompts: [
         { role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
-        ...(storyRef ? [{ role: 'system', content: storyRef }] : []),
         { role: 'user', content: '生成评论回复，只输出 ===DYREPLY=== 数据块，块外不写字。' },
       ] })
-    } else { result = await th.generate({ user_input: storyReferencePrompt() ? instruction + '\n' + storyReferencePrompt() : instruction, should_silence: true }) }
+    } else { result = await th.generate({ user_input: instruction, should_silence: true }) }
     const replies = parseDyReplies(result)
     if (replies.length && comment.replies) {
       comment.replies.push(...replies)
@@ -2823,7 +2844,7 @@ async function generateDyHotList() {
   const instruction =
     `${styleLine}\n【${platform}·热榜·静默生成】结合下方世界观设定与当前剧情，生成一份当前的热搜榜，共10条，绝不输出任何正文、旁白或解释。` +
     noveltyLine +
-    `\n每条是一个热搜话题词（简洁、有话题感、像真的能搜到的词，不用带#），配一个热度数字（如 328.5万 / 1024.8万，排名越靠前热度越高）。` +
+    `\n每条是一个热搜话题词（简洁、有话题感、像真的能搜到的词，不用带#），配一个热度数字（如 328.5万 / 1024.8万，排名越靠前热度越高）。不要在话题前自行添加1.、1、①等序号，前端会统一显示排名。` +
     `\n话题要贴合这个故事世界的背景（可含本世界的地名/事件/人物/风俗相关话题），别都套现实世界的东西。` +
     `\n只输出一个 ===HOTSTART=== 数据块，块外不写任何字。每行格式：话题|||热度\n===HOTSTART===\n话题1|||热度\n话题2|||热度\n…(共10行)\n===HOTEND===`
   try {
@@ -3245,7 +3266,7 @@ function openIME({ placeholder = '', getValue, setValue, onSubmit, multiline = f
   nextTick(() => {
     // 浮层teleport到父document，必须用doc（window.parent.document）才能找到元素
     const el = doc.querySelector('.mp-ime-in, .mp-ime-ta')
-    if (el) { el.focus(); el.setSelectionRange && el.setSelectionRange(el.value.length, el.value.length) }
+    if (el) { el.focus(); el.setSelectionRange?.(el.value.length, el.value.length) }
   })
 }
 function imeSync() { if (_imeSetValue) _imeSetValue(imeDraft.value) }

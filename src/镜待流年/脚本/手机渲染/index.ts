@@ -35,7 +35,7 @@ function parseTime(s: string): PT | null {
   if (!s) return null;
   s = String(s).trim();
   let y: number | null = null, mo: number | null = null, d: number | null = null, h: number | null = null, mi: number | null = null;
-  const dm = s.match(/(\d{2,4})\s*[年\/\-]\s*(\d{1,2})\s*[月\/\-]\s*(\d{1,2})/);
+  const dm = s.match(new RegExp('(\\d{2,4})\\s*[年/-]\\s*(\\d{1,2})\\s*[月/-]\\s*(\\d{1,2})'));
   if (dm) { y = +dm[1]; mo = +dm[2]; d = +dm[3]; }
   const tm = s.match(/(\d{1,2})\s*[:：]\s*(\d{2})/);
   if (tm) { h = +tm[1]; mi = +tm[2]; }
@@ -216,19 +216,27 @@ function recordIcon(source: string, type: string): { label: string; bg: string }
   return { label: '记', bg: 'linear-gradient(145deg,#35a66f,#14764b)' };
 }
 
-function buildRecordTop(screen: HTMLElement, source: string, type: string, time: string, dark: boolean): HTMLElement {
+function buildRecordStatus(screen: HTMLElement, time: string, dark: boolean): void {
   const d = pdoc();
   const status = d.createElement('div');
-  status.style.cssText = `height:27px;padding:0 15px;display:flex;align-items:center;justify-content:space-between;font-size:10px;font-weight:650;color:${dark ? '#fff' : '#202124'};letter-spacing:.1px`;
+  status.style.cssText = `height:27px;padding:0 18px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600;color:${dark ? '#fff' : '#202124'};letter-spacing:.1px`;
   const parsed = parseTime(time);
   const timeText = parsed && hm(parsed) ? hm(parsed) : (time === '未显示' ? '' : time);
   const clock = d.createElement('span');
+  clock.style.cssText = 'font-variant-numeric:tabular-nums';
   clock.textContent = timeText;
   const signal = d.createElement('span');
-  signal.style.cssText = 'font-size:9px;letter-spacing:2px';
-  signal.textContent = '●●●  Wi-Fi  ▰';
+  signal.style.cssText = 'display:flex;align-items:center;gap:5px';
+  signal.innerHTML = '<svg viewBox="0 0 640 640" style="width:15px;height:13px"><path fill="currentColor" d="M112 400h56v96h-56zm120-64h56v160h-56zm120-80h56v240h-56zm120-96h56v336h-56z"/></svg>' +
+    '<svg viewBox="0 0 640 640" style="width:16px;height:13px"><path fill="currentColor" d="M320 160c116 0 221 45 298 118l-52 54c-64-60-151-96-246-96S138 272 74 332l-52-54C99 205 204 160 320 160m0 152c58 0 111 22 150 59l-53 55c-26-24-60-38-97-38s-71 14-97 38l-53-55c39-37 92-59 150-59m0 152c20 0 38 8 51 22l-51 53l-51-53c13-14 31-22 51-22"/></svg>' +
+    '<span style="width:22px;height:11px;border:1.4px solid currentColor;border-radius:3px;position:relative;opacity:.85"><i style="position:absolute;inset:1.5px;right:5px;background:currentColor;border-radius:1px"></i><b style="position:absolute;right:-3px;top:3px;width:2px;height:4px;background:currentColor;border-radius:0 1px 1px 0"></b></span>';
   status.append(clock, signal);
   screen.appendChild(status);
+}
+
+function buildRecordTop(screen: HTMLElement, source: string, type: string, time: string, dark: boolean): HTMLElement {
+  const d = pdoc();
+  buildRecordStatus(screen, time, dark);
 
   const appbar = d.createElement('div');
   appbar.style.cssText = `min-height:47px;padding:7px 12px;display:flex;align-items:center;gap:9px;border-top:1px solid ${dark ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.04)'};border-bottom:1px solid ${dark ? 'rgba(255,255,255,.09)' : 'rgba(0,0,0,.08)'};background:${dark ? 'rgba(12,13,17,.92)' : 'rgba(255,255,255,.86)'}`;
@@ -248,10 +256,7 @@ function buildRecordTop(screen: HTMLElement, source: string, type: string, time:
   sub.style.cssText = `font-size:10px;font-weight:500;color:${dark ? 'rgba(255,255,255,.5)' : '#8a8d94'}`;
   sub.textContent = type || '应用记录';
   titles.append(title, sub);
-  const more = d.createElement('span');
-  more.style.cssText = `font-size:17px;color:${dark ? 'rgba(255,255,255,.65)' : '#7b7e85'};letter-spacing:2px`;
-  more.textContent = '•••';
-  appbar.append(back, icon, titles, more);
+  appbar.append(back, icon, titles);
   screen.appendChild(appbar);
   return appbar;
 }
@@ -322,15 +327,20 @@ function renderHotRecord(screen: HTMLElement, source: string, type: string, time
 
 function renderNotificationRecord(screen: HTMLElement, source: string, type: string, time: string, lines: RecordLine[]): void {
   const d = pdoc();
-  screen.style.cssText = 'min-height:280px;background:linear-gradient(145deg,#dfe7ed 0%,#c9d2d9 48%,#dde1df 100%);color:#17191d';
-  buildRecordTop(screen, source, type, time, false);
+  screen.style.cssText = 'min-height:280px;background:linear-gradient(145deg,#edf2f5 0%,#dbe3e8 48%,#eef1ef 100%);color:#17191d';
+  buildRecordStatus(screen, time, false);
   const caption = d.createElement('div');
-  caption.style.cssText = 'padding:15px 16px 8px;font-size:11px;font-weight:700;color:#5f6770;letter-spacing:.4px';
-  caption.textContent = /系统/.test(type) ? '系统通知' : /平台|推送/.test(type) ? '最新通知' : '活动记录';
+  caption.style.cssText = 'display:flex;align-items:center;gap:8px;padding:12px 16px 9px;font-size:15px;font-weight:750;color:#30363d';
+  const captionIcon = d.createElement('span');
+  const iconData = recordIcon(source, type);
+  captionIcon.style.cssText = `width:25px;height:25px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:750;background:${iconData.bg}`;
+  captionIcon.textContent = iconData.label;
+  const captionText = d.createElement('span');
+  captionText.textContent = source || (/系统/.test(type) ? '系统通知' : /平台|推送/.test(type) ? '最新通知' : '活动记录');
+  caption.append(captionIcon, captionText);
   screen.appendChild(caption);
   const list = d.createElement('div');
-  list.style.cssText = 'display:flex;flex-direction:column;gap:8px;padding:0 11px 15px';
-  const iconData = recordIcon(source, type);
+  list.style.cssText = 'display:flex;flex-direction:column;gap:7px;padding:0 12px 15px';
   lines.forEach(line => {
     const item = d.createElement('div');
     item.style.cssText = 'display:flex;align-items:flex-start;gap:9px;padding:10px;border-radius:8px;background:rgba(255,255,255,.76);box-shadow:0 1px 5px rgba(48,57,65,.12);backdrop-filter:blur(12px)';
