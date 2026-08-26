@@ -1,7 +1,9 @@
 @@preprocessing
 <%
-const r18On = getvar('stat_data.R18模式', { defaults: false });
-const mentionedR18 = matchChatMessages([
+const r18Raw = getvar('stat_data.R18模式', { defaults: false });
+const r18On = r18Raw === true || r18Raw === 1 ||
+  (typeof r18Raw === 'string' && ['true', '1', 'on', 'yes', '开启', '开'].includes(r18Raw.trim().toLowerCase()));
+const r18Keywords = [
   '肏',
   '插入', '抽插', '顶入', '肉棒', '蜜穴', '龟头', '阴蒂',
   '做爱', '交合', '交欢', '性交',
@@ -13,7 +15,18 @@ const mentionedR18 = matchChatMessages([
   '乳尖', '乳首', '乳肉', '腿间', '腿根', '私处',
   '湿了', '湿意', '硬了', '勃起', '情动',
   '压在身下', '跨坐', '分开双腿', '挺腰',
-]);
+];
+// 手机块是独立的小手机剧情，不代表正文场景已经进入成人情节。
+// 只检查最近两楼的正文部分，避免手机/转发记录中的成人词残留触发本控制器。
+const recentMessages = typeof getChatMessages === 'function' ? (getChatMessages(2) || []) : [];
+const recentBody = recentMessages.map(item => {
+  const raw = typeof item === 'string' ? item : (item?.message ?? item?.mes ?? '');
+  return String(raw)
+    // 手机/照片/展示块是独立媒介内容，不代表正文进入成人场景。
+    .replace(/<(手机|手机展示|照片|抖音|抖阴)(?:\s[^>]*)?>[^]*?<\/\1>/gi, '')
+    .replace(/<update(?:variable)?>[^]*?<\/update(?:variable)?>/gi, '');
+}).join('\n');
+const mentionedR18 = r18Keywords.some(keyword => recentBody.includes(keyword));
 
 if (r18On || mentionedR18) {
   print(await getwi('NSFW场景规则'));

@@ -90,14 +90,6 @@
         自定义剧情
       </button>
     </div>
-    <!-- 手机开关：开启后所有开场白（含自由开局）都会追加"随身带手机"的要求 -->
-    <div class="phone-opt">
-      <label class="phone-opt-row">
-        <input type="checkbox" v-model="withPhone" @change="savePhoneOpt" />
-        <span class="phone-opt-txt">开局随身带手机</span>
-      </label>
-      <p class="phone-opt-note">开启后，仅在变量初始化中把手机加入随身物品；剧情没有自然涉及时，正文不会特意描写它。</p>
-    </div>
     <div class="tools-section">
       <ProtagonistPanel v-show="toolsTab === 'protag'" />
       <MirrorPanel v-show="toolsTab === 'mirror'" @close="toolsTab = 'protag'" />
@@ -260,24 +252,6 @@ onUnmounted(() => {
 const page = ref('intro');
 const showCustom = ref(false);
 const customMsg = ref('');
-// 开局随身带手机（默认关闭），开启后给开场白追加要求
-const PHONE_OPT_KEY = 'jdnl_cover_with_phone';
-const withPhone = ref(false);
-try {
-  withPhone.value = localStorage.getItem(PHONE_OPT_KEY) === '1';
-} catch (e) {}
-function savePhoneOpt() {
-  try {
-    localStorage.setItem(PHONE_OPT_KEY, withPhone.value ? '1' : '0');
-  } catch (e) {}
-}
-// 只初始化随身物品，避免手机喧宾夺主地进入开场正文
-const PHONE_REQ =
-  '\n\n（开局初始化：仅在变量更新中将“手机”加入{{user}}的随身物品；除非本次剧情自然涉及，否则正文不要提及或描写手机。）';
-function withPhoneReq(msg: string) {
-  return withPhone.value ? msg + PHONE_REQ : msg;
-}
-
 async function toggleCustom() {
   showCustom.value = !showCustom.value;
   if (showCustom.value) {
@@ -487,7 +461,18 @@ const xiGuangScenes: Scene[] = [
 时间：白日
 地点：星碎多岛海 · 梵卓世家领地（曦光穹界）
 出场角色：莉泽洛特
-剧情大纲：游历至星碎多岛海的{{user}}受邀踏入梵卓世家的领地，血族共尊的“小主人”莉泽洛特亲自接待。她此番敛去魔力，以成熟御姐的姿态端着家主威仪，领{{user}}参观领地；待寻由头将他引回私人公馆、屏退左右，独处时便卸下端庄，变回萝莉常态，扑进他怀里讨要守候千年的安抚。`,
+剧情大纲：游历至星碎多岛海的{{user}}受邀踏入梵卓世家的领地，血族共尊的”小主人”莉泽洛特亲自接待。她此番敛去魔力，以成熟御姐的姿态端着家主威仪，领{{user}}参观领地；待寻由头将他引回私人公馆、屏退左右，独处时便卸下端庄，变回萝莉常态，扑进他怀里讨要守候千年的安抚。`,
+  },
+  {
+    title: '《御姐身材的摸鱼勇者和雌小鬼魔王姐姐的世界大战全是演的》',
+    char: '奥罗拉 · 维斯佩拉',
+    intro:
+      '圣辉修道十字军与深渊魔王军在结界外严阵以待，等候光暗对决的结果。我在丰满修女的请求下踏入结界，却撞见御姐勇者和雌小鬼魔王正在分零食',
+    message: `根据以下设定构建剧情开头：
+时间：午后
+地点：曦光穹界边境 · 极光屏障下的中立地带
+出场角色：奥罗拉·索拉瑞斯、维斯佩拉·诺克提斯
+剧情大纲：曦光穹界每隔数十年就会上演一次”勇者与魔王的宿命对决”。这一日，圣辉修道十字军与深渊魔王军在极光屏障下的中立地带严阵以待，双方隔着巨大的魔法结界，等候结界内光暗对决的结果。圣辉修道十字军中一位身材丰满的年轻修女神色焦急，她拉住游历至此的{{user}}，恳求他进入结界确认勇者的安危——结界只允许非双方阵营的人通过。{{user}}踏入结界，穿过浓雾，却看到与想象中完全不同的画面：身材丰满成熟的勇者奥罗拉正慵懒地靠在一块巨石上打瞌睡，身材娇小的魔王维斯佩拉叉着腰站在她面前，一边嘴上凶巴巴地说”妹妹你也太懒了吧”，一边用影子魔法递零食过去。两人察觉{{user}}的出现，同时僵住——娇小的魔王瞬间炸毛般跳起来，御姐勇者慢吞吞地眨巴眼睛。`,
   },
 ];
 const activeScenes = computed(() =>
@@ -535,7 +520,7 @@ async function startScene(i: number) {
       }
     }
   }
-  $p('#send_textarea').val(withPhoneReq(activeScenes.value[i].message)).trigger('input');
+  $p('#send_textarea').val(activeScenes.value[i].message).trigger('input');
   setTimeout(() => $p('#send_but').trigger('click'), 50);
 }
 
@@ -572,6 +557,10 @@ const sceneEntryMap: Record<string, { enable: string[]; disable: string[] }> = {
     disable: ['user人设'],
   },
   xiGuang_1: {
+    enable: ['user人设_曦光穹界'],
+    disable: ['user人设'],
+  },
+  xiGuang_2: {
     enable: ['user人设_曦光穹界'],
     disable: ['user人设'],
   },
@@ -629,7 +618,7 @@ function sendCustom() {
   if (!msg) return;
   const $p = (window as any).parent?.$;
   if (!$p) return;
-  $p('#send_textarea').val(withPhoneReq(msg)).trigger('input');
+  $p('#send_textarea').val(msg).trigger('input');
   setTimeout(() => $p('#send_but').trigger('click'), 50);
   customMsg.value = '';
   showCustom.value = false;
@@ -974,35 +963,6 @@ function sendCustom() {
   width: 100%;
   max-width: 360px;
   margin: 0 auto;
-}
-.phone-opt {
-  width: 100%;
-  max-width: 360px;
-  margin: 0 auto 12px;
-  padding: 8px 10px;
-  border: 1px solid rgba(var(--c-accent-rgb, 201, 169, 110), 0.2);
-  background: rgba(var(--c-accent-rgb, 201, 169, 110), 0.05);
-}
-.phone-opt-row {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  cursor: pointer;
-  input {
-    cursor: pointer;
-    accent-color: var(--c-gold, #8b7355);
-  }
-}
-.phone-opt-txt {
-  font-family: '寒蝉全圆体', var(--font-main);
-  font-size: 12px;
-  color: var(--c-text);
-}
-.phone-opt-note {
-  margin: 5px 0 0;
-  font-size: 10px;
-  line-height: 1.5;
-  color: var(--c-text-dim);
 }
 .tools-tabs {
   display: flex;

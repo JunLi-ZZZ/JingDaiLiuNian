@@ -1,16 +1,18 @@
 <template>
   <div class="bestiary-panel" @click.self="$emit('close')">
-    <div :class="['bestiary-frame', { 'item-mode': mode === 'item' }]">
+    <div class="bestiary-frame">
       <span class="bs-corner tl"></span><span class="bs-corner br"></span>
       <button class="bs-close" @click="$emit('close')">
         <svg viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="M140.5 140.5c12.5-12.5 32.8-12.5 45.3 0L320 274.7l134.2-134.2c12.5-12.5 32.8-12.5 45.3 0s12.5 32.8 0 45.3L365.3 320l134.2 134.2c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L320 365.3 185.8 499.5c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L274.7 320 140.5 185.8c-12.5-12.5-12.5-32.8 0-45.3z"/></svg>
       </button>
       <div class="bs-panel-title"><span class="bs-dia">◆</span>万象图鉴<span class="bs-dia">◆</span></div>
       <div class="bs-title-line"></div>
+      <div v-if="isDemo" class="bs-demo-note">浏览器演示数据 · 不会写入酒馆存档</div>
 
       <div class="bs-mode-tabs">
         <button :class="['bs-mode', { active: mode === 'bio' }]" @click="switchMode('bio')">生物</button>
         <button :class="['bs-mode', { active: mode === 'item' }]" @click="switchMode('item')">物品</button>
+        <button :class="['bs-mode', { active: mode === 'skill' }]" @click="switchMode('skill')">技能</button>
       </div>
 
       <div class="bs-tabs" v-if="tiers.length">
@@ -20,6 +22,7 @@
           {{ t.label }}
         </button>
       </div>
+      <div v-if="tiers.length" class="bs-count">{{ currentCount }} 条记录</div>
       <div class="bs-empty" v-else>暂无图鉴记录</div>
 
       <div class="bs-list" v-if="activeTab && grouped[activeTab]">
@@ -37,6 +40,14 @@
               <div class="bs-erow" v-if="c.ra && c.ra !== '无'"><svg class="bs-eico" viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="M184 120c0-30.9 25.1-56 56-56h24c17.7 0 32 14.3 32 32v448c0 17.7-14.3 32-32 32h-32c-29.8 0-54.9-20.4-62-48h-2c-44.2 0-80-35.8-80-80c0-18 6-34.6 16-48c-19.4-14.6-32-37.8-32-64c0-30.9 17.6-57.8 43.2-71.1c-7.1-12-11.2-26-11.2-40.9c0-44.2 35.8-80 80-80z"/></svg><span class="bs-elbl">种族能力</span>{{ c.ra }}</div>
               <div class="bs-erow" v-if="c.ba && c.ba !== '无'"><svg class="bs-eico" viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="M434.8 54.1c11.9 8.6 16.3 24.2 10.9 37.8L367.3 288H512c13.5 0 25.5 8.4 30.1 21.1s.7 26.9-9.6 35.5l-288 240c-11.3 9.4-27.4 9.9-39.3 1.3s-16.3-24.2-10.9-37.8L272.7 352H128c-13.5 0-25.5-8.4-30.1-21.1s-.7-26.9 9.6-35.5l288-240c11.3-9.4 27.4-9.9 39.3-1.3"/></svg><span class="bs-elbl">血脉能力</span>{{ c.ba }}</div>
               <div class="bs-erow"><svg class="bs-eico" viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="M472 216c57.4 0 104 46.6 104 104c0 141.4-114.6 256-256 256c-54.3 0-104.8-17-146.3-45.9c-14.5-10.1-18-30.1-7.9-44.6s30.1-18 44.6-7.9c31.1 21.7 68.9 34.4 109.7 34.4c67.9 0 127.5-35.3 161.7-88.5c-3.2.3-6.4.5-9.7.5c-57.4 0-104-46.6-104-104s46.6-104 104-104zM320 64c54.3 0 104.8 17 146.3 45.9c14.5 10.1 18 30.1 7.9 44.6s-30.1 18-44.6 7.9c-31.1-21.7-68.9-34.4-109.7-34.4c-67.9 0-127.5 35.2-161.7 88.4c3.2-.3 6.4-.4 9.7-.4c57.4 0 104 46.6 104 104S225.4 424 168 424S64 377.4 64 320c0-1.9 0-3.8.1-5.6C67.1 175.6 180.5 64 320 64M168 280c-22.1 0-40 17.9-40 40s17.9 40 40 40s40-17.9 40-40s-17.9-40-40-40m304 0c-22.1 0-40 17.9-40 40s17.9 40 40 40s40-17.9 40-40s-17.9-40-40-40"/></svg><span class="bs-elbl">描述</span>{{ c.d }}</div>
+            </template>
+            <template v-else-if="mode === 'skill'">
+              <div class="bs-erow"><svg class="bs-eico" viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="M320 32 64 176v288l256 144 256-144V176zM320 96l192 108-192 108-192-108zm-192 160 160 90v184l-160-90zm224 274V346l160-90v184z"/></svg><span class="bs-elbl">持有者</span>{{ c.r }}</div>
+              <div class="bs-erow"><svg class="bs-eico" viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="M320 64 64 208l256 144 256-144zm-192 240v128l192 108 192-108V304L320 412z"/></svg><span class="bs-elbl">类型</span>{{ c.k }}</div>
+              <div class="bs-erow"><svg class="bs-eico" viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="M320 32 64 176v288l256 144 256-144V176zM320 96l192 108-192 108-192-108zm-192 160 160 90v184l-160-90zm224 274V346l160-90v184z"/></svg><span class="bs-elbl">状态</span>{{ c.s }}</div>
+              <div class="bs-erow"><svg class="bs-eico" viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="M320 64c-141.4 0-256 114.6-256 256s114.6 256 256 256 256-114.6 256-256S461.4 64 320 64m32 384h-64V288h64zm0-224h-64v-64h64z"/></svg><span class="bs-elbl">效果</span>{{ c.e }}</div>
+              <div class="bs-erow" v-if="c.x && c.x !== '无'"><svg class="bs-eico" viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="m352 64 224 224-224 224-45-45 147-147H64v-64h390L307 109z"/></svg><span class="bs-elbl">限制</span>{{ c.x }}</div>
+              <div class="bs-erow"><svg class="bs-eico" viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="M320 64c141.4 0 256 114.6 256 256S461.4 576 320 576 64 461.4 64 320 178.6 64 320 64m0 96a160 160 0 1 0 0 320 160 160 0 0 0 0-320m0 64a96 96 0 1 1 0 192 96 96 0 0 1 0-192"/></svg><span class="bs-elbl">描述</span>{{ c.d }}</div>
             </template>
             <template v-else>
               <div class="bs-erow"><svg class="bs-eico" viewBox="0 0 640 640"><path d="M0 0h640v640H0z" fill="none"/><path fill="currentColor" d="M479.9 375.9L452.1 424h55.7L480 375.9zM447.6 320l-60.2-104H252.6l-60.2 104l60.2 104h134.8zm64.7 0l58.4 100.9c3.5 6 5.3 12.8 5.3 19.7c0 21.7-17.6 39.4-39.4 39.4h-117l-61.3 105.8c-7.8 13.8-22.5 22.2-38.3 22.2s-30.5-8.4-38.4-22.2L220.3 480h-117c-21.7 0-39.4-17.6-39.4-39.4c0-6.9 1.8-13.7 5.3-19.7L127.7 320L69.3 219.1c-3.5-6-5.3-12.8-5.3-19.7c0-21.8 17.6-39.4 39.4-39.4h117l61.3-105.8C289.5 40.4 304.2 32 320 32s30.5 8.4 38.4 22.2L419.7 160h117c21.7 0 39.4 17.6 39.4 39.4c0 6.9-1.8 13.7-5.3 19.7z"/></svg><span class="bs-elbl">描述</span>{{ c.d }}</div>
@@ -56,6 +67,7 @@ defineEmits(['close'])
 
 const BIO_KEY = 'jdnl_bestiary'
 const ITEM_KEY = 'jdnl_items'
+const SKILL_KEY = 'jdnl_skills'
 const CHAT_ID_KEY = 'jdnl_bestiary_chat_id'
 
 const ALL_TIERS = [
@@ -75,8 +87,27 @@ const mode = ref('bio')
 const grouped = ref({})
 const activeTab = ref('')
 const expandedNames = ref([])
+const demoParam = new URLSearchParams(window.location.search).get('demo') || ''
+const isDemo = ['all', 'bio', 'item', 'skill'].includes(demoParam)
+
+const DEMO_DATA = {
+  bio: [
+    { n: '银翎灵鹿', r: '银翎灵鹿', b: '月辉鹿裔', t: '精良', ra: '夜视、轻盈步', ba: '月光亲和', d: '栖息于林缘的灵性生物，警觉而亲人。', l: '主世界', dispName: '银翎灵鹿·月辉鹿裔' },
+    { n: '雾港水母', r: '雾港水母', b: '无', t: '普通', ra: '微光发散', ba: '无', d: '漂浮在潮雾中的半透明小型生物。', l: '雾港', dispName: '雾港水母' },
+  ],
+  item: [
+    { n: '折光怀表', t: '稀有', ba: '短暂冻结表盘内的时间指针', d: '银色表壳里藏着一圈会自行转动的蓝光。', dispName: '折光怀表' },
+    { n: '旅者火绒', t: '普通', ba: '在潮湿环境中稳定点火', d: '一小盒防潮火绒，适合露营和临时照明。', dispName: '旅者火绒' },
+  ],
+  skill: [
+    { n: '火花术', r: 'user', k: '法术', t: '普通', s: '已掌握', e: '弹出一枚可控火星，能够点燃引火物或提供短暂照明。', x: '需要少量灵力；连续施放会使指尖发麻。', d: '入门级火系法术，适合日常使用。', dispName: '火花术' },
+    { n: '灵息感知', r: 'user', k: '天赋', t: '精良', s: '觉醒', e: '感知近处生物与灵力流动的方向。', x: '嘈杂或强烈能量环境会降低准确度。', d: '在一次危机中觉醒的感知能力。', dispName: '灵息感知' },
+    { n: '裂空斩', r: 'user', k: '秘术', t: '史诗', s: '已掌握', e: '将力量压缩为一道短距斩击，能切开坚硬护具。', x: '消耗较大，必须有稳定的发力空间。', d: '以实战改良出的高阶近战秘术。', dispName: '裂空斩' },
+  ],
+}
 
 const tiers = computed(() => ALL_TIERS.filter(t => grouped.value[t.key] && grouped.value[t.key].length))
+const currentCount = computed(() => Object.values(grouped.value).reduce((sum, list) => sum + list.length, 0))
 
 const doc = window.parent ? window.parent.document : document
 
@@ -98,6 +129,7 @@ function checkChatChange() {
   if (stored && stored !== cur) {
     localStorage.removeItem(BIO_KEY)
     localStorage.removeItem(ITEM_KEY)
+    localStorage.removeItem(SKILL_KEY)
     grouped.value = {}
     expandedNames.value = []
     activeTab.value = ''
@@ -109,8 +141,9 @@ function checkChatChange() {
 }
 
 function syncDOM() {
-  const key = mode.value === 'bio' ? BIO_KEY : ITEM_KEY
-  const dataClass = mode.value === 'bio' ? 'bio-data' : 'it-data'
+  if (isDemo) return
+  const key = mode.value === 'bio' ? BIO_KEY : mode.value === 'skill' ? SKILL_KEY : ITEM_KEY
+  const dataClass = mode.value === 'bio' ? 'bio-data' : mode.value === 'skill' ? 'skill-data' : 'it-data'
   const spans = doc.querySelectorAll('[class*="' + dataClass + '"]')
   if (!spans.length) return
   let changed = false
@@ -124,6 +157,9 @@ function syncDOM() {
       if (mode.value === 'bio') {
         if (parts.length < 8) return
         d = { n: parts[0], r: parts[1], b: parts[2], t: parts[3], ra: parts[4], ba: parts[5], d: parts[6], l: parts[7], dispName: parts[1] + (parts[2] && parts[2] !== parts[1] ? '·' + parts[2] : '') }
+      } else if (mode.value === 'skill') {
+        if (parts.length < 8) return
+        d = { n: parts[1], r: parts[0], k: parts[2], t: parts[3], s: parts[4], e: parts[5], x: parts[6], d: parts[7], dispName: parts[1] }
       } else {
         if (parts.length < 4) return
         d = { n: parts[0], t: parts[1], ba: parts[2], d: parts[3], dispName: parts[0] }
@@ -146,9 +182,8 @@ function syncDOM() {
 function load() {
   syncDOM()
   try {
-    const key = mode.value === 'bio' ? BIO_KEY : ITEM_KEY
-    const raw = localStorage.getItem(key)
-    const list = JSON.parse(raw || '[]')
+    const key = mode.value === 'bio' ? BIO_KEY : mode.value === 'skill' ? SKILL_KEY : ITEM_KEY
+    const list = isDemo ? DEMO_DATA[mode.value] : JSON.parse(localStorage.getItem(key) || '[]')
     const g = {}
     for (const c of list) {
       const tk = c.t || '唯一'
@@ -180,6 +215,7 @@ function toggleExpand(name) {
 
 let timer = null
 onMounted(() => {
+  if (isDemo && demoParam !== 'all') mode.value = demoParam
   checkChatChange()
   load()
   timer = setInterval(() => { checkChatChange(); syncDOM(); load() }, 2000)
@@ -246,6 +282,8 @@ onUnmounted(() => {
 .bs-tab:hover{color:var(--tc);background:rgba(180,150,110,.06);border-color:rgba(180,150,110,.18)}
 .bs-tab.active{color:var(--tc);background:linear-gradient(180deg,rgba(180,150,110,.1) 0%,rgba(180,150,110,.03) 100%);border-color:rgba(180,150,110,.25);border-bottom-color:var(--tc);text-shadow:0 0 8px rgba(196,168,122,.25);box-shadow:0 -2px 8px rgba(0,0,0,.15)}
 
+.bs-demo-note{margin:8px 14px 0;padding:5px 8px;border:1px dashed rgba(196,168,122,.25);border-radius:5px;text-align:center;color:rgba(196,168,122,.65);font-size:.68em;letter-spacing:.06em;position:relative;z-index:1}
+.bs-count{padding:7px 16px 0;text-align:right;color:rgba(180,160,130,.42);font-size:.68em;letter-spacing:.05em;position:relative;z-index:1}
 .bs-empty{text-align:center;padding:50px 16px;color:rgba(180,160,130,.32);font-size:.85em;letter-spacing:.06em;position:relative;z-index:1}
 
 .bs-list{flex:1;overflow-y:auto;padding:8px 14px 16px;scrollbar-width:thin;scrollbar-color:rgba(180,150,110,.12) transparent;position:relative;z-index:1}
@@ -258,6 +296,7 @@ onUnmounted(() => {
 .bs-entry:hover::before{opacity:.8}
 .bs-entry.expanded{background:linear-gradient(90deg,rgba(255,255,255,.08) 0%,rgba(255,255,255,.03) 100%);box-shadow:0 4px 18px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.03);border-left-width:4px}
 .bs-entry.expanded::before{opacity:1}
+.bestiary-frame::before,.bs-entry::before{background-image:repeating-linear-gradient(135deg,transparent 0 9px,rgba(196,168,122,.04) 9px 10px),repeating-radial-gradient(circle at 100% 0,transparent 0 13px,rgba(196,168,122,.035) 13px 14px),url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2724%27%20height%3D%2712%27%3E%3Cg%20fill%3D%27none%27%20stroke%3D%27rgba(196%2C168%2C122%2C.06)%27%20stroke-width%3D%27.6%27%3E%3Cpath%20d%3D%27M8%2012%20A%204%204%200%200%201%2016%2012%20A%202%202%200%200%201%2012%2012%20A%202%202%200%200%201%208%2012%27%2F%3E%3Cpath%20d%3D%27M4%2012%20A%208%208%200%200%201%2020%2012%20A%204%204%200%200%201%2012%2012%20A%204%204%200%200%201%204%2012%27%2F%3E%3Cpath%20d%3D%27M0%2012%20A%2012%2012%200%200%201%2024%2012%20A%206%206%200%200%201%2012%2012%20A%206%206%200%200%201%200%2012%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");background-size:20px 20px,32px 32px,24px 12px}
 .bs-entry .bs-ehd{display:flex;align-items:center;gap:8px;padding:11px 14px;position:relative;z-index:1}
 .bs-entry .bs-enm{font-family:'寒蝉全圆体','DouyinSans',serif;font-weight:700;font-size:1.05em;letter-spacing:.03em;background-size:200% auto!important;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:bs-shimmer 4s linear infinite}
 .bs-entry .bs-etier{font-size:.62em;padding:2px 8px;border:1px solid var(--tc);border-radius:4px;margin-left:auto;letter-spacing:.08em;font-weight:600;color:var(--tc);-webkit-text-fill-color:var(--tc)}
@@ -273,4 +312,5 @@ onUnmounted(() => {
 .bs-entry .bs-erow:last-child{margin-bottom:0}
 .bs-entry .bs-elbl{color:var(--tc);font-size:.76em;white-space:nowrap;min-width:4.5em;display:inline-block;text-align:right;opacity:.55;letter-spacing:.05em;margin-right:4px;flex-shrink:0}
 .bs-entry .bs-eico{display:inline-block;width:1em;height:1em;vertical-align:middle;color:var(--tc);margin-right:3px;opacity:.65;flex-shrink:0}
+.bestiary-frame.item-mode::before,.bestiary-frame.item-mode .bs-entry::before{background-image:repeating-linear-gradient(135deg,transparent 0 9px,rgba(196,168,122,.04) 9px 10px),repeating-radial-gradient(circle at 100% 0,transparent 0 13px,rgba(196,168,122,.035) 13px 14px),url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2724%27%20height%3D%2712%27%3E%3Cg%20fill%3D%27none%27%20stroke%3D%27rgba(196%2C168%2C122%2C.06)%27%20stroke-width%3D%27.6%27%3E%3Cpath%20d%3D%27M8%2012%20A%204%204%200%200%201%2016%2012%20A%202%202%200%200%201%2012%2012%20A%202%202%200%200%201%208%2012%27%2F%3E%3Cpath%20d%3D%27M4%2012%20A%208%208%200%200%201%2020%2012%20A%204%204%200%200%201%2012%2012%20A%204%204%200%200%201%204%2012%27%2F%3E%3Cpath%20d%3D%27M0%2012%20A%2012%2012%200%200%201%2024%2012%20A%206%206%200%200%201%2012%2012%20A%206%206%200%200%201%200%2012%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");background-size:20px 20px,32px 32px,24px 12px}
 </style>

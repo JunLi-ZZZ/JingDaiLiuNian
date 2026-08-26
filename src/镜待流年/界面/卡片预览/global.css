@@ -1,0 +1,10 @@
+:root {
+  color-scheme: dark;
+  font-family: 'Noto Serif SC', 'Microsoft YaHei', serif;
+  background: #292621;
+  color: #e2d6c2;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; background: radial-gradient(circle at 50% 0, #40382e, #211f1d 72%); }
+#app { width: min(760px, 100%); margin: 0 auto; padding: 28px 16px 56px; }

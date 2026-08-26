@@ -35,7 +35,7 @@ function parseTime(s: string): PT | null {
   if (!s) return null;
   s = String(s).trim();
   let y: number | null = null, mo: number | null = null, d: number | null = null, h: number | null = null, mi: number | null = null;
-  const dm = s.match(/(\d{2,4})\s*[年\/\-]\s*(\d{1,2})\s*[月\/\-]\s*(\d{1,2})/);
+  const dm = s.match(new RegExp('(\\d{2,4})\\s*[年/-]\\s*(\\d{1,2})\\s*[月/-]\\s*(\\d{1,2})'));
   if (dm) { y = +dm[1]; mo = +dm[2]; d = +dm[3]; }
   const tm = s.match(/(\d{1,2})\s*[:：]\s*(\d{2})/);
   if (tm) { h = +tm[1]; mi = +tm[2]; }
@@ -191,6 +191,206 @@ function buildBubble(dir: string, type: string, text: string, contact: string, o
   return row;
 }
 
+interface RecordLine { role: string; name: string; text: string }
+
+function parseRecordLines(blob: string): RecordLine[] {
+  const chunks = blob
+    .replace(/\u00a0/g, ' ')
+    .split(/(?=-\s*[^:：]{1,12}[:：])/)
+    .map(line => line.trim())
+    .filter(Boolean);
+
+  return chunks.map(line => {
+    const clean = line.replace(/^-\s*/, '').trim();
+    const matched = clean.match(/^([^:：]{1,12})[:：]\s*(.*?)\s*[｜|]\s*文本[:：]\s*([\s\S]+)$/);
+    if (matched) return { role: matched[1].trim(), name: matched[2].trim(), text: matched[3].trim() };
+    return { role: '记录', name: '', text: clean };
+  }).filter(line => line.text);
+}
+
+function recordIcon(source: string, type: string): { label: string; bg: string } {
+  if (/直播|抖音|抖阴/.test(source + type)) return { label: '音', bg: 'linear-gradient(145deg,#16171b,#292a31)' };
+  if (/热榜/.test(type)) return { label: '热', bg: 'linear-gradient(145deg,#ff5a52,#e52d3d)' };
+  if (/系统/.test(type)) return { label: '设', bg: 'linear-gradient(145deg,#7f8998,#596474)' };
+  if (/平台|推送/.test(type)) return { label: '讯', bg: 'linear-gradient(145deg,#3188f5,#1264d6)' };
+  return { label: '记', bg: 'linear-gradient(145deg,#35a66f,#14764b)' };
+}
+
+function buildRecordStatus(screen: HTMLElement, time: string, dark: boolean): void {
+  const d = pdoc();
+  const status = d.createElement('div');
+  status.style.cssText = `height:27px;padding:0 18px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600;color:${dark ? '#fff' : '#202124'};letter-spacing:.1px`;
+  const parsed = parseTime(time);
+  const timeText = parsed && hm(parsed) ? hm(parsed) : (time === '未显示' ? '' : time);
+  const clock = d.createElement('span');
+  clock.style.cssText = 'font-variant-numeric:tabular-nums';
+  clock.textContent = timeText;
+  const signal = d.createElement('span');
+  signal.style.cssText = 'display:flex;align-items:center;gap:5px';
+  signal.innerHTML = '<svg viewBox="0 0 640 640" style="width:15px;height:13px"><path fill="currentColor" d="M112 400h56v96h-56zm120-64h56v160h-56zm120-80h56v240h-56zm120-96h56v336h-56z"/></svg>' +
+    '<svg viewBox="0 0 640 640" style="width:16px;height:13px"><path fill="currentColor" d="M320 160c116 0 221 45 298 118l-52 54c-64-60-151-96-246-96S138 272 74 332l-52-54C99 205 204 160 320 160m0 152c58 0 111 22 150 59l-53 55c-26-24-60-38-97-38s-71 14-97 38l-53-55c39-37 92-59 150-59m0 152c20 0 38 8 51 22l-51 53l-51-53c13-14 31-22 51-22"/></svg>' +
+    '<span style="width:22px;height:11px;border:1.4px solid currentColor;border-radius:3px;position:relative;opacity:.85"><i style="position:absolute;inset:1.5px;right:5px;background:currentColor;border-radius:1px"></i><b style="position:absolute;right:-3px;top:3px;width:2px;height:4px;background:currentColor;border-radius:0 1px 1px 0"></b></span>';
+  status.append(clock, signal);
+  screen.appendChild(status);
+}
+
+function buildRecordTop(screen: HTMLElement, source: string, type: string, time: string, dark: boolean): HTMLElement {
+  const d = pdoc();
+  buildRecordStatus(screen, time, dark);
+
+  const appbar = d.createElement('div');
+  appbar.style.cssText = `min-height:47px;padding:7px 12px;display:flex;align-items:center;gap:9px;border-top:1px solid ${dark ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.04)'};border-bottom:1px solid ${dark ? 'rgba(255,255,255,.09)' : 'rgba(0,0,0,.08)'};background:${dark ? 'rgba(12,13,17,.92)' : 'rgba(255,255,255,.86)'}`;
+  const back = d.createElement('span');
+  back.style.cssText = `font-size:24px;line-height:1;color:${dark ? 'rgba(255,255,255,.8)' : '#303239'}`;
+  back.textContent = '‹';
+  const iconData = recordIcon(source, type);
+  const icon = d.createElement('span');
+  icon.style.cssText = `width:29px;height:29px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:13px;font-weight:750;background:${iconData.bg}`;
+  icon.textContent = iconData.label;
+  const titles = d.createElement('span');
+  titles.style.cssText = 'display:flex;flex:1;min-width:0;flex-direction:column;line-height:1.25';
+  const title = d.createElement('b');
+  title.style.cssText = `font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${dark ? '#fff' : '#16181c'}`;
+  title.textContent = source || '手机记录';
+  const sub = d.createElement('small');
+  sub.style.cssText = `font-size:10px;font-weight:500;color:${dark ? 'rgba(255,255,255,.5)' : '#8a8d94'}`;
+  sub.textContent = type || '应用记录';
+  titles.append(title, sub);
+  appbar.append(back, icon, titles);
+  screen.appendChild(appbar);
+  return appbar;
+}
+
+function renderLiveRecord(screen: HTMLElement, source: string, type: string, time: string, lines: RecordLine[]): void {
+  const d = pdoc();
+  screen.style.cssText = 'min-height:300px;background:linear-gradient(155deg,#25212a 0%,#101116 42%,#07080b 100%);color:#fff';
+  buildRecordTop(screen, source, type, time, true);
+
+  const stage = d.createElement('div');
+  stage.style.cssText = 'height:112px;display:flex;align-items:center;justify-content:center;position:relative;background:radial-gradient(circle at 50% 25%,rgba(254,44,85,.16),transparent 54%)';
+  const live = d.createElement('span');
+  live.style.cssText = 'position:absolute;left:13px;top:11px;padding:3px 7px;border-radius:4px;background:#fe2c55;color:#fff;font-size:10px;font-weight:750;letter-spacing:.5px';
+  live.textContent = 'LIVE';
+  const hint = d.createElement('span');
+  hint.style.cssText = 'font-size:12px;color:rgba(255,255,255,.48)';
+  hint.textContent = '直播画面';
+  stage.append(live, hint);
+  screen.appendChild(stage);
+
+  const chat = d.createElement('div');
+  chat.style.cssText = 'display:flex;flex-direction:column;gap:8px;padding:10px 13px 15px;background:linear-gradient(180deg,rgba(0,0,0,.22),rgba(0,0,0,.64))';
+  lines.forEach(line => {
+    const row = d.createElement('div');
+    row.style.cssText = 'display:flex;align-items:flex-start;gap:7px;font-size:12px;line-height:1.45';
+    const avatar = d.createElement('span');
+    avatar.style.cssText = `width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;font-weight:700;color:#fff;background:${/主播/.test(line.role) ? '#fe2c55' : '#586079'}`;
+    avatar.textContent = initial(line.name || line.role);
+    const body = d.createElement('span');
+    body.style.cssText = 'min-width:0;color:rgba(255,255,255,.9);word-break:break-word';
+    const who = d.createElement('b');
+    who.style.cssText = `margin-right:6px;font-size:11px;color:${/主播/.test(line.role) ? '#ff7893' : '#aeb7d2'}`;
+    who.textContent = line.name || line.role;
+    body.append(who, d.createTextNode(line.text));
+    row.append(avatar, body);
+    chat.appendChild(row);
+  });
+  screen.appendChild(chat);
+}
+
+function renderHotRecord(screen: HTMLElement, source: string, type: string, time: string, lines: RecordLine[]): void {
+  const d = pdoc();
+  screen.style.cssText = 'min-height:270px;background:#f6f6f8;color:#16181c';
+  buildRecordTop(screen, source, type, time, false);
+  const head = d.createElement('div');
+  head.style.cssText = 'padding:13px 15px 8px;font-size:16px;font-weight:750';
+  head.textContent = '实时热榜';
+  screen.appendChild(head);
+  const list = d.createElement('div');
+  list.style.cssText = 'padding:0 15px 14px;background:#fff;border-top:1px solid #ececef';
+  lines.forEach((line, index) => {
+    const row = d.createElement('div');
+    row.style.cssText = 'min-height:42px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f0f0f2';
+    const rank = d.createElement('b');
+    rank.style.cssText = `width:18px;text-align:center;font-size:15px;color:${index < 3 ? '#ef3d4d' : '#a1a4aa'}`;
+    rank.textContent = String(index + 1);
+    const text = d.createElement('span');
+    text.style.cssText = 'flex:1;min-width:0;font-size:13px;color:#25272c;word-break:break-word';
+    text.textContent = line.text;
+    const mark = d.createElement('small');
+    mark.style.cssText = 'color:#b3b5ba;font-size:10px';
+    mark.textContent = line.name || line.role;
+    row.append(rank, text, mark);
+    list.appendChild(row);
+  });
+  screen.appendChild(list);
+}
+
+function renderNotificationRecord(screen: HTMLElement, source: string, type: string, time: string, lines: RecordLine[]): void {
+  const d = pdoc();
+  screen.style.cssText = 'min-height:280px;background:linear-gradient(145deg,#edf2f5 0%,#dbe3e8 48%,#eef1ef 100%);color:#17191d';
+  buildRecordStatus(screen, time, false);
+  const caption = d.createElement('div');
+  caption.style.cssText = 'display:flex;align-items:center;gap:8px;padding:12px 16px 9px;font-size:15px;font-weight:750;color:#30363d';
+  const captionIcon = d.createElement('span');
+  const iconData = recordIcon(source, type);
+  captionIcon.style.cssText = `width:25px;height:25px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:750;background:${iconData.bg}`;
+  captionIcon.textContent = iconData.label;
+  const captionText = d.createElement('span');
+  captionText.textContent = source || (/系统/.test(type) ? '系统通知' : /平台|推送/.test(type) ? '最新通知' : '活动记录');
+  caption.append(captionIcon, captionText);
+  screen.appendChild(caption);
+  const list = d.createElement('div');
+  list.style.cssText = 'display:flex;flex-direction:column;gap:7px;padding:0 12px 15px';
+  lines.forEach(line => {
+    const item = d.createElement('div');
+    item.style.cssText = 'display:flex;align-items:flex-start;gap:9px;padding:10px;border-radius:8px;background:rgba(255,255,255,.76);box-shadow:0 1px 5px rgba(48,57,65,.12);backdrop-filter:blur(12px)';
+    const icon = d.createElement('span');
+    icon.style.cssText = `width:31px;height:31px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:12px;font-weight:750;background:${iconData.bg}`;
+    icon.textContent = initial(line.name || iconData.label);
+    const body = d.createElement('span');
+    body.style.cssText = 'display:flex;flex:1;min-width:0;flex-direction:column;gap:2px';
+    const meta = d.createElement('span');
+    meta.style.cssText = 'display:flex;align-items:center;gap:6px';
+    const who = d.createElement('b');
+    who.style.cssText = 'flex:1;min-width:0;font-size:12px;color:#202228;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    who.textContent = line.name || source || line.role;
+    const now = d.createElement('small');
+    now.style.cssText = 'font-size:9px;color:#8e939a';
+    now.textContent = '现在';
+    const text = d.createElement('span');
+    text.style.cssText = 'font-size:12px;line-height:1.45;color:#44484f;word-break:break-word';
+    text.textContent = line.text;
+    meta.append(who, now);
+    body.append(meta, text);
+    item.append(icon, body);
+    list.appendChild(item);
+  });
+  screen.appendChild(list);
+}
+
+function renderRecordCard(card: Element): void {
+  const dataEl = card.querySelector('[class*="phone-record-data"]');
+  const screen = card.querySelector('[class*="pm-record-screen"]') as HTMLElement | null;
+  if (!dataEl || !screen) {
+    card.setAttribute('data-rendered', '1');
+    return;
+  }
+  const parts = (dataEl.textContent || '').trim().split('|||');
+  if (parts.length < 4) {
+    card.setAttribute('data-rendered', '1');
+    return;
+  }
+  const source = parts[0].trim();
+  const type = parts[1].trim();
+  const time = parts[2].trim();
+  const lines = parseRecordLines(parts.slice(3).join('|||'));
+  screen.innerHTML = '';
+  if (/直播/.test(type + source)) renderLiveRecord(screen, source, type, time, lines);
+  else if (/热榜/.test(type)) renderHotRecord(screen, source, type, time, lines);
+  else renderNotificationRecord(screen, source, type, time, lines);
+  card.setAttribute('data-rendered', '1');
+}
+
 function renderCard(card: Element, now: PT | null): void {
   const dataEl = card.querySelector('[class*="phone-data"]');
   const bubbles = card.querySelector('[class*="pm-bubbles"]') as HTMLElement | null;
@@ -251,6 +451,9 @@ function renderAll(): void {
   pdoc()
     .querySelectorAll('[class*="pm-card"]:not([data-rendered])')
     .forEach(c => renderCard(c, now));
+  pdoc()
+    .querySelectorAll('[class*="pm-record-card"]:not([data-rendered])')
+    .forEach(renderRecordCard);
 }
 
 // 收集页面上所有卡片的参与者（手机机主+联系人 + 照片拍摄者），用于确认谁该拥有手机

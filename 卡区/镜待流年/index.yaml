@@ -117,8 +117,10 @@
     激活策略:
       类型: 蓝灯
     插入位置:
-      类型: 角色定义之前
-      顺序: 200
+      类型: 指定深度
+      角色: 系统
+      深度: 0
+      顺序: 14710
     激活概率: 100
     递归:
       不可被其他条目激活: false
@@ -320,6 +322,19 @@
       不可激活其他条目: true
     文件: 世界书\系统\NPC生成规则
 
+  - 名称: 战斗与大场面规则
+    启用: true
+    激活策略:
+      类型: 蓝灯
+    插入位置:
+      类型: 角色定义之前
+      顺序: 204
+    激活概率: 100
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+    文件: 世界书\系统\战斗与大场面规则
+
   - 名称: "位面生成规则"
     启用: true
     激活策略:
@@ -426,7 +441,7 @@
       不可激活其他条目: true
     文件: 世界书\系统\品阶体系
 
-  - 名称: 物品与生物格式
+  - 名称: 物品、生物与技能格式
     启用: true
     激活策略:
       类型: 蓝灯
@@ -828,6 +843,45 @@
       不可激活其他条目: true
     文件: 世界书\角色\莉泽洛特
 
+  - 名称: 奥罗拉·索拉瑞斯
+    启用: true
+    激活策略:
+      类型: 绿灯
+      关键字:
+        - 奥罗拉·索拉瑞斯
+        - 奥罗拉
+        - 索拉瑞斯
+        - 勇者
+        - 光之女神
+    插入位置:
+      类型: 角色定义之前
+      顺序: 5230
+    激活概率: 100
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+    文件: 世界书\角色\奥罗拉·索拉瑞斯
+
+  - 名称: 维斯佩拉·诺克提斯
+    启用: true
+    激活策略:
+      类型: 绿灯
+      关键字:
+        - 维斯佩拉·诺克提斯
+        - 维斯佩拉
+        - 诺克提斯
+        - 魔王
+        - 深渊魔王
+        - 暗之女神
+    插入位置:
+      类型: 角色定义之前
+      顺序: 5240
+    激活概率: 100
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+    文件: 世界书\角色\维斯佩拉·诺克提斯
+
   - 名称: 生成角色列表
     启用: true
     激活策略:
@@ -1002,7 +1056,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v205/界面/状态栏/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v212/界面/状态栏/index.html')
         </script>
         </body>
         ```
@@ -1020,7 +1074,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v205/界面/封面/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v212/界面/封面/index.html')
         </script>
         </body>
         ```
@@ -1077,12 +1131,36 @@
         仅格式提示词: false
       最大深度: 10
 
+    - 正则名称: "[美化]技能卡片"
+      启用: true
+      查找表达式: "/<skill>\\s*角色: ([\\s\\S]*?)\\s*名称: ([\\s\\S]*?)\\s*类型: ([\\s\\S]*?)\\s*品阶: ([\\s\\S]*?)\\s*状态: ([\\s\\S]*?)\\s*效果: ([\\s\\S]*?)\\s*限制: ([\\s\\S]*?)\\s*描述: ([\\s\\S]*?)\\s*<\\/skill>/gi "
+      文件: 正则/技能卡片
+      来源:
+        用户输入: false
+        AI输出: true
+      作用于:
+        仅格式显示: true
+        仅格式提示词: false
+      最大深度: 10
+
     - 正则名称: "[美化]手机消息"
       启用: true
       查找表达式: "/<手机[^>]*>\\s*(?:机主:\\s*([^\\n]*?)\\s*\\n\\s*)?联系人:\\s*([^\\n]*?)\\s*\\n\\s*时间:\\s*([^\\n]*?)\\s*\\n([\\s\\S]*?)<\\/手机>/gi"
       文件: 正则/手机消息
       来源:
         用户输入: true
+        AI输出: true
+      作用于:
+        仅格式显示: true
+        仅格式提示词: false
+      最大深度: 10
+
+    - 正则名称: "[美化]手机记录"
+      启用: true
+      查找表达式: "/<手机记录>\\s*来源:\\s*([^\\n]*?)\\s*\\n\\s*类型:\\s*([^\\n]*?)\\s*\\n\\s*时间:\\s*([^\\n]*?)\\s*\\n\\s*内容:\\s*([\\s\\S]*?)<\\/手机记录>/gi"
+      文件: 正则/手机记录
+      来源:
+        用户输入: false
         AI输出: true
       作用于:
         仅格式显示: true
@@ -1115,13 +1193,13 @@
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v205/脚本/变量结构/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v212/脚本/变量结构/index.js';
 
       - 名称: 手机渲染
         id: a7f3c2e1-9b4d-4e6a-8c1f-2d5e7a9b3c4d
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v205/脚本/手机渲染/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v212/脚本/手机渲染/index.js';
 
     变量: {}

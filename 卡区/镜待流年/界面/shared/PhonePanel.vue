@@ -286,6 +286,15 @@
           <span class="mp-setapp-title">设置</span>
         </div>
         <div class="mp-setapp-body">
+          <div class="mp-setapp-hd">生成参考</div>
+          <div class="mp-setapp-desc">开启后，小手机生成会参考最近一条 AI 正文；它只用于对齐当前世界状态，不会被当作手机里已经发生的内容。</div>
+          <div class="mp-setapp-sec mp-setapp-sec-single">
+            <div class="mp-setapp-row">
+              <span class="mp-setapp-ico" style="background:#5b6472">文</span>
+              <span class="mp-setapp-lbl">参考最近正文</span>
+              <button class="mp-switch" :class="{ on: referenceStory }" @click="toggleReferenceStory"><span class="mp-switch-dot"></span></button>
+            </div>
+          </div>
           <div class="mp-setapp-hd">纯手机模式</div>
           <div class="mp-setapp-desc">开启后，在该应用里发消息只在手机内往来、不写进正文，AI 只以聊天对象的身份在手机里回你。适合单独把玩手机、补写消息。</div>
           <div class="mp-setapp-sec">
@@ -317,6 +326,9 @@
                   </div>
                 </div>
                 <div class="mp-dy-set-note">抖阴模式下顶栏会多出「私密」页。公开流（推荐/关注）里点视频文字可翻转看只给你的私密版。直播卡也会混入推荐/关注流。</div>
+                <div class="mp-dy-set-subhd">抖阴风格（可选）</div>
+                <textarea class="mp-dy-style-input" :value="douyinSettings.style || ''" rows="2" readonly @click.stop.prevent="openIMEDyStyle" placeholder="未设置，使用默认风格"></textarea>
+                <div class="mp-dy-set-note">只在抖阴模式的视频与直播生成中生效；留空使用有韵味、情境化的默认风格。热榜不受此设置影响。</div>
                 <!-- 直播出现概率 -->
                 <div class="mp-dy-set-subhd">直播出现概率（当前 {{ dyLivePct }}%）</div>
                 <div class="mp-dy-set-btns">
@@ -494,12 +506,20 @@
             <div class="mp-dy-load-txt">正在为你推荐…</div>
           </div>
           <!-- 视频卡片列表 -->
-          <div v-for="(v, vi) in dyVisibleFeed" :key="v._i" class="mp-dy-slide">
+          <div v-for="v in dyVisibleFeed" :key="v._i" class="mp-dy-slide">
             <div class="mp-dy-grad-top"></div>
             <div class="mp-dy-grad-bot"></div>
             <!-- 占位卡：正在生成 -->
-            <template v-if="v.pending">
-              <div class="mp-dy-ph">
+            <template v-if="v.pending || v.error">
+              <div v-if="v.error" class="mp-dy-ph mp-dy-ph-error">
+                <div class="mp-dy-ph-error-title">这条内容生成中断了</div>
+                <div class="mp-dy-ph-error-msg">{{ v.errorMessage || '没有拿到完整内容' }}</div>
+                <div class="mp-dy-ph-error-actions">
+                  <button @click.stop="retryDyVideo(v._i)">重新生成</button>
+                  <button class="danger" @click.stop="deleteDyFailed(v._i)">删除</button>
+                </div>
+              </div>
+              <div v-else class="mp-dy-ph">
                 <div class="mp-dy-spinner"><span></span><span></span><span></span></div>
                 <div class="mp-dy-load-txt">正在为你推荐…</div>
               </div>
@@ -680,7 +700,7 @@
           </div>
           <div class="mp-dym-body">
             <div v-if="!dyNotifs.length" class="mp-dyh-none">还没有互动消息</div>
-            <div v-for="(n, ni) in dyNotifs" :key="n.id" class="mp-dym-item" :class="{unread:!n.read}" @click="openDyFromNotif(n)">
+            <div v-for="n in dyNotifs" :key="n.id" class="mp-dym-item" :class="{unread:!n.read}" @click="openDyFromNotif(n)">
               <div class="mp-dym-dot" v-if="!n.read"></div>
               <div class="mp-dym-ava">{{ (n.replierUser||'?').replace('@','').slice(0,1).toUpperCase() }}</div>
               <div class="mp-dym-info">
@@ -771,10 +791,16 @@
                 <span v-else-if="!msg.isMe && msg.level != null" class="mp-dylv-lv" :style="{background: levelColor(msg.level)}">{{ msg.level }}</span>
                 <span class="mp-dylv-user">{{ msg.user }}：</span>
                 <span class="mp-dylv-txt">{{ msg.text }}</span>
+                <button v-if="msg.isMe && msg.status === 'failed'" class="mp-dylv-retry" title="发送失败，点击重发" @click.stop="retryLiveUserMessage(msg)">↻</button>
               </template>
             </div>
             <div v-if="generatingLiveChat" class="mp-dylv-loading">
               <span></span><span></span><span></span>
+            </div>
+            <div v-if="liveChatError" class="mp-dylv-error">
+              <span class="mp-dylv-error-text">{{ liveChatError }}</span>
+              <button @click.stop="retryLiveChat">重试本批</button>
+              <button class="secondary" @click.stop="clearLiveChatError">关闭</button>
             </div>
           </div>
           <!-- 底部输入栏 -->
@@ -844,9 +870,12 @@
       <div v-if="dyShareMenu" class="mp-ctx-overlay mp-share-overlay" @click.self="dyShareMenu=null">
         <div class="mp-ctx-sheet">
           <div class="mp-ctx-title">{{ dyShareMenu.type==='photo' ? '相册照片' : dyShareMenu.type==='live' ? '直播' : dyShareMenu.type==='comment'||dyShareMenu.type==='reply' ? '评论' : '视频' }}</div>
-          <button class="mp-ctx-item" @click="shareToStory(dyShareMenu.type, dyShareMenu.data)">📤 分享到故事</button>
+          <template v-if="!shareFeedback">
+            <button class="mp-ctx-item" @click="shareToStory(dyShareMenu.type, dyShareMenu.data)">📤 分享到故事</button>
+          </template>
+          <div v-else class="mp-share-feedback" :class="{fail: shareFeedbackTone === 'fail'}">{{ shareFeedback }}</div>
           <button class="mp-ctx-item" @click="showToast('转发到微信（即将上线）')">💬 发给…</button>
-          <button class="mp-ctx-cancel" @click="dyShareMenu=null">取消</button>
+          <button class="mp-ctx-cancel" @click="dyShareMenu=null">{{ shareFeedback ? '完成' : '取消' }}</button>
         </div>
       </div>
 
@@ -864,7 +893,7 @@
           <span v-for="e in IME_EMOJIS" :key="e" class="mp-ime-ej" @click.stop="imeAppendEmoji(e)">{{ e }}</span>
         </div>
         <div class="mp-ime-foot">
-          <button class="mp-ime-send" :disabled="imeHasSubmit && !imeDraft.trim()" @click="submitIME">{{ imeHasSubmit ? '发送' : '确定' }}</button>
+          <button class="mp-ime-send" :disabled="imeHasSubmit && !imeAllowEmpty && !imeDraft.trim()" @click="submitIME">{{ imeSubmitLabel }}</button>
         </div>
       </div>
     </div>
@@ -884,6 +913,8 @@ const DELETED_KEY = 'phone_deleted'    // 墓碑：{ 机主: { 联系人: true }
 const SILENT_KEY = 'phone_silent'      // 纯手机模式开关，按 app 存：{ 微信: true, 相机: true, ... }
 const PHOTO_KEY = 'photo_album'        // 相册存储 key
 const HIST_KEY = 'phone_hist_limit'    // 纯手机模式带入的历史消息条数
+const REFERENCE_STORY_KEY = 'phone_reference_story'
+const PHONE_SYNC_EVENT = 'jdnl-phone-data-updated'
 const HIST_OPTIONS = [24, 48, 100, 200]
 const histLimit = ref(48)
 const CUR_APP = '微信'                  // 目前只有微信 app，将来加 QQ/B站等在此扩展
@@ -891,6 +922,7 @@ const logs = ref({})
 const unread = ref({})
 const deleted = ref({})
 const silentMap = ref({})              // { app名: bool }
+const referenceStory = ref(false)
 const silent = computed(() => !!silentMap.value[CUR_APP])   // 当前微信 app 的纯手机模式
 const showSettings = ref(false)        // 微信内设置页
 const showPhoneSettings = ref(false)   // 主屏设置 app（各 app 总控）
@@ -944,7 +976,8 @@ chat8:等级数字|||昵称|||聊天内容
 （进场消息统一格式：文本写"来了"并在末尾加|||join；普通聊天不加|||join）`
 const douyinFeed = ref([])
 const douyinIdx = ref(0)
-const douyinSettings = ref({ mode: 'normal' })
+const douyinSettings = ref({ mode: 'normal', style: '' })
+const DY_DEFAULT_STYLE = '整体保持有韵味、暧昧、情境化和人物关系感；用镜头、衣物、体态、声音、停顿与情绪制造张力，内容每次换一种场景和节奏，避免机械重复的器官或动作清单。私密成人内容可以直白，但必须服务于人物、关系和当下情境。'
 const dyStrangerPct = ref(0)             // 私密页陌生美女占比，默认0（全红颜私发）
 const DY_STRANGER_OPTIONS = [0, 25, 50, 75, 100]
 const dyIdxMap = ref({ 推荐: 0, 关注: 0, 私密: 0 })   // 各tab记住看到哪条(_i)
@@ -971,6 +1004,8 @@ const dyNotifs = ref([])                  // 消息通知列表 [{id,videoCreato
 const dyUnreadCount = computed(() => dyNotifs.value.filter(n => !n.read).length)
 // ---- 分享菜单（视频/直播/评论/照片） ----
 const dyShareMenu = ref(null)             // { type:'video'|'live'|'comment'|'reply'|'photo', data }
+const shareFeedback = ref('')
+const shareFeedbackTone = ref('')
 // ---- 微信多选模式 ----
 const wxMultiSelect = ref(false)
 const wxSelectedMsgs = ref(new Set())
@@ -994,6 +1029,8 @@ const dyLiveChatEl = ref(null)           // 聊天滚动容器
 const dyLiveChatDraft = ref('')          // 聊天输入草稿
 const dyLiveReplyTo = ref('')            // 正在回复的用户名
 const generatingLiveChat = ref(false)
+const liveChatError = ref('')
+const liveChatRetryContext = ref(null)   // { includeUserMsg, sid }
 const dyChatBatch = ref(50)              // 每批生成的直播聊天条数（默认50，token宽松）
 const DY_CHAT_BATCH_OPTIONS = [30, 50, 80]
 const chatBatchDraft = ref('')
@@ -1212,7 +1249,7 @@ function parseTime(s) {                       // 兼容「2024年03月05日 20:1
   if (!s) return null
   s = String(s).trim()
   let y = null, mo = null, d = null, h = null, mi = null
-  const dm = s.match(/(\d{2,4})\s*[年\/\-]\s*(\d{1,2})\s*[月\/\-]\s*(\d{1,2})/)
+  const dm = s.match(new RegExp('(\\d{2,4})\\s*[年/-]\\s*(\\d{1,2})\\s*[月/-]\\s*(\\d{1,2})'))
   if (dm) { y = +dm[1]; mo = +dm[2]; d = +dm[3] }
   const tm = s.match(/(\d{1,2})\s*[:：]\s*(\d{2})/)
   if (tm) { h = +tm[1]; mi = +tm[2] }
@@ -1301,6 +1338,7 @@ function loadLogs() {
     if (typeof sv === 'boolean') silentMap.value = { [CUR_APP]: sv }        // 旧布尔 → 迁移成按 app
     else if (sv && typeof sv === 'object') silentMap.value = sv
     const hl = +v[HIST_KEY]; if (hl > 0) histLimit.value = hl
+    referenceStory.value = !!v[REFERENCE_STORY_KEY]
   } catch (e) {}
 }
 function migrate(data) {                         // 旧格式 {联系人:[消息]} → 新格式 {机主:{联系人:[消息]}}
@@ -1370,8 +1408,42 @@ function putVar(key, val) {
 function saveLogs() { putVar(VAR_KEY, logs.value) }
 function saveDeleted() { putVar(DELETED_KEY, deleted.value) }
 function saveSilent() { putVar(SILENT_KEY, silentMap.value) }
+function toggleReferenceStory() { referenceStory.value = !referenceStory.value; putVar(REFERENCE_STORY_KEY, referenceStory.value) }
+function emitPhoneSync(kind, detail = {}) {
+  try { window.parent.dispatchEvent(new CustomEvent(PHONE_SYNC_EVENT, { detail: { kind, ...detail } })) } catch (e) {}
+}
+function stripStoryFormats(text) {
+  return String(text || '')
+    .replace(/<(?:update(?:variable)?|手机(?:记录|展示)?|照片|item|bestiary|skill)[^>]*>[\s\S]*?<\/(?:update(?:variable)?|手机(?:记录|展示)?|照片|item|bestiary|skill)>/gi, '')
+    .replace(/<StatusPlaceHolderImpl\s*\/?>/gi, '')
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+function latestStoryReference() {
+  if (!referenceStory.value) return ''
+  try {
+    const th = TH()
+    const getMessages = (th && th.getChatMessages) || (window.parent && window.parent.TavernHelper && window.parent.TavernHelper.getChatMessages)
+    if (!getMessages) return ''
+    const messages = getMessages('0-{{lastMessageId}}', { role: 'assistant', hide_state: 'unhidden' }) || []
+    // 不假设酒馆宿主返回顺序：按真实楼层号挑最新一条，缺少楼层号时才退回数组末项。
+    const usable = messages.filter(message => stripStoryFormats(message && message.message))
+    const withIds = usable.filter(message => Number.isFinite(Number(message && message.message_id)))
+    const latest = withIds.length
+      ? withIds.reduce((best, message) => Number(message.message_id) > Number(best.message_id) ? message : best)
+      : usable[usable.length - 1]
+    if (!latest) return ''
+    return stripStoryFormats(latest.message).slice(-2400)
+  } catch (e) { return '' }
+}
+function storyReferencePrompt(scope = '手机生成内容') {
+  const text = latestStoryReference()
+  return text ? `【${scope}·最近正文参考·优先遵循】本次生成应优先参考最近一条正文中的当前人物处境、地点、关系和已经确认的事实，把正文世界自然转入本次内容；正文不是手机里已经发生的消息，不要把它原样复述，也不要把正文叙事直接当成手机应用内事实：\n${text}` : ''
+}
+function dyStoryReferencePrompt() { return storyReferencePrompt('抖音/抖阴视频或直播') }
 function setHistLimit(n) { n = Math.round(+n); if (!n || n < 1) return; n = Math.min(n, 500); histLimit.value = n; putVar(HIST_KEY, n) }
-function delKey(o, c) { return o + '→' + c } //+ '' + c }
+function delKey(o, c) { return o + '→' + c }
 function isDeleted(o, c) { return !!deleted.value[delKey(o, c)] }
 const swapDir = d => (d === '发出' ? '收到' : d === '收到' ? '发出' : d)
 
@@ -1432,7 +1504,7 @@ function goHome() {
   if (showCameraSettings.value) { showCameraSettings.value = false; return }
   if (selectedPhoto.value) { selectedPhoto.value = null; return }
   if (activeContact.value) { closeContact(); return }
-  if (view.value === 'douyin') { dyLiveRoom.value = null; stopDanmaku() }
+  if (view.value === 'douyin') { closeDyLiveRoom(); stopDanmaku() }
   view.value = 'home'
 }
 const homeStyle = computed(() => curWallpaper.value ? { backgroundImage: `url(${curWallpaper.value})`, backgroundSize: 'cover', backgroundPosition: 'center' } : null)
@@ -1499,6 +1571,17 @@ function findBySid(ref) {                       // 在当前 logs.value 里按 s
 function markSent(ref) { const m = findBySid(ref); if (m && m.status === 'pending') { delete m.status; delete m.sid; saveLogs() } }
 function markFailed(ref) { const m = findBySid(ref); if (m && m.status === 'pending') { m.status = 'failed'; saveLogs() } }
 function clearPending() { markSent(pendingRef); pendingRef = null }
+function confirmPendingAfterGeneration(ref) {
+  if (!ref || pendingRef !== ref) return
+  setTimeout(() => {
+    if (pendingRef !== ref) return
+    const arr = logs.value[ref.owner] && logs.value[ref.owner][ref.contact]
+    const i = arr ? arr.findIndex(m => m.sid === ref.sid) : -1
+    const gotReply = i >= 0 && arr.slice(i + 1).some(m => m.dir === '收到')
+    if (gotReply) clearPending()
+    else { markFailed(ref); pendingRef = null; showToast('没有收到有效回复，点消息旁的感叹号可重发') }
+  }, 1200)
+}
 // 自愈：AI 没回显发出行时 pending 会一直转圈。若该会话在 pending 之后已有"收到"，说明回复到了，直接转正
 function healPending() {
   if (!pendingRef || silentBusy.value) return
@@ -1647,6 +1730,7 @@ async function silentReply(owner, contact, myText, pref) {
     `联系人填名录全名、与角色名录一致，不用昵称/简称/代称；时间用绝对格式、与世界当前时间一致；每条消息占一行写作「方向|类型|内容」，类型据实取 文字/语音/图片/表情/红包 之一，非文字类型时内容处写这条消息承载的信息（图片写画面，语音写说出的话，表情写[表情:名称]，红包写祝福语）；可回复多条，按先后顺序排列。模仿真实微信的随意性：消息条数、长度、类型自然多样，避免每次都是固定的句式或格式。`
   try {
     const history = buildSilentHistory(owner, contact)
+    const storyRef = storyReferencePrompt()
     let result
     if (th.generateRaw) {
       const ordered = [
@@ -1655,6 +1739,7 @@ async function silentReply(owner, contact, myText, pref) {
         'char_description',
         'world_info_before',
         'world_info_after',
+        ...(storyRef ? [{ role: 'system', content: storyRef }] : []),
         ...history,
         { role: 'user', content: `以「${contact}」身份回消息，只输出一个 <手机> 块，块外不写任何其它文字：\n<手机>\n机主: ${owner}\n联系人: ${contact}\n时间: YYYY年MM月DD日 HH:MM\n发出|文字|${myText}\n收到|文字|${contact}回复的内容\n</手机>` },
       ]
@@ -1667,13 +1752,15 @@ async function silentReply(owner, contact, myText, pref) {
       result = await th.generate({
         user_input: instruction,
         should_silence: true,
-        overrides: { chat_history: { with_depth_entries: false, prompts: history } },
+        overrides: { chat_history: { with_depth_entries: false, prompts: storyRef ? [{ role: 'system', content: storyRef }, ...history] : history } },
       })
     }
     const replyText = typeof result === 'string' ? result : (result && result.content) || ''
+    loadLogs()       // 后台完成时先合并当前聊天变量，避免旧组件覆盖新实例写入
     markSent(pref)   // 生成成功返回：把乐观写的发出条转正
     const got = ingestPhoneReply(replyText, owner, contact, storyTime())
-    saveLogs(); scrollDown()
+    saveLogs(); emitPhoneSync('wechat', { owner, contact, count: got })
+    if (view.value === 'wechat' && activeContact.value === contact) scrollDown()
     if (!got) showToast('未能解析到手机回复')
   } catch (e) {
     markFailed(pref)
@@ -1692,6 +1779,13 @@ function loadPhotos() {
   try { const v = th.getVariables({ type: 'chat' }) || {}; if (Array.isArray(v[PHOTO_KEY])) photos.value = v[PHOTO_KEY] } catch (e) {}
 }
 function savePhotos() { putVar(PHOTO_KEY, photos.value) }
+function mergePhotosFromChat() {
+  const th = TH(); if (!th || !th.getVariables) return
+  try {
+    const v = th.getVariables({ type: 'chat' }) || {}
+    if (Array.isArray(v[PHOTO_KEY])) photos.value = v[PHOTO_KEY]
+  } catch (e) {}
+}
 function syncScrapePhotos() {
   const spans = doc.querySelectorAll('[class*="photo-data"]')
   if (!spans.length) return
@@ -1723,7 +1817,7 @@ function ingestPhotoBlock(text, mode) {
       n++
     }
   })
-  if (n) savePhotos()
+  if (n) { savePhotos(); emitPhoneSync('photos', { count: n }) }
   return n
 }
 
@@ -1752,6 +1846,24 @@ const dyCurrentCommentTotal = computed(() => {
   const v = douyinFeed.value[dyCommentIdx.value]
   return v ? (v.commentList || []).length + (v.myComments || []).length : 0
 })
+function formatDyCommentContext(video, target = null) {
+  const roots = [...(video && video.commentList || []), ...(video && video.myComments || [])]
+  const lines = ['【当前完整评论区（主楼/楼中楼均按页面顺序）】']
+  const walk = (comment, depth, parentUser = '') => {
+    if (!comment) return
+    const user = String(comment.user || '匿名用户')
+    const text = String(comment.text || '').replace(/\s+/g, ' ').trim()
+    if (!text) return
+    const mark = comment === target ? ' ←【本次回复目标】' : ''
+    const prefix = depth ? `${'  '.repeat(Math.min(depth, 4))}楼中楼` : '主楼'
+    const replyTo = comment.replyTo ? ` 回复${comment.replyTo}` : parentUser ? ` 回复${parentUser}` : ''
+    lines.push(`${prefix} ${user}${replyTo}：${text}${mark}`)
+    ;(comment.replies || []).forEach(reply => walk(reply, depth + 1, user))
+  }
+  roots.forEach(comment => walk(comment, 0))
+  if (lines.length === 1) lines.push('（当前评论区暂无其他已加载评论）')
+  return lines.join('\n')
+}
 // AI 声称的评论总数（视频卡上显示的数字），可能远大于实际加载的几条
 const dyCurrentCommentClaimed = computed(() => {
   const v = douyinFeed.value[dyCommentIdx.value]
@@ -1802,10 +1914,26 @@ function loadDyData(modeChanged = false) {
 }
 // 存feed时剔除未完成的占位卡，避免刷新后残留空卡
 // 持久化feed：只剔除未完成的占位卡。搜索结果照常存(靠dyVisibleFeed的!v.searchQ隐藏，不靠丢弃)，否则重开手机就没了、历史也点不开
-function saveDyFeed() { try { const clean = douyinFeed.value.filter(v => !v.pending).slice(-50); localStorage.setItem(dyModeKey(DY_FEED_KEY), JSON.stringify(clean)); localStorage.setItem(dyModeKey(DY_IDX_KEY), String(douyinIdx.value)) } catch (e) {} }
+function saveDyFeed() { try { const clean = douyinFeed.value.filter(v => v && (!v.pending || v._taskId)).slice(-50); localStorage.setItem(dyModeKey(DY_FEED_KEY), JSON.stringify(clean)); localStorage.setItem(dyModeKey(DY_IDX_KEY), String(douyinIdx.value)) } catch (e) {} }
+function emitDyFeedSync() { emitPhoneSync('douyin', { mode: dyR18.value ? 'r18' : 'normal' }) }
+function persistDyTask(taskId, modeSuffix, card) {
+  if (!taskId || !card) return
+  try {
+    const key = DY_FEED_KEY + (modeSuffix || '')
+    const raw = localStorage.getItem(key)
+    const list = raw ? JSON.parse(raw) : []
+    const idx = list.findIndex(v => v && v._taskId === taskId)
+    const cleanCard = JSON.parse(JSON.stringify(card))
+    if (idx >= 0) list.splice(idx, 1, cleanCard)
+    else if (!cleanCard.pending) list.push(cleanCard)
+    localStorage.setItem(key, JSON.stringify(list.filter(v => v && (!v.pending || v._taskId)).slice(-50)))
+    emitPhoneSync('douyin', { mode: modeSuffix === '_r' ? 'r18' : 'normal', taskId })
+  } catch (e) {}
+}
 function saveDyFollows() { try { localStorage.setItem(dyModeKey(DY_FOLLOWS_KEY), JSON.stringify([...dyFollows.value])) } catch (e) {} }
 function saveDyIdxMap() { try { localStorage.setItem(dyModeKey(DY_IDXMAP_KEY), JSON.stringify(dyIdxMap.value)) } catch (e) {} }
 function saveDySettings() { try { localStorage.setItem(DY_SETTINGS_KEY, JSON.stringify(douyinSettings.value)) } catch (e) {} }
+function dyStylePrompt() { return (douyinSettings.value.style || '').trim() || DY_DEFAULT_STYLE }
 function clearDyCache() {
   douyinFeed.value = []; douyinIdx.value = 0
   dyIdxMap.value = { 推荐: 0, 关注: 0, 私密: 0 }
@@ -1954,17 +2082,20 @@ async function generateDyTopCommentResponse(video, myComment) {
     ? `这是${me}才能看到的私密内容，回应只能来自发布者@${video.creator}，绝不能出现陌生人。`
     : `回应可来自发布者@${video.creator}或路过的真实观众，口吻简短真实，5~20字以内。`
   const instruction =
-    `【${isR18 ? '抖阴（成人向短视频平台）' : '抖音'}·评论子回复·静默生成】在视频「${(video.content||'').slice(0,80)}」的评论区，${me}(@${me.replace(/^@/,'')})刚发表了评论：「${myComment.text}」。${audience}${pcontentLine}` +
+    `【${isR18 ? '抖阴（成人向短视频平台）' : '抖音'}·评论子回复·静默生成】在视频「${(video.content||'').slice(0,80)}」的评论区，${me}(@${me.replace(/^@/,'')})刚发表了评论：「${myComment.text}」。` +
+    (isR18 ? `【抖阴风格】${dyStylePrompt()}评论区口吻也要遵循这套风格，但保持短促、像真实用户留言，不把风格说明本身写进评论。` : '') +
+    `${audience}${pcontentLine}` +
+    `\n${formatDyCommentContext(video, myComment)}` +
     `\n生成 1~2 条自然的子回复（直接回复${me}的这条评论）。【至少必须给出 1 条】绝不允许输出空块或0条——用户会误以为接口出错了。即使判断冷门，也要给一条最合理的回应。` +
     `\n【禁止扮演${me}】${me}是真实用户，不是AI生成的角色；回复里绝不能出现昵称为"${me}"的发言，也不得替${me}生成任何想法、心理或反应。` +
     `\n只输出一个 ===DYREPLY=== 数据块，块外不写字：\n===DYREPLY===\nr1:回复者号|||被回复者号(可空)|||回复内容\nr2:...\n===REPLYEND===`
   try {
     let result
-    if (th.generateRaw) {
+      if (th.generateRaw) {
       result = await th.generateRaw({ user_input: dyRetrievalHint(video, '', myComment.text), should_silence: true, ordered_prompts: [
-        { role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
-        { role: 'user', content: '生成评论子回复，只输出 ===DYREPLY=== 数据块，块外不写字。' },
-      ] })
+          { role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
+          { role: 'user', content: '生成评论子回复，只输出 ===DYREPLY=== 数据块，块外不写字。' },
+        ] })
     } else { result = await th.generate({ user_input: instruction, should_silence: true }) }
     const replies = parseDyReplies(result)
     if (replies.length) {
@@ -1973,7 +2104,7 @@ async function generateDyTopCommentResponse(video, myComment) {
         myComment.replies.push({ user: r.user, text: r.text, replyTo: myComment.user, isMe: false })
         pushDyNotif(video, myComment.text, r.user, r.text)
       }
-      saveDyFeed()
+      saveDyFeed(); emitDyFeedSync()
     }
   } catch (e) {}
 }
@@ -1995,11 +2126,13 @@ async function generateDyCommentReply(video, comment, myText, toUser) {
     : ''
   const instruction =
     `【${isR18 ? '抖阴（成人向短视频平台）' : '抖音'}·评论回复·静默生成】在一条视频的评论区里，${me}(@${me.replace(/^@/,'')})刚回复了 @${toUser} 的评论。` +
+    (isR18 ? `【抖阴风格】${dyStylePrompt()}回复口吻也要遵循这套风格，但保持短促、像真实用户留言，不把风格说明本身写进回复。` : '') +
     `\n视频公开画面：${(video.content||'').slice(0,80)}` +
     pcontentLine +
     `\n@${toUser} 的原评论：「${comment.text}」` +
     `\n${me}的回复：「${myText}」` +
     `\n${audience}` +
+    `\n${formatDyCommentContext(video, comment)}` +
     (existing ? `\n这条评论下已有的回复：\n${existing}` : '') +
     `\n生成 1~3 条自然的后续回复（每条5~20字简短口语）。【至少必须给出 1 条】绝不允许输出空块或0条——用户会误以为接口出错了。即使判断冷门，也要给一条最合理的回应。` +
     `\n【禁止扮演${me}】${me}是真实用户，不是AI生成的角色；回复里绝不能出现昵称为"${me}"的发言，也不得替${me}生成任何想法、心理或反应。` +
@@ -2016,7 +2149,7 @@ async function generateDyCommentReply(video, comment, myText, toUser) {
     if (replies.length && comment.replies) {
       comment.replies.push(...replies)
       for (const r of replies) pushDyNotif(video, comment.text, r.user, r.text)
-      saveDyFeed()
+      saveDyFeed(); emitDyFeedSync()
     }
   } catch (e) {}
 }
@@ -2057,15 +2190,44 @@ function startDanmaku(video) {
 }
 function stopDanmaku() { clearTimeout(dmTimer); dmTimer = null; activeDanmaku.value = [] }
 
-async function generateDyVideo() {
+function markDyGenerationFailed(placeholder, message) {
+  const idx = douyinFeed.value.indexOf(placeholder)
+  if (idx < 0) return
+  placeholder.pending = false
+  placeholder.error = true
+  placeholder.errorMessage = message || '没有拿到完整内容'
+  douyinIdx.value = idx
+  if (!placeholder.searchQ) { dyIdxMap.value[dyTab.value] = idx; saveDyIdxMap() }
+  saveDyFeed()
+  persistDyTask(placeholder._taskId, placeholder.generation && placeholder.generation.modeSuffix, placeholder)
+}
+function retryDyVideo(index) {
+  const v = douyinFeed.value[index]
+  if (!v || !v.error || generatingDy.value) return
+  suppressDyScroll(800)
+  generateDyVideo(index)
+}
+function deleteDyFailed(index) {
+  const v = douyinFeed.value[index]
+  if (!v || !v.error) return
+  douyinFeed.value.splice(index, 1)
+  douyinIdx.value = Math.max(0, Math.min(index - 1, douyinFeed.value.length - 1))
+  if (!dySearchMode.value) { dyIdxMap.value[dyTab.value] = douyinIdx.value; saveDyIdxMap() }
+  saveDyFeed()
+  nextTick(() => dyRestorePos())
+}
+async function generateDyVideo(retryIdx = null) {
   if (generatingDy.value) return
   const th = TH(); if (!th || (!th.generateRaw && !th.generate)) { showToast('当前环境不支持生成'); return }
   const isR18 = dyR18.value
-  const isSearch = dySearchMode.value
-  const query = dySearchQuery.value
+  const modeSuffix = isR18 ? '_r' : '_n'
+  const retryCard = Number.isInteger(retryIdx) ? douyinFeed.value[retryIdx] : null
+  const retry = retryCard && retryCard.error ? retryCard.generation : null
+  const isSearch = retry ? !!retry.isSearch : dySearchMode.value
+  const query = retry && retry.query != null ? retry.query : dySearchQuery.value
   // 搜索是独立的公开结果流：不当作私密/关注生成
-  const isPrivate = !isSearch && dyTab.value === '私密'
-  const isFollowTab = !isSearch && dyTab.value === '关注'
+  const isPrivate = retry ? !!retry.isPrivate : !isSearch && dyTab.value === '私密'
+  const isFollowTab = retry ? !!retry.isFollowTab : !isSearch && dyTab.value === '关注'
   // 关注tab没有已关注对象时不生成，避免凭空造关注对象
   if (isFollowTab && !dyFollows.value.size) { showToast('还没有关注任何人，去推荐看看吧'); return }
   generatingDy.value = true
@@ -2078,14 +2240,17 @@ async function generateDyVideo() {
   const seen = [...seenPairs.entries()].map(([id, rn]) => rn ? `${id}（${rn}）` : id).join('、')
 
   // 私密流：按设置的陌生人占比掷骰，默认0（全红颜私发）
-  const isPrivateStranger = isPrivate && Math.random() * 100 < dyStrangerPct.value
+  const isPrivateStranger = retry ? !!retry.isPrivateStranger : isPrivate && Math.random() * 100 < dyStrangerPct.value
   // 抖阴公开流（推荐/关注）要一份翻转私密版；抖音全年龄模式不要
   const wantFlip = isR18 && !isPrivate
   // 直播卡：推荐/关注/搜索流里按概率掷骰（私密流不出直播）
-  const isLive = !isPrivate && Math.random() * 100 < dyLivePct.value
+  const isLive = retry ? !!retry.isLive : !isPrivate && Math.random() * 100 < dyLivePct.value
+  const isLiveStranger = retry ? !!retry.isLiveStranger : isR18 && Math.random() * 100 < dyStrangerPct.value
+  const taskId = retryCard && retryCard._taskId ? retryCard._taskId : `dy${Date.now()}${Math.random().toString(36).slice(2, 8)}`
 
   // 先插占位卡并滚过去
   const placeholder = {
+    _taskId: taskId, createdAt: Date.now(),
     pending: true, creator: '', verified: false, caption: '', sound: '',
     likes: '0', commentCount: '0', shares: '0', saves: '0', content: '',
     danmaku: [], commentList: [], myComments: [],
@@ -2093,12 +2258,15 @@ async function generateDyVideo() {
     isFollowing: isPrivate || isFollowTab, isLiked: false, isSaved: false,
     searchQ: isSearch ? query : undefined,
     type: isLive ? 'live' : 'video',
+    generation: { isSearch, query, isPrivate, isFollowTab, isPrivateStranger, isLive, isLiveStranger, modeSuffix },
   }
   const wasEmpty = !dyVisibleFeed.value.length
   suppressDyScroll(800)
-  douyinFeed.value.push(placeholder)
-  const placeholderRealIdx = douyinFeed.value.length - 1
+  const placeholderRealIdx = retryCard ? retryIdx : douyinFeed.value.length
+  if (retryCard) douyinFeed.value.splice(retryIdx, 1, placeholder)
+  else douyinFeed.value.push(placeholder)
   douyinIdx.value = placeholderRealIdx
+  saveDyFeed()
   stopDanmaku()
   nextTick(() => {
     const el = dyFeedEl.value; if (!el) return
@@ -2108,12 +2276,11 @@ async function generateDyVideo() {
 
   // ---- 直播卡分支 ----
   if (isLive) {
-    const isLiveStranger = isR18 && Math.random() * 100 < dyStrangerPct.value
     const livePlatform = isR18 ? '抖阴（成人向直播平台）' : '抖音（直播）'
     const liveStyleLine = isR18
       ? (isLiveStranger
-        ? `这是陌生成人主播的公开直播，尺度完全放开：直接写出裸露与情色表演本身，具体到身体、动作、声音、情态，不用暗示、不用留白、不擦边。真实素人成人主播风格。`
-        : `这是与${me}亲密的红颜在直播，只对${me}和极少数知情者开放，尺度完全放开：直接写出裸露与情色本身，具体到身体、动作、声音、气息与情态，不用暗示、不用留白。她知道${me}在看，会对镜头特别示意，是这个人只对${me}才会这样。`)
+        ? `这是陌生成人主播的公开直播。${dyStylePrompt()} 直播尺度按成人平台设定执行，可直接写出与表演相符的裸露、动作、声音和情态。`
+        : `这是与${me}亲密的红颜在直播，只对${me}和极少数知情者开放。${dyStylePrompt()} 她知道${me}在看，会对镜头特别示意，是这个人只对${me}才会这样。`)
       : `直播内容生活化、有真情实感，题材自由（聊天/才艺/游戏/美食/户外/穿搭等）。`
     const liveSourceLine = isR18
       ? (isLiveStranger
@@ -2130,6 +2297,7 @@ async function generateDyVideo() {
       : ''
     const liveInstruction =
       `【${livePlatform}·直播卡·静默生成】现在模拟刷到的一个直播卡，绝不输出任何正文。` +
+      (isR18 ? `\n【抖阴风格设定·置于前部】${dyStylePrompt()}` : '') +
       `\n主播来源：${liveSourceLine}` +
       `\n直播风格：${liveStyleLine}` +
       `\n【贴合优先】主播与直播主题应贴合。当已有角色都不契合这个主题时，可以合理创建一个符合本世界观的新角色来直播，而不是让现有角色勉强扮演不属于ta设定的形象。` +
@@ -2145,14 +2313,18 @@ async function generateDyVideo() {
     try {
       let result
       if (th.generateRaw) {
+        const storyRef = dyStoryReferencePrompt()
         result = await th.generateRaw({ user_input: liveUserInput, should_silence: true, ordered_prompts: [
-          { role: 'system', content: liveInstruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
+          { role: 'system', content: liveInstruction },
+          ...(storyRef ? [{ role: 'system', content: storyRef }] : []),
+          'persona_description', 'char_description', 'world_info_before', 'world_info_after',
           { role: 'user', content: `生成${isSearch ? `与「${query}」直接相关的` : ''}直播卡。严格沿用上面的身份、受众与私密范围，只输出 ===LIVECARD=== 数据块，块外不写字。` },
         ] })
-      } else { result = await th.generate({ user_input: liveInstruction, should_silence: true }) }
+      } else { const storyRef = dyStoryReferencePrompt(); result = await th.generate({ user_input: storyRef ? liveInstruction + '\n' + storyRef : liveInstruction, should_silence: true }) }
       const liveCard = parseDyLiveCard(result)
       const idx = douyinFeed.value.indexOf(placeholder)
       if (liveCard && idx >= 0) {
+        liveCard._taskId = taskId
         liveCard.vis = 'public'; liveCard.type = 'live'
         if (isR18 && !isLiveStranger) liveCard.redYan = true   // 标记为红颜私密直播，用于聊天生成铁则
         if (isFollowTab) { liveCard.isFollowing = true; dyFollows.value.add(liveCard.creator); saveDyFollows() }
@@ -2162,20 +2334,20 @@ async function generateDyVideo() {
         douyinIdx.value = idx
         if (!isSearch) { dyIdxMap.value[dyTab.value] = idx; saveDyIdxMap() }
         saveDyFeed()
+        persistDyTask(taskId, modeSuffix, liveCard)
         nextTick(() => {
           const el = dyFeedEl.value; if (!el) return
           const pos = dyVisibleFeed.value.findIndex(v => v._i === idx)
           if (pos >= 0) el.scrollTop = pos * el.clientHeight
         })
       } else {
-        const rm = douyinFeed.value.indexOf(placeholder); if (rm >= 0) douyinFeed.value.splice(rm, 1)
-        douyinIdx.value = Math.max(0, douyinFeed.value.length - 1)
-        showToast('直播卡没生成出来，再试一次')
+        markDyGenerationFailed(placeholder, '直播卡没有生成完整')
+        showToast('直播卡没生成出来，可在原位置重试')
       }
     } catch (e) {
-      const rm = douyinFeed.value.indexOf(placeholder); if (rm >= 0) douyinFeed.value.splice(rm, 1)
-      douyinIdx.value = Math.max(0, douyinFeed.value.length - 1)
-      showToast('生成失败：' + ((e && e.message) || e))
+      const msg = '生成失败：' + ((e && e.message) || e)
+      markDyGenerationFailed(placeholder, msg)
+      showToast(msg + '，可在原位置重试')
     } finally { generatingDy.value = false }
     return
   }
@@ -2183,25 +2355,25 @@ async function generateDyVideo() {
   let platform, styleLine, sourceLine, audienceLine
   if (isPrivate && !isPrivateStranger) {
     platform = '抖阴·私密（只有本人能看到的私发内容）'
-    styleLine = `尺度完全放开：直接写出裸露与性事本身，具体到身体、动作、声音、气息与情态，不用暗示、不用留白、不擦边。同时保有情绪与关系的温度，是这个人对${me}才会这样，不是无名的色情素材。`
+    styleLine = `${dyStylePrompt()} 这是只给${me}看的私密内容，按情境需要可以直白呈现成人性事，但不要堆砌无意义的动作。`
     sourceLine = `发布者必须是当前故事世界中与${me}关系亲密的女性角色（从下方角色信息中自行判断谁符合，别凭空造陌生人）。这条私密内容只有${me}能看到，但内容不必都围绕${me}——可以是ta单独拍给${me}的，也可以是ta自娱自乐、独处时的私密记录、或与另一位亲密女性角色之间的百合互动，题材自然多样，别每条都写成对着${me}。`
     audienceLine = `\n【评论区铁则】这条内容只有${me}一个人能看到，因此绝对禁止出现任何陌生人、路人、男性观众的评论——出现即为错误。评论只能来自：${me}本人，或与发布者同属${me}亲密圈子且知情的其他女性角色。若判断没有合适的人会看到，就把评论全部留空，评论数写0，宁可没有评论也不许放陌生人进来。弹幕同理，私密内容没有公开观众，弹幕留空。`
   } else if (isPrivate && isPrivateStranger) {
     platform = '抖阴·私密（成人内容平台）'
-    styleLine = `尺度完全放开：直接写出裸露与性事，具体到身体、动作、声音、气息与情态，不用暗示、不用留白。这是平台上的陌生成人内容创作者，与故事世界无关，可以有陌生观众评论和弹幕。`
+    styleLine = `${dyStylePrompt()} 这是平台上的陌生成人内容，可按成人平台尺度直接呈现裸露与性事，保持真实情境和内容变化。`
     sourceLine = `发布者是平台上的陌生女性成人内容创作者，与当前故事人物无关，是真实存在感强的素人博主或成人up主。`
     audienceLine = `\n评论区可以有陌生的成人观众评论，口吻符合成人平台真实氛围。`
   } else if (isFollowTab) {
     platform = isR18 ? '抖阴（成人向短视频平台）' : '抖音（短视频平台）'
     styleLine = isR18
-      ? `公开画面擦边风格：性感、撩人、若隐若现，靠体态、衣物、角度、氛围撩拨，呼之欲出但不真正露出、不直接描写性行为。`
+      ? `${dyStylePrompt()} 公开画面仍保持性感、撩人、若隐若现，靠体态、衣物、角度和氛围撩拨，不真正露出、不直接描写性行为。`
       : `内容生活化、有真情实感或趣味，题材自由（日常/情感/才艺/风景/美食/知识/搞笑/宠物/穿搭等皆可）。`
     sourceLine = `发布者必须是以下已关注的创作者之一，从中选一个来发新视频：${[...dyFollows.value].join('、')}。`
     audienceLine = `\n评论区可以有各种陌生观众，立场性格各异；若发布者是故事中的角色，其他角色也可能出现在评论里。`
   } else {
     platform = isR18 ? '抖阴（成人向短视频平台）' : '抖音（短视频平台）'
     styleLine = isR18
-      ? `公开画面擦边风格：性感、撩人、若隐若现，靠体态、衣物、角度、氛围撩拨，呼之欲出但不真正露出、不直接描写性行为。`
+      ? `${dyStylePrompt()} 公开画面仍保持性感、撩人、若隐若现，靠体态、衣物、角度和氛围撩拨，不真正露出、不直接描写性行为。`
       : `内容生活化、有真情实感或趣味，题材自由（日常/情感/才艺/风景/美食/知识/搞笑/宠物/穿搭等皆可）。`
     sourceLine = `发布者既可能是当前故事世界里的角色，也可能是与故事无关的陌生博主、路人、素人——由内容自然决定，不必偏向任何人。`
     audienceLine = `\n评论区可以有各种陌生观众，立场性格各异；若发布者是故事中的角色，其他角色也可能出现在评论里。`
@@ -2221,6 +2393,7 @@ async function generateDyVideo() {
   const instruction =
     `【${platform}·刷视频·静默生成】现在只模拟刷到的一条短视频，绝不输出任何正文、旁白、场景或动作描写，只产出下面规定的数据块。` +
     `请结合下方提供的世界观设定、角色信息与当前剧情，生成一条真实可信、符合该世界背景的短视频。` +
+    (isR18 ? `\n【抖阴风格设定·置于前部】${dyStylePrompt()}` : '') +
     `\n发布来源：${sourceLine}` +
     `\n内容风格：${styleLine}` +
     `\n【贴合优先】发布者与内容应贴合视频主题。当已有角色都不契合这个主题时，可以合理创建一个符合本世界观的新角色来发布，而不是让现有角色勉强扮演不属于ta设定的形象。` +
@@ -2239,8 +2412,10 @@ async function generateDyVideo() {
   try {
     let result
     if (th.generateRaw) {
+      const storyRef = dyStoryReferencePrompt()
       const ordered = [
         { role: 'system', content: instruction },
+        ...(storyRef ? [{ role: 'system', content: storyRef }] : []),
         'persona_description',
         'char_description',
         'world_info_before',
@@ -2249,11 +2424,13 @@ async function generateDyVideo() {
       ]
       result = await th.generateRaw({ user_input: videoUserInput, should_silence: true, ordered_prompts: ordered })
     } else {
-      result = await th.generate({ user_input: instruction, should_silence: true })
+      const storyRef = dyStoryReferencePrompt()
+      result = await th.generate({ user_input: storyRef ? instruction + '\n' + storyRef : instruction, should_silence: true })
     }
     const video = parseDyVideo(result)
     const idx = douyinFeed.value.indexOf(placeholder)
     if (video && idx >= 0) {
+      video._taskId = taskId
       video.vis = isPrivate ? 'private' : 'public'
       if (isPrivate && isPrivateStranger) video.stranger = true   // 陌生成人博主私密内容，评论可公开
       if (isPrivate && !isPrivateStranger) { video.danmaku = []; video.isFollowing = true }
@@ -2269,6 +2446,7 @@ async function generateDyVideo() {
       if (!isSearch) { dyIdxMap.value[dyTab.value] = idx; saveDyIdxMap() }   // 记住位置，退出再进/重挂能定位到新视频
       pushDyHistory(video)
       saveDyFeed()
+      persistDyTask(taskId, modeSuffix, video)
       nextTick(() => {
         // 若此时仍在抖音视图，把视口对准这条新视频（后台生成完退回来也能显示）
         const el = dyFeedEl.value
@@ -2282,19 +2460,13 @@ async function generateDyVideo() {
         stopDanmaku(); startDanmaku(video)
       })
     } else {
-      // 生成失败：移除占位卡，回到上一条
-      const rm = douyinFeed.value.indexOf(placeholder)
-      if (rm >= 0) douyinFeed.value.splice(rm, 1)
-      douyinIdx.value = Math.max(0, douyinFeed.value.length - 1)
-      if (!isSearch) { dyIdxMap.value[dyTab.value] = douyinIdx.value; saveDyIdxMap() }
-      showToast('没刷出内容，再试一次')
+      markDyGenerationFailed(placeholder, '没有解析到有效视频内容')
+      showToast('没刷出内容，可在原位置重试')
     }
   } catch (e) {
-    const rm = douyinFeed.value.indexOf(placeholder)
-    if (rm >= 0) douyinFeed.value.splice(rm, 1)
-    douyinIdx.value = Math.max(0, douyinFeed.value.length - 1)
-    if (!isSearch) { dyIdxMap.value[dyTab.value] = douyinIdx.value; saveDyIdxMap() }
-    showToast('生成失败：' + ((e && e.message) || e))
+    const msg = '生成失败：' + ((e && e.message) || e)
+    markDyGenerationFailed(placeholder, msg)
+    showToast(msg + '，可在原位置重试')
   } finally { generatingDy.value = false }
 }
 function parseDyVideo(raw) {
@@ -2354,7 +2526,7 @@ function parseDyLiveCard(raw) {
     creator: f('creator').replace('@',''), realName: f('realName').replace('@',''), verified: /true|是|认证/.test(f('verified')),
     title: f('title'), viewers: f('viewers') || '0',
     liveLikes: Math.floor(Math.random()*5000+200) + '',
-    content, memory: f('memory') || '', chatLog, myComments: [], isLiked: false, isSaved: false, isFollowing: false, type: 'live',
+    content, memory: f('memory') || '', memoryTrail: f('memory') ? [f('memory')] : [], chatLog, myComments: [], isLiked: false, isSaved: false, isFollowing: false, type: 'live',
   }
 }
 // 设置里自定义数字输入的本地草稿，避免2秒轮询重渲染把没输完的值清掉
@@ -2429,7 +2601,7 @@ function formatDyNotifTime(ts) {
   return Math.floor(diff / 86400000) + '天前'
 }
 // ---- 分享功能 ----
-function openDyShareMenu(type, data) { dyShareMenu.value = { type, data } }
+function openDyShareMenu(type, data) { shareFeedback.value = ''; shareFeedbackTone.value = ''; dyShareMenu.value = { type, data } }
 function openDyCreatorProfile(data) {
   if (!data || !data.creator) return
   dyCreatorProfile.value = data
@@ -2488,11 +2660,19 @@ function buildShareToStoryText(type, data) {
   } else if (type === 'comment') {
     const { video, comment } = data
     const platform = dyR18.value ? '抖阴（成人向短视频平台）' : '抖音'
-    return dyShareBlock('show', `${me}把手机上的评论展示出来：${platform}博主@${video.creator}「${video.caption || ''}」视频下，${comment.user}评论道「${comment.text}」`, `这是该视频评论区的公开文字记录，不等于评论者出现在当前现场；角色只知道这段记录中明确写出的内容。`)
+    const publisher = video.realName ? `${video.realName}（抖音号 @${video.creator}）` : `抖音号 @${video.creator}`
+    const privateLine = video.vis === 'private'
+      ? (video.stranger ? '这是陌生成人创作者发布的平台内容，评论区对平台观众公开。' : `这是${publisher}只发给${me}的私密视频，只有${me}、发布者及明确知情的参与者能知道；陌生人不能知道这条视频或评论。`)
+      : '这是平台公开视频，评论者只是在评论区留下文字，并不等于本人出现在当前现场。'
+    return dyShareBlock('show', `${me}把手机上的评论展示出来：${platform}视频所属信息——发布者${publisher}；视频文案「${video.caption || ''}」；公开画面「${video.content || '未记录'}」。在这条视频的评论区，${comment.user}评论道「${comment.text}」`, `${privateLine}这段转发包含所属视频和评论的上下文；角色只知道明确写出的记录，不要把评论者的身份、位置、想法或未写出的经历补成事实。`)
   } else if (type === 'reply') {
     const { video, comment, reply } = data
     const platform = dyR18.value ? '抖阴（成人向短视频平台）' : '抖音'
-    return dyShareBlock('show', `${me}把手机上的评论展示出来：${platform}博主@${video.creator}「${video.caption || ''}」视频下，${reply.user}回复${reply.replyTo || comment.user}「${reply.text}」`, `这是评论区已有的公开回复记录，不等于回复者就在当前现场。`)
+    const publisher = video.realName ? `${video.realName}（抖音号 @${video.creator}）` : `抖音号 @${video.creator}`
+    const privateLine = video.vis === 'private' && !video.stranger
+      ? `这是${publisher}只发给${me}的私密视频，只有${me}、发布者及明确知情的参与者能知道；陌生人不能知道这条视频、评论或回复。`
+      : video.vis === 'private' ? '这是陌生成人创作者发布的平台内容，评论区对平台观众公开。' : '这是平台公开视频。'
+    return dyShareBlock('show', `${me}把手机上的评论展示出来：${platform}视频所属信息——发布者${publisher}；视频文案「${video.caption || ''}」；公开画面「${video.content || '未记录'}」。原评论：${comment.user}「${comment.text}」；在其下，${reply.user}回复${reply.replyTo || comment.user}「${reply.text}」`, `${privateLine}这是一段按原评论层级保存的真实记录，不等于评论者或回复者出现在当前现场；不要把未写出的关系、位置、动机或反应补成事实。`)
   } else if (type === 'photo') {
     const p = data
     return dyShareBlock('show', `${me}把手机相册里的一张照片展示出来：${p.时间}拍下的，画面是${p.画面}`, `这是相册中真实存在的照片记录；时间和画面指向照片拍摄时刻，不要把查看照片的现在误写成拍摄时刻。`)
@@ -2511,18 +2691,29 @@ function buildShareToStoryText(type, data) {
 // 而不是后台静默 generate。
 function shareToStory(type, data) {
   const text = buildShareToStoryText(type, data)
-  if (!text) { showToast('无内容可分享'); return }
-  dyShareMenu.value = null
+  if (!text) { shareFeedbackTone.value = 'fail'; shareFeedback.value = '转发失败：没有可注入的内容'; showToast(shareFeedback.value); return }
   try {
     const ta = doc.querySelector('#send_textarea')
-    if (!ta) { showToast('未找到输入框，无法分享'); return }
+    if (!ta) { shareFeedbackTone.value = 'fail'; shareFeedback.value = '转发失败：未找到故事输入框'; showToast(shareFeedback.value); return }
     const cur = (ta.value || '').replace(/\s+$/, '')
     ta.value = cur ? cur + '\n\n' + text : text
     ta.dispatchEvent(new Event('input', { bubbles: true }))
     const btn = doc.querySelector('#send_but')
-    if (btn) { btn.click(); showToast('已分享到故事') }
-    else showToast('已填入输入框，请手动发送')
-  } catch (e) { showToast('分享失败：' + ((e && e.message) || e)) }
+    if (btn && !btn.disabled && btn.getAttribute('aria-disabled') !== 'true') {
+      btn.click()
+      shareFeedbackTone.value = ''
+      shareFeedback.value = '已提交到故事，正在等待正文生成'
+      showToast('已提交到故事')
+    } else {
+      shareFeedbackTone.value = ''
+      shareFeedback.value = '已注入故事输入框，请手动发送'
+      showToast('已填入输入框，请手动发送')
+    }
+  } catch (e) {
+    shareFeedbackTone.value = 'fail'
+    shareFeedback.value = '转发失败：' + ((e && e.message) || e)
+    showToast(shareFeedback.value)
+  }
 }
 // 微信：从点击菜单分享单条消息到故事
 function shareWxMsgToStory() {
@@ -2646,34 +2837,42 @@ async function generateDyHotList() {
   generatingHot.value = true
   const isR18 = dyR18.value
   const platform = isR18 ? '抖阴（成人向短视频平台）' : '抖音（短视频平台）'
+  const currentMode = isR18 ? 'r18' : 'normal'
+  const previousTopics = dyHotMode.value === currentMode
+    ? dyHotList.value.map(item => item.topic).filter(Boolean).slice(0, 12)
+    : []
   const styleLine = isR18
-    ? '这是成人向平台的热搜榜，话题可以露骨、擦边、情色、猎奇向，但仍要像真实能搜的热搜词条。'
+    ? '这是成人向平台的热搜榜，话题可以涉及性感、情感、夜生活、成人行业、猎奇与社会讨论，但仍要像真实能搜的热搜词条；不要把每条都写成露骨色情。'
     : '这是全年龄短视频平台的热搜榜，题材广泛：社会热点/娱乐/影视/情感/生活/搞笑/知识/地域等，像真实抖音热榜。'
+  const noveltyLine = previousTopics.length
+    ? `\n【避免重复】上一版热榜为：${previousTopics.join('、')}。本次不得复用或同义改写这些话题；在符合平台与风格的前提下，换用不同事件、人物、场景、句式和关注角度。`
+    : '\n【内容多样】10条话题须有明显差异，不要围绕同一种事件、身体部位、动作、人物或句式反复改写。'
   const instruction =
-    `【${platform}·热榜·静默生成】结合下方世界观设定与当前剧情，生成一份当前的热搜榜，共10条，绝不输出任何正文、旁白或解释。` +
-    `\n${styleLine}` +
-    `\n每条是一个热搜话题词（简洁、有话题感、像真的能搜到的词，不用带#），配一个热度数字（如 328.5万 / 1024.8万，排名越靠前热度越高）。` +
+    `${styleLine}\n【${platform}·热榜·静默生成】结合下方世界观设定与当前剧情，生成一份当前的热搜榜，共10条，绝不输出任何正文、旁白或解释。` +
+    noveltyLine +
+    `\n每条是一个热搜话题词（简洁、有话题感、像真的能搜到的词，不用带#），配一个热度数字（如 328.5万 / 1024.8万，排名越靠前热度越高）。不要在话题前自行添加1.、1、①等序号，前端会统一显示排名。` +
     `\n话题要贴合这个故事世界的背景（可含本世界的地名/事件/人物/风俗相关话题），别都套现实世界的东西。` +
     `\n只输出一个 ===HOTSTART=== 数据块，块外不写任何字。每行格式：话题|||热度\n===HOTSTART===\n话题1|||热度\n话题2|||热度\n…(共10行)\n===HOTEND===`
   try {
     let result
-  if (th.generateRaw) {
+    if (th.generateRaw) {
       result = await th.generateRaw({ user_input: dyRetrievalHint(null, `${platform} 热榜`), should_silence: true, ordered_prompts: [
         { role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
         { role: 'user', content: `给出符合${platform}和当前世界背景的热搜榜，只输出一个 ===HOTSTART=== 数据块，块外不写字。` },
       ] })
     } else { result = await th.generate({ user_input: instruction, should_silence: true }) }
     const list = parseDyHot(result)
-    if (list.length) { dyHotList.value = list; dyHotMode.value = isR18 ? 'r18' : 'normal'; saveDyHot() }
+    if (list.length) { dyHotList.value = list; dyHotMode.value = currentMode; saveDyHot() }
     else showToast('热榜没刷出来，再试一次')
   } catch (e) { showToast('热榜生成失败：' + ((e && e.message) || e)) }
-  finally { generatingHot.value = false }
+  finally { generatingHot.value = false; emitPhoneSync('douyin', { mode: currentMode }) }
 }
 // ---- 直播（阶段C重构：直播融入视频流）----
 // 进入直播间（从feed里的直播卡或关注tab头像条）
 function enterDyLiveRoom(feedIdx) {
   const v = douyinFeed.value[feedIdx]; if (!v || v.type !== 'live') return
-  dyLiveRoom.value = { ...v, feedIdx, memory: v.memory || `主播${v.realName || v.creator}正在直播「${v.title || ''}」，上一版画面：${v.content || ''}`, chatLog: [...(v.chatLog || [])] }
+  const firstMemory = v.memory || `主播${v.realName || v.creator}正在直播「${v.title || ''}」，上一版画面：${v.content || ''}`
+  dyLiveRoom.value = { ...v, feedIdx, memory: firstMemory, memoryTrail: [...(v.memoryTrail || []), firstMemory].filter(Boolean).slice(-8), chatLog: [...(v.chatLog || [])] }
   dyLiveChatDraft.value = ''; dyLiveReplyTo.value = ''
   stopDanmaku()
   nextTick(() => { const el = dyLiveChatEl.value; if (el) el.scrollTop = el.scrollHeight })
@@ -2688,9 +2887,11 @@ function closeDyLiveRoom() {
     if (fi != null && douyinFeed.value[fi] && douyinFeed.value[fi].type === 'live') {
       douyinFeed.value[fi].chatLog = [...(dyLiveRoom.value.chatLog || [])]
       douyinFeed.value[fi].memory = dyLiveRoom.value.memory || ''
+      douyinFeed.value[fi].memoryTrail = [...(dyLiveRoom.value.memoryTrail || [])]
       douyinFeed.value[fi].liveLikes = dyLiveRoom.value.liveLikes
       douyinFeed.value[fi].viewers = dyLiveRoom.value.viewers
       saveDyFeed()
+      persistDyTask(dyLiveRoom.value._taskId, dyR18.value ? '_r' : '_n', { ...dyLiveRoom.value, chatLog: [...(dyLiveRoom.value.chatLog || [])] })
     }
   }
   dyLiveRoom.value = null; dyLiveChatDraft.value = ''; dyLiveReplyTo.value = ''; showGiftPanel.value = false; stopDanmaku()
@@ -2734,14 +2935,23 @@ function parseLiveChat(raw, batch = 50) {
   })
   return { msgs: out, screen, memory }
 }
+function updateLiveMemory(room, nextMemory) {
+  if (!room || !nextMemory) return
+  const trail = [...(room.memoryTrail || []), String(nextMemory).trim()].filter(Boolean)
+  room.memoryTrail = [...new Set(trail)].slice(-8)
+  room.memory = String(nextMemory).trim().slice(0, 300)
+}
 // 生成新一批聊天消息（进房间时 / 用户发言后 / 手动「主播继续」）
-async function generateLiveChat(includeUserMsg = false) {
+async function generateLiveChat(includeUserMsg = false, retrySid = '') {
   if (generatingLiveChat.value || !dyLiveRoom.value) return
   const th = TH(); if (!th || (!th.generateRaw && !th.generate)) { showToast('当前环境不支持生成'); return }
   generatingLiveChat.value = true
+  liveChatError.value = ''
+  liveChatRetryContext.value = { includeUserMsg, retrySid }
   const room = dyLiveRoom.value
   const me = meName.value || '我'
   const isR18 = dyR18.value
+  const modeSuffix = isR18 ? '_r' : '_n'
   // dyChatBatch = 喂给AI的历史记忆条数（含user发言，noImpersonateLine防AI扮演）
   const contextBatch = dyChatBatch.value || 50
   const allChat = room.chatLog || []
@@ -2760,12 +2970,16 @@ async function generateLiveChat(includeUserMsg = false) {
     const pos = index === lastMeMsgs.length - 1 ? '最近一条' : index === 0 ? '较早' : '随后'
     return `${index + 1}. ${pos}（全场第${item.seq}条）：${item.msg.text}`
   }).join('\n')
-  const replyNote = lastMeMsgs.length > 0
-    ? `\n【${me}最近三条操作·按较早到较新排列】\n${orderedMeMsgs}` +
-      `\n【上一条用户消息】${me}最近一条、也就是当前最需要承接的消息是：「${lastMeMsg.msg.text}」。主播或被点名的观众先回应这一条，再自然承接更早但尚未解决的事项。` +
-      (includeUserMsg ? '' : `若记忆摘要表明其中仍有未回应事项，这次要补上，不能假装没看见。`) +
-      `\n【点名必应】若${me}的发言里点名、@ 或直接称呼了某个人（主播或某位观众），被点到的人必须在这批内容里优先、明确回应。`
-    : '\n【上一条用户消息】当前没有用户发言需要回应。'
+  const replyNote = includeUserMsg && lastMeMsg
+    ? `\n【本次操作】${me}刚刚发送了一条新的直播消息。` +
+      `\n【${me}最近三条操作·按较早到较新排列】\n${orderedMeMsgs}` +
+      `\n【本轮新消息】全场第${lastMeMsg.seq}条：「${lastMeMsg.msg.text}」。主播或被点名的观众先回应这一条，再自然承接更早但尚未解决的事项。` +
+      `\n【点名必应】若本轮新消息里点名、@ 或直接称呼了某个人，被点到的人必须在这批内容里优先、明确回应。`
+    : `\n【本次操作·主播继续】本轮用户没有发送任何新消息。` +
+      (lastMeMsg
+        ? `最近一条用户消息「${lastMeMsg.msg.text}」只是已经发生过的历史记录，不得复制、重发或当作本轮新输入；只在连续性记忆标明它仍未回应时，才自然补完回应。`
+        : `当前也没有历史用户消息需要回应。`) +
+      `请依据上一版直播画面、连续性记忆和后续观众弹幕继续推动直播，绝不虚构${me}的新发言、动作或决定。`
   const fan = dyFanClub.value[room.creator]
   const levelNote = fan && fan.level > 0
     ? `\n${me}是这个直播间 ${fan.level} 级粉丝团成员${fan.level >= 10 ? '（高等级铁粉）' : ''}，主播对${me}${fan.level >= 20 ? `非常熟悉亲近，会主动点名、记得${me}` : fan.level >= 10 ? '比较熟络，愿意多回应' : '有印象'}。`
@@ -2774,8 +2988,8 @@ async function generateLiveChat(includeUserMsg = false) {
   const isRedYan = !!room.redYan
   const styleNote = isR18
     ? (isRedYan
-      ? `【私密直播铁则·不可破】这是只对${me}和极少数知情亲密圈子开放的私密直播。聊天里绝对禁止任何陌生人、路人、男性观众；只允许与主播真正亲密且知情的极少数女性角色（若没有，chat留空）。尺度完全放开，直接写裸露与情色本身，不擦边不留白。违反即错误。`
-      : `这是成人平台公开直播，观众可以有各种人，口吻成人化真实。主播的表演尺度完全放开，直接写裸露与情色本身。`)
+      ? `【抖阴风格】${dyStylePrompt()}【私密直播铁则·不可破】这是只对${me}和极少数知情亲密圈子开放的私密直播。聊天里绝对禁止任何陌生人、路人、男性观众；只允许与主播真正亲密且知情的极少数女性角色（若没有，chat留空）。违反即错误。`
+      : `【抖阴风格】${dyStylePrompt()}这是成人平台公开直播，观众可以有各种人，口吻成人化真实。`)
     : `这是普通抖音直播间，观众口吻真实日常。等级高的粉丝主播会更热络。`
   // ③ 主播口播 与 观众弹幕 是两种不同的东西，必须都有，别混成一锅
   const roleSplitLine =
@@ -2788,7 +3002,8 @@ async function generateLiveChat(includeUserMsg = false) {
   // ① 明确禁止 AI 扮演 me（replyNote 已在上方构建）
   const noImpersonateLine = `\n【禁止扮演${me}】聊天输出里绝对不能出现昵称为"${me}"的发言，因为${me}是真实用户，不是AI生成的角色。`
   const contMustLine = `\n【连续性铁则】这是同一场直播的延续，主播始终是同一个人 @${room.creator}，正在直播「${room.title}」。在前面聊天的基础上自然往下推进，主播的状态、话题连贯，绝不能像换了个人或重开一场。`
-  const priorMemory = room.memory || `主播${room.realName || room.creator}正在直播「${room.title || ''}」。`
+  const priorMemory = [...(room.memoryTrail || []), room.memory || `主播${room.realName || room.creator}正在直播「${room.title || ''}」。`]
+    .filter(Boolean).filter((item, index, list) => list.indexOf(item) === index).slice(-8).join('\n')
   const previousScreen = room.content || '暂无上一版画面'
   const chatAmountLine = isRedYan
     ? `\n生成 0~6 条聊天消息。只允许已知且知情的亲密女性角色发出新消息；${me}的既有消息只作为上下文，绝不能由AI复刻或代发。如果没有合适的新观众发言，可以不输出 c 行，绝不能为了凑数创造陌生人或进场消息。`
@@ -2809,11 +3024,13 @@ async function generateLiveChat(includeUserMsg = false) {
   const liveUserInput = dyRetrievalHint(
     room,
     recentChat ? `最近直播消息（按发生顺序）：${recentChat.slice(-1200)}` : '最近直播消息：暂无',
-    lastMeMsgs.map(item => item.msg.text).join('；'),
+    includeUserMsg && lastMeMsg ? lastMeMsg.msg.text : '',
   )
   const finalLivePrompt =
     `承接上一版直播画面：「${previousScreen}」。` +
-    (lastMeMsg ? `上一条用户消息是：「${lastMeMsg.msg.text}」，先处理它和记忆中的未回应事项。` : '当前没有上一条用户消息。') +
+    (includeUserMsg && lastMeMsg
+      ? `本轮新用户消息是：「${lastMeMsg.msg.text}」，先处理它和记忆中的未回应事项。`
+      : `本轮没有新的用户消息；历史用户消息不得复刻为本轮输入，直接继续推进主播画面与直播发展。`) +
     `更新 screen 与 memory，并严格只输出 ===LIVECHAT=== 数据块；不得输出故事正文、解释或块外文字。`
   try {
     let result
@@ -2824,17 +3041,28 @@ async function generateLiveChat(includeUserMsg = false) {
       ] })
     } else { result = await th.generate({ user_input: instruction, should_silence: true }) }
     const parsed = parseLiveChat(result, 12)
+    if (retrySid && !parsed.msgs.length && !parsed.screen && !parsed.memory) {
+      const pending = (room.chatLog || []).find(m => m.sid === retrySid)
+      if (pending) pending.status = 'failed'
+      liveChatError.value = '没有解析到有效的直播回应'
+      persistDyTask(room._taskId, modeSuffix, { ...room, chatLog: [...room.chatLog] })
+      return
+    }
     // ① 过滤掉 AI 伪造的 me 发言（昵称完全匹配），防止冒名
     const safeMe = me.replace(/^@/, '')
     const newMsgs = parsed.msgs.filter(m => (m.user || '').replace(/^@/, '') !== safeMe)
-    if (dyLiveRoom.value && (newMsgs.length || parsed.screen || parsed.memory)) {
-      if (newMsgs.length) dyLiveRoom.value.chatLog = [...(dyLiveRoom.value.chatLog || []), ...newMsgs]
-      if (parsed.screen) dyLiveRoom.value.content = parsed.screen
-      if (parsed.memory) dyLiveRoom.value.memory = parsed.memory
+    if (newMsgs.length || parsed.screen || parsed.memory) {
+      if (retrySid) {
+        const pending = (room.chatLog || []).find(m => m.sid === retrySid)
+        if (pending) { pending.status = 'sent'; delete pending.sid }
+      }
+      if (newMsgs.length) room.chatLog = [...(room.chatLog || []), ...newMsgs]
+      if (parsed.screen) room.content = parsed.screen
+      if (parsed.memory) updateLiveMemory(room, parsed.memory)
       // 观众数递增：修复万/K格式解析 + 每条进场消息+1
       const joinCount = newMsgs.filter(m => m.isJoin).length
-      if (joinCount > 0 && dyLiveRoom.value.viewers) {
-        const vStr = String(dyLiveRoom.value.viewers)
+      if (joinCount > 0 && room.viewers) {
+        const vStr = String(room.viewers)
         let prev = 0
         if (vStr.includes('万')) prev = Math.round(parseFloat(vStr) * 10000)
         else if (vStr.includes('K') || vStr.includes('k')) prev = Math.round(parseFloat(vStr) * 1000)
@@ -2842,39 +3070,64 @@ async function generateLiveChat(includeUserMsg = false) {
         if (prev > 0 && prev < 1000000) {
           // 红颜直播圈子封闭，不加随机路人；普通直播随机补几个隐藏观众
           const bonus = isRedYan ? 0 : Math.floor(Math.random() * 8 + 2)
-          dyLiveRoom.value.viewers = String(prev + joinCount + bonus)
+          room.viewers = String(prev + joinCount + bonus)
         }
       }
       // ⑦ 点赞随每批聊天自然递增（基于观众数）
       if (newMsgs.length) {
-        const vNum = (() => { const s = String(dyLiveRoom.value.viewers || '0'); return s.includes('万') ? Math.round(parseFloat(s)*10000) : parseInt(s.replace(/[^\d]/g,''),10)||10 })()
+        const vNum = (() => { const s = String(room.viewers || '0'); return s.includes('万') ? Math.round(parseFloat(s)*10000) : parseInt(s.replace(/[^\d]/g,''),10)||10 })()
         const increment = Math.floor(vNum * (0.03 + Math.random() * 0.05))
-        const oldLikes = parseInt((dyLiveRoom.value.liveLikes || '0').replace(/[,万]/g, '') || '0', 10)
-        dyLiveRoom.value.liveLikes = String(oldLikes + increment)
+        const oldLikes = parseInt((room.liveLikes || '0').replace(/[,万]/g, '') || '0', 10)
+        room.liveLikes = String(oldLikes + increment)
       }
       // 每批都同步回 feed（保存全量chatLog，不限8条）
-      const fi = dyLiveRoom.value.feedIdx
+      const fi = room.feedIdx
       if (fi != null && douyinFeed.value[fi] && douyinFeed.value[fi].type === 'live') {
-        douyinFeed.value[fi].content = dyLiveRoom.value.content
-        douyinFeed.value[fi].memory = dyLiveRoom.value.memory || ''
-        douyinFeed.value[fi].liveLikes = dyLiveRoom.value.liveLikes
-        douyinFeed.value[fi].chatLog = [...(dyLiveRoom.value.chatLog || [])]
+        douyinFeed.value[fi].content = room.content
+        douyinFeed.value[fi].memory = room.memory || ''
+        douyinFeed.value[fi].memoryTrail = [...(room.memoryTrail || [])]
+        douyinFeed.value[fi].liveLikes = room.liveLikes
+        douyinFeed.value[fi].viewers = room.viewers
+        douyinFeed.value[fi].chatLog = [...(room.chatLog || [])]
         saveDyFeed()
       }
-      nextTick(() => { const el = dyLiveChatEl.value; if (el) el.scrollTop = el.scrollHeight })
+      persistDyTask(room._taskId, modeSuffix, { ...room, chatLog: [...(room.chatLog || [])] })
+      if (dyLiveRoom.value === room) nextTick(() => { const el = dyLiveChatEl.value; if (el) el.scrollTop = el.scrollHeight })
     }
-  } catch (e) { showToast('聊天生成失败：' + ((e && e.message) || e)) }
+  } catch (e) {
+    const msg = '聊天生成失败：' + ((e && e.message) || e)
+    liveChatError.value = msg
+    if (retrySid) {
+      const pending = (room.chatLog || []).find(m => m.sid === retrySid)
+      if (pending) pending.status = 'failed'
+    }
+    persistDyTask(room._taskId, modeSuffix, { ...room, chatLog: [...(room.chatLog || [])] })
+    showToast(msg + '，可重试本批')
+  }
   finally { generatingLiveChat.value = false }
+}
+function clearLiveChatError() { liveChatError.value = ''; liveChatRetryContext.value = null }
+function retryLiveChat() {
+  const ctx = liveChatRetryContext.value
+  if (!ctx || generatingLiveChat.value) return
+  generateLiveChat(!!ctx.includeUserMsg, ctx.retrySid || '')
 }
 // 用户在直播间发言 → 追加进聊天列表 → 触发AI生成主播+其他人回应
 function submitLiveChat() {
   const txt = dyLiveChatDraft.value.trim(); if (!txt || !dyLiveRoom.value) return
   const me = meName.value || '我'
   const replyTo = dyLiveReplyTo.value
-  dyLiveRoom.value.chatLog.push({ level: curFan.value ? curFan.value.level : 0, user: me, text: (replyTo ? `回复@${replyTo} ` : '') + txt, isJoin: false, isMe: true })
+  const sid = 'live' + Date.now() + Math.random().toString(36).slice(2, 6)
+  dyLiveRoom.value.chatLog.push({ level: curFan.value ? curFan.value.level : 0, user: me, text: (replyTo ? `回复@${replyTo} ` : '') + txt, isJoin: false, isMe: true, status: 'pending', sid })
   dyLiveChatDraft.value = ''; dyLiveReplyTo.value = ''
   nextTick(() => { const el = dyLiveChatEl.value; if (el) el.scrollTop = el.scrollHeight })
-  generateLiveChat(true)   // 发言即推进：AI生成回应
+  generateLiveChat(true, sid)   // 发言即推进：AI生成回应
+}
+function retryLiveUserMessage(msg) {
+  if (!msg || !msg.sid || generatingLiveChat.value || !dyLiveRoom.value) return
+  msg.status = 'pending'
+  liveChatError.value = ''
+  generateLiveChat(true, msg.sid)
 }
 // ---- 粉丝团 & 等级 ----
 function saveDyFanClub() { try { localStorage.setItem(dyModeKey(DY_FAN_KEY), JSON.stringify(dyFanClub.value)) } catch (e) {} }
@@ -2995,32 +3248,37 @@ const imeDraft = ref('')
 const imePlaceholder = ref('')
 const imeMultiline = ref(false)
 const imeHasSubmit = ref(false)     // 控制"发送"/"确定"按钮文字和禁用态（let变量非响应式，用ref代理）
+const imeAllowEmpty = ref(false)
+const imeSubmitLabel = ref('确定')
 let _imeSetValue = null
 let _imeOnSubmit = null
 
 const IME_EMOJIS = ['😊','😂','🥰','😍','🤔','👍','🙏','💕','❤️','😭','😅','🎉','🔥','✨','💪','😏','😈','👀','💋','🫶','🥹','😘','🤗','🤩','🥳','😌','😴','🤭','💔','🫰']
 
-function openIME({ placeholder = '', getValue, setValue, onSubmit, multiline = false } = {}) {
+function openIME({ placeholder = '', getValue, setValue, onSubmit, multiline = false, allowEmpty = false, submitLabel = '' } = {}) {
   imeDraft.value = getValue ? getValue() : ''
   imePlaceholder.value = placeholder
   imeMultiline.value = !!multiline
   _imeSetValue = setValue || null
   _imeOnSubmit = onSubmit || null
   imeHasSubmit.value = !!onSubmit
+  imeAllowEmpty.value = !!allowEmpty
+  imeSubmitLabel.value = submitLabel || (onSubmit ? '发送' : '确定')
   imeActive.value = true
   nextTick(() => {
     // 浮层teleport到父document，必须用doc（window.parent.document）才能找到元素
     const el = doc.querySelector('.mp-ime-in, .mp-ime-ta')
-    if (el) { el.focus(); el.setSelectionRange && el.setSelectionRange(el.value.length, el.value.length) }
+    if (el) { el.focus(); el.setSelectionRange?.(el.value.length, el.value.length) }
   })
 }
 function imeSync() { if (_imeSetValue) _imeSetValue(imeDraft.value) }
 function submitIME() {
+  if (imeHasSubmit.value && !imeAllowEmpty.value && !imeDraft.value.trim()) return
   if (_imeSetValue) _imeSetValue(imeDraft.value)
   if (_imeOnSubmit) _imeOnSubmit()
   closeIME()
 }
-function closeIME() { imeActive.value = false; imeDraft.value = ''; imeHasSubmit.value = false; _imeSetValue = null; _imeOnSubmit = null }
+function closeIME() { imeActive.value = false; imeDraft.value = ''; imeHasSubmit.value = false; imeAllowEmpty.value = false; imeSubmitLabel.value = '确定'; _imeSetValue = null; _imeOnSubmit = null }
 function imeAppendEmoji(e) { imeDraft.value += e; imeSync() }
 
 // 各输入框对应的 openIME 入口（自带上下文）
@@ -3057,6 +3315,9 @@ function openIMELiveChat() {
     setValue: v => { dyLiveChatDraft.value = v },
     onSubmit: submitLiveChat,
   })
+}
+function openIMEDyStyle() {
+  openIME({ placeholder: '输入抖阴风格', getValue: () => douyinSettings.value.style || '', setValue: v => { douyinSettings.value.style = v }, onSubmit: saveDySettings, multiline: true, allowEmpty: true, submitLabel: '保存' })
 }
 // 数字输入框也走IME浮层（数字键盘也会顶缩手机）
 function openIMEHistDraft() { openIME({ placeholder: '输入历史条数', getValue: () => histDraft.value, setValue: v => { histDraft.value = v }, onSubmit: applyHistDraft }) }
@@ -3098,6 +3359,7 @@ async function silentCamera() {
     `只输出一个 <照片> 块，块外不写任何其它文字。格式：\n<照片>\n拍摄者: 拍照的角色名\n对象: 被拍摄主体\n时间: ${timeNow || 'YYYY年MM月DD日 HH:MM'}\n画面: 照片内容的具体描述\n</照片>`
   try {
     const history = buildSilentHistory('', '')
+    const storyRef = storyReferencePrompt()
     let result
     if (th.generateRaw) {
       result = await th.generateRaw({
@@ -3109,17 +3371,22 @@ async function silentCamera() {
           'char_description',
           'world_info_before',
           'world_info_after',
+          ...(storyRef ? [{ role: 'system', content: storyRef }] : []),
           ...history,
           { role: 'user', content: subject || `（举起手机拍照）` },
         ],
       })
     } else {
-      result = await th.generate({ user_input: instruction, should_silence: true, overrides: { chat_history: { with_depth_entries: false, prompts: history } } })
+      result = await th.generate({ user_input: storyRef ? instruction + '\n' + storyRef : instruction, should_silence: true, overrides: { chat_history: { with_depth_entries: false, prompts: storyRef ? [{ role: 'system', content: storyRef }, ...history] : history } } })
     }
     const text = typeof result === 'string' ? result : (result && result.content) || ''
+    loadPhotos()
     const got = ingestPhotoBlock(text, mode)
     if (!got) showToast('未能解析到照片')
-    else { view.value = 'album'; selectedPhoto.value = photos.value[photos.value.length - 1] }
+    else {
+      emitPhoneSync('photos', { count: got })
+      if (view.value === 'camera' || view.value === 'album') { view.value = 'album'; selectedPhoto.value = photos.value[photos.value.length - 1] }
+    }
   } catch (e) { showToast('生成失败：' + ((e && e.message) || e)) }
   finally { sendingCamera.value = false }
 }
@@ -3157,8 +3424,8 @@ function hookGen() {
     genCtx = ctx
     onGenEnded = () => {
       if (silentBusy.value) return          // 纯手机模式由 silentReply 自行落库/清态
-      clearPending()                        // 生成结束：乐观写的发出条转正（不再要求 sendingContact 仍在，超时清空后也要转正）
-      setTimeout(() => { loadLogs(); syncScrape(); sendingContact.value = ''; clearTimeout(sendTimer) }, 250)
+      const ref = pendingRef
+      setTimeout(() => { loadLogs(); syncScrape(); sendingContact.value = ''; clearTimeout(sendTimer); confirmPendingAfterGeneration(ref) }, 250)
     }
     onGenStopped = () => {
       if (silentBusy.value) return
@@ -3215,6 +3482,12 @@ function copyStyles() {
     pdoc.head.appendChild(tpStyle)
   } catch (e) {}
 }
+function onPhoneSync(event) {
+  const detail = event && event.detail || {}
+  if (detail.kind === 'wechat') loadLogs()
+  else if (detail.kind === 'photos') { loadPhotos(); syncScrapePhotos() }
+  else if (detail.kind === 'douyin') loadDyData(false)
+}
 onMounted(() => {
   if (props.owner) activeOwner.value = props.owner
   copyStyles()
@@ -3222,6 +3495,7 @@ onMounted(() => {
   timer = setInterval(() => { tick(); loadLogs(); loadRemarks(); loadPhotos(); syncScrape(); syncScrapePhotos(); healPending() }, 2000)
   doc.documentElement.style.overflow = 'hidden'; doc.body.style.overflow = 'hidden'
   hookGen()
+  try { window.parent.addEventListener(PHONE_SYNC_EVENT, onPhoneSync) } catch (e) {}
   try {
     vvRef = window.parent && window.parent.visualViewport
     if (vvRef) { vvHandler = () => applyVV(); vvRef.addEventListener('resize', vvHandler); vvRef.addEventListener('scroll', vvHandler); applyVV() }
@@ -3253,6 +3527,7 @@ onUnmounted(() => {
   clearInterval(timer); clearTimeout(sendTimer); clearTimeout(errTimer)
   doc.documentElement.style.overflow = ''; doc.body.style.overflow = ''
   unhookGen()
+  try { window.parent.removeEventListener(PHONE_SYNC_EVENT, onPhoneSync) } catch (e) {}
   try { if (vvRef && vvHandler) { vvRef.removeEventListener('resize', vvHandler); vvRef.removeEventListener('scroll', vvHandler) } } catch (e) {}
 })
 </script>
@@ -3625,6 +3900,14 @@ onUnmounted(() => {
 .mp-dy-content.flip .mp-dy-content-in{color:#ffd9e6}
 .mp-dy-flip-hint{margin-top:8px;font-size:11px;color:rgba(255,180,210,.85);letter-spacing:.5px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 .mp-dy-ph{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;background:#111;z-index:4}
+.mp-dy-ph-error{padding:24px;text-align:center;gap:8px}
+.mp-dy-ph-error-title{font-size:16px;font-weight:700;color:#fff}
+.mp-dy-ph-error-msg{max-width:85%;font-size:12px;color:rgba(255,255,255,.6);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mp-dy-ph-error-actions{display:flex;gap:8px;margin-top:5px}
+.mp-dy-ph-error-actions button{border:0;border-radius:14px;padding:6px 14px;background:#fe2c55;color:#fff;font-size:12px;cursor:pointer}
+.mp-dy-ph-error-actions button.danger{background:rgba(255,255,255,.18)}
+.mp-share-feedback{margin:8px 0;padding:10px 12px;border-radius:8px;background:rgba(7,193,96,.12);color:#087f46;font-size:13px;line-height:1.5;text-align:center}
+.mp-share-feedback.fail{background:rgba(220,50,70,.12);color:#b42336}
 .mp-dy-empty,.mp-dy-loading,.mp-dy-next{justify-content:center;align-items:center;flex-direction:column;gap:12px;cursor:pointer}
 .mp-dy-next-ico svg{width:34px;height:34px;fill:rgba(255,255,255,.5)}
 .mp-dy-swipe-hint{position:absolute;left:50%;transform:translateX(-50%);bottom:118px;z-index:6;pointer-events:none;animation:mp-dy-bob 1.6s ease-in-out infinite}
@@ -3730,6 +4013,9 @@ button.mp-dy-profile-tag.real{color:#fe2c55;border-color:rgba(254,44,85,.4);back
 .mp-dy-set-btn.on{background:#fe2c55;border-color:#fe2c55;color:#fff}
 .mp-dy-set-note{font-size:12px;color:#8a8a90;line-height:1.5;padding:2px 0 8px}
 .mp-dy-set-note b{color:#666;font-weight:600}
+.mp-dy-style-input{display:block;width:100%;min-height:48px;box-sizing:border-box;padding:6px 8px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#333;font-size:12px;line-height:1.5;resize:none;font-family:inherit;outline:none}
+.mp-dy-style-input:focus{border-color:#fe2c55}
+.mp-dy-style-input::placeholder{color:#b0b0b0}
 .mp-dy-set-subhd{font-size:13px;font-weight:600;color:#444;padding:8px 0 4px;border-top:1px solid #ececf0;margin-top:6px}
 .mp-dy-set-warn{font-size:12px;color:#c0392b;line-height:1.55;padding:4px 0 8px}
 .mp-dy-set-warn b{font-weight:700}
@@ -3861,6 +4147,11 @@ button.mp-dy-profile-tag.real{color:#fe2c55;border-color:rgba(254,44,85,.4);back
 .mp-dylv-lv{display:inline-flex;align-items:center;vertical-align:middle;font-size:11px;color:#fff;background:linear-gradient(90deg,#7a3fff,#fe2c55);padding:1px 5px;border-radius:7px;margin-right:3px;flex-shrink:0}
 .mp-dylv-user{display:inline;font-size:13px;color:#ff9eb5;font-weight:600}
 .mp-dylv-txt{display:inline;font-size:13px;color:rgba(255,255,255,.88);line-height:1.6;word-break:break-all}
+.mp-dylv-retry{margin-left:5px;border:0;background:rgba(255,100,130,.2);color:#ff9eb5;border-radius:10px;padding:0 5px;cursor:pointer}
+.mp-dylv-error{display:flex;align-items:center;gap:6px;margin:4px 0;padding:6px 8px;border:1px solid rgba(255,120,145,.45);border-radius:8px;background:rgba(90,20,35,.65);color:#ffd5dd;font-size:12px}
+.mp-dylv-error-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mp-dylv-error button{border:0;border-radius:10px;padding:3px 8px;background:#fe2c55;color:#fff;font-size:11px;cursor:pointer;white-space:nowrap}
+.mp-dylv-error button.secondary{background:rgba(255,255,255,.15)}
 .mp-dylv-loading{display:flex;gap:4px;padding:4px 0;align-items:center}
 .mp-dylv-loading span{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.4);animation:mp-dy-spin-scale .8s ease infinite}
 .mp-dylv-loading span:nth-child(2){animation-delay:.15s}
