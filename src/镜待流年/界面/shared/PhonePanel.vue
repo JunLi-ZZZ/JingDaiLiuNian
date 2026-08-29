@@ -1426,15 +1426,28 @@ function latestStoryReference() {
     const th = TH()
     const getMessages = (th && th.getChatMessages) || (window.parent && window.parent.TavernHelper && window.parent.TavernHelper.getChatMessages)
     if (!getMessages) return ''
+    const usable = message => message && message.role === 'assistant' && stripStoryFormats(message.message)
+    // 先取最新楼层，避免宿主在全量查询中返回倒序或省略楼层号时误选旧消息。
+    const latestFloor = getMessages(-1, { hide_state: 'unhidden' }) || []
+    const latestOnFloor = latestFloor.find(usable)
+    if (latestOnFloor) return stripStoryFormats(latestOnFloor.message).slice(-2400)
+
+    // 最新楼层可能是 user；此时按真实楼层号从全量 assistant 消息中取最大值。
     const messages = getMessages('0-{{lastMessageId}}', { role: 'assistant', hide_state: 'unhidden' }) || []
-    // 不假设酒馆宿主返回顺序：按真实楼层号挑最新一条，缺少楼层号时才退回数组末项。
-    const usable = messages.filter(message => stripStoryFormats(message && message.message))
-    const withIds = usable.filter(message => Number.isFinite(Number(message && message.message_id)))
-    const latest = withIds.length
-      ? withIds.reduce((best, message) => Number(message.message_id) > Number(best.message_id) ? message : best)
-      : usable[usable.length - 1]
-    if (!latest) return ''
-    return stripStoryFormats(latest.message).slice(-2400)
+    const candidates = messages.filter(usable)
+    const withIds = candidates.filter(message => Number.isFinite(Number(message.message_id)))
+    if (withIds.length) {
+      const latest = withIds.reduce((best, message) => Number(message.message_id) > Number(best.message_id) ? message : best)
+      return stripStoryFormats(latest.message).slice(-2400)
+    }
+
+    // 极旧宿主没有 message_id 时，按深度倒序寻找最近一条 assistant；不再使用数组末项猜测。
+    for (let depth = 1; depth <= 100; depth++) {
+      const floor = getMessages(-depth, { role: 'assistant', hide_state: 'unhidden' }) || []
+      const message = floor.find(usable)
+      if (message) return stripStoryFormats(message.message).slice(-2400)
+    }
+    return ''
   } catch (e) { return '' }
 }
 function storyReferencePrompt(scope = '手机生成内容') {
@@ -2924,7 +2937,7 @@ function parseLiveChat(raw, batch = 50) {
     const msgText = isJoin ? '' : (text || '')
     // 等级字段容错：纯数字(85)或带前缀(Lv.85/lv85)均支持，提取首段数字
     const lvNum = (level || '').match(/\d+/)
-    if (user) out.push({ level: lvNum ? +lvNum[0] : null, user, text: msgText, isJoin, isMe: false })
+    if (user) out.push({ level: lvNum ? +lvNum[0] : null, user, text: msgText, isJoin, isGift: tag === 'gift', isMe: false })
   }
   block.split('\n').forEach(ln => {
     let t = ln.trim(); if (!t) return
@@ -2960,7 +2973,7 @@ async function generateLiveChat(includeUserMsg = false, retrySid = '') {
   const recentChat = recentSlice.map((c, i) => {
     const seq = recentStart + i + 1
     if (c.isJoin) return `第${seq}条｜${c.user}进入直播间`
-    const kind = c.isMe ? '用户消息' : c.isGift ? '用户送礼' : c.isLevelUp ? '粉丝团升级' : '观众弹幕'
+    const kind = c.isMe ? (c.isGift ? '用户送礼' : '用户消息') : c.isGift ? '角色/观众送礼' : c.isLevelUp ? '粉丝团升级' : '观众弹幕'
     return `第${seq}条｜${kind}｜[等级${c.level ?? '?'}] ${c.user}：${c.text}`
   }).join('\n')
   // 最近三条用户操作必须保留原始先后顺序，并单独点明最新一条，避免模型把三句当成并列指令。
@@ -3020,7 +3033,8 @@ async function generateLiveChat(includeUserMsg = false, retrySid = '') {
     (recentChat ? `\n【近期聊天记录·严格按编号从小到大发生】\n${recentChat}` : '\n【近期聊天记录】暂无。') +
     `\n输出 screen：承接“上一版直播画面”，写主播接下来具体做什么、说什么，2-3句。` +
     `\n输出 memory：在旧记忆基础上写一份更新后的、自包含的本场连续性摘要，最多300字。保留主播身份、场景、正在做的事、已发生的关键互动、${me}最近一条消息和未回应事项；已解决事项可压缩。只写客观事实，不写${me}的内心、反应、对白或决定。` +
-    `\n只输出一个 ===LIVECHAT=== 数据块，块外不写字：\n===LIVECHAT===\nscreen:承接上一版后的直播画面描述\nmemory:更新后的本场连续性记忆\nc1:等级|||昵称|||来了|||join（进场消息）\nc2:等级|||昵称|||聊天内容（普通消息，不加|||join）\n...\n===CHATEND===`
+    `\n直播中的角色或观众可以在合适时机送出平台礼物；这类消息仍写在 c 行，但第四字段使用 gift，例如“等级|||昵称|||送出礼物：礼物名|||gift”。礼物不是每轮必有，只有剧情自然需要时才生成，不要替用户伪造送礼。` +
+    `\n只输出一个 ===LIVECHAT=== 数据块，块外不写字：\n===LIVECHAT===\nscreen:承接上一版后的直播画面描述\nmemory:更新后的本场连续性记忆\nc1:等级|||昵称|||来了|||join（进场消息）\nc2:等级|||昵称|||聊天内容（普通消息，不加|||join）\nc3:等级|||昵称|||送出礼物：礼物名|||gift（可选）\n...\n===CHATEND===`
   const liveUserInput = dyRetrievalHint(
     room,
     recentChat ? `最近直播消息（按发生顺序）：${recentChat.slice(-1200)}` : '最近直播消息：暂无',

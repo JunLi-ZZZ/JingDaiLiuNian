@@ -7,19 +7,24 @@ const mentionedMangCang = matchChatMessages(['莽苍太古界']);
 const mentionedYanYun = matchChatMessages(['晏云界']);
 const mentionedXiGuang = matchChatMessages(['曦光穹界']);
 
-if (plane.includes('主世界') || mentionedMain) {
+// 当前地点是唯一活动位面的权威状态；已有位面时不因近期正文提及其他位面而并行注入其设定。
+// 只有尚未建立当前位面时，才用最近两楼的关键词作为首次落地兜底。
+const hasActivePlane = String(plane).trim().length > 0;
+const shouldLoad = (aliases, mentioned) => hasActivePlane ? aliases.some(alias => String(plane).includes(alias)) : mentioned;
+
+if (shouldLoad(['主世界'], mentionedMain)) {
   print(await getwi('主世界'));
 }
-if (plane.includes('苍溟') || mentionedCangMing) {
+if (shouldLoad(['苍溟界', '苍溟'], mentionedCangMing)) {
   print(await getwi('苍溟界'));
 }
-if (plane.includes('莽苍太古') || mentionedMangCang) {
+if (shouldLoad(['莽苍太古界', '莽苍太古'], mentionedMangCang)) {
   print(await getwi('莽苍太古界'));
 }
-if (plane.includes('晏云') || mentionedYanYun) {
+if (shouldLoad(['晏云界', '晏云'], mentionedYanYun)) {
   print(await getwi('晏云界'));
 }
-if (plane.includes('曦光') || mentionedXiGuang) {
+if (shouldLoad(['曦光穹界', '曦光'], mentionedXiGuang)) {
   print(await getwi('曦光穹界'));
 }
 %>
