@@ -616,6 +616,26 @@
       不可激活其他条目: true
     文件: 世界书\角色\苏墨染
 
+  - 名称: 曦泠玥
+    启用: true
+    激活策略:
+      类型: 绿灯
+      关键字:
+        - 曦泠玥
+        - 玥泠儿
+        - 凌霄剑宗
+        - 凌霄峰
+        - 小师妹
+        - 剑宗宗主
+    插入位置:
+      类型: 角色定义之前
+      顺序: 5070
+    激活概率: 100
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+    文件: 世界书\角色\曦泠玥
+
   - 名称: 苏幼清
     启用: true
     激活策略:
@@ -921,6 +941,19 @@
       不可激活其他条目: true
     文件: 世界书\玩家\user人设_曦光穹界
 
+  - 名称: user人设_苍溟界历练
+    启用: false
+    激活策略:
+      类型: 蓝灯
+    插入位置:
+      类型: 角色定义之前
+      顺序: 4993
+    激活概率: 100
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+    文件: 世界书\玩家\user人设_苍溟界历练
+
   - 名称: user人设_晨星公爵之子
     启用: false
     激活策略:
@@ -1056,7 +1089,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v213/界面/状态栏/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v214/界面/状态栏/index.html')
         </script>
         </body>
         ```
@@ -1074,7 +1107,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v213/界面/封面/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v214/界面/封面/index.html')
         </script>
         </body>
         ```
@@ -1193,13 +1226,13 @@
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v213/脚本/变量结构/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v214/脚本/变量结构/index.js';
 
       - 名称: 手机渲染
         id: a7f3c2e1-9b4d-4e6a-8c1f-2d5e7a9b3c4d
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v213/脚本/手机渲染/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v214/脚本/手机渲染/index.js';
 
     变量: {}

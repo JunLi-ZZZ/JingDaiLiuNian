@@ -1424,24 +1424,24 @@ function latestStoryReference() {
   if (!referenceStory.value) return ''
   try {
     const th = TH()
-    const getMessages = (th && th.getChatMessages) || (window.parent && window.parent.TavernHelper && window.parent.TavernHelper.getChatMessages)
-    if (!getMessages) return ''
+    const parentTh = window.parent && window.parent.TavernHelper
+    const api = th && typeof th.getChatMessages === 'function' ? th : parentTh
+    if (!api || typeof api.getChatMessages !== 'function') return ''
+    // 宿主 API 可能依赖 this；不要将方法摘出后作为普通函数调用。
+    const getMessages = (range, options) => api.getChatMessages(range, options)
     const usable = message => message && message.role === 'assistant' && stripStoryFormats(message.message)
-    // 先取最新楼层，避免宿主在全量查询中返回倒序或省略楼层号时误选旧消息。
-    const latestFloor = getMessages(-1, { hide_state: 'unhidden' }) || []
-    const latestOnFloor = latestFloor.find(usable)
-    if (latestOnFloor) return stripStoryFormats(latestOnFloor.message).slice(-2400)
-
-    // 最新楼层可能是 user；此时按真实楼层号从全量 assistant 消息中取最大值。
-    const messages = getMessages('0-{{lastMessageId}}', { role: 'assistant', hide_state: 'unhidden' }) || []
-    const candidates = messages.filter(usable)
-    const withIds = candidates.filter(message => Number.isFinite(Number(message.message_id)))
-    if (withIds.length) {
-      const latest = withIds.reduce((best, message) => Number(message.message_id) > Number(best.message_id) ? message : best)
-      return stripStoryFormats(latest.message).slice(-2400)
+    const lastId = typeof api.getLastMessageId === 'function' ? Number(api.getLastMessageId()) : NaN
+    if (Number.isFinite(lastId) && lastId >= 0) {
+      // PhonePanel 是运行时 JavaScript，{{lastMessageId}} 不会在这里被 EJS 展开。
+      // 直接按实际楼层从新到旧找，最新楼层是 user 时也能拿到上一条正文。
+      for (let messageId = Math.floor(lastId); messageId >= 0; messageId--) {
+        const floor = getMessages(messageId, { role: 'assistant', hide_state: 'unhidden' }) || []
+        const message = floor.find(usable)
+        if (message) return stripStoryFormats(message.message).slice(-2400)
+      }
     }
 
-    // 极旧宿主没有 message_id 时，按深度倒序寻找最近一条 assistant；不再使用数组末项猜测。
+    // 兼容不提供 getLastMessageId 的旧宿主。
     for (let depth = 1; depth <= 100; depth++) {
       const floor = getMessages(-depth, { role: 'assistant', hide_state: 'unhidden' }) || []
       const message = floor.find(usable)
