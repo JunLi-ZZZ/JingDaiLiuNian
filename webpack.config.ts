@@ -431,7 +431,11 @@ function parse_configuration(entry: Entry): (_env: any, argv: any) => webpack.Co
           new MiniCssExtractPlugin(),
           new HTMLInlineCSSWebpackPlugin({
             styleTagFactory({ style }: { style: string }) {
+<<<<<<< HEAD
               return `<style>${style.replaceAll('\uFEFF', '')}</style>`;
+=======
+              return `<style>${style}</style>`;
+>>>>>>> 457044c57ea6141e665c88603ea84d7542da64a4
             },
           }),
         ]
@@ -452,6 +456,10 @@ function parse_configuration(entry: Entry): (_env: any, argv: any) => webpack.Co
             { from: 'klona', imports: ['klona'] },
             { from: 'vue-final-modal', imports: ['useModal'] },
             { from: 'zod', imports: ['z'] },
+<<<<<<< HEAD
+=======
+            { from: 'type-fest', imports: [['*', 'TypeFest']], type: true },
+>>>>>>> 457044c57ea6141e665c88603ea84d7542da64a4
           ],
         }),
         unpluginVueComponents({
@@ -559,12 +567,27 @@ function parse_configuration(entry: Entry): (_env: any, argv: any) => webpack.Co
       }
       const cdn = {
         sass: 'https://jspm.dev/sass',
+<<<<<<< HEAD
         // 钉死版本，防止 jsDelivr 未锁 URL 自动升到不兼容的 pinia 4.x
         pinia: 'https://testingcf.jsdelivr.net/npm/pinia@3.0.4/+esm',
       };
       return callback(
         null,
         'module-import ' + (cdn[request as keyof typeof cdn] ?? `https://testingcf.jsdelivr.net/npm/${request}/+esm`),
+=======
+      };
+      const package_json = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, 'package.json'), 'utf-8')) as {
+        dependencies?: Record<string, string>;
+        devDependencies?: Record<string, string>;
+      };
+      const package_versions = { ...package_json.devDependencies, ...package_json.dependencies };
+      const version = package_versions[request]?.replace(/^[~^]/, '');
+      const versioned_request = /^[.\d]+$/.test(version) ? `${request}@${version}` : request;
+      return callback(
+        null,
+        'module-import ' +
+          (cdn[request as keyof typeof cdn] ?? `https://testingcf.jsdelivr.net/npm/${versioned_request}/+esm`),
+>>>>>>> 457044c57ea6141e665c88603ea84d7542da64a4
       );
     },
   });
