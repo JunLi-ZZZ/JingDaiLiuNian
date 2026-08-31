@@ -1427,25 +1427,26 @@ function latestStoryReference() {
     const parentTh = window.parent && window.parent.TavernHelper
     const api = th && typeof th.getChatMessages === 'function' ? th : parentTh
     if (!api || typeof api.getChatMessages !== 'function') return ''
-    // 宿主 API 可能依赖 this；不要将方法摘出后作为普通函数调用。
+    // 全量范围按 message_id 升序返回；取最大 id 的 assistant，避免把开场白当成正文。
     const getMessages = (range, options) => api.getChatMessages(range, options)
-    const usable = message => message && message.role === 'assistant' && stripStoryFormats(message.message)
+    const usable = message => {
+      const text = message && message.role === 'assistant' ? stripStoryFormats(message.message) : ''
+      return text ? { message, text } : null
+    }
     const lastId = typeof api.getLastMessageId === 'function' ? Number(api.getLastMessageId()) : NaN
-    if (Number.isFinite(lastId) && lastId >= 0) {
-      // PhonePanel 是运行时 JavaScript，{{lastMessageId}} 不会在这里被 EJS 展开。
-      // 直接按实际楼层从新到旧找，最新楼层是 user 时也能拿到上一条正文。
-      for (let messageId = Math.floor(lastId); messageId >= 0; messageId--) {
-        const floor = getMessages(messageId, { role: 'assistant', hide_state: 'unhidden' }) || []
-        const message = floor.find(usable)
-        if (message) return stripStoryFormats(message.message).slice(-2400)
-      }
+    const range = Number.isFinite(lastId) && lastId >= 0 ? `0-${Math.floor(lastId)}` : '0-{{lastMessageId}}'
+    const messages = getMessages(range, { role: 'assistant', hide_state: 'unhidden', include_swipes: false }) || []
+    const candidates = messages.map(usable).filter(Boolean)
+    if (candidates.length) {
+      candidates.sort((a, b) => Number(b.message.message_id) - Number(a.message.message_id))
+      return candidates[0].text.slice(-2400)
     }
 
-    // 兼容不提供 getLastMessageId 的旧宿主。
+    // 兼容不支持范围宏的旧宿主：只在全量查询没有结果时回退按深度查找。
     for (let depth = 1; depth <= 100; depth++) {
       const floor = getMessages(-depth, { role: 'assistant', hide_state: 'unhidden' }) || []
-      const message = floor.find(usable)
-      if (message) return stripStoryFormats(message.message).slice(-2400)
+      const candidate = floor.map(usable).filter(Boolean).sort((a, b) => Number(b.message.message_id) - Number(a.message.message_id))[0]
+      if (candidate) return candidate.text.slice(-2400)
     }
     return ''
   } catch (e) { return '' }
@@ -1754,10 +1755,14 @@ async function silentReply(owner, contact, myText, pref) {
         'world_info_after',
         ...(storyRef ? [{ role: 'system', content: storyRef }] : []),
         ...history,
-        { role: 'user', content: `以「${contact}」身份回消息，只输出一个 <手机> 块，块外不写任何其它文字：\n<手机>\n机主: ${owner}\n联系人: ${contact}\n时间: YYYY年MM月DD日 HH:MM\n发出|文字|${myText}\n收到|文字|${contact}回复的内容\n</手机>` },
+        'user_input',
       ]
       result = await th.generateRaw({
-        user_input: `以「${contact}」身份回消息，只输出一个 <手机> 块。`,
+        user_input: [
+          `以「${contact}」身份回消息，只输出一个 <手机> 块。`,
+          storyRef,
+          `机主「${owner}」刚发送：「${myText}」。只输出一个 <手机> 块，块外不写任何其它文字。`,
+        ].filter(Boolean).join('\n'),
         should_silence: true,
         ordered_prompts: ordered,
       })
@@ -2327,11 +2332,11 @@ async function generateDyVideo(retryIdx = null) {
       let result
       if (th.generateRaw) {
         const storyRef = dyStoryReferencePrompt()
-        result = await th.generateRaw({ user_input: liveUserInput, should_silence: true, ordered_prompts: [
+        const taskInput = `生成${isSearch ? `与「${query}」直接相关的` : ''}直播卡。严格沿用上面的身份、受众与私密范围，只输出 ===LIVECARD=== 数据块，块外不写字。`
+        result = await th.generateRaw({ user_input: [liveUserInput, storyRef, taskInput].filter(Boolean).join('\n'), should_silence: true, ordered_prompts: [
           { role: 'system', content: liveInstruction },
-          ...(storyRef ? [{ role: 'system', content: storyRef }] : []),
           'persona_description', 'char_description', 'world_info_before', 'world_info_after',
-          { role: 'user', content: `生成${isSearch ? `与「${query}」直接相关的` : ''}直播卡。严格沿用上面的身份、受众与私密范围，只输出 ===LIVECARD=== 数据块，块外不写字。` },
+          'user_input',
         ] })
       } else { const storyRef = dyStoryReferencePrompt(); result = await th.generate({ user_input: storyRef ? liveInstruction + '\n' + storyRef : liveInstruction, should_silence: true }) }
       const liveCard = parseDyLiveCard(result)
@@ -2426,16 +2431,16 @@ async function generateDyVideo(retryIdx = null) {
     let result
     if (th.generateRaw) {
       const storyRef = dyStoryReferencePrompt()
+      const taskInput = `生成${isSearch ? `与「${query}」直接相关的搜索结果` : isPrivate ? '严格遵守私密可见范围的视频' : isFollowTab ? '由已关注账号发布的新视频' : '下一条推荐视频'}。沿用上面的身份、受众和内容边界，只输出一个 ===DYSTART=== 数据块，块外不写任何字。`
       const ordered = [
         { role: 'system', content: instruction },
-        ...(storyRef ? [{ role: 'system', content: storyRef }] : []),
         'persona_description',
         'char_description',
         'world_info_before',
         'world_info_after',
-        { role: 'user', content: `生成${isSearch ? `与「${query}」直接相关的搜索结果` : isPrivate ? '严格遵守私密可见范围的视频' : isFollowTab ? '由已关注账号发布的新视频' : '下一条推荐视频'}。沿用上面的身份、受众和内容边界，只输出一个 ===DYSTART=== 数据块，块外不写任何字。` },
+        'user_input',
       ]
-      result = await th.generateRaw({ user_input: videoUserInput, should_silence: true, ordered_prompts: ordered })
+      result = await th.generateRaw({ user_input: [videoUserInput, storyRef, taskInput].filter(Boolean).join('\n'), should_silence: true, ordered_prompts: ordered })
     } else {
       const storyRef = dyStoryReferencePrompt()
       result = await th.generate({ user_input: storyRef ? instruction + '\n' + storyRef : instruction, should_silence: true })
@@ -3049,11 +3054,15 @@ async function generateLiveChat(includeUserMsg = false, retrySid = '') {
   try {
     let result
     if (th.generateRaw) {
-      result = await th.generateRaw({ user_input: liveUserInput, should_silence: true, ordered_prompts: [
+      const storyRef = dyStoryReferencePrompt()
+      result = await th.generateRaw({ user_input: [liveUserInput, storyRef, finalLivePrompt].filter(Boolean).join('\n'), should_silence: true, ordered_prompts: [
         { role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
-        { role: 'user', content: finalLivePrompt },
+        'user_input',
       ] })
-    } else { result = await th.generate({ user_input: instruction, should_silence: true }) }
+    } else {
+      const storyRef = dyStoryReferencePrompt()
+      result = await th.generate({ user_input: [instruction, storyRef, finalLivePrompt].filter(Boolean).join('\n'), should_silence: true })
+    }
     const parsed = parseLiveChat(result, 12)
     if (retrySid && !parsed.msgs.length && !parsed.screen && !parsed.memory) {
       const pending = (room.chatLog || []).find(m => m.sid === retrySid)
@@ -3377,7 +3386,7 @@ async function silentCamera() {
     let result
     if (th.generateRaw) {
       result = await th.generateRaw({
-        user_input: subject || `（举起手机拍照）`,
+        user_input: [subject || `（举起手机拍照）`, storyRef, '只输出一个 <照片> 块，块外不写任何其它文字。'].filter(Boolean).join('\n'),
         should_silence: true,
         ordered_prompts: [
           { role: 'system', content: instruction },
@@ -3387,7 +3396,7 @@ async function silentCamera() {
           'world_info_after',
           ...(storyRef ? [{ role: 'system', content: storyRef }] : []),
           ...history,
-          { role: 'user', content: subject || `（举起手机拍照）` },
+          'user_input',
         ],
       })
     } else {
