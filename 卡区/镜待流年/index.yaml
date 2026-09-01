@@ -645,7 +645,9 @@
         - 绯汣
         - 绯汣瞳
         - 九尾赤狐
-        - 赤狐一脉
+        - 赤狐种
+        - 赤狐女王
+        - 涂山女王
     插入位置:
       类型: 角色定义之前
       顺序: 5075
@@ -1108,7 +1110,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v216/界面/状态栏/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v217/界面/状态栏/index.html')
         </script>
         </body>
         ```
@@ -1126,7 +1128,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v216/界面/封面/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v217/界面/封面/index.html')
         </script>
         </body>
         ```
@@ -1161,7 +1163,7 @@
 
     - 正则名称: "[美化]物品获得"
       启用: true
-      查找表达式: "/<item>\\s*角色: ([\\s\\S]*?)\\s*名称: ([\\s\\S]*?)\\s*数量: (\\d+)\\s*品阶: ([\\s\\S]*?)\\s*方式: ([\\s\\S]*?)\\s*能力: ([\\s\\S]*?)\\s*描述: ([\\s\\S]*?)\\s*<\\/item>/gi "
+      查找表达式: "/<item>\\s*角色: ([\\s\\S]*?)\\s*名称: ([\\s\\S]*?)\\s*数量: ([^\\r\\n]+?)\\s*品阶: ([\\s\\S]*?)\\s*方式: ([\\s\\S]*?)\\s*能力: ([\\s\\S]*?)\\s*描述: ([\\s\\S]*?)\\s*<\\/item>/gi "
       文件: 正则/物品获得
       来源:
         用户输入: false
@@ -1245,13 +1247,13 @@
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v216/脚本/变量结构/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v217/脚本/变量结构/index.js';
 
       - 名称: 手机渲染
         id: a7f3c2e1-9b4d-4e6a-8c1f-2d5e7a9b3c4d
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v216/脚本/手机渲染/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v217/脚本/手机渲染/index.js';
 
     变量: {}

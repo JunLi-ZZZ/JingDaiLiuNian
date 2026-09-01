@@ -287,7 +287,7 @@
         </div>
         <div class="mp-setapp-body">
           <div class="mp-setapp-hd">生成参考</div>
-          <div class="mp-setapp-desc">开启后，小手机生成会参考最近一条 AI 正文；它只用于对齐当前世界状态，不会被当作手机里已经发生的内容。</div>
+          <div class="mp-setapp-desc">开启后，新生成的视频与直播卡会优先参考最近一条 AI 正文，将当前人物、地点与事件自然延伸到平台内容中。</div>
           <div class="mp-setapp-sec mp-setapp-sec-single">
             <div class="mp-setapp-row">
               <span class="mp-setapp-ico" style="background:#5b6472">文</span>
@@ -1412,50 +1412,11 @@ function toggleReferenceStory() { referenceStory.value = !referenceStory.value; 
 function emitPhoneSync(kind, detail = {}) {
   try { window.parent.dispatchEvent(new CustomEvent(PHONE_SYNC_EVENT, { detail: { kind, ...detail } })) } catch (e) {}
 }
-function stripStoryFormats(text) {
-  return String(text || '')
-    .replace(/<(?:update(?:variable)?|手机(?:记录|展示)?|照片|item|bestiary|skill)[^>]*>[\s\S]*?<\/(?:update(?:variable)?|手机(?:记录|展示)?|照片|item|bestiary|skill)>/gi, '')
-    .replace(/<StatusPlaceHolderImpl\s*\/?>/gi, '')
-    .replace(/```[\s\S]*?```/g, '')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
+function dyStoryReferencePrompt() {
+  return referenceStory.value
+    ? '【参考最近正文】已附带聊天末尾记录。优先读取其中最新一条 assistant 正文的当前人物、地点、关系与已确认事件，将这些内容自然延伸为本次视频或直播；较早消息只用于理解最新正文，不要把正文原样复述，也不要把正文叙事误当成平台内已经发生的内容。'
+    : ''
 }
-function latestStoryReference() {
-  if (!referenceStory.value) return ''
-  try {
-    const th = TH()
-    const parentTh = window.parent && window.parent.TavernHelper
-    const api = th && typeof th.getChatMessages === 'function' ? th : parentTh
-    if (!api || typeof api.getChatMessages !== 'function') return ''
-    // 全量范围按 message_id 升序返回；取最大 id 的 assistant，避免把开场白当成正文。
-    const getMessages = (range, options) => api.getChatMessages(range, options)
-    const usable = message => {
-      const text = message && message.role === 'assistant' ? stripStoryFormats(message.message) : ''
-      return text ? { message, text } : null
-    }
-    const lastId = typeof api.getLastMessageId === 'function' ? Number(api.getLastMessageId()) : NaN
-    const range = Number.isFinite(lastId) && lastId >= 0 ? `0-${Math.floor(lastId)}` : '0-{{lastMessageId}}'
-    const messages = getMessages(range, { role: 'assistant', hide_state: 'unhidden', include_swipes: false }) || []
-    const candidates = messages.map(usable).filter(Boolean)
-    if (candidates.length) {
-      candidates.sort((a, b) => Number(b.message.message_id) - Number(a.message.message_id))
-      return candidates[0].text.slice(-2400)
-    }
-
-    // 兼容不支持范围宏的旧宿主：只在全量查询没有结果时回退按深度查找。
-    for (let depth = 1; depth <= 100; depth++) {
-      const floor = getMessages(-depth, { role: 'assistant', hide_state: 'unhidden' }) || []
-      const candidate = floor.map(usable).filter(Boolean).sort((a, b) => Number(b.message.message_id) - Number(a.message.message_id))[0]
-      if (candidate) return candidate.text.slice(-2400)
-    }
-    return ''
-  } catch (e) { return '' }
-}
-function storyReferencePrompt(scope = '手机生成内容') {
-  const text = latestStoryReference()
-  return text ? `【${scope}·最近正文参考·优先遵循】本次生成应优先参考最近一条正文中的当前人物处境、地点、关系和已经确认的事实，把正文世界自然转入本次内容；正文不是手机里已经发生的消息，不要把它原样复述，也不要把正文叙事直接当成手机应用内事实：\n${text}` : ''
-}
-function dyStoryReferencePrompt() { return storyReferencePrompt('抖音/抖阴视频或直播') }
 function setHistLimit(n) { n = Math.round(+n); if (!n || n < 1) return; n = Math.min(n, 500); histLimit.value = n; putVar(HIST_KEY, n) }
 function delKey(o, c) { return o + '→' + c }
 function isDeleted(o, c) { return !!deleted.value[delKey(o, c)] }
@@ -1744,7 +1705,6 @@ async function silentReply(owner, contact, myText, pref) {
     `联系人填名录全名、与角色名录一致，不用昵称/简称/代称；时间用绝对格式、与世界当前时间一致；每条消息占一行写作「方向|类型|内容」，类型据实取 文字/语音/图片/表情/红包 之一，非文字类型时内容处写这条消息承载的信息（图片写画面，语音写说出的话，表情写[表情:名称]，红包写祝福语）；可回复多条，按先后顺序排列。模仿真实微信的随意性：消息条数、长度、类型自然多样，避免每次都是固定的句式或格式。`
   try {
     const history = buildSilentHistory(owner, contact)
-    const storyRef = storyReferencePrompt()
     let result
     if (th.generateRaw) {
       const ordered = [
@@ -1753,14 +1713,12 @@ async function silentReply(owner, contact, myText, pref) {
         'char_description',
         'world_info_before',
         'world_info_after',
-        ...(storyRef ? [{ role: 'system', content: storyRef }] : []),
         ...history,
         'user_input',
       ]
       result = await th.generateRaw({
         user_input: [
           `以「${contact}」身份回消息，只输出一个 <手机> 块。`,
-          storyRef,
           `机主「${owner}」刚发送：「${myText}」。只输出一个 <手机> 块，块外不写任何其它文字。`,
         ].filter(Boolean).join('\n'),
         should_silence: true,
@@ -1770,7 +1728,7 @@ async function silentReply(owner, contact, myText, pref) {
       result = await th.generate({
         user_input: instruction,
         should_silence: true,
-        overrides: { chat_history: { with_depth_entries: false, prompts: storyRef ? [{ role: 'system', content: storyRef }, ...history] : history } },
+        overrides: { chat_history: { with_depth_entries: false, prompts: history } },
       })
     }
     const replyText = typeof result === 'string' ? result : (result && result.content) || ''
@@ -2333,12 +2291,13 @@ async function generateDyVideo(retryIdx = null) {
       if (th.generateRaw) {
         const storyRef = dyStoryReferencePrompt()
         const taskInput = `生成${isSearch ? `与「${query}」直接相关的` : ''}直播卡。严格沿用上面的身份、受众与私密范围，只输出 ===LIVECARD=== 数据块，块外不写字。`
-        result = await th.generateRaw({ user_input: [liveUserInput, storyRef, taskInput].filter(Boolean).join('\n'), should_silence: true, ordered_prompts: [
+        result = await th.generateRaw({ user_input: [liveUserInput, storyRef, taskInput].filter(Boolean).join('\n'), should_silence: true, max_chat_history: referenceStory.value ? 2 : 0, ordered_prompts: [
           { role: 'system', content: liveInstruction },
           'persona_description', 'char_description', 'world_info_before', 'world_info_after',
+          ...(referenceStory.value ? ['chat_history'] : []),
           'user_input',
         ] })
-      } else { const storyRef = dyStoryReferencePrompt(); result = await th.generate({ user_input: storyRef ? liveInstruction + '\n' + storyRef : liveInstruction, should_silence: true }) }
+      } else { const storyRef = dyStoryReferencePrompt(); result = await th.generate({ user_input: storyRef ? liveInstruction + '\n' + storyRef : liveInstruction, should_silence: true, max_chat_history: referenceStory.value ? 2 : 0 }) }
       const liveCard = parseDyLiveCard(result)
       const idx = douyinFeed.value.indexOf(placeholder)
       if (liveCard && idx >= 0) {
@@ -2438,12 +2397,13 @@ async function generateDyVideo(retryIdx = null) {
         'char_description',
         'world_info_before',
         'world_info_after',
+        ...(referenceStory.value ? ['chat_history'] : []),
         'user_input',
       ]
-      result = await th.generateRaw({ user_input: [videoUserInput, storyRef, taskInput].filter(Boolean).join('\n'), should_silence: true, ordered_prompts: ordered })
+      result = await th.generateRaw({ user_input: [videoUserInput, storyRef, taskInput].filter(Boolean).join('\n'), should_silence: true, max_chat_history: referenceStory.value ? 2 : 0, ordered_prompts: ordered })
     } else {
       const storyRef = dyStoryReferencePrompt()
-      result = await th.generate({ user_input: storyRef ? instruction + '\n' + storyRef : instruction, should_silence: true })
+      result = await th.generate({ user_input: storyRef ? instruction + '\n' + storyRef : instruction, should_silence: true, max_chat_history: referenceStory.value ? 2 : 0 })
     }
     const video = parseDyVideo(result)
     const idx = douyinFeed.value.indexOf(placeholder)
@@ -3054,14 +3014,12 @@ async function generateLiveChat(includeUserMsg = false, retrySid = '') {
   try {
     let result
     if (th.generateRaw) {
-      const storyRef = dyStoryReferencePrompt()
-      result = await th.generateRaw({ user_input: [liveUserInput, storyRef, finalLivePrompt].filter(Boolean).join('\n'), should_silence: true, ordered_prompts: [
+      result = await th.generateRaw({ user_input: [liveUserInput, finalLivePrompt].filter(Boolean).join('\n'), should_silence: true, ordered_prompts: [
         { role: 'system', content: instruction }, 'persona_description', 'char_description', 'world_info_before', 'world_info_after',
         'user_input',
       ] })
     } else {
-      const storyRef = dyStoryReferencePrompt()
-      result = await th.generate({ user_input: [instruction, storyRef, finalLivePrompt].filter(Boolean).join('\n'), should_silence: true })
+      result = await th.generate({ user_input: [instruction, finalLivePrompt].filter(Boolean).join('\n'), should_silence: true })
     }
     const parsed = parseLiveChat(result, 12)
     if (retrySid && !parsed.msgs.length && !parsed.screen && !parsed.memory) {
@@ -3382,11 +3340,10 @@ async function silentCamera() {
     `只输出一个 <照片> 块，块外不写任何其它文字。格式：\n<照片>\n拍摄者: 拍照的角色名\n对象: 被拍摄主体\n时间: ${timeNow || 'YYYY年MM月DD日 HH:MM'}\n画面: 照片内容的具体描述\n</照片>`
   try {
     const history = buildSilentHistory('', '')
-    const storyRef = storyReferencePrompt()
     let result
     if (th.generateRaw) {
       result = await th.generateRaw({
-        user_input: [subject || `（举起手机拍照）`, storyRef, '只输出一个 <照片> 块，块外不写任何其它文字。'].filter(Boolean).join('\n'),
+        user_input: [subject || `（举起手机拍照）`, '只输出一个 <照片> 块，块外不写任何其它文字。'].filter(Boolean).join('\n'),
         should_silence: true,
         ordered_prompts: [
           { role: 'system', content: instruction },
@@ -3394,13 +3351,12 @@ async function silentCamera() {
           'char_description',
           'world_info_before',
           'world_info_after',
-          ...(storyRef ? [{ role: 'system', content: storyRef }] : []),
           ...history,
           'user_input',
         ],
       })
     } else {
-      result = await th.generate({ user_input: storyRef ? instruction + '\n' + storyRef : instruction, should_silence: true, overrides: { chat_history: { with_depth_entries: false, prompts: storyRef ? [{ role: 'system', content: storyRef }, ...history] : history } } })
+      result = await th.generate({ user_input: instruction, should_silence: true, overrides: { chat_history: { with_depth_entries: false, prompts: history } } })
     }
     const text = typeof result === 'string' ? result : (result && result.content) || ''
     loadPhotos()
