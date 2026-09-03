@@ -6,6 +6,7 @@ const mentionedCangMing = matchChatMessages(['苍溟界']);
 const mentionedMangCang = matchChatMessages(['莽苍太古界']);
 const mentionedYanYun = matchChatMessages(['晏云界']);
 const mentionedXiGuang = matchChatMessages(['曦光穹界']);
+const mentionedYunMiao = matchChatMessages(['云渺万灵界', '云渺万灵']);
 
 // 当前地点是唯一活动位面的权威状态；已有位面时不因近期正文提及其他位面而并行注入其设定。
 // 只有尚未建立当前位面时，才用最近两楼的关键词作为首次落地兜底。
@@ -26,5 +27,8 @@ if (shouldLoad(['晏云界', '晏云'], mentionedYanYun)) {
 }
 if (shouldLoad(['曦光穹界', '曦光'], mentionedXiGuang)) {
   print(await getwi('曦光穹界'));
+}
+if (shouldLoad(['云渺万灵界', '云渺万灵'], mentionedYunMiao)) {
+  print(await getwi('云渺万灵界'));
 }
 %>

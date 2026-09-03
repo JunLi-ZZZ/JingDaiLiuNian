@@ -131,6 +131,14 @@
         </div>
         <span class="scene-arrow"></span>
       </button>
+      <button class="dlc-card" @click="selectDlc('yunMiao')">
+        <span class="dlc-index">❈</span>
+        <div class="dlc-body">
+          <span class="dlc-name">云渺万灵界<span class="dlc-type">[妖灵]</span></span>
+          <span class="dlc-desc">建木贯穿云海，浮岛与灵海栖居万族。涂山姐妹邀你踏入她们的故乡历练</span>
+        </div>
+        <span class="scene-arrow"></span>
+      </button>
       <button class="dlc-card" @click="selectDlc('hongHuang')">
         <span class="dlc-index">≋</span>
         <div class="dlc-body">
@@ -431,6 +439,21 @@ const xianDaoScenes: Scene[] = [
 正文从{{user}}发现被窝里多了一个人开始。绯汣应当保持成年女性的主动与风情，允许用靠近、眼神、衣料与尾巴制造暧昧气氛，但不能替{{user}}决定接受、拒绝或进行任何亲密行为。若{{user}}认真回应，她平日的“老司姬”姿态应迅速出现破绽，表现出脸红、僵住、尾巴炸开、嘴硬辩解等纯情反差；若{{user}}表现出拒绝或不适，她应立即收敛并用玩笑或道歉化解，不以媚术、力量或情绪绑架对方。`,
   },
 ];
+const yunMiaoScenes: Scene[] = [
+  {
+    title: '《随涂山姐妹归乡历练，抬眼便见万灵栖于通天建木》',
+    char: '涂山素凝 · 涂山曦华',
+    location: '建木天都 · 接天云桥',
+    teaser: '母镜通道在云海之上展开，建木、浮岛、灵海与无数奇珍异兽一并铺满视野',
+    message: `根据以下设定构建剧情开头：
+时间：清晨，极光灵潮刚刚退去
+地点：云渺万灵界·建木天都外缘·接天云桥
+出场角色：涂山素凝、涂山曦华
+前情提要：涂山素凝与涂山曦华都出生于云渺万灵界，后来才在主世界定居。她们此次邀请{{user}}一同返回故乡历练，由熟悉本地风物的姐妹二人同行，也借此让{{user}}真正认识她们生长的世界。
+剧情大纲：母镜开启的跨界通道在高空云桥上稳定下来，云渺万灵界的辽阔天地第一次完整展现在眼前。贯穿天穹的远古建木从云海深处拔起，宽如陆地的枝干托着层叠灵市与宫阙，悬浮仙岛环绕树冠缓慢迁移，瀑布自岛缘坠入下方云潮；更远处，青丘幻洲铺展成花海、仙丘与红叶深谷，归墟龙海在天际映出雷光与巨浪。披羽、负鳞、生角或由草木化灵的万族生灵穿行其间，成群飞禽掠过云桥上空，灵兽沿枝海迁徙，巨大的原形与精巧的人形共同构成繁盛而有秩序的万灵世界。
+素凝回到故乡后难掩雀跃，狐耳与九尾自然显露，兴致勃勃地想把熟悉的一切介绍给{{user}}；曦华同样露出金狐耳尾，温柔地补充各地的规矩与风物，也留意着第一次来访者可能需要适应的灵气与高度。正文从界门在三人身后合拢、姐妹二人站在云桥前等待{{user}}决定先去何处开始，先以开阔而具体的景象呈现这个生机勃勃的巨构世界，再让历练方向从现场自然展开；不要替{{user}}预设震撼、赞叹、动作、对白或选择。`,
+  },
+];
 const hongHuangScenes: Scene[] = [
   {
     title: '《洪荒入侵，却被软萌垂耳玉兔和追着她跑的贪吃饕餮双双赖上了》',
@@ -519,11 +542,13 @@ const activeScenes = computed(() =>
     ? hongHuangScenes
     : currentDlc.value === 'xianDao'
       ? xianDaoScenes
-      : currentDlc.value === 'yanYun'
-        ? yanYunScenes
-        : currentDlc.value === 'xiGuang'
-          ? xiGuangScenes
-          : mainScenes,
+      : currentDlc.value === 'yunMiao'
+        ? yunMiaoScenes
+        : currentDlc.value === 'yanYun'
+          ? yanYunScenes
+          : currentDlc.value === 'xiGuang'
+            ? xiGuangScenes
+            : mainScenes,
 );
 
 async function startScene(i: number) {
@@ -577,11 +602,13 @@ const dlcResetDisable = [
 const dlcEntryMap: Record<string, { enable: string[]; disable: string[] }> = {
   main: { enable: ['user人设'], disable: dlcResetDisable },
   xianDao: { enable: ['user人设'], disable: dlcResetDisable },
+  yunMiao: { enable: ['user人设'], disable: dlcResetDisable },
   hongHuang: { enable: ['user人设'], disable: dlcResetDisable },
   yanYun: { enable: [], disable: dlcResetDisable },
 };
 
 const sceneEntryMap: Record<string, { enable: string[]; disable: string[] }> = {
+  yunMiao_0: { enable: ['user人设'], disable: dlcResetDisable },
   hongHuang_0: { enable: ['洪荒入侵'], disable: [] },
   xianDao_0: { enable: ['user人设'], disable: dlcResetDisable },
   yanYun_0: { enable: ['user人设_白衣卿相'], disable: ['user人设', 'user人设_静安王爷'] },
