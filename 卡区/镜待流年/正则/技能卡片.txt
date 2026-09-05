@@ -37,4 +37,3 @@
 <div class="skill-ft"><span class="skill-fld"><svg class="skill-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c.6-3.2 3.1-5 7-5s6.4 1.8 7 5"/></svg>$1</span><span class="skill-fld"><svg class="skill-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="7.5"/></svg>$5</span></div>
 </div>
 </div>
-<button class="jdln-card-action" data-jdln-action="bestiary" type="button">打开图鉴</button>

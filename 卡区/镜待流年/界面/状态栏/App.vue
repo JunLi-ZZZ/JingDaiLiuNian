@@ -412,7 +412,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { receiveCardNavigation } from '../shared/cardNavigation';
 import { useDataStore } from './store';
 import MirrorPanel from '../shared/MirrorPanel.vue';
 import BestiaryPanel from '../shared/BestiaryPanel.vue';
@@ -540,6 +541,16 @@ function openPhone(owner: string) {
   phoneOwner.value = owner || '';
   phoneOpen.value = true;
 }
+let stopCardNavigation: (() => void) | undefined;
+onMounted(() => {
+  let rank = 0;
+  try { rank = getCurrentMessageId(); } catch { /* Standalone preview has no message floor. */ }
+  stopCardNavigation = receiveCardNavigation(window.parent, rank, destination => {
+    if (destination.action === 'phone') { bestiaryOpen.value = false; openPhone(destination.owner || ''); }
+    else { phoneOpen.value = false; bestiaryOpen.value = true; }
+  });
+});
+onUnmounted(() => stopCardNavigation?.());
 
 const expandedChars = ref(new Set<string>());
 const expandedSubs = ref(new Set<string>());

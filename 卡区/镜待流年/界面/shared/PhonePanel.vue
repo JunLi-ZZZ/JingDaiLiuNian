@@ -53,8 +53,9 @@
                 <div v-if="wxMultiSelect && m.dir !== '系统'" class="mp-ms-chk" :class="{on: wxSelectedMsgs.has(i)}" @click.stop="toggleWxMsgSelect(i)"></div>
               <div :class="['mp-row', m.dir === '发出' ? 'out' : m.dir === '系统' ? 'sys' : 'in']" @click="wxMultiSelect && m.dir !== '系统' ? toggleWxMsgSelect(i) : null">
                 <div v-if="m.dir !== '系统'" class="mp-ava">{{ initial(m.dir === '发出' ? curOwner : activeContact) }}</div>
-                <div :class="['mp-bub', 'mt-' + (m.type || '文字'), {selected: wxMultiSelect && wxSelectedMsgs.has(i)}]" @click.stop="wxMultiSelect ? toggleWxMsgSelect(i) : openCtxMenu(i, m.dir)">
-                  <template v-if="m.type === '语音'"><span class="mp-voice" :style="{ width: voiceWidth(m.text) }"><span class="mp-voice-ico"><i></i><i></i><i></i></span><span class="mp-voice-len">{{ voiceLen(m.text) }}″</span></span><span class="mp-vtext">{{ m.text }}</span></template>
+                <div :class="['mp-bub', 'mt-' + (m.type || '文字'), {selected: wxMultiSelect && wxSelectedMsgs.has(i)}]" @click.stop="wxMultiSelect ? toggleWxMsgSelect(i) : m.callId ? openCallRecord(m) : openCtxMenu(i, m.dir)">
+                  <template v-if="m.callId"><span class="mp-call-record"><i class="fa-solid fa-video" /> {{ m.text }}</span></template>
+                  <template v-else-if="m.type === '语音'"><span class="mp-voice" :style="{ width: voiceWidth(m.text) }"><span class="mp-voice-ico"><i></i><i></i><i></i></span><span class="mp-voice-len">{{ voiceLen(m.text) }}″</span></span><span class="mp-vtext">{{ m.text }}</span></template>
                   <template v-else-if="m.type === '图片'"><span class="mp-media"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M128 128c-35 0-64 29-64 64v256c0 35 29 64 64 64h384c35 0 64-29 64-64V192c0-35-29-64-64-64zm80 80a48 48 0 110 96 48 48 0 010-96m304 240H128l96-128 64 80 80-112z"/></svg></span><span class="mp-cap">{{ m.text }}</span></template>
                   <template v-else-if="m.type === '视频'"><span class="mp-media mp-video"><svg viewBox="0 0 640 640"><path fill="currentColor" d="M320 128a192 192 0 100 384 192 192 0 000-384m-40 120l112 72-112 72z"/></svg></span><span class="mp-cap">{{ m.text }}</span></template>
                   <template v-else-if="m.type === '红包'"><span class="mp-rp-top"><span class="mp-rp-ico"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2m0 2v5h12V4zm6 9a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2"/></svg></span><span class="mp-rp-txt">{{ m.text || '恭喜发财，大吉大利' }}</span></span><span class="mp-rp-tag">微信红包</span></template>
@@ -80,11 +81,12 @@
             <button class="mp-in-ico" @click="toggleEmoji" title="表情">
               <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10s-4.477 10-10 10m0-2a8 8 0 1 0 0-16a8 8 0 0 0 0 16m-4-7h8a4 4 0 0 1-8 0m0-2a1.5 1.5 0 1 1 0-3a1.5 1.5 0 0 1 0 3m8 0a1.5 1.5 0 1 1 0-3a1.5 1.5 0 0 1 0 3"/></svg>
             </button>
-            <button v-if="!draft.trim()" class="mp-in-ico" title="更多">
+            <button v-if="!draft.trim()" class="mp-in-ico" title="更多" @click="showPlus = !showPlus">
               <svg viewBox="0 0 24 24"><path fill="currentColor" d="M11 11V7h2v4h4v2h-4v4h-2v-4H7v-2zm1 11C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10s-4.477 10-10 10m0-2a8 8 0 1 0 0-16a8 8 0 0 0 0 16"/></svg>
             </button>
             <button v-else class="mp-send" :disabled="!!sendingContact" @click="send">发送</button>
           </div>
+          <div v-if="showPlus" class="mp-chat-tools"><button @click="showPlus=false; openVideoCall(activeContact)"><span><i class="fa-solid fa-video" /></span>视频通话</button></div>
           <!-- 表情面板 -->
           <div v-if="showEmoji" class="mp-emoji">
             <div class="mp-emoji-body">
@@ -119,6 +121,7 @@
             <div v-if="showPlus" class="mp-plus-menu">
               <button class="mp-plus-item" @click="startAddFriend"><span class="mp-plus-ico" v-html="ic.newfriend"></span>添加朋友</button>
               <button class="mp-plus-item dim" @click="showToast('群聊功能即将上线')"><span class="mp-plus-ico" v-html="ic.group"></span>发起群聊</button>
+              <button v-if="activeContact" class="mp-plus-item" @click="showPlus=false; openVideoCall(activeContact)"><span class="mp-plus-ico" v-html="ic.video"></span>视频通话</button>
             </div>
           </div>
           <div v-if="viewingOther" class="mp-owner-banner">正在查看 {{ curOwner }} 的手机 · <button @click="switchOwner(meName)">返回我的</button></div>
@@ -220,7 +223,7 @@
             </div>
             <div class="mp-prof-btns">
               <button class="mp-prof-msg" @click="openContact(profileContact)"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 3c5.5 0 10 3.6 10 8s-4.5 8-10 8a11 11 0 0 1-3-.4L4 20l1.3-3.3A7.4 7.4 0 0 1 2 11c0-4.4 4.5-8 10-8"/></svg>发消息</button>
-              <button class="mp-prof-call"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M17 15.5l-2.3-.5a1 1 0 0 0-1 .3l-1 1a12 12 0 0 1-5.3-5.3l1-1a1 1 0 0 0 .3-1L7.7 6.5a1 1 0 0 0-1-.8H5a1 1 0 0 0-1 1.1A15 15 0 0 0 17.2 20a1 1 0 0 0 1.1-1v-1.7a1 1 0 0 0-.8-1z"/></svg>音视频通话</button>
+              <button class="mp-prof-call" @click="openVideoCall(profileContact)"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M17 15.5l-2.3-.5a1 1 0 0 0-1 .3l-1 1a12 12 0 0 1-5.3-5.3l1-1a12 12 0 0 0-.3-1L7.7 6.5a1 1 0 0 0-1-.8H5a1 1 0 0 0-1 1.1A15 15 0 0 0 17.2 20a1 1 0 0 0 1.1-1v-1.7a1 1 0 0 0-.8-1z"/></svg>音视频通话</button>
             </div>
             <div class="mp-prof-sec">
               <button v-if="!confirmDel" class="mp-prof-del" @click="confirmDel = true">删除联系人</button>
@@ -232,6 +235,7 @@
             </div>
           </div>
         </div>
+<VideoCallPanel v-if="videoCall" :key="videoCall.id" :call-id="videoCall.id" :storage-key="videoCall.key" :api="videoApi" @close="closeVideoCall" />
 
         <!-- 微信多选底部确认栏（在微信场景内，不上移整机） -->
         <div v-if="wxMultiSelect && activeContact" class="mp-ms-bar">
@@ -463,8 +467,9 @@
             <span class="mp-dy-st-bat"></span>
           </span>
         </div>
+        <DyCreatorPanel ref="dyCreatorPanel" v-show="showDyMe" :name="meName" :account="meId" :mode="dyR18 ? 'r18' : 'normal'" :follows="dyFollows.size" :feed="douyinFeed.map((v, i) => ({ ...v, _i: i }))" :wallpaper="curWallpaper || WALLPAPERS[0].url" :icons="ic" :api="dyHostApi" @home="showDyMe=false" @history="showDyHistory=true" @subpage="dyHostSubpage=$event" @video="openOwnDyVideo" @share="openDyShareMenu('hostlive', $event)" />
         <!-- 顶栏 -->
-        <div class="mp-dy-nav">
+        <div v-show="!showDyMe" class="mp-dy-nav">
           <!-- 搜索模式：返回箭头 + 搜索词条，点词条可改词重搜 -->
           <template v-if="dySearchMode">
             <button class="mp-nav-back mp-dy-back" @click="exitDySearch"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12l4.95 4.95l-1.414 1.415L8 12l6.364-6.364l1.414 1.414z"/></svg></button>
@@ -488,7 +493,7 @@
           </template>
         </div>
         <!-- 视频流 -->
-        <div class="mp-dy-feed" ref="dyFeedEl" @scroll.passive="onDyScroll">
+        <div v-show="!showDyMe" class="mp-dy-feed" ref="dyFeedEl" @scroll.passive="onDyScroll">
           <!-- 关注tab正在直播的人头像条 -->
           <div v-if="dyTab==='关注' && !dySearchMode && dyLiveInFollowed.length" class="mp-dy-live-strip">
             <div v-for="lv in dyLiveInFollowed" :key="lv._i" class="mp-dy-ls-item" @click="enterDyLiveRoom(lv._i)">
@@ -609,16 +614,16 @@
           </div>
         </div>
         <!-- 上划提示：只在当前是最后一条真实视频、且没在生成时出现 -->
-        <div v-if="dyVisibleFeed.length && !showDyComments && !generatingDy && douyinIdx === dyVisibleFeed[dyVisibleFeed.length-1]?._i" class="mp-dy-swipe-hint">
+        <div v-if="!showDyMe && dyVisibleFeed.length && !showDyComments && !generatingDy && douyinIdx === dyVisibleFeed[dyVisibleFeed.length-1]?._i" class="mp-dy-swipe-hint">
           <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z" transform="rotate(90 12 12)"/></svg>
         </div>
         <!-- 底部导航 -->
-        <div class="mp-dy-tabbar">
-          <button class="mp-dy-tb on">首页</button>
+        <div v-show="!showDyMe || !dyHostSubpage" class="mp-dy-tabbar">
+          <button :class="['mp-dy-tb', {on: !showDyMe}]" @click="showDyMe=false">首页</button>
           <button class="mp-dy-tb" @click="showToast('该功能暂未开放')">朋友</button>
-          <button class="mp-dy-tb mp-dy-tb-add" @click="showToast('该功能暂未开放')"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg></button>
+          <button class="mp-dy-tb mp-dy-tb-add" title="开直播" @click="openHostSetup"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg></button>
           <button class="mp-dy-tb" style="position:relative" @click="showDyMsgCenter=true">消息<span v-if="dyUnreadCount" class="mp-badge tb">{{ dyUnreadCount > 99 ? '99+' : dyUnreadCount }}</span></button>
-          <button class="mp-dy-tb" @click="showDyHistory=true">我</button>
+          <button :class="['mp-dy-tb', {on: showDyMe}]" @click="showDyMe=true">我</button>
         </div>
         <!-- 评论弹层 -->
         <div v-if="showDyComments" class="mp-dy-cm-overlay" @click.self="showDyComments=false">
@@ -869,7 +874,7 @@
       <!-- 通用分享菜单（视频/直播/评论/照片通用）——放在所有 view 之上（z-60），避免被抖音/相册层覆盖 -->
       <div v-if="dyShareMenu" class="mp-ctx-overlay mp-share-overlay" @click.self="dyShareMenu=null">
         <div class="mp-ctx-sheet">
-          <div class="mp-ctx-title">{{ dyShareMenu.type==='photo' ? '相册照片' : dyShareMenu.type==='live' ? '直播' : dyShareMenu.type==='comment'||dyShareMenu.type==='reply' ? '评论' : '视频' }}</div>
+          <div class="mp-ctx-title">{{ dyShareMenu.type==='photo' ? '相册照片' : dyShareMenu.type==='live'||dyShareMenu.type==='hostlive' ? '直播' : dyShareMenu.type==='comment'||dyShareMenu.type==='reply' ? '评论' : '视频' }}</div>
           <template v-if="!shareFeedback">
             <button class="mp-ctx-item" @click="shareToStory(dyShareMenu.type, dyShareMenu.data)">📤 分享到故事</button>
           </template>
@@ -903,6 +908,10 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import DyCreatorPanel from './DyCreatorPanel.vue'
+import { parseLiveResponse } from './liveReply'
+import VideoCallPanel from './VideoCallPanel.vue'
+import { CALL_SYNC, callStorageKey, createCall, readCalls, recoverCalls, runVideoCall, saveCall } from './videoCall'
 
 defineEmits(['close'])
 const props = defineProps({ owner: { type: String, default: '' } })   // 指定机主（状态栏点某角色手机时传入），空=看<user>自己
@@ -997,7 +1006,10 @@ let dySuppressScroll = false              // 程序性改动列表/滚动时，�
 let dySuppressTimer = null
 function suppressDyScroll(ms = 500) { dySuppressScroll = true; clearTimeout(dySuppressTimer); dySuppressTimer = setTimeout(() => { dySuppressScroll = false }, ms) }
 const dyFlipped = ref({})                 // { _i: true } 该视频文字已翻转到私密版
-const showDyHistory = ref(false)          // 「我」页观看历史弹层
+const showDyHistory = ref(false)          // 观看历史独立页面
+const showDyMe = ref(false)
+const dyHostSubpage = ref(false)
+const dyCreatorPanel = ref(null)
 const showDyMsgCenter = ref(false)        // 消息中心弹层
 const DY_NOTIF_KEY = 'jdnl_dy_notif'
 const dyNotifs = ref([])                  // 消息通知列表 [{id,videoCreator,videoContent,commentText,replierUser,replyText,ts,read}]
@@ -1083,6 +1095,7 @@ const phoneEl = ref(null)
 const storyNow = ref(null)
 const activeOwner = ref('')            // 当前查看的手机机主，空=<user>自己
 const profileContact = ref('')         // 打开的好友资料页对象
+const videoCall = ref(null)
 const showPlus = ref(false)            // 右上角 + 菜单
 const remarks = ref({})                // { 机主: { 联系人: 备注 } }
 const confirmDel = ref(false)          // 删除好友二次确认
@@ -1113,6 +1126,26 @@ function ownerId(name) {
   return 'wxid_' + h.toString(36).slice(0, 8)
 }
 const meId = computed(() => ownerId(meName.value))
+
+const dyHostApi = {
+  scope() {
+    const st = window.parent.SillyTavern
+    const chatId = st?.getCurrentChatId?.() || st?.getContext?.()?.chatId
+    if (!chatId) throw new Error('请先选择聊天，再使用主播直播')
+    return String(chatId) + ':' + meName.value
+  },
+  openIME,
+  gifts: DY_GIFTS,
+  referenceStory: () => referenceStory.value,
+  style: () => douyinSettings.value.style?.trim() || DY_DEFAULT_STYLE,
+  generation() {
+    const th = TH()
+    if (!th?.generateRaw) throw new Error('酒馆助手生成接口不可用')
+    return { generate: options => th.generateRaw(options), gifts: DY_GIFTS, contextBatch: dyChatBatch.value, style: dyStylePrompt(), storyPrompt: '【参考最近正文】优先依据附带聊天中最新一条assistant正文的当前人物、关系与事件生成开播现场；以本次填写的直播内容为明确安排，较早消息只作背景。' }
+  },
+}
+function openHostSetup() { showDyMe.value = true; nextTick(() => dyCreatorPanel.value?.prepare()) }
+function openOwnDyVideo(video) { showDyMe.value = false; openDyFromHistory({ ...video, content: (video.content || '').slice(0, 40), _i: video._i }) }
 
 // 贴纸 & 壁纸
 const CDN_BASE = 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian'
@@ -1501,6 +1534,49 @@ function openProfile(c) {
   remarkDraft.value = (r && r[c]) || ''      // 打开时快照进本地 draft，轮询不再冲掉输入
 }
 function closeProfile() { profileContact.value = ''; confirmDel.value = false }
+const videoApi = { openIME, generate: options => {
+  const th = TH(); if (!th?.generateRaw) throw new Error('酒馆助手生成接口不可用');
+  return th.generateRaw(options);
+} }
+function currentCallKey() { return callStorageKey(dyHostApi.scope()) }
+function syncVideoCallLogs() {
+  try {
+    const key = currentCallKey(); let changed = false;
+    for (const call of readCalls(key)) {
+      const seconds = Math.max(0, Math.floor(((call.endedAt || Date.now()) - call.startedAt) / 1000));
+      const state = call.status === 'ended' ? `通话结束 ${Math.floor(seconds / 60)}分${seconds % 60}秒` : call.status === 'calling' ? '等待接通' : '通话中';
+      for (const [owner, contact, dir] of [[call.owner, call.contact, '发出'], [call.contact, call.owner, '收到']]) {
+        if (isDeleted(owner, contact)) continue;
+        logs.value[owner] ||= {}; logs.value[owner][contact] ||= [];
+        const list = logs.value[owner][contact]; const previous = list.findIndex(m => m.callId === call.id);
+        const msg = { dir, type: '视频通话', text: state, time: call.time, callId: call.id, callData: call };
+        if (previous < 0) { insertLogMessage(list, msg); changed = true; }
+        else if (JSON.stringify(list[previous]) !== JSON.stringify(msg)) { list[previous] = msg; changed = true; }
+      }
+    }
+    if (changed) saveLogs();
+  } catch (e) { console.warn('[镜待流年] 通话记录同步失败', e); }
+}
+function onVideoCallSync(event) {
+  if (event.detail !== currentCallKey()) return;
+  loadLogs(); syncVideoCallLogs();
+}
+function openVideoCall(contact) {
+  if (!contact) return;
+  if (viewingOther.value) { showToast('请从自己的手机发起通话'); return; }
+  try {
+    const key = currentCallKey(); recoverCalls(key);
+    const call = readCalls(key).find(c => c.owner === meName.value && c.contact === contact && c.status !== 'ended') || createCall(key, meName.value, contact, storyTime());
+    videoCall.value = { id: call.id, key }; profileContact.value = ''; showPlus.value = false;
+    if (!call.screen && !call.pending && !call.error) void runVideoCall(key, call.id, 'start', '', videoApi.generate).catch(e => showToast(String(e)));
+  } catch (e) { showToast(String(e)); }
+}
+function openCallRecord(message) {
+  const key = currentCallKey();
+  if (!readCalls(key).some(c => c.id === message.callId) && message.callData) saveCall(key, message.callData);
+  recoverCalls(key); videoCall.value = { id: message.callId, key };
+}
+function closeVideoCall() { videoCall.value = null; syncVideoCallLogs(); }
 function saveRemarkDraft() { if (profileContact.value) setRemark(profileContact.value, remarkDraft.value) }
 function roleInfo(name) {                     // 从名录读身份/来源世界丰富资料页，读不到返回空
   try {
@@ -2599,7 +2675,7 @@ function dyShareBlock(kind, body, context = '') {
   const head = kind === 'scene'
     ? '【手机·画面转场】以下内容来自小手机里真实存在的抖音/抖阴记录，不是虚构、不是同人、不是他人捏造。本次分享就是明确的镜头切换指令：把正文当前场景转入这个视频或直播所展示的现场，以画面中的地点、人物与关系状态作为新的剧情起点，从此刻往后创造新剧情。不要停留在原场景讨论手机内容，也不要把它当成用户的一句概括来敷衍。{{user}}是否在新现场、以何种方式出现，只能依据画面和已有剧情，不得擅自补写{{user}}的动作、对白、反应或决定。'
     : '【手机·出示内容】以下是手机里真实存在的记录，内容属实、可被信任，不是伪造也不是玩笑。请让在场角色看到它并自然做出反应。'
-  return `<手机展示>\n${head}\n${context ? `【可见性与身份定义】${context}\n` : ''}${body}\n</手机展示>`
+  return ['<手机展示>', head, context ? `【可见性与身份定义】${context}` : '', body, '</手机展示>'].filter(Boolean).join('\n\n')
 }
 function buildShareToStoryText(type, data) {
   const me = meName.value || '我'
@@ -2621,6 +2697,11 @@ function buildShareToStoryText(type, data) {
       const platform = isR18 ? '抖阴（成人向短视频平台）' : '抖音'
       return dyShareBlock('scene', `转场来源：${platform}博主${publisher}发布的视频，文案「${v.caption || ''}」。\n新剧情现场：${v.content}`, `这是平台公开内容；若实名对应故事中的已有角色，沿用其既有身份与关系；若是陌生博主，不要强行与当前角色建立关系，也不要让其知道${me}的未公开信息。`)
     }
+  } else if (type === 'hostlive') {
+    const platform = data.mode === 'r18' ? '抖阴' : '抖音'
+    const visible = data.visibility === 'private' ? '本场为私密直播，所有已知亲密角色有观看资格；只有明确入场的观众知道已播出的内容，其他人不会凭空知情。' : '本场为公开直播，线上观众与直播现场的人物分别处理。'
+    const events = (data.events || []).filter(event => event.status !== 'failed' && event.status !== 'pending').slice(-12).map(event => `${event.name}（${event.kind === 'action' || event.kind === 'start' ? '直播内容' : event.kind === 'chat' ? '主播弹幕' : '观众互动'}）：${event.text}`).join('\n')
+    return dyShareBlock('scene', [`转场来源：${data.creator}在${platform}主持直播「${data.title}」。`, `直播状态：${data.status === 'live' ? '直播中' : '已结束的直播记录'}`, `新剧情现场：\n${data.screen}`, `本场累计记忆：\n${data.memory}`, `当前已入场观众：${data.audience.join('、') || '无人'}`, `最近互动（从早到晚）：\n${events}`].join('\n\n'), `${visible}沿用直播已经确认的事件与人物关系；主播就是${me}，只保留记录中明确给出的言行，接下来由玩家决定。`)
   } else if (type === 'live') {
     const room = data
     const platform = dyR18.value ? '抖阴（成人向短视频平台）' : '抖音'
@@ -2734,6 +2815,7 @@ function openDyFromHistory(h) {
   if (idx < 0) { showToast('这条已不在缓存里了'); return }
   const v = douyinFeed.value[idx]
   showDyHistory.value = false
+  showDyMe.value = false
   showDySearchInput.value = false
   // 搜索结果：回到对应关键词的搜索流
   if (v.searchQ) {
@@ -2885,33 +2967,8 @@ function toggleDyFollowFromLive() {
 // 解析直播聊天批次（===LIVECHAT=== ... ===CHATEND===）：返回 {msgs, screen, memory}
 // 兼容两种：cN:等级|||昵称|||内容 带编号，或裸行 等级|||昵称|||内容
 function parseLiveChat(raw, batch = 50) {
-  if (!raw) return { msgs: [], screen: '', memory: '' }
-  const m = raw.match(/===LIVECHAT===([\s\S]*?)===CHATEND===/)
-  if (!m) return { msgs: [], screen: '', memory: '' }
-  const block = m[1]
-  const out = []
-  const sm = block.match(/^\s*screen\s*:(.+)$/m)
-  const screen = sm ? sm[1].trim() : ''
-  const mm = block.match(/^\s*memory\s*:(.+)$/m)
-  const memory = mm ? mm[1].trim().slice(0, 300) : ''
-  const pushLine = (line) => {
-    const t = line.trim(); if (!t || !t.includes('|||')) return
-    const p = t.split('|||'); const level = p[0]?.trim(); const user = p[1]?.trim(); const text = p[2]?.trim(); const tag = (p[3]||'').trim()
-    // join 识别容错：tag==='join' OR text本身就是"join"（AI少写了第4字段）
-    const isJoin = tag === 'join' || (text || '').toLowerCase() === 'join'
-    const msgText = isJoin ? '' : (text || '')
-    // 等级字段容错：纯数字(85)或带前缀(Lv.85/lv85)均支持，提取首段数字
-    const lvNum = (level || '').match(/\d+/)
-    if (user) out.push({ level: lvNum ? +lvNum[0] : null, user, text: msgText, isJoin, isGift: tag === 'gift', isMe: false })
-  }
-  block.split('\n').forEach(ln => {
-    let t = ln.trim(); if (!t) return
-    if (/^(screen|memory)\s*:/.test(t)) return
-    // 去掉行首 cN: 编号
-    t = t.replace(/^c\d+\s*:/, '')
-    if (t.includes('|||')) pushLine(t)
-  })
-  return { msgs: out, screen, memory }
+  const parsed = parseLiveResponse(raw)
+  return { ...parsed, msgs: parsed.messages.slice(0, batch).map(m => ({ level: m.level, user: m.name, text: m.text, isJoin: m.kind === 'join' || m.text.toLowerCase() === 'join', isGift: m.kind === 'gift', isMe: false })) }
 }
 function updateLiveMemory(room, nextMemory) {
   if (!room || !nextMemory) return
@@ -3455,7 +3512,7 @@ function copyStyles() {
     const pdoc = window.parent.document
     if (pdoc.head.querySelector('style[data-mp-phone]')) return
     let css = ''
-    document.querySelectorAll('style').forEach(s => { const t = s.textContent || ''; if (t.includes('.mp-overlay')) css += t + '\n' })
+    document.querySelectorAll('style').forEach(s => { const t = s.textContent || ''; if (t.includes('.mp-overlay') || t.includes('.dh[') || t.includes('.vc[')) css += t + '\n' })
     if (!css) return
     tpStyle = pdoc.createElement('style'); tpStyle.setAttribute('data-mp-phone', ''); tpStyle.textContent = css
     pdoc.head.appendChild(tpStyle)
@@ -3467,14 +3524,17 @@ function onPhoneSync(event) {
   else if (detail.kind === 'photos') { loadPhotos(); syncScrapePhotos() }
   else if (detail.kind === 'douyin') loadDyData(false)
 }
+function onOpenPhoneCard() { view.value = 'home'; showDyMe.value = false; showDyHistory.value = false; closeDyLiveRoom(); }
 onMounted(() => {
   if (props.owner) activeOwner.value = props.owner
   copyStyles()
-  tick(); loadLogs(); loadRemarks(); loadPhotos(); loadDyData(); syncScrape(); syncScrapePhotos()
+  tick(); loadLogs(); loadRemarks(); loadPhotos(); loadDyData(); syncScrape(); syncScrapePhotos(); syncVideoCallLogs()
+  window.parent.addEventListener(CALL_SYNC, onVideoCallSync)
   timer = setInterval(() => { tick(); loadLogs(); loadRemarks(); loadPhotos(); syncScrape(); syncScrapePhotos(); healPending() }, 2000)
   doc.documentElement.style.overflow = 'hidden'; doc.body.style.overflow = 'hidden'
   hookGen()
   try { window.parent.addEventListener(PHONE_SYNC_EVENT, onPhoneSync) } catch (e) {}
+  try { window.parent.addEventListener('jdnl-open-phone', onOpenPhoneCard) } catch (e) {}
   try {
     vvRef = window.parent && window.parent.visualViewport
     if (vvRef) { vvHandler = () => applyVV(); vvRef.addEventListener('resize', vvHandler); vvRef.addEventListener('scroll', vvHandler); applyVV() }
@@ -3502,11 +3562,13 @@ onMounted(() => {
   })
 })
 onUnmounted(() => {
+  window.parent.removeEventListener(CALL_SYNC, onVideoCallSync)
   try { if (tpStyle && tpStyle.parentNode) tpStyle.parentNode.removeChild(tpStyle); tpStyle = null } catch (e) {}
   clearInterval(timer); clearTimeout(sendTimer); clearTimeout(errTimer)
   doc.documentElement.style.overflow = ''; doc.body.style.overflow = ''
   unhookGen()
   try { window.parent.removeEventListener(PHONE_SYNC_EVENT, onPhoneSync) } catch (e) {}
+  try { window.parent.removeEventListener('jdnl-open-phone', onOpenPhoneCard) } catch (e) {}
   try { if (vvRef && vvHandler) { vvRef.removeEventListener('resize', vvHandler); vvRef.removeEventListener('scroll', vvHandler) } } catch (e) {}
 })
 </script>
@@ -3800,6 +3862,7 @@ onUnmounted(() => {
 .mp-prof-msg::after{content:'';position:absolute;left:15px;right:0;bottom:0;height:1px;background:#f2f2f2}
 .mp-prof-msg svg,.mp-prof-call svg{width:21px;height:21px}
 .mp-prof-call{color:#07c160}
+.mp-chat-tools{display:flex;flex-shrink:0;gap:16px;padding:18px 22px 22px;background:#f3f3f3;border-top:1px solid #dedede}.mp-chat-tools>button{display:flex;flex-direction:column;align-items:center;gap:8px;background:none;border:0;color:#656565;font:inherit;font-size:11px;cursor:pointer}.mp-chat-tools>button>span{display:grid;place-items:center;width:54px;height:54px;border-radius:8px;background:#fff;color:#555;font-size:24px}.mp-call-record{display:inline-flex;align-items:center;gap:9px;line-height:1.65;overflow-wrap:anywhere}.mp-call-record>i{flex-shrink:0;font-size:18px}
 .mp-prof-msg:active,.mp-prof-call:active{background:#e9e9e9}
 .mp-prof-del{width:100%;padding:14px;background:#fff;border:none;font-size:16px;color:#fa5151;cursor:pointer;font-family:inherit}
 .mp-prof-del:active{background:#e9e9e9}

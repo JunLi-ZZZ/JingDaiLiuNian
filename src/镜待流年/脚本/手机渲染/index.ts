@@ -240,10 +240,12 @@ function buildRecordTop(screen: HTMLElement, source: string, type: string, time:
 
   const appbar = d.createElement('div');
   appbar.style.cssText = `min-height:47px;padding:7px 12px;display:flex;align-items:center;gap:9px;border-top:1px solid ${dark ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.04)'};border-bottom:1px solid ${dark ? 'rgba(255,255,255,.09)' : 'rgba(0,0,0,.08)'};background:${dark ? 'rgba(12,13,17,.92)' : 'rgba(255,255,255,.86)'}`;
-  const back = d.createElement('span');
-  back.style.cssText = `font-size:24px;line-height:1;color:${dark ? 'rgba(255,255,255,.8)' : '#303239'}`;
+  const back = d.createElement('button');
+  back.type = 'button';
+  back.style.cssText = `width:28px;height:28px;flex-shrink:0;border:0;background:transparent;padding:0;font-size:24px;line-height:1;color:${dark ? 'rgba(255,255,255,.8)' : '#303239'}`;
   back.textContent = '‹';
   back.title = '打开小手机';
+  back.setAttribute('aria-label', '打开小手机');
   back.style.cursor = 'pointer';
   back.addEventListener('click', () => {
     try { window.parent.dispatchEvent(new CustomEvent('jdnl-open-phone', { detail: { source, type } })); } catch (e) {}
@@ -459,30 +461,33 @@ function renderAll(): void {
   pdoc()
     .querySelectorAll('[class*="pm-record-card"]:not([data-rendered])')
     .forEach(renderRecordCard);
-  pdoc().querySelectorAll('[class*="photo-card"]').forEach(card => {
-    if (!card.querySelector('[data-jdln-action="phone"]')) {
-      const button = document.createElement('button');
-      button.className = 'jdln-card-action';
-      button.dataset.jdlnAction = 'phone';
-      button.type = 'button';
-      button.textContent = '打开小手机';
-      button.style.cssText = 'display:block;margin:8px 12px 0;padding:5px 10px;border:1px solid rgba(180,150,110,.35);border-radius:6px;background:rgba(180,150,110,.12);color:inherit;font-size:11px;cursor:pointer';
-      card.appendChild(button);
-    }
-  });
+  renderCardActions();
 }
 
-function bindCardActions(): void {
-  const doc = pdoc();
-  if ((doc as any).__jdlnCardActions) return;
-  (doc as any).__jdlnCardActions = true;
-  doc.addEventListener('click', event => {
-    const target = (event.target as Element | null)?.closest?.('[data-jdln-action]') as HTMLElement | null;
-    if (!target) return;
-    const action = target.dataset.jdlnAction;
-    if (action === 'bestiary') window.parent.dispatchEvent(new CustomEvent('jdnl-open-bestiary'));
-    if (action === 'phone') window.parent.dispatchEvent(new CustomEvent('jdnl-open-phone'));
+function renderCardActions(): void {
+  const d = pdoc();
+  d.querySelectorAll('.bio-card,.it-card,.skill-card,.photo-card').forEach(card => {
+    const photo = card.classList.contains('photo-card');
+    const header = (card.querySelector('.bio-type,.it-type,.skill-type') || (photo ? card.children[1] : null)) as HTMLElement | null;
+    if (!header || card.querySelector('[data-jdln-action]')) return;
+    header.style.position = 'relative';
+    const button = d.createElement('button');
+    button.type = 'button'; button.className = 'jdln-card-action';
+    button.dataset.jdlnAction = photo ? 'phone' : 'bestiary';
+    button.title = photo ? '打开小手机' : '打开万象图鉴';
+    button.setAttribute('aria-label', button.title);
+    button.style.cssText = `position:absolute;left:${photo ? '4px' : '7px'};top:${photo ? '4px' : '50%'};transform:${photo ? 'none' : 'translateY(-50%)'};display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;padding:4px;margin:0;border:0;border-radius:50%;background:${photo ? 'rgba(255,255,255,.8)' : 'transparent'};color:var(--tc,#8b7355);cursor:pointer;z-index:3`;
+    button.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="m10.828 12 4.95 4.95-1.414 1.415L8 12l6.364-6.364 1.414 1.414z"/></svg>';
+    header.appendChild(button);
   });
+}
+function onCardAction(event: Event): void {
+  const target = (event.target as Element | null)?.closest?.('[data-jdln-action]') as HTMLElement | null;
+  if (!target) return;
+  const action = target.dataset.jdlnAction;
+  if (action !== 'bestiary' && action !== 'phone') return;
+  event.preventDefault(); event.stopPropagation();
+  window.parent.dispatchEvent(new CustomEvent(action === 'phone' ? 'jdnl-open-phone' : 'jdnl-open-bestiary'));
 }
 
 // 收集页面上所有卡片的参与者（手机机主+联系人 + 照片拍摄者），用于确认谁该拥有手机
@@ -546,7 +551,7 @@ function ensurePhones(): void {
 }
 
 $(() => {
-  bindCardActions();
+  pdoc().addEventListener('click', onCardAction);
   renderAll();
 
   const events = [
@@ -575,6 +580,7 @@ $(() => {
   const timer = setInterval(renderAll, 1200);
 
   $(window).on('pagehide', () => {
+    pdoc().removeEventListener('click', onCardAction);
     clearInterval(timer);
   });
 });

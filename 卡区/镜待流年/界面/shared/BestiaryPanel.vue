@@ -1,4 +1,5 @@
 <template>
+  <Teleport :to="doc.body">
   <div class="bestiary-panel" @click.self="$emit('close')">
     <div class="bestiary-frame">
       <span class="bs-corner tl"></span><span class="bs-corner br"></span>
@@ -58,6 +59,7 @@
       </div>
     </div>
   </div>
+  </Teleport>
 </template>
 
 <script setup>
@@ -214,18 +216,27 @@ function toggleExpand(name) {
 }
 
 let timer = null
+let portalStyle = null
+let previousOverflow = ['', '']
 onMounted(() => {
+  if (doc !== document) {
+    portalStyle = doc.createElement('style')
+    portalStyle.textContent = [...document.querySelectorAll('style')].map(s => s.textContent || '').filter(css => css.includes('.bestiary-panel')).join('\n')
+    doc.head.appendChild(portalStyle)
+  }
   if (isDemo && demoParam !== 'all') mode.value = demoParam
   checkChatChange()
   load()
   timer = setInterval(() => { checkChatChange(); syncDOM(); load() }, 2000)
+  previousOverflow = [doc.documentElement.style.overflow, doc.body.style.overflow]
   doc.documentElement.style.overflow = 'hidden'
   doc.body.style.overflow = 'hidden'
 })
 onUnmounted(() => {
+  portalStyle?.remove()
   clearInterval(timer)
-  doc.documentElement.style.overflow = ''
-  doc.body.style.overflow = ''
+  doc.documentElement.style.overflow = previousOverflow[0]
+  doc.body.style.overflow = previousOverflow[1]
 })
 </script>
 

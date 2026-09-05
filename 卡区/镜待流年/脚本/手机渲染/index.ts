@@ -159,7 +159,29 @@ function buildBubble(dir: string, type: string, text: string, contact: string, o
     bub.appendChild(foot);
   } else if (isSticker) {
     const m = text.match(/\[表情[：:]\s*(.*?)\]/);
-    bub.appendChild(d.createTextNode(m ? '[' + m[1].trim() + ']' : text));
+    const sname = m ? m[1].trim().replace(/\s+/g, '') : '';
+    const CDN_BASE = 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian';
+    const STICKERS: Record<string, string> = {
+      '你好呀': CDN_BASE + '/assets/stickers/final/01_你好呀.png',
+      '嘿嘿':   CDN_BASE + '/assets/stickers/final/02_嘿嘿.png',
+      '摸摸头': CDN_BASE + '/assets/stickers/final/03_摸摸头.png',
+      '好害羞': CDN_BASE + '/assets/stickers/final/04_好害羞.png',
+      '呜呜':   CDN_BASE + '/assets/stickers/final/05_呜呜.png',
+      '晚安':   CDN_BASE + '/assets/stickers/final/06_晚安.png',
+      '略略':   CDN_BASE + '/assets/stickers/final/07_略略.png',
+      '诶':     CDN_BASE + '/assets/stickers/final/08_诶.png',
+      '哼':     CDN_BASE + '/assets/stickers/final/09_哼.png',
+    };
+    const imgUrl = sname && STICKERS[sname];
+    if (imgUrl) {
+      const img = d.createElement('img');
+      img.src = imgUrl;
+      img.alt = sname;
+      img.style.cssText = 'width:88px;height:88px;object-fit:contain;display:block';
+      bub.appendChild(img);
+    } else {
+      bub.appendChild(d.createTextNode(m ? '[' + m[1].trim() + ']' : text));
+    }
   } else {
     bub.appendChild(d.createTextNode(text));
   }
@@ -218,9 +240,16 @@ function buildRecordTop(screen: HTMLElement, source: string, type: string, time:
 
   const appbar = d.createElement('div');
   appbar.style.cssText = `min-height:47px;padding:7px 12px;display:flex;align-items:center;gap:9px;border-top:1px solid ${dark ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.04)'};border-bottom:1px solid ${dark ? 'rgba(255,255,255,.09)' : 'rgba(0,0,0,.08)'};background:${dark ? 'rgba(12,13,17,.92)' : 'rgba(255,255,255,.86)'}`;
-  const back = d.createElement('span');
-  back.style.cssText = `font-size:24px;line-height:1;color:${dark ? 'rgba(255,255,255,.8)' : '#303239'}`;
+  const back = d.createElement('button');
+  back.type = 'button';
+  back.style.cssText = `width:28px;height:28px;flex-shrink:0;border:0;background:transparent;padding:0;font-size:24px;line-height:1;color:${dark ? 'rgba(255,255,255,.8)' : '#303239'}`;
   back.textContent = '‹';
+  back.title = '打开小手机';
+  back.setAttribute('aria-label', '打开小手机');
+  back.style.cursor = 'pointer';
+  back.addEventListener('click', () => {
+    try { window.parent.dispatchEvent(new CustomEvent('jdnl-open-phone', { detail: { source, type } })); } catch (e) {}
+  });
   const iconData = recordIcon(source, type);
   const icon = d.createElement('span');
   icon.style.cssText = `width:29px;height:29px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:13px;font-weight:750;background:${iconData.bg}`;
@@ -432,9 +461,36 @@ function renderAll(): void {
   pdoc()
     .querySelectorAll('[class*="pm-record-card"]:not([data-rendered])')
     .forEach(renderRecordCard);
+  renderCardActions();
 }
 
-// 收集页面上所有卡片的参与者（机主+联系人），用于确认谁该拥有手机
+function renderCardActions(): void {
+  const d = pdoc();
+  d.querySelectorAll('.bio-card,.it-card,.skill-card,.photo-card').forEach(card => {
+    const photo = card.classList.contains('photo-card');
+    const header = (card.querySelector('.bio-type,.it-type,.skill-type') || (photo ? card.children[1] : null)) as HTMLElement | null;
+    if (!header || card.querySelector('[data-jdln-action]')) return;
+    header.style.position = 'relative';
+    const button = d.createElement('button');
+    button.type = 'button'; button.className = 'jdln-card-action';
+    button.dataset.jdlnAction = photo ? 'phone' : 'bestiary';
+    button.title = photo ? '打开小手机' : '打开万象图鉴';
+    button.setAttribute('aria-label', button.title);
+    button.style.cssText = `position:absolute;left:${photo ? '4px' : '7px'};top:${photo ? '4px' : '50%'};transform:${photo ? 'none' : 'translateY(-50%)'};display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;padding:4px;margin:0;border:0;border-radius:50%;background:${photo ? 'rgba(255,255,255,.8)' : 'transparent'};color:var(--tc,#8b7355);cursor:pointer;z-index:3`;
+    button.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="m10.828 12 4.95 4.95-1.414 1.415L8 12l6.364-6.364 1.414 1.414z"/></svg>';
+    header.appendChild(button);
+  });
+}
+function onCardAction(event: Event): void {
+  const target = (event.target as Element | null)?.closest?.('[data-jdln-action]') as HTMLElement | null;
+  if (!target) return;
+  const action = target.dataset.jdlnAction;
+  if (action !== 'bestiary' && action !== 'phone') return;
+  event.preventDefault(); event.stopPropagation();
+  window.parent.dispatchEvent(new CustomEvent(action === 'phone' ? 'jdnl-open-phone' : 'jdnl-open-bestiary'));
+}
+
+// 收集页面上所有卡片的参与者（手机机主+联系人 + 照片拍摄者），用于确认谁该拥有手机
 function collectParticipants(): string[] {
   const set = new Set<string>();
   pdoc()
@@ -446,6 +502,14 @@ function collectParticipants(): string[] {
       else if (head.length === 3) { owner = meName(); contact = head[0].trim(); }
       if (owner) set.add(owner);
       if (contact) set.add(contact);
+    });
+  // 照片卡片：拍摄者（第一字段）也需要手机
+  pdoc()
+    .querySelectorAll('[class*="photo-data"]')
+    .forEach(el => {
+      const parts = (el.textContent || '').trim().split('|||');
+      const shooter = parts[0].trim() || meName();
+      if (shooter) set.add(shooter);
     });
   return Array.from(set);
 }
@@ -487,6 +551,7 @@ function ensurePhones(): void {
 }
 
 $(() => {
+  pdoc().addEventListener('click', onCardAction);
   renderAll();
 
   const events = [
@@ -515,6 +580,7 @@ $(() => {
   const timer = setInterval(renderAll, 1200);
 
   $(window).on('pagehide', () => {
+    pdoc().removeEventListener('click', onCardAction);
     clearInterval(timer);
   });
 });

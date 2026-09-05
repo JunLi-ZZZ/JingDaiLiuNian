@@ -72,4 +72,3 @@
 </div>
 </div>
 </div>
-<button class="jdln-card-action" data-jdln-action="bestiary" type="button">打开图鉴</button>

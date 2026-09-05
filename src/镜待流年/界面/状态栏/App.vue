@@ -413,6 +413,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { receiveCardNavigation } from '../shared/cardNavigation';
 import { useDataStore } from './store';
 import MirrorPanel from '../shared/MirrorPanel.vue';
 import BestiaryPanel from '../shared/BestiaryPanel.vue';
@@ -540,18 +541,16 @@ function openPhone(owner: string) {
   phoneOwner.value = owner || '';
   phoneOpen.value = true;
 }
-function onOpenPhoneCard(event: Event) {
-  const owner = (event as CustomEvent<{ owner?: string }>).detail?.owner || '';
-  openPhone(owner);
-}
-function onOpenBestiaryCard() {
-  bestiaryOpen.value = true;
-}
-onMounted(() => window.addEventListener('jdnl-open-phone', onOpenPhoneCard));
-onUnmounted(() => window.removeEventListener('jdnl-open-phone', onOpenPhoneCard));
-onMounted(() => window.addEventListener('jdnl-open-bestiary', onOpenBestiaryCard));
-onUnmounted(() => window.removeEventListener('jdnl-open-bestiary', onOpenBestiaryCard));
-onUnmounted(() => window.removeEventListener('jdnl-open-phone', onOpenPhoneCard));
+let stopCardNavigation: (() => void) | undefined;
+onMounted(() => {
+  let rank = 0;
+  try { rank = getCurrentMessageId(); } catch { /* Standalone preview has no message floor. */ }
+  stopCardNavigation = receiveCardNavigation(window.parent, rank, destination => {
+    if (destination.action === 'phone') { bestiaryOpen.value = false; openPhone(destination.owner || ''); }
+    else { phoneOpen.value = false; bestiaryOpen.value = true; }
+  });
+});
+onUnmounted(() => stopCardNavigation?.());
 
 const expandedChars = ref(new Set<string>());
 const expandedSubs = ref(new Set<string>());
