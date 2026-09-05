@@ -243,6 +243,11 @@ function buildRecordTop(screen: HTMLElement, source: string, type: string, time:
   const back = d.createElement('span');
   back.style.cssText = `font-size:24px;line-height:1;color:${dark ? 'rgba(255,255,255,.8)' : '#303239'}`;
   back.textContent = '‹';
+  back.title = '打开小手机';
+  back.style.cursor = 'pointer';
+  back.addEventListener('click', () => {
+    try { window.parent.dispatchEvent(new CustomEvent('jdnl-open-phone', { detail: { source, type } })); } catch (e) {}
+  });
   const iconData = recordIcon(source, type);
   const icon = d.createElement('span');
   icon.style.cssText = `width:29px;height:29px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:13px;font-weight:750;background:${iconData.bg}`;
@@ -454,6 +459,30 @@ function renderAll(): void {
   pdoc()
     .querySelectorAll('[class*="pm-record-card"]:not([data-rendered])')
     .forEach(renderRecordCard);
+  pdoc().querySelectorAll('[class*="photo-card"]').forEach(card => {
+    if (!card.querySelector('[data-jdln-action="phone"]')) {
+      const button = document.createElement('button');
+      button.className = 'jdln-card-action';
+      button.dataset.jdlnAction = 'phone';
+      button.type = 'button';
+      button.textContent = '打开小手机';
+      button.style.cssText = 'display:block;margin:8px 12px 0;padding:5px 10px;border:1px solid rgba(180,150,110,.35);border-radius:6px;background:rgba(180,150,110,.12);color:inherit;font-size:11px;cursor:pointer';
+      card.appendChild(button);
+    }
+  });
+}
+
+function bindCardActions(): void {
+  const doc = pdoc();
+  if ((doc as any).__jdlnCardActions) return;
+  (doc as any).__jdlnCardActions = true;
+  doc.addEventListener('click', event => {
+    const target = (event.target as Element | null)?.closest?.('[data-jdln-action]') as HTMLElement | null;
+    if (!target) return;
+    const action = target.dataset.jdlnAction;
+    if (action === 'bestiary') window.parent.dispatchEvent(new CustomEvent('jdnl-open-bestiary'));
+    if (action === 'phone') window.parent.dispatchEvent(new CustomEvent('jdnl-open-phone'));
+  });
 }
 
 // 收集页面上所有卡片的参与者（手机机主+联系人 + 照片拍摄者），用于确认谁该拥有手机
@@ -517,6 +546,7 @@ function ensurePhones(): void {
 }
 
 $(() => {
+  bindCardActions();
   renderAll();
 
   const events = [
