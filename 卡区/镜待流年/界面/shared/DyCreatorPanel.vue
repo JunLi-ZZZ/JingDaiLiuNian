@@ -36,7 +36,7 @@
     </template>
 
     <template v-else-if="room">
-      <header class="dh-host-header"><button class="dh-host-identity" title="直播信息" @click="showInfo = !showInfo"><span class="dh-mini-avatar">{{ name.slice(0, 1) }}</span><span><b>{{ name }}</b><small>{{ room.status === 'live' ? '主播' : '直播回放' }} · {{ room.visibility === 'private' ? '私密' : '公开' }}</small></span></button><button class="dh-online" title="在线观众" @click="showAudience = !showAudience">{{ room.viewers }} 人</button><button class="dh-icon" title="收起直播间" @click="page = 'profile'"><span v-html="backIcon"></span></button></header>
+      <header class="dh-host-header"><button class="dh-host-identity" title="直播信息" @click="showInfo = !showInfo"><span class="dh-mini-avatar">{{ room.creator.slice(0, 1) }}</span><span><b>{{ room.creator }}</b><small>{{ room.status === 'live' ? '主播' : '直播回放' }} · {{ room.visibility === 'private' ? '私密' : '公开' }}</small></span></button><button class="dh-online" title="在线观众" @click="showAudience = !showAudience">{{ room.viewers }} 人</button><button class="dh-icon" title="收起直播间" @click="page = 'profile'"><span v-html="backIcon"></span></button></header>
       <div class="dh-host-meta"><span :class="{ 'dh-live': room.status === 'live' }">{{ room.status === 'live' ? '直播中' : '已结束' }}</span><span>{{ elapsed }} · {{ room.likes }} 赞</span></div>
       <div v-if="showInfo" class="dh-info"><b>{{ room.title }}</b><p>{{ room.brief }}</p><small>{{ room.visibility === 'private' ? '所有已知亲密角色可见' : '所有人可见' }}</small></div>
       <div v-if="showAudience" class="dh-info"><b>在线观众</b><p v-if="!room.audience.length">暂无入场观众</p><p v-for="person in room.audience" :key="person">{{ person }} <span v-if="room.fans?.[person]" class="dh-fan-badge">Lv.{{ room.fans[person].level }}</span></p></div>
@@ -44,22 +44,24 @@
       <div class="dh-stage" :style="backdrop"><div class="dh-stage-caption"><small>{{ room.title }}</small><p>{{ room.screen || '等待直播画面' }}</p></div></div>
       <div ref="chatEl" class="dh-chat" aria-live="polite">
         <div class="dh-chat-notice">{{ room.visibility === 'private' ? '私密直播 · 已知亲密角色可见' : '欢迎来到直播间' }}</div>
-        <div v-for="event in room.events" :key="event.id" class="dh-message" :class="['dh-msg-' + event.kind, { 'dh-msg-failed': event.status === 'failed' }]">
+        <div v-for="event in visibleEvents" :key="event.id" class="dh-message" :class="['dh-msg-' + event.kind, { 'dh-msg-failed': event.status === 'failed' }]">
           <template v-if="event.kind === 'continue'"><small>继续直播</small></template>
-          <template v-else><span v-if="['chat', 'action', 'start'].includes(event.kind)" class="dh-host-badge">主播</span><span v-else-if="event.level != null" class="dh-fan-badge">Lv.{{ event.level }}</span><button class="dh-audience-name" @click="replyTo(event)">{{ event.name }}</button><small v-if="event.kind === 'action' || event.kind === 'start'"> 直播内容</small><span v-if="event.replyTo"> 回复 {{ event.replyTo }}</span><span>：{{ event.kind === 'fan' ? '加入了粉丝团' : event.text }}</span><span v-if="event.kind === 'gift' && event.gift" class="dh-gift"> {{ giftLabel(event.gift) }} ×{{ event.quantity }}</span></template>
+          <template v-else-if="event.kind === 'join' || event.kind === 'fan'"><button class="dh-audience-name" @click="replyTo(event)">{{ event.name }}</button><span> {{ event.kind === 'join' ? '加入直播间' : '加入了粉丝团' }}</span></template>
+          <template v-else-if="event.kind === 'gift'"><button class="dh-audience-name" @click="replyTo(event)">{{ event.name }}</button><span v-if="event.gift" class="dh-gift"> 送出 {{ giftLabel(event.gift) }} ×{{ event.quantity }}</span><span v-else> 送出礼物</span><span v-if="event.text" class="dh-gift-note">{{ event.text }}</span></template>
+          <template v-else><span v-if="['chat', 'action', 'start'].includes(event.kind)" class="dh-host-badge">主播</span><span v-else-if="event.level != null" class="dh-fan-badge">Lv.{{ event.level }}</span><button class="dh-audience-name" @click="replyTo(event)">{{ event.name }}</button><small v-if="event.kind === 'action' || event.kind === 'start'"> 直播内容</small><span v-if="event.replyTo"> 回复 {{ event.replyTo }}</span><span>：{{ event.text }}</span></template>
           <button v-if="event.status === 'failed'" class="dh-retry" @click="retry">重试</button>
         </div>
         <div v-if="room.pending" class="dh-loading" role="status" aria-label="正在生成直播反馈"><i /><i /><i /></div>
       </div>
       <div v-if="room.warning" class="dh-error" role="status">{{ room.warning }}</div>
-      <div v-if="room.error" class="dh-error" role="alert"><span>{{ room.error }}</span><button @click="retry">重试</button><button @click="withdraw">撤回本次</button></div>
+      <div v-if="room.error" class="dh-error" role="alert"><span>{{ room.error }}</span><button v-if="room.status === 'live'" @click="retry">重试</button><button @click="withdraw">撤回本次</button></div>
       <details v-if="room.failedRaw" class="dh-info"><summary>查看未解析的回复</summary><p>{{ room.failedRaw }}</p></details>
       <footer class="dh-controls">
         <template v-if="room.status === 'live'">
           <div class="dh-input-tabs"><button :class="{ on: inputMode === 'action' }" @click="inputMode = 'action'">直播内容</button><button :class="{ on: inputMode === 'chat' }" @click="inputMode = 'chat'">发弹幕</button><button @click="showFans = !showFans">粉丝团</button><button class="dh-end" @click="confirmEnd = true">结束</button></div>
           <div class="dh-compose"><button class="dh-draft" :disabled="!!room.pending || !!room.error" @click="editInput">{{ drafts[inputMode] || (inputMode === 'action' ? '此刻做什么、说什么…' : '发条弹幕…') }}</button><button class="dh-icon" title="继续直播" :disabled="!!room.pending || !!room.error" @click="run('continue', '')"><span v-html="icons.video"></span></button><button class="dh-icon" title="分享到故事" :disabled="!room.screen" @click="share"><span v-html="shareIcon"></span></button></div>
         </template>
-        <button v-else class="dh-primary" :disabled="!room.screen" @click="share">分享到故事</button>
+        <div v-else class="dh-ended-actions"><button class="dh-primary" @click="resume">继续本场直播</button><button class="dh-icon" title="粉丝团" @click="showFans = !showFans"><span v-html="icons.star"></span></button><button class="dh-icon" title="分享到故事" :disabled="!room.screen" @click="share"><span v-html="shareIcon"></span></button></div>
       </footer>
       <div v-if="confirmEnd" class="dh-modal-shade" @click.self="confirmEnd = false"><div class="dh-modal"><h3>结束本场直播？</h3><p>{{ room.pending ? '本轮仍在生成，结束后不再接收本轮结果。' : '本场记录将保留在个人主页。' }}</p><button class="dh-primary" @click="end">结束直播</button><button class="dh-soft" @click="confirmEnd = false">继续直播</button></div></div>
     </template>
@@ -69,7 +71,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
-import { generateHostTurn, hostId, hostStorageKey, readHostSessions, recoverHostSessions, subscribeHostSessions, writeHostSession, type HostSession, type HostInput } from './hostLive';
+import { collectHostFans, displayHostEvent, endHostSession, generateHostTurn, hostId, migrateHostSessions, readHostSessions, recoverHostSessions, resumeHostSession, subscribeHostSessions, writeHostSession, type HostSession, type HostInput } from './hostLive';
 
 const props = defineProps<{ name: string; account: string; mode: 'normal' | 'r18'; follows: number; feed: any[]; wallpaper: string; icons: Record<string, string>; api: any }>();
 const emit = defineEmits(['home', 'history', 'video', 'share', 'subpage']);
@@ -90,18 +92,18 @@ const setup = reactive({ title: '', brief: '', visibility: 'public' as 'public' 
 const chatEl = ref<HTMLElement>();
 const now = ref(Date.now());
 let storageKey = '';
-let scope = '';
 let unsubscribe: (() => void) | undefined;
 let timer: ReturnType<typeof setInterval> | undefined;
 const platform = computed(() => props.mode === 'r18' ? '抖阴' : '抖音');
 const backdrop = computed(() => props.wallpaper ? { backgroundImage: `url("${props.wallpaper}")` } : {});
 const room = computed(() => sessions.value.find(item => item.id === selectedId.value));
+const visibleEvents = computed(() => (room.value?.events || []).map(e => displayHostEvent(e, props.api.gifts)).filter(e => e.text || ['continue', 'join', 'gift', 'fan'].includes(e.kind)));
 const active = computed(() => sessions.value.find(item => item.status === 'live'));
 const liked = computed(() => props.feed.filter(item => item.isLiked && !item.pending));
 const saved = computed(() => props.feed.filter(item => item.isSaved && !item.pending));
 const selectedVideos = computed(() => profileTab.value === '喜欢' ? liked.value : saved.value);
 const elapsed = computed(() => {
-  const seconds = Math.max(0, Math.floor(((room.value?.endedAt || now.value) - (room.value?.startedAt || now.value)) / 1000));
+  const seconds = Math.max(0, Math.floor(((room.value?.endedAt || now.value) - (room.value?.startedAt || now.value) - (room.value?.pausedMs || 0)) / 1000));
   return `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
 });
 const backIcon = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 12 4.95 4.95-1.414 1.415L8 12l6.364-6.364 1.414 1.414z"/></svg>';
@@ -109,11 +111,10 @@ const historyIcon = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2
 const shareIcon = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M13 14H9a5 5 0 0 0-5 5v1H2v-1A11 11 0 0 1 13 8V3l9 8-9 8zm2 .55L18.99 11 15 7.45V10h-2a8.97 8.97 0 0 0-6.19 2.46A7 7 0 0 1 9 12h6z"/></svg>';
 const stamp = (value: number) => new Date(value).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 const giftLabel = (key?: string) => { const gift = props.api.gifts.find((item: any) => item.k === key); return gift ? `${gift.icon} ${gift.name}` : ''; };
-function refresh() { try { sessions.value = readHostSessions(storageKey); } catch (e) { error.value = String(e); } }
+function refresh() { try { sessions.value = readHostSessions(storageKey); if (page.value === 'room' && !room.value) page.value = 'profile'; } catch (e) { error.value = String(e); } }
 function load() {
   try {
-    scope = props.api.scope();
-    storageKey = hostStorageKey(scope, props.mode);
+    storageKey = migrateHostSessions(props.mode);
     recoverHostSessions(storageKey);
     refresh();
     bio.value = localStorage.getItem(storageKey + ':bio') || '';
@@ -142,7 +143,7 @@ function start() {
     if (!setup.brief.trim()) return;
     props.api.generation();
     const item: HostSession = { id: hostId(), mode: props.mode, creator: props.name, title: setup.title.trim() || `${props.name}的直播间`, brief: setup.brief.trim(), visibility: setup.visibility, referenceStory: setup.referenceStory, style: props.api.style(), startedAt: Date.now(), status: 'live', screen: '', memory: '', events: [], audience: [], viewers: 0, likes: 0 };
-    item.fans = Object.assign({}, ...[...sessions.value].reverse().map(previous => previous.fans || {}));
+    item.fans = collectHostFans(sessions.value);
     writeHostSession(storageKey, item); openRoom(item.id); void run('start', item.brief);
   } catch (e) { error.value = String(e); }
 }
@@ -171,18 +172,36 @@ function editInput() {
     if (room.value?.request?.text === value) drafts[kind] = '';
   } });
 }
-function end() { if (room.value) writeHostSession(storageKey, { ...room.value, status: 'ended', endedAt: Date.now(), pending: undefined }); confirmEnd.value = false; }
+function end() { if (room.value) endHostSession(storageKey, room.value.id); confirmEnd.value = false; }
+function resume() {
+  if (!room.value) return;
+  try { resumeHostSession(storageKey, room.value.id); error.value = ''; }
+  catch (e) { error.value = String(e); }
+}
 function share() { if (room.value) emit('share', JSON.parse(JSON.stringify(room.value))); }
 watch(() => props.mode, load);
 watch(page, value => emit('subpage', value !== 'profile'));
 watch(setup, () => { if (storageKey) { try { localStorage.setItem(storageKey + ':setup', JSON.stringify(setup)); } catch (e) { error.value = String(e); } } });
 watch(() => [room.value?.events.length, room.value?.pending], () => nextTick(() => { if (chatEl.value) chatEl.value.scrollTop = chatEl.value.scrollHeight; }));
-onMounted(() => { load(); unsubscribe = subscribeHostSessions(refresh); timer = setInterval(() => { now.value = Date.now(); if (props.api.scope() !== scope) load(); }, 1000); });
+onMounted(() => { load(); unsubscribe = subscribeHostSessions(refresh); timer = setInterval(() => { now.value = Date.now(); }, 1000); });
 onUnmounted(() => { unsubscribe?.(); clearInterval(timer); });
 defineExpose({ prepare });
 </script>
 
 <style scoped>
+.dh .dh-field{gap:8px;padding:14px 0!important;border-bottom:0!important}
+.dh .dh-field b{grid-column:1/3;grid-row:2;background:#f1f2f4;color:#292a30;border:1px solid #d5d7df;border-radius:5px;padding:11px 30px 11px 12px;min-height:44px}
+.dh .dh-field-multi b{min-height:94px}
+.dh .dh-field>span{grid-row:2;z-index:1;margin-right:11px;color:#777b87}
+.dh .dh-field:focus-visible b{outline:2px solid #29d9cf}
+.dh .dh-stage{border-bottom:1px solid #ffffff26;scrollbar-width:thin;scrollbar-color:#85858e transparent}
+.dh .dh-chat{background:#1d1d22;scrollbar-width:thin;scrollbar-color:#5c5c68 transparent}
+.dh .dh-chat-notice{border-bottom:1px solid #ffffff10;padding-bottom:8px}
+.dh .dh-msg-join,.dh .dh-msg-fan{font-size:11px;color:#a3a6b8;line-height:1.5;padding:3px 0}
+.dh-msg-join .dh-audience-name,.dh-msg-fan .dh-audience-name,.dh-msg-gift .dh-audience-name{margin-right:4px}
+.dh .dh-msg-gift{padding:5px 8px;border-left:2px solid #c5a36c;background:#c5a36c12}
+.dh-gift-note{display:block;color:#dad1c1;font-size:11px}
+.dh-ended-actions{display:flex;align-items:center;gap:6px}.dh-ended-actions>.dh-primary{flex:1;min-width:0}
 .dh-fan-badge{display:inline-block;font-size:9px;padding:0 4px;background:#334a59;color:#c5eafb;border-radius:3px;margin-right:4px}.dh .dh-audience-name{color:#bdc3e0;font-size:12px}.dh-error>span{overflow-wrap:anywhere;min-width:0}.dh-error button{flex-shrink:0}
 .dh{padding-top:28px}
 .dh{display:flex;flex:1;flex-direction:column;min-height:0;background:#151517;color:#f7f7f8;font-family:inherit;font-size:13px;letter-spacing:0;position:relative;overflow:hidden}.dh *{box-sizing:border-box;letter-spacing:0}.dh button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0}.dh button:disabled{opacity:.38;cursor:default}.dh button:focus-visible{outline:2px solid #29d9cf;outline-offset:-2px}.dh svg{width:100%;height:100%;display:block}.dh-icon{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;border-radius:50%!important}.dh-icon>span{display:block;width:23px;height:23px}.dh-profile-scroll{overflow-y:auto;flex:1;min-height:0}.dh-banner{height:104px;background-size:cover;background-position:center 44%;display:flex;justify-content:space-between;align-items:flex-start;padding:9px 10px;background-color:#323a3a}.dh-banner>span{font-size:12px;padding-top:9px;text-shadow:0 1px 3px #000}.dh-banner .dh-icon{background:#0004}.dh-profile{padding:0 16px 13px}.dh-identity{display:flex;justify-content:space-between;align-items:center;margin-top:-29px;position:relative}.dh-avatar{height:76px;width:76px;display:grid;place-items:center;border-radius:50%;border:4px solid #151517;background:#45484c;color:white;font-size:28px}.dh-soft{background:#303034!important;border-radius:5px;padding:8px 18px!important;font-size:12px!important}.dh-identity .dh-soft{margin-top:25px}.dh h2{font-size:21px;line-height:1.3;margin:9px 0 5px;font-weight:700;overflow-wrap:anywhere}.dh-id{font-size:10px;color:#939399;margin:0 0 12px}.dh-bio{text-align:left;color:#b9b9c0!important;font-size:12px!important;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%}.dh-stats{display:flex;gap:24px;margin:16px 0;color:#a9a9af;font-size:11px}.dh-stats b{font-size:16px;color:#fafafa;margin-right:5px}.dh-shortcuts{display:flex;gap:9px}.dh-shortcuts button{display:flex;align-items:center;justify-content:center;gap:7px;background:#252528;border-radius:5px;padding:9px 7px;flex:1;font-size:12px;white-space:nowrap}.dh-shortcuts span{width:18px;height:18px}.dh-shortcuts i{width:5px;height:5px;border-radius:50%;background:#ff4161}.dh-tabs{display:flex;border-bottom:1px solid #ffffff13;position:sticky;top:0;background:#151517;z-index:1;height:43px}.dh-tabs button{flex:1;color:#99999f;font-size:12px;position:relative}.dh-tabs button.on{color:white;font-weight:600}.dh-tabs button.on:after{content:'';position:absolute;height:3px;width:30px;background:#f6f6f6;bottom:0;left:calc(50% - 15px)}.dh-tabs small{font-weight:400;font-size:10px}.dh-empty{text-align:center;padding:32px 15px;color:#95959e}.dh-empty>span{display:block;width:34px;height:34px;margin:auto;color:#66666f}.dh-empty p{margin:13px 0 19px;font-size:12px}.dh-primary{padding:12px 18px!important;background:#fa3159!important;color:white!important;border-radius:5px;font-weight:600!important}.dh-records{padding:0 12px}.dh-record{width:100%;display:flex;align-items:center;gap:11px;text-align:left;padding:12px 0!important;border-bottom:1px solid #ffffff0d!important}.dh-thumb{width:69px;height:80px;flex-shrink:0;background-size:cover;background-position:center;border-radius:4px;position:relative;background-color:#323a3a;display:grid;place-items:center}.dh-thumb>span{position:absolute;top:4px;left:4px;font-size:9px;padding:2px 4px;background:#0008;border-radius:2px}.dh-thumb>b{width:26px;height:26px;filter:drop-shadow(0 1px 4px #000)}.dh-record>div:nth-child(2){min-width:0;flex:1}.dh-record strong{font-size:13px;display:block;overflow-wrap:anywhere;line-height:1.5}.dh-record small{display:block;color:#919198;font-size:10px;margin-top:7px}.dh-chevron{color:#aaa;font-size:22px}.dh-live{color:#ff617a!important}.dh-video-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px}.dh-video-grid button{aspect-ratio:3/4;display:flex;flex-direction:column;justify-content:space-between;text-align:left;padding:8px;background-size:cover;background-color:#323a3a;background-blend-mode:multiply;gap:5px;overflow:hidden}.dh-video-grid span,.dh-video-grid small{font-size:9px}.dh-video-grid strong{font-size:11px;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow-wrap:anywhere}.dh-header{display:flex;align-items:center;justify-content:space-between;padding:7px 9px;border-bottom:1px solid #ffffff10;flex-shrink:0}.dh-header strong{font-size:15px}.dh-header-spacer{width:34px}.dh-setup{flex:1;min-height:0;overflow:auto;padding:16px}.dh-setup-cover{height:140px;border-radius:6px;background-size:cover;background-position:center 44%;padding:12px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;background-color:#323a3a}.dh-outline{align-self:flex-start;font-size:10px;padding:3px 6px;background:#0006;border:1px solid #fff4;border-radius:3px}.dh-camera-mark{width:32px;height:32px;filter:drop-shadow(0 1px 4px #000)}.dh-setup-cover>span:last-child{font-size:12px}.dh-field{display:grid!important;grid-template-columns:minmax(0,1fr) 15px;text-align:left;width:100%;padding:17px 0!important;border-bottom:1px solid #ffffff14!important;gap:7px 10px}.dh-field small{grid-column:1;font-size:11px;color:#92929c}.dh-field b{grid-column:1;font-weight:400;font-size:14px;overflow-wrap:anywhere;white-space:pre-wrap;line-height:1.5}.dh-field>span{grid-column:2;grid-row:1/3;align-self:center;color:#999;font-size:22px}.dh-field-multi b{font-size:12px}.dh-setting{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:15px 0;font-size:12px}.dh-segment{display:flex;padding:3px;background:#29292e;border-radius:5px}.dh-segment button{padding:5px 12px;border-radius:3px;font-size:11px;color:#aaa}.dh-segment .on{background:#505057;color:white}.dh-access{font-size:11px;color:#f7b6c4;margin:-5px 0 6px}.dh-setting input{appearance:none;width:34px;height:20px;border-radius:20px;background:#45454b;position:relative;cursor:pointer;margin:0;flex-shrink:0}.dh-setting input:before{content:'';position:absolute;top:3px;left:3px;width:14px;height:14px;background:#fff;border-radius:50%;transition:transform .15s}.dh-setting input:checked{background:#fa3159}.dh-setting input:checked:before{transform:translateX(14px)}.dh-setup-footer{padding:12px 16px 18px;border-top:1px solid #ffffff0d;flex-shrink:0}.dh-setup-footer button{width:100%}.dh-host-header{display:flex;align-items:center;gap:8px;padding:8px 10px;flex-shrink:0}.dh-host-identity{display:flex;align-items:center;gap:7px;min-width:0;flex:1;text-align:left}.dh-mini-avatar{width:33px;height:33px;display:grid;place-items:center;background:#4a4a52;border-radius:50%;flex-shrink:0}.dh-host-identity>span:last-child{min-width:0}.dh-host-identity b{font-size:12px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dh-host-identity small{font-size:9px;color:#b8b8bf;display:block;margin-top:3px}.dh-online{font-size:10px!important;background:#ffffff12!important;border-radius:16px;padding:6px 9px!important;flex-shrink:0}.dh-host-meta{display:flex;justify-content:space-between;padding:0 13px 9px;font-size:10px;color:#acacb6;flex-shrink:0}.dh-stage{flex:0 1 42%;min-height:110px;overflow:auto;background-size:cover;background-position:center;position:relative;background-color:#323a3a}.dh-stage-caption{padding:12px 14px;background:#080a0ed9;min-height:100%}.dh-stage-caption small{color:#ddd9d3;font-size:10px}.dh-stage p{white-space:pre-wrap;font-size:13px;line-height:1.85;margin:9px 0 0;overflow-wrap:anywhere}.dh-chat{flex:1;min-height:50px;overflow:auto;padding:9px 12px}.dh-chat-notice{font-size:10px;color:#b1a280;margin-bottom:8px}.dh-message{font-size:12px;line-height:1.8;margin-bottom:5px;overflow-wrap:anywhere}.dh-message>b{font-weight:400;color:#bdc3e0}.dh-message small{font-size:10px;color:#9999a4}.dh-host-badge{font-size:9px;background:#fa315928;color:#ff8197;padding:2px 4px;border-radius:3px;margin-right:4px}.dh-msg-start,.dh-msg-action{border-left:2px solid #29d9cf77;padding-left:6px;color:#d2d2d8}.dh-msg-gift{color:#ffe3a2}.dh-gift{white-space:nowrap}.dh-msg-join{color:#a5aece;font-size:11px}.dh-msg-failed{opacity:.7}.dh-retry{color:#ff8e99!important;font-size:10px!important;margin-left:6px}.dh-controls{padding:7px 10px 13px;border-top:1px solid #ffffff10;flex-shrink:0;background:#19191c}.dh-controls>.dh-primary{width:100%}.dh-input-tabs{display:flex;gap:17px;align-items:center;padding:2px 3px 10px;font-size:11px}.dh-input-tabs button{color:#868690;font-size:11px}.dh-input-tabs .on{color:white}.dh-end{margin-left:auto;color:#ff8599!important}.dh-compose{display:flex;align-items:center;gap:4px}.dh-draft{background:#2c2c31!important;border-radius:18px;flex:1;min-width:0;height:35px;text-align:left;padding:0 13px!important;font-size:11px!important;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;color:#b6b6c0!important}.dh-info{padding:10px 14px;background:#25252b;border-top:1px solid #ffffff0d;max-height:105px;overflow:auto;flex-shrink:0;font-size:11px}.dh-info p{line-height:1.6;white-space:pre-wrap;margin:5px 0}.dh-info small{color:#b9a9b2}.dh-loading{display:flex;gap:4px;padding:8px 0}.dh-loading i{height:4px;width:4px;background:#b4b4bc;border-radius:50%;animation:dh-pulse 1s infinite}.dh-loading i:nth-child(2){animation-delay:.15s}.dh-loading i:nth-child(3){animation-delay:.3s}@keyframes dh-pulse{50%{opacity:.2}}.dh-error{background:#55242c;color:#ffd7de;padding:7px 12px;display:flex;align-items:center;gap:12px;font-size:10px;flex-shrink:0}.dh-error>span{flex:1}.dh-error button{text-decoration:underline;font-size:10px}.dh-modal-shade{position:absolute;inset:0;z-index:4;background:#0009;display:flex;align-items:center;justify-content:center;padding:23px}.dh-modal{background:#28282e;padding:22px;border-radius:8px;width:100%}.dh-modal h3{font-size:16px;margin:0 0 10px}.dh-modal p{font-size:12px;color:#aaaab4;line-height:1.7}.dh-modal button{display:block;width:100%;margin-top:10px}.dh-local-error{background:#55242c;color:#ffd7de;font-size:11px;padding:8px;margin:0;overflow-wrap:anywhere;max-height:65px;overflow:auto;flex-shrink:0}

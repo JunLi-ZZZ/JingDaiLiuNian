@@ -357,6 +357,7 @@
                   <div class="mp-dy-set-warn">⚠️ 两者性质完全不同：<b>红颜私发</b>只有你和红颜看得到、评论只会是你俩；<b>陌生博主的私密内容是公开发布的成人内容</b>，会被其他陌生人看到、也会有陌生人评论。调高此项＝私密页混入公开的陌生成人视频。</div>
                 </template>
                 <button class="mp-dy-set-clear" @click="clearDyCache">清理视频缓存（共 {{ douyinFeed.length }} 条）</button>
+                <button class="mp-dy-set-clear" @click="clearOwnLiveArchive">清理个人直播记录与粉丝团</button>
               </div>
             </div>
           </div>
@@ -795,7 +796,7 @@
                 <span v-if="msg.isMe && curFan" class="mp-dylv-lv" :style="{background: levelColor(curFan.level)}">{{ curFan.level }}</span>
                 <span v-else-if="!msg.isMe && msg.level != null" class="mp-dylv-lv" :style="{background: levelColor(msg.level)}">{{ msg.level }}</span>
                 <span class="mp-dylv-user">{{ msg.user }}：</span>
-                <span class="mp-dylv-txt">{{ msg.text }}</span>
+                <span v-if="msg.replyTo" class="mp-dylv-txt">回复 {{ msg.replyTo }} </span><span class="mp-dylv-txt">{{ msg.text }}</span>
                 <button v-if="msg.isMe && msg.status === 'failed'" class="mp-dylv-retry" title="发送失败，点击重发" @click.stop="retryLiveUserMessage(msg)">↻</button>
               </template>
             </div>
@@ -909,7 +910,8 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import DyCreatorPanel from './DyCreatorPanel.vue'
-import { parseLiveResponse } from './liveReply'
+import { normalizeLiveGift, parseLiveResponse } from './liveReply'
+import { clearHostSessions, hostEventText } from './hostLive'
 import VideoCallPanel from './VideoCallPanel.vue'
 import { CALL_SYNC, callStorageKey, createCall, readCalls, recoverCalls, runVideoCall, saveCall } from './videoCall'
 
@@ -1566,7 +1568,8 @@ function openVideoCall(contact) {
   if (viewingOther.value) { showToast('请从自己的手机发起通话'); return; }
   try {
     const key = currentCallKey(); recoverCalls(key);
-    const call = readCalls(key).find(c => c.owner === meName.value && c.contact === contact && c.status !== 'ended') || createCall(key, meName.value, contact, storyTime());
+    const initialChat = (logs.value[meName.value]?.[contact] || []).filter(m => m.status !== 'pending' && m.status !== 'failed').slice(-20).map((m, i) => `${i + 1}. ${m.dir === '发出' ? meName.value : contact}｜${m.type || '文字'}｜${m.text}`).join('\n');
+    const call = readCalls(key).find(c => c.owner === meName.value && c.contact === contact && c.status !== 'ended') || createCall(key, meName.value, contact, storyTime(), initialChat);
     videoCall.value = { id: call.id, key }; profileContact.value = ''; showPlus.value = false;
     if (!call.screen && !call.pending && !call.error) void runVideoCall(key, call.id, 'start', '', videoApi.generate).catch(e => showToast(String(e)));
   } catch (e) { showToast(String(e)); }
@@ -1986,6 +1989,10 @@ function saveDyFollows() { try { localStorage.setItem(dyModeKey(DY_FOLLOWS_KEY),
 function saveDyIdxMap() { try { localStorage.setItem(dyModeKey(DY_IDXMAP_KEY), JSON.stringify(dyIdxMap.value)) } catch (e) {} }
 function saveDySettings() { try { localStorage.setItem(DY_SETTINGS_KEY, JSON.stringify(douyinSettings.value)) } catch (e) {} }
 function dyStylePrompt() { return (douyinSettings.value.style || '').trim() || DY_DEFAULT_STYLE }
+function clearOwnLiveArchive() {
+  clearHostSessions(dyR18.value ? 'r18' : 'normal')
+  showToast('本平台个人直播记录与粉丝团已清理')
+}
 function clearDyCache() {
   douyinFeed.value = []; douyinIdx.value = 0
   dyIdxMap.value = { 推荐: 0, 关注: 0, 私密: 0 }
@@ -2567,15 +2574,8 @@ function parseDyLiveCard(raw) {
   const block = m[1]
   const f = (k) => { const r = block.match(new RegExp('^\\s*' + k + '\\s*:(.+)$', 'm')); return r ? r[1].trim() : '' }
   const content = f('content'); if (!content) return null
-  const chatLog = []
-  // 按行扫描：同时支持 chat1:level|||user|||text 和裸行 level|||user|||text（AI有时省略前缀）
-  block.split('\n').forEach(ln => {
-    if (chatLog.length >= 10) return
-    let t = ln.trim(); if (!t || t.startsWith('===') || !t.includes('|||')) return
-    t = t.replace(/^chat\d+\s*:\s*/, '')        // 去掉 chatN: 前缀（如有）
-    const p = t.split('|||'); const level = p[0]?.trim(); const user = p[1]?.trim(); const text = p[2]?.trim(); const tag = (p[3]||'').trim()
-    if (user) chatLog.push({ level: /^\d+$/.test(level) ? +level : null, user, text: text||'', isJoin: tag==='join', isMe: false })
-  })
+  const chatRows = block.split('\n').filter(line => line.includes('|||')).map(line => line.replace(/^\s*chat(\d+)\s*[:：]/i, 'c$1:'))
+  const chatLog = parseLiveChat(['screen:' + content, ...chatRows].join('\n'), 10).msgs
   return {
     creator: f('creator').replace('@',''), realName: f('realName').replace('@',''), verified: /true|是|认证/.test(f('verified')),
     title: f('title'), viewers: f('viewers') || '0',
@@ -2700,7 +2700,7 @@ function buildShareToStoryText(type, data) {
   } else if (type === 'hostlive') {
     const platform = data.mode === 'r18' ? '抖阴' : '抖音'
     const visible = data.visibility === 'private' ? '本场为私密直播，所有已知亲密角色有观看资格；只有明确入场的观众知道已播出的内容，其他人不会凭空知情。' : '本场为公开直播，线上观众与直播现场的人物分别处理。'
-    const events = (data.events || []).filter(event => event.status !== 'failed' && event.status !== 'pending').slice(-12).map(event => `${event.name}（${event.kind === 'action' || event.kind === 'start' ? '直播内容' : event.kind === 'chat' ? '主播弹幕' : '观众互动'}）：${event.text}`).join('\n')
+    const events = (data.events || []).filter(event => event.status !== 'failed' && event.status !== 'pending').slice(-12).map(event => `${event.name}（${event.kind === 'action' || event.kind === 'start' ? '直播内容' : event.kind === 'chat' ? '主播弹幕' : '观众互动'}）：${hostEventText({ ...event, gift: DY_GIFTS.find(g => g.k === event.gift)?.name || event.gift })}`).join('\n')
     return dyShareBlock('scene', [`转场来源：${data.creator}在${platform}主持直播「${data.title}」。`, `直播状态：${data.status === 'live' ? '直播中' : '已结束的直播记录'}`, `新剧情现场：\n${data.screen}`, `本场累计记忆：\n${data.memory}`, `当前已入场观众：${data.audience.join('、') || '无人'}`, `最近互动（从早到晚）：\n${events}`].join('\n\n'), `${visible}沿用直播已经确认的事件与人物关系；主播就是${me}，只保留记录中明确给出的言行，接下来由玩家决定。`)
   } else if (type === 'live') {
     const room = data
@@ -2968,7 +2968,12 @@ function toggleDyFollowFromLive() {
 // 兼容两种：cN:等级|||昵称|||内容 带编号，或裸行 等级|||昵称|||内容
 function parseLiveChat(raw, batch = 50) {
   const parsed = parseLiveResponse(raw)
-  return { ...parsed, msgs: parsed.messages.slice(0, batch).map(m => ({ level: m.level, user: m.name, text: m.text, isJoin: m.kind === 'join' || m.text.toLowerCase() === 'join', isGift: m.kind === 'gift', isMe: false })) }
+  return { ...parsed, msgs: parsed.messages.slice(0, batch).map(m => {
+    const gift = m.kind === 'gift' ? normalizeLiveGift(m, DY_GIFTS) : undefined
+    const namedGift = gift?.gift ? DY_GIFTS.find(g => g.k === gift.gift) : undefined
+    const text = namedGift ? `送出 ${namedGift.icon}${namedGift.name} ×${gift.quantity}${gift.text ? '，' + gift.text : ''}` : m.kind === 'fan' ? '加入了粉丝团' : m.text
+    return { level: m.level, user: m.name, text, replyTo: m.replyTo, gift: gift?.gift, quantity: gift?.quantity, isJoin: m.kind === 'join' || m.text.toLowerCase() === 'join', isGift: m.kind === 'gift', isMe: false }
+  }) }
 }
 function updateLiveMemory(room, nextMemory) {
   if (!room || !nextMemory) return
@@ -3055,8 +3060,9 @@ async function generateLiveChat(includeUserMsg = false, retrySid = '') {
     (recentChat ? `\n【近期聊天记录·严格按编号从小到大发生】\n${recentChat}` : '\n【近期聊天记录】暂无。') +
     `\n输出 screen：承接“上一版直播画面”，写主播接下来具体做什么、说什么，2-3句。` +
     `\n输出 memory：在旧记忆基础上写一份更新后的、自包含的本场连续性摘要，最多300字。保留主播身份、场景、正在做的事、已发生的关键互动、${me}最近一条消息和未回应事项；已解决事项可压缩。只写客观事实，不写${me}的内心、反应、对白或决定。` +
-    `\n直播中的角色或观众可以在合适时机送出平台礼物；这类消息仍写在 c 行，但第四字段使用 gift，例如“等级|||昵称|||送出礼物：礼物名|||gift”。礼物不是每轮必有，只有剧情自然需要时才生成，不要替用户伪造送礼。` +
-    `\n只输出一个 ===LIVECHAT=== 数据块，块外不写字：\n===LIVECHAT===\nscreen:承接上一版后的直播画面描述\nmemory:更新后的本场连续性记忆\nc1:等级|||昵称|||来了|||join（进场消息）\nc2:等级|||昵称|||聊天内容（普通消息，不加|||join）\nc3:等级|||昵称|||送出礼物：礼物名|||gift（可选）\n...\n===CHATEND===`
+    `\n直播中的角色或观众可以在合适时机送出平台礼物。每条c行依次为：等级|||昵称|||消息内容|||kind|||gift|||quantity|||replyTo。kind取audience、join、gift、fan；gift填礼物代码，quantity填1至9999的整数，礼物与数量由界面展示，消息内容只保留附言。replyTo填实际回复对象，无对应内容的可选字段留空。每条互动独立占一行，按先后顺序编号；screen只写现场，memory只写累计摘要。` +
+    `\n礼物目录：${JSON.stringify(DY_GIFTS.map(({ k, name }) => ({ k, name })))}` +
+    `\n只输出一个完整数据块，按此字段结构填写：\n===LIVECHAT===\nscreen:承接上一版后的直播画面描述\nmemory:更新后的本场连续性记忆\nc1:等级|||昵称|||消息内容|||kind|||gift|||quantity|||replyTo\n===CHATEND===`
   const liveUserInput = dyRetrievalHint(
     room,
     recentChat ? `最近直播消息（按发生顺序）：${recentChat.slice(-1200)}` : '最近直播消息：暂无',

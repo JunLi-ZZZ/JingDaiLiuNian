@@ -466,9 +466,11 @@ function renderAll(): void {
 
 function renderCardActions(): void {
   const d = pdoc();
-  d.querySelectorAll('.bio-card,.it-card,.skill-card,.photo-card').forEach(card => {
-    const photo = card.classList.contains('photo-card');
-    const header = (card.querySelector('.bio-type,.it-type,.skill-type') || (photo ? card.children[1] : null)) as HTMLElement | null;
+  // Tavern prefixes message classes with custom- while sanitizing HTML.
+  const classes = (name: string) => `.${name},.custom-${name}`;
+  d.querySelectorAll(['bio-card', 'it-card', 'skill-card', 'photo-card'].map(classes).join(',')).forEach(card => {
+    const photo = card.matches(classes('photo-card'));
+    const header = (card.querySelector(['bio-type', 'it-type', 'skill-type'].map(classes).join(',')) || (photo ? card.children[1] : null)) as HTMLElement | null;
     if (!header || card.querySelector('[data-jdln-action]')) return;
     header.style.position = 'relative';
     const button = d.createElement('button');

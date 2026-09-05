@@ -1,6 +1,34 @@
 import { z } from 'zod';
 
 const Text = z.string().catch('');
+export function liveOptional(value: unknown): string {
+  const text = Text.parse(value).trim();
+  return /^(?:无|暂无|无对象|none|null|undefined|n\/a|[-—]+)$/i.test(text) ? '' : text;
+}
+export function liveQuantity(value: unknown, ...fallbacks: unknown[]): number {
+  const explicit = liveOptional(typeof value === 'number' ? String(value) : value).replace(/^[x×*]\s*/i, '');
+  const embedded = fallbacks.map(v => String(v ?? '').match(/[×x*]\s*(\d+)/i)?.[1]).find(Boolean);
+  return Math.min(9999, Math.max(1, liveCount(explicit, liveCount(embedded, 1))));
+}
+export function normalizeLiveMessage<T extends { kind?: string; text?: string; gift?: string; replyTo?: string; quantity?: unknown }>(msg: T) {
+  const tag = liveOptional(msg.kind).toLowerCase().replace(/[（(].*$/, '').trim();
+  const aliases: Record<string, string> = { '入场': 'join', '加入直播间': 'join', '送礼': 'gift', '弹幕': 'audience', '加入粉丝团': 'fan' };
+  const kind = aliases[tag] || tag || 'audience';
+  return { ...msg, kind, text: Text.parse(msg.text).trim(), gift: liveOptional(msg.gift), replyTo: liveOptional(liveOptional(msg.replyTo).replace(/^@/, '')), quantity: liveQuantity(msg.quantity, msg.gift, msg.text) };
+}
+export function normalizeLiveGift<T extends { text: string; gift?: string; quantity?: unknown }>(msg: T, gifts: { k: string; name: string }[]) {
+  const giftName = liveOptional(msg.gift).replace(/\s*[×x*]\s*\d+\s*$/i, '').trim();
+  const gift = gifts.find(g => g.k === giftName || g.name === giftName)
+    || (!giftName ? gifts.find(g => msg.text.includes(g.name)) : undefined);
+  const quantity = liveQuantity(msg.quantity, msg.gift, msg.text);
+  let text = msg.text;
+  if (gift) {
+    const escaped = gift.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Remove only a receipt prefix; preserve any accompanying comment.
+    text = text.replace(new RegExp(`^(?:送出(?:了)?|赠送(?:了)?|送来(?:了)?)?\\s*(?:礼物[：:]?\\s*)?${escaped}(?:\\s*[×x*]\\s*\\d+)?[。！!，,：:\\s]*`), '').trim();
+  }
+  return { ...msg, text: liveOptional(text), gift: gift?.k, quantity };
+}
 const Message = z.object({
   name: z.string().trim().min(1), text: Text, kind: z.string().catch('audience'),
   level: z.unknown().optional(), gift: Text.optional(), quantity: z.unknown().optional(), replyTo: Text.optional(),
@@ -37,12 +65,14 @@ export function parseLiveResponse(raw: string) {
         const alias: Record<string, string> = { '画面': 'screen', '记忆': 'memory', '观众': 'audience', '点赞': 'likes' };
         field = alias[key[1]] || key[1].toLowerCase(); data[field] = key[2]; continue;
       }
+      const isMessage = /^\s*c\d+\s*[:：]/i.test(line);
       const content = line.replace(/^\s*c\d+\s*[:：]\s*/i, '').trim();
       if (content.includes('|||')) {
         const [level, name, body, kind, gift, quantity, replyTo] = content.split('|||').map(v => v.trim());
         messages.push({ name, text: body || '', kind: kind || 'audience', level, gift, quantity, replyTo });
         field = ''; continue;
       }
+      if (isMessage) { field = ''; warning = '部分互动字段未识别，已保留可解析内容'; continue; }
       if (field === 'screen' || field === 'memory') data[field] += '\n' + line;
     }
     if (Object.keys(data).length || messages.length) data.messages = messages;
@@ -57,8 +87,11 @@ export function parseLiveResponse(raw: string) {
   const messages = (Array.isArray(source) ? source : []).flatMap(item => {
     if (!item || typeof item !== 'object') return [];
     const parsed = Message.safeParse({ ...item, name: item.name ?? item.user, kind: item.kind ?? (item.isGift ? 'gift' : item.isJoin ? 'join' : 'audience') });
-    if (!parsed.success || (!parsed.data.text && parsed.data.kind !== 'join' && parsed.data.kind !== 'fan')) return [];
-    return [{ ...parsed.data, level: liveCount(parsed.data.level), quantity: liveCount(parsed.data.quantity, 1) }];
+    if (!parsed.success) { warning = '部分互动字段未识别，已保留可解析内容'; return []; }
+    const msg = normalizeLiveMessage(parsed.data);
+    if (!liveOptional(msg.name)) return [];
+    if (!msg.text && !['join', 'fan'].includes(msg.kind) && !(msg.kind === 'gift' && msg.gift)) return [];
+    return [{ ...msg, level: liveCount(msg.level) }];
   }).slice(0, 50);
   if (!screen && !messages.length) throw new Error('没有画面或互动内容，请重试本轮');
   let audience = data.audience;
