@@ -41,14 +41,14 @@
       <div v-if="showInfo" class="dh-info"><b>{{ room.title }}</b><p>{{ room.brief }}</p><small>{{ room.visibility === 'private' ? '所有已知亲密角色可见' : '所有人可见' }}</small></div>
       <div v-if="showAudience" class="dh-info"><b>在线观众</b><p v-if="!room.audience.length">暂无入场观众</p><p v-for="person in room.audience" :key="person">{{ person }} <span v-if="room.fans?.[person]" class="dh-fan-badge">Lv.{{ room.fans[person].level }}</span></p></div>
       <div v-if="showFans" class="dh-info"><b>粉丝团</b><p v-if="!Object.keys(room.fans || {}).length">暂无粉丝团成员</p><p v-for="(fan, person) in room.fans" :key="person">{{ person }} <span class="dh-fan-badge">Lv.{{ fan.level }}</span> · {{ fan.exp }} 经验</p></div>
-      <div class="dh-stage" :style="backdrop"><div class="dh-stage-caption"><small>{{ room.title }}</small><p>{{ room.screen || '等待直播画面' }}</p></div></div>
+      <div ref="stageEl" class="dh-stage" :style="backdrop"><div class="dh-stage-caption"><small>{{ room.title }}</small><p>{{ room.screen || '等待直播画面' }}</p></div></div>
       <div ref="chatEl" class="dh-chat" aria-live="polite">
         <div class="dh-chat-notice">{{ room.visibility === 'private' ? '私密直播 · 已知亲密角色可见' : '欢迎来到直播间' }}</div>
         <div v-for="event in visibleEvents" :key="event.id" class="dh-message" :class="['dh-msg-' + event.kind, { 'dh-msg-failed': event.status === 'failed' }]">
           <template v-if="event.kind === 'continue'"><small>继续直播</small></template>
           <template v-else-if="event.kind === 'join' || event.kind === 'fan'"><button class="dh-audience-name" @click="replyTo(event)">{{ event.name }}</button><span> {{ event.kind === 'join' ? '加入直播间' : '加入了粉丝团' }}</span></template>
           <template v-else-if="event.kind === 'gift'"><button class="dh-audience-name" @click="replyTo(event)">{{ event.name }}</button><span v-if="event.gift" class="dh-gift"> 送出 {{ giftLabel(event.gift) }} ×{{ event.quantity }}</span><span v-else> 送出礼物</span><span v-if="event.text" class="dh-gift-note">{{ event.text }}</span></template>
-          <template v-else><span v-if="['chat', 'action', 'start'].includes(event.kind)" class="dh-host-badge">主播</span><span v-else-if="event.level != null" class="dh-fan-badge">Lv.{{ event.level }}</span><button class="dh-audience-name" @click="replyTo(event)">{{ event.name }}</button><small v-if="event.kind === 'action' || event.kind === 'start'"> 直播内容</small><span v-if="event.replyTo"> 回复 {{ event.replyTo }}</span><span>：{{ event.text }}</span></template>
+          <template v-else><span v-if="['chat', 'action', 'start'].includes(event.kind)" class="dh-host-badge">主播</span><span v-else-if="room.fans?.[event.name]" class="dh-fan-badge">Lv.{{ room.fans[event.name].level }}</span><button class="dh-audience-name" @click="replyTo(event)">{{ event.name }}</button><small v-if="event.kind === 'action' || event.kind === 'start'"> 直播内容</small><span v-if="event.replyTo"> 回复 {{ event.replyTo }}</span><span>：{{ event.text }}</span></template>
           <button v-if="event.status === 'failed'" class="dh-retry" @click="retry">重试</button>
         </div>
         <div v-if="room.pending" class="dh-loading" role="status" aria-label="正在生成直播反馈"><i /><i /><i /></div>
@@ -90,6 +90,7 @@ const inputMode = ref<'action' | 'chat'>('action');
 const drafts = reactive({ action: '', chat: '' });
 const setup = reactive({ title: '', brief: '', visibility: 'public' as 'public' | 'private', referenceStory: false });
 const chatEl = ref<HTMLElement>();
+const stageEl = ref<HTMLElement>();
 const now = ref(Date.now());
 let storageKey = '';
 let unsubscribe: (() => void) | undefined;
@@ -182,7 +183,14 @@ function share() { if (room.value) emit('share', JSON.parse(JSON.stringify(room.
 watch(() => props.mode, load);
 watch(page, value => emit('subpage', value !== 'profile'));
 watch(setup, () => { if (storageKey) { try { localStorage.setItem(storageKey + ':setup', JSON.stringify(setup)); } catch (e) { error.value = String(e); } } });
-watch(() => [room.value?.events.length, room.value?.pending], () => nextTick(() => { if (chatEl.value) chatEl.value.scrollTop = chatEl.value.scrollHeight; }));
+watch(() => room.value?.screen, () => nextTick(() => { if (stageEl.value) stageEl.value.scrollTop = 0; }));
+watch(() => room.value?.events.length, (count, before) => nextTick(() => {
+  const el = chatEl.value;
+  if (!el || !count) return;
+  const rows = el.querySelectorAll<HTMLElement>('.dh-message');
+  const firstNew = rows[Math.min(before || 0, rows.length - 1)];
+  if (firstNew) el.scrollTop += firstNew.getBoundingClientRect().top - el.getBoundingClientRect().top;
+}));
 onMounted(() => { load(); unsubscribe = subscribeHostSessions(refresh); timer = setInterval(() => { now.value = Date.now(); }, 1000); });
 onUnmounted(() => { unsubscribe?.(); clearInterval(timer); });
 defineExpose({ prepare });

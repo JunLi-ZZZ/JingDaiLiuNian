@@ -544,11 +544,12 @@ function openPhone(owner: string) {
 let stopCardNavigation: (() => void) | undefined;
 onMounted(() => {
   let rank = 0;
+  const frame = window.frameElement;
   try { rank = getCurrentMessageId(); } catch { /* Standalone preview has no message floor. */ }
   stopCardNavigation = receiveCardNavigation(window.parent, rank, destination => {
     if (destination.action === 'phone') { bestiaryOpen.value = false; openPhone(destination.owner || ''); }
     else { phoneOpen.value = false; bestiaryOpen.value = true; }
-  });
+  }, () => !frame || (frame.isConnected && (frame as HTMLIFrameElement).contentDocument === document));
 });
 onUnmounted(() => stopCardNavigation?.());
 

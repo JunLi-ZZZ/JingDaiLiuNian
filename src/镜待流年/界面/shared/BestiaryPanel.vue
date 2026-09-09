@@ -64,6 +64,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { mountPortalStyles } from './portalStyles'
 
 defineEmits(['close'])
 
@@ -216,33 +217,24 @@ function toggleExpand(name) {
 }
 
 let timer = null
-let portalStyle = null
-let previousOverflow = ['', '']
+let releaseStyles = () => {}
 onMounted(() => {
-  if (doc !== document) {
-    portalStyle = doc.createElement('style')
-    portalStyle.textContent = [...document.querySelectorAll('style')].map(s => s.textContent || '').filter(css => css.includes('.bestiary-panel')).join('\n')
-    doc.head.appendChild(portalStyle)
-  }
+  releaseStyles = mountPortalStyles(document, doc, /\.(?:bestiary-|bs-|tier-|c-)/)
   if (isDemo && demoParam !== 'all') mode.value = demoParam
   checkChatChange()
   load()
   timer = setInterval(() => { checkChatChange(); syncDOM(); load() }, 2000)
-  previousOverflow = [doc.documentElement.style.overflow, doc.body.style.overflow]
-  doc.documentElement.style.overflow = 'hidden'
-  doc.body.style.overflow = 'hidden'
 })
 onUnmounted(() => {
-  portalStyle?.remove()
+  releaseStyles()
   clearInterval(timer)
-  doc.documentElement.style.overflow = previousOverflow[0]
-  doc.body.style.overflow = previousOverflow[1]
 })
 </script>
 
 <style>
 @import url('https://fontsapi.zeoseven.com/3/main/result.css');
 @import url('https://fontsapi.zeoseven.com/84/main/result.css');
+.bs-list{overscroll-behavior:contain}
 .tier-残破{background:linear-gradient(90deg,#444,#666,#555,#777,#666,#555,#444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .tier-普通{background:linear-gradient(90deg,#b0b0b0,#d0d0d0,#c8c8c8,#e0e0e0,#d0d0d0,#c8c8c8,#b0b0b0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .tier-精良{background:linear-gradient(90deg,#2e7d32,#4caf50,#43a047,#66bb6a,#4caf50,#43a047,#2e7d32);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}

@@ -464,6 +464,8 @@ function renderAll(): void {
   renderCardActions();
 }
 
+const actionButtons = new WeakSet<Element>();
+const cardActionController = new AbortController();
 function renderCardActions(): void {
   const d = pdoc();
   // Tavern prefixes message classes with custom- while sanitizing HTML.
@@ -471,7 +473,12 @@ function renderCardActions(): void {
   d.querySelectorAll(['bio-card', 'it-card', 'skill-card', 'photo-card'].map(classes).join(',')).forEach(card => {
     const photo = card.matches(classes('photo-card'));
     const header = (card.querySelector(['bio-type', 'it-type', 'skill-type'].map(classes).join(',')) || (photo ? card.children[1] : null)) as HTMLElement | null;
-    if (!header || card.querySelector('[data-jdln-action]')) return;
+    if (!header) return;
+    const existing = card.querySelector('[data-jdln-action]');
+    if (existing) {
+      if (!actionButtons.has(existing)) { existing.addEventListener('click', onCardAction, { signal: cardActionController.signal }); actionButtons.add(existing); }
+      return;
+    }
     header.style.position = 'relative';
     const button = d.createElement('button');
     button.type = 'button'; button.className = 'jdln-card-action';
@@ -481,6 +488,8 @@ function renderCardActions(): void {
     button.style.cssText = `position:absolute;left:${photo ? '4px' : '7px'};top:${photo ? '4px' : '50%'};transform:${photo ? 'none' : 'translateY(-50%)'};display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;padding:4px;margin:0;border:0;border-radius:50%;background:${photo ? 'rgba(255,255,255,.8)' : 'transparent'};color:var(--tc,#8b7355);cursor:pointer;z-index:3`;
     button.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="m10.828 12 4.95 4.95-1.414 1.415L8 12l6.364-6.364 1.414 1.414z"/></svg>';
     header.appendChild(button);
+    button.addEventListener('click', onCardAction, { signal: cardActionController.signal });
+    actionButtons.add(button);
   });
 }
 function onCardAction(event: Event): void {
@@ -553,7 +562,6 @@ function ensurePhones(): void {
 }
 
 $(() => {
-  pdoc().addEventListener('click', onCardAction);
   renderAll();
 
   const events = [
@@ -582,7 +590,7 @@ $(() => {
   const timer = setInterval(renderAll, 1200);
 
   $(window).on('pagehide', () => {
-    pdoc().removeEventListener('click', onCardAction);
+    cardActionController.abort();
     clearInterval(timer);
   });
 });

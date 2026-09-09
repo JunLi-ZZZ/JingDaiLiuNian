@@ -1,15 +1,15 @@
 export type CardDestination = { action: 'phone' | 'bestiary'; owner?: string };
-type Receiver = { rank: number; receive: (destination: CardDestination) => void };
+type Receiver = { rank: number; receive: (destination: CardDestination) => void; alive: () => boolean };
 type BridgeWindow = Window & { jdnlCardReceivers?: Receiver[] };
 
 // Script and status-bar iframes share the parent event target. Only the newest floor opens.
-export function receiveCardNavigation(root: Window, rank: number, receive: Receiver['receive']) {
+export function receiveCardNavigation(root: Window, rank: number, receive: Receiver['receive'], alive = () => true) {
   const host = root as BridgeWindow;
   const receivers = host.jdnlCardReceivers ||= [];
-  const entry = { rank, receive };
+  const entry = { rank, receive, alive };
   receivers.push(entry);
   const handle = (event: Event) => {
-    const latest = receivers.reduce((a, b) => b.rank >= a.rank ? b : a);
+    const latest = receivers.filter(item => { try { return item.alive(); } catch { return false; } }).reduce<Receiver | undefined>((a, b) => !a || b.rank >= a.rank ? b : a, undefined);
     if (latest !== entry) return;
     receive({ action: event.type === 'jdnl-open-phone' ? 'phone' : 'bestiary', owner: (event as CustomEvent).detail?.owner || '' });
   };

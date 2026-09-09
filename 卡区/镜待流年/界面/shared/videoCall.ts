@@ -109,3 +109,9 @@ export async function runVideoCall(key: string, callId: string, kind: 'start' | 
     }
   } finally { clearTimeout(timer); tasks().delete(requestId); }
 }
+export function callContextText(message: { text?: string; callData?: VideoCall }): string {
+  const call = message.callData;
+  if (!call) return message.text || '';
+  const history = call.memory || call.lines.filter(line => line.status !== 'pending' && line.status !== 'failed').map(line => `${line.name}：${line.text}`).join('\n');
+  return [`视频通话记录｜${call.owner}与${call.contact}｜${message.text || ''}`, history ? `累计通话记忆：${history}` : '', call.screen ? `最后画面：${call.screen}` : ''].filter(Boolean).join('\n');
+}
