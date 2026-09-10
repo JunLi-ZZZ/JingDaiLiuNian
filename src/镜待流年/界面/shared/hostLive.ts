@@ -4,7 +4,7 @@ export type HostInput = 'start' | 'action' | 'chat' | 'continue';
 export type HostEvent = {
   id: string; kind: HostInput | 'audience' | 'gift' | 'join' | 'fan'; name: string; text: string;
   level?: number;
-  status?: 'pending' | 'sent' | 'failed'; gift?: string; quantity?: number; replyTo?: string;
+  status?: 'pending' | 'sent' | 'failed'; gift?: string; quantity?: number; replyTo?: string; giftExp?: number;
 };
 export type HostSession = {
   id: string; mode: 'normal' | 'r18'; creator: string; title: string; brief: string;
@@ -146,9 +146,9 @@ export function hostGenerationOptions(room: HostSession, api: HostGeneration) {
     isStart ? '【首次开播】依据直播内容建立镜头、现场与初次入场反馈，形成第一份本场记忆。' : '【同场续播】保持主播、场景和已发生事件连续。本轮承接上一版画面、累计记忆和按序互动，推进此刻的发展。',
     '【画面与弹幕】screen以其他现场人物的动作、口头回应和环境变化呈现本轮新进展，以自然分段的文字代替视频画面；主播输入作为这些反馈的起因。c行是线上观众打字发送的短消息，观众不能用弹幕在现场行动。screen与c行共同构成输入之后的反馈，玩家原话与动作保留在操作记录，玩家后续行为由玩家输入。',
     '【观众互动】观众依照自己的性格与关注点回应现场，发言保持先后顺序；实际收到的点名或提问由被问到的人优先回应。加入粉丝团、送礼和定向回复随互动自然发生；依据在线人数与互动强度安排数量，当前无人发言时省略c行。粉丝等级来自已附带记录，送礼经验由程序计算。',
-    '【输出结构】沿用直播数据块，字段名与分隔符固定，字段内自由创作。screen为本轮画面；memory为整场自包含累计摘要；viewers为当前人数，likes为累计点赞；audience用顿号分隔本轮实际在线姓名；c行只写本轮新增互动，普通消息省略后续可选字段。kind取audience（弹幕）、join（入场）、gift（送礼）、fan（加入粉丝团）；gift用礼物目录代码，quantity为数量，replyTo为回复对象。',
-    '===LIVECHAT===\nscreen:本轮画面\nmemory:累计摘要\nviewers:当前人数\nlikes:累计点赞\naudience:实际在线姓名\nc1:粉丝等级|||昵称|||消息内容|||kind|||gift|||quantity|||replyTo\n===CHATEND===',
-    '【字段分工】每条c行独立占一行、按发生顺序编号。弹幕的消息内容只写观众实际发送的文字；入场与加团的提示文字由界面生成，消息内容留空。送礼的gift写目录代码、quantity写1至9999的整数，消息内容仅在有附言时填写，礼物名称及数量由界面统一展示。replyTo只填实际回复对象的昵称；没有的可选字段留空，保留中间分隔符。screen与memory各自成段，字段内容从对应字段名开始，直到下一个字段；数据块结束后即停止输出。',
+    '【输出结构】沿用直播数据块，字段名与分隔符固定，字段内自由创作。screen为本轮画面；memory为整场自包含累计摘要；viewers为当前人数，likes为累计点赞；audience用顿号分隔本轮实际在线姓名；c行只写本轮新增互动，普通消息省略后续可选字段。kind取audience（弹幕）、join（入场）、gift（送礼）、fan（加入粉丝团）；gift用目录代码或自定义礼物名称，quantity为数量，replyTo为回复对象，giftExp为自定义礼物的可选单份经验。',
+    '===LIVECHAT===\nscreen:本轮画面\nmemory:累计摘要\nviewers:当前人数\nlikes:累计点赞\naudience:实际在线姓名\nc1:粉丝等级|||昵称|||消息内容|||kind|||gift|||quantity|||replyTo|||giftExp\n===CHATEND===',
+    '【字段分工】每条c行独立占一行、按发生顺序编号。弹幕的消息内容只写观众实际发送的文字；入场与加团的提示文字由界面生成，消息内容留空。送礼的gift写目录代码或自定义礼物名称，quantity单独写1至9999的整数，消息内容仅在有附言时填写。自定义礼物可参照目录的单份经验填写giftExp（0至10000整数），省略则只展示礼物；目录内礼物使用既定经验。程序统一展示名称、数量并乘数量结算经验。replyTo只填实际回复对象的昵称；没有的可选字段留空，保留中间分隔符。screen与memory各自成段，字段内容从对应字段名开始，直到下一个字段；数据块结束后即停止输出。',
   ].filter(Boolean).join('\n');
   const currentInput = {
     start: `本次开播，初始直播内容：${request.text}`,
@@ -163,7 +163,7 @@ export function hostGenerationOptions(room: HostSession, api: HostGeneration) {
       `主播：${room.creator}\n标题：${room.title}\n开播设定：${room.brief}\n可见范围：${room.visibility}`,
       api.relations?.length ? `已有关系补充（结合世界书理解）：${JSON.stringify(api.relations)}` : '',
       `粉丝团记录：${JSON.stringify(room.fans || {})}`,
-      `礼物目录：${JSON.stringify(api.gifts.map(({ k, name }) => ({ k, name })))}`,
+      `礼物目录（exp为单份经验）：${JSON.stringify(api.gifts.map(({ k, name, exp }) => ({ k, name, exp })))}`,
       `截至上一轮的累计摘要：${room.memory || '尚未开播'}\n上一条直播画面：${room.screen || '尚未生成'}\n累计点赞：${room.likes}`,
       `较早到较新的已完成互动：\n${room.events.filter(item => item.status !== 'pending' && item.status !== 'failed' && item.id !== request.eventId).slice(-(api.contextBatch || 50)).map((e, i) => `${i + 1}. ${e.name}｜${e.kind}｜${hostEventText(e)}${liveOptional(e.replyTo) ? `｜回复对象：${e.replyTo}` : ''}`).join('\n')}`,
       currentInput,
@@ -229,8 +229,9 @@ export async function generateHostTurn(key: string, roomId: string, kind: HostIn
       if (fan) event.level = fan.level;
       if (event.kind !== 'fan' && event.kind !== 'gift') continue;
       const gift = api.gifts.find(g => g.k === event.gift);
-      if (event.kind === 'gift' && !gift) continue;
-      const exp = (fan?.exp || 0) + (gift?.exp || 0) * (event.quantity || 1);
+      const unitExp = gift?.exp ?? event.giftExp ?? 0;
+      if (event.kind === 'gift' && !gift && !unitExp) continue;
+      const exp = (fan?.exp || 0) + unitExp * (event.quantity || 1);
       latest.fans[event.name] = { exp, level: fanLevel(exp) };
       event.level = fanLevel(exp);
     }

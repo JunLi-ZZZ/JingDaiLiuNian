@@ -22,16 +22,17 @@ export function normalizeLiveGift<T extends { text: string; gift?: string; quant
     || (!giftName ? gifts.find(g => msg.text.includes(g.name)) : undefined);
   const quantity = liveQuantity(msg.quantity, msg.gift, msg.text);
   let text = msg.text;
-  if (gift) {
-    const escaped = gift.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  if (gift || giftName) {
+    const escaped = (gift?.name || giftName).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     // Remove only a receipt prefix; preserve any accompanying comment.
     text = text.replace(new RegExp(`^(?:送出(?:了)?|赠送(?:了)?|送来(?:了)?)?\\s*(?:礼物[：:]?\\s*)?${escaped}(?:\\s*[×x*]\\s*\\d+)?[。！!，,：:\\s]*`), '').trim();
   }
-  return { ...msg, text: liveOptional(text), gift: gift?.k, quantity };
+  return { ...msg, text: liveOptional(text), gift: gift?.k || giftName || undefined, quantity };
 }
 const Message = z.object({
   name: z.string().trim().min(1), text: Text, kind: z.string().catch('audience'),
   level: z.unknown().optional(), gift: Text.optional(), quantity: z.unknown().optional(), replyTo: Text.optional(),
+  giftExp: z.unknown().optional(),
 });
 export function liveCount(value: unknown, fallback = 0): number {
   const match = String(value ?? '').replace(/[,，\s]/g, '').match(/^(?:Lv\.?|等级)?(\d+(?:\.\d+)?)\s*([万亿kKmM]?)/i);
@@ -68,8 +69,8 @@ export function parseLiveResponse(raw: string) {
       const isMessage = /^\s*c\d+\s*[:：]/i.test(line);
       const content = line.replace(/^\s*c\d+\s*[:：]\s*/i, '').trim();
       if (content.includes('|||')) {
-        const [level, name, body, kind, gift, quantity, replyTo] = content.split('|||').map(v => v.trim());
-        messages.push({ name, text: body || '', kind: kind || 'audience', level, gift, quantity, replyTo });
+        const [level, name, body, kind, gift, quantity, replyTo, giftExp] = content.split('|||').map(v => v.trim());
+        messages.push({ name, text: body || '', kind: kind || 'audience', level, gift, quantity, replyTo, giftExp });
         field = ''; continue;
       }
       if (isMessage) { field = ''; warning = '部分互动字段未识别，已保留可解析内容'; continue; }
@@ -91,7 +92,9 @@ export function parseLiveResponse(raw: string) {
     const msg = normalizeLiveMessage(parsed.data);
     if (!liveOptional(msg.name)) return [];
     if (!msg.text && !['join', 'fan'].includes(msg.kind) && !(msg.kind === 'gift' && msg.gift)) return [];
-    return [{ ...msg, level: liveCount(msg.level) }];
+    const expText = String(msg.giftExp ?? '').trim();
+    const giftExp = /^\d+(?:\.\d+)?$/.test(expText) ? Math.min(10000, Math.floor(Number(expText))) : undefined;
+    return [{ ...msg, giftExp, level: liveCount(msg.level) }];
   }).slice(0, 50);
   if (!screen && !messages.length) throw new Error('没有画面或互动内容，请重试本轮');
   let audience = data.audience;

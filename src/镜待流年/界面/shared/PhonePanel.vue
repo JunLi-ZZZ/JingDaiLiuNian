@@ -2998,7 +2998,7 @@ function parseLiveChat(raw, batch = 50) {
   return { ...parsed, msgs: parsed.messages.slice(0, batch).map(m => {
     const gift = m.kind === 'gift' ? normalizeLiveGift(m, DY_GIFTS) : undefined
     const namedGift = gift?.gift ? DY_GIFTS.find(g => g.k === gift.gift) : undefined
-    const text = namedGift ? `送出 ${namedGift.icon}${namedGift.name} ×${gift.quantity}${gift.text ? '，' + gift.text : ''}` : m.kind === 'fan' ? '加入了粉丝团' : m.text
+    const text = gift?.gift ? `送出 ${namedGift ? namedGift.icon + namedGift.name : gift.gift} ×${gift.quantity}${gift.text ? '，' + gift.text : ''}` : m.kind === 'fan' ? '加入了粉丝团' : m.text
     return { level: m.level, user: m.name, text, replyTo: m.replyTo, gift: gift?.gift, quantity: gift?.quantity, isJoin: m.kind === 'join' || m.text.toLowerCase() === 'join', isGift: m.kind === 'gift', isMe: false }
   }) }
 }
@@ -3093,7 +3093,7 @@ async function generateLiveChat(includeUserMsg = false, retrySid = '') {
     (recentChat ? `\n【近期聊天记录·严格按编号从小到大发生】\n${recentChat}` : '\n【近期聊天记录】暂无。') +
     `\n输出 screen：承接“上一版直播画面”，写主播接下来具体做什么、说什么，2-3句。` +
     `\n输出 memory：在旧记忆基础上写一份更新后的、自包含的本场连续性摘要，最多300字。保留主播身份、场景、正在做的事、已发生的关键互动、${me}最近一条消息和未回应事项；已解决事项可压缩。只写客观事实，不写${me}的内心、反应、对白或决定。` +
-    `\n直播中的角色或观众可以在合适时机送出平台礼物。每条c行依次为：等级|||昵称|||消息内容|||kind|||gift|||quantity|||replyTo。kind取audience、join、gift、fan；gift填礼物代码，quantity填1至9999的整数，礼物与数量由界面展示，消息内容只保留附言。replyTo填实际回复对象，无对应内容的可选字段留空。每条互动独立占一行，按先后顺序编号；screen只写现场，memory只写累计摘要。` +
+    `\n直播中的角色或观众可以在合适时机送出平台礼物，也可以送出目录外的自定义礼物。每条c行依次为：等级|||昵称|||消息内容|||kind|||gift|||quantity|||replyTo。kind取audience、join、gift、fan；gift填目录代码或自定义礼物名称，quantity单独填1至9999的整数，礼物与数量由界面展示，消息内容只保留附言。replyTo填实际回复对象，无对应内容的可选字段留空。每条互动独立占一行，按先后顺序编号；screen只写现场，memory只写累计摘要。` +
     `\n礼物目录：${JSON.stringify(DY_GIFTS.map(({ k, name }) => ({ k, name })))}` +
     `\n只输出一个完整数据块，按此字段结构填写：\n===LIVECHAT===\nscreen:承接上一版后的直播画面描述\nmemory:更新后的本场连续性记忆\nc1:等级|||昵称|||消息内容|||kind|||gift|||quantity|||replyTo\n===CHATEND===`
   const liveUserInput = dyRetrievalHint(

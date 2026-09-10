@@ -111,7 +111,7 @@ const backIcon = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="m10.828 
 const historyIcon = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 1-9.8 12h2.05A8 8 0 1 0 6.34 6.34L9 9H2V2l2.92 2.92A9.97 9.97 0 0 1 12 2m-1 5h2v5.17l3.41 3.42L15 17l-4-4z"/></svg>';
 const shareIcon = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M13 14H9a5 5 0 0 0-5 5v1H2v-1A11 11 0 0 1 13 8V3l9 8-9 8zm2 .55L18.99 11 15 7.45V10h-2a8.97 8.97 0 0 0-6.19 2.46A7 7 0 0 1 9 12h6z"/></svg>';
 const stamp = (value: number) => new Date(value).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-const giftLabel = (key?: string) => { const gift = props.api.gifts.find((item: any) => item.k === key); return gift ? `${gift.icon} ${gift.name}` : ''; };
+const giftLabel = (key?: string) => { const gift = props.api.gifts.find((item: any) => item.k === key); return gift ? `${gift.icon} ${gift.name}` : key || ''; };
 function refresh() { try { sessions.value = readHostSessions(storageKey); if (page.value === 'room' && !room.value) page.value = 'profile'; } catch (e) { error.value = String(e); } }
 function load() {
   try {
