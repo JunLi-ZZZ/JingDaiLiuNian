@@ -1,5 +1,5 @@
 <template>
-  <Teleport :to="doc.body">
+  <Teleport :to="layer.target">
   <div class="bestiary-panel" @click.self="$emit('close')">
     <div class="bestiary-frame">
       <span class="bs-corner tl"></span><span class="bs-corner br"></span>
@@ -65,6 +65,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { mountPortalStyles } from './portalStyles'
+import { createPortalLayer } from './portalLayer'
 
 defineEmits(['close'])
 
@@ -113,6 +114,7 @@ const tiers = computed(() => ALL_TIERS.filter(t => grouped.value[t.key] && group
 const currentCount = computed(() => Object.values(grouped.value).reduce((sum, list) => sum + list.length, 0))
 
 const doc = window.parent ? window.parent.document : document
+const layer = createPortalLayer(doc)
 
 function getCurrentChatId() {
   try {
@@ -220,6 +222,7 @@ let timer = null
 let releaseStyles = () => {}
 onMounted(() => {
   releaseStyles = mountPortalStyles(document, doc, /\.(?:bestiary-|bs-|tier-|c-)/)
+  layer.show()
   if (isDemo && demoParam !== 'all') mode.value = demoParam
   checkChatChange()
   load()
@@ -227,6 +230,7 @@ onMounted(() => {
 })
 onUnmounted(() => {
   releaseStyles()
+  layer.destroy()
   clearInterval(timer)
 })
 </script>

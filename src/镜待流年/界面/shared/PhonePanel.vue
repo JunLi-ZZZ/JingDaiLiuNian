@@ -917,6 +917,7 @@ import VideoCallPanel from './VideoCallPanel.vue'
 import CallIcon from './CallIcon.vue'
 import { CALL_SYNC, callContextText, callStorageKey, createCall, readCalls, recoverCalls, runVideoCall, saveCall } from './videoCall'
 import { mountPortalStyles } from './portalStyles'
+import { createPortalLayer } from './portalLayer'
 import { beginLiveBatch, finishLiveBatch, liveBatchText, LIVE_TASK_SYNC, liveTaskActive, claimLiveTask, ownsLiveTask, releaseLiveTask } from './liveBatch'
 
 defineEmits(['close'])
@@ -1120,7 +1121,8 @@ const curWallpaper = ref(localStorage.getItem('jdnl_wallpaper') || '')  // å½“å‰
 
 const doc = window.parent ? window.parent.document : document
 function TH() { return window.parent && window.parent.TavernHelper }
-const tpTarget = (() => { try { return (window.parent && window.parent.document && window.parent.document.body) || null } catch (e) { return null } })()
+const layer = createPortalLayer(doc)
+const tpTarget = layer.target
 
 const meName = computed(() => {
   try {
@@ -3556,7 +3558,7 @@ function applyVV() {
   } catch (e) {}
 }
 function copyStyles() {
-  if (tpTarget) releasePhoneStyles = mountPortalStyles(document, window.parent.document, /\.(?:mp-|dh(?:[\s.[:#-]|$)|vc(?:[\s.[:#-]|$))/)
+  releasePhoneStyles = mountPortalStyles(document, doc, /\.(?:mp-|ico-|dh(?:[\s.[:#-]|$)|vc(?:[\s.[:#-]|$))/)
 }
 function onPhoneSync(event) {
   const detail = event && event.detail || {}
@@ -3591,6 +3593,7 @@ function onOpenPhoneCard() { view.value = 'home'; showDyMe.value = false; showDy
 onMounted(() => {
   if (props.owner) activeOwner.value = props.owner
   copyStyles()
+  layer.show()
   tick(); loadLogs(); loadRemarks(); loadPhotos(); loadDyData(); syncScrape(); syncScrapePhotos(); syncVideoCallLogs()
   window.parent.addEventListener(CALL_SYNC, onVideoCallSync)
   window.parent.addEventListener(LIVE_TASK_SYNC, syncLiveTaskState)
@@ -3628,6 +3631,7 @@ onUnmounted(() => {
   window.parent.removeEventListener(CALL_SYNC, onVideoCallSync)
   window.parent.removeEventListener(LIVE_TASK_SYNC, syncLiveTaskState)
   releasePhoneStyles()
+  layer.destroy()
   clearInterval(timer); clearTimeout(sendTimer); clearTimeout(errTimer)
   unhookGen()
   try { window.parent.removeEventListener(PHONE_SYNC_EVENT, onPhoneSync) } catch (e) {}
