@@ -108,7 +108,7 @@ test('11项JSON字符串动作归一化为实际对象；自然语言动作保�
 test('实际EJS状态输出为可读分段，保留判定精度和人物信息',async()=>{
  const s=start().stat_data;const view=projectPromptState(s),text=formatPromptView(view);
  assert(text.includes('当前世界:'));assert(text.includes('能力:'));assert(text.includes('起源涅槃'));assert(!text.includes('规则ID'));
- assert(!text.match(/0\.\d{6}/));assert(!text.includes('能力授予状态'));assert.equal(view.本轮骰列.length,32);
+ assert(!text.match(/0\.\d{6}/));assert(!text.includes('能力授予状态'));assert.equal(view.本轮骰列,undefined);assert(!text.includes('<本轮判定>'));
  const ejs=fs.readFileSync(path.join(root,'世界书/变量/变量列表.txt'),'utf8'),out=[];
  const AsyncFunction=Object.getPrototypeOf(async function(){}).constructor;
  await new AsyncFunction('getvar','getChatMessages','print',ejs.slice(ejs.indexOf('<%')+2,ejs.lastIndexOf('%>')))(()=>s,()=>[],v=>out.push(v));

@@ -7,6 +7,7 @@ strike: kind="strike"；actorId=string；targetId=string；abilityId=string
 release: kind="release"；actorId=string；targetId=string；abilityId=string
 advance: kind="advance"；seconds=number >0 ≤86400
 revive: kind="revive"
+register: kind="register"；entityId=string；name=string 长度≥1；category?=人物|生物 默认"人物"；life=number >0 ≤1000000000；energy?=number ≥0 ≤1000000000 默认0；attack=number ≥0 ≤1000000000；defense=number ≥0 ≤1000000000；hit?=number ≥0 ≤1 默认0.95；dodge?=number ≥0 ≤1 默认0；critical?=number ≥0 ≤1 默认0.1；criticalMultiplier?=number ≥1 ≤100 默认1.5；resistance?=object 默认{}；currentLife?=number ≥0；currentEnergy?=number ≥0；evidence=string 长度≥4
 encounter: kind="encounter"；name=string 长度≥1；tier=普通|强敌|致命；mechanism=string 长度≥1
 exposure: kind="exposure"；source=string 长度≥1；mechanism=string 长度≥1；mechanismName=string 长度≥1；abilityName?=string|null 默认null；amount=number >0 ≤1000000；conditions=string 长度≥1
 travel: kind="travel"；abilityId?=string|null；planeId=string 长度≥1；name=string 长度≥1；description=string；locationId=string 长度≥1；location=string 长度≥1；route=string 长度≥1；rate=number >0 ≤10000

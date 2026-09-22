@@ -55,8 +55,6 @@ export function formatPromptView(view:any):string {
     最近结果:view.最近结果?.map((e:any)=>e.结果),
   });
   const editable=clean({...view.叙事,待审提案:view.待审提案});
-  const dice=view.本轮骰列||[];
-  const dieText='本轮操作序号从0起；每项取同序号骰值。命中与暴击用万分值，概率乘10000后比较。\nD20: '+dice.map((d:any)=>d.D20).join(',')+'\n命中: '+dice.map((d:any)=>Math.round(d.命中骰*10000)).join(',')+'\n暴击: '+dice.map((d:any)=>Math.round(d.暴击骰*10000)).join(',');
-  return '<当前状态>\n'+lines(snapshot)+'\n结算版本: '+view._结算?.状态版本+'\n</当前状态>\n<叙事记录>\n'+lines(editable)+'\n</叙事记录>\n<本轮判定>\n'+dieText+'\n</本轮判定>'+
+  return '<当前状态>\n'+lines(snapshot)+'\n结算版本: '+view._结算?.状态版本+'\n</当前状态>\n<叙事记录>\n'+lines(editable)+'\n</叙事记录>'+
     (view.上轮结算反馈?'\n<待处理更新>\n'+view.上轮结算反馈+'\n'+lines(clean(view.待修复操作))+'\n</待处理更新>':'');
 }

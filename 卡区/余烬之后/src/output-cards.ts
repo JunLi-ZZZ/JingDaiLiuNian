@@ -1,4 +1,5 @@
 import type { Session } from './engine';
+import { characterEntity } from './character-dossier';
 
 const Reference = z.strictObject({ 分支ID: z.string(), 事件ID: z.string() });
 export function eventReference(state:Session['stat_data'], id:string) {
@@ -52,7 +53,7 @@ export type DossierCard = {
  kind:string;title:string;grade:string;subtitle:string;description:string;detail:string;
  type?:string; emblem?:string; source?:string; metrics?:{label:string;value:string}[];
 };
-function entityMetrics(entity: Session['stat_data']['_实体'][string]) {
+export function entityMetrics(entity: Session['stat_data']['_实体'][string]) {
   const energy = entity.资源.energy;
   return [
     ...(entity.生命 ? [{ label: '生命', value: `${entity.生命.当前} / ${entity.生命.上限}` }] : []),
@@ -83,17 +84,17 @@ export function resolveDossierCard(state: Session['stat_data'], kind: string, id
   }
   if (kind === 'character') {
     const p=state.叙事.人物档案[id];
-    if(p) return {type:kind,kind:'人物档案',title:p.名称,grade:'旅途相逢',subtitle:p.身份,description:p.外貌,detail:[p.近况,p.关系经历].filter(Boolean).join('\n')};
+    if(p) return {type:kind,kind:'人物档案',title:p.名称,grade:'旅途相逢',subtitle:p.身份,description:p.外貌,detail:[p.近况,p.关系经历].filter(Boolean).join('\n'),metrics:characterEntity(state,id)?entityMetrics(characterEntity(state,id)!):undefined};
   }
   if (kind === 'item') {
     const item = state._物品[id];
     if (item && ((item.所在.类型 === '实体' && item.所在.ID === playerId) || note)) return { type:kind,kind:'物品', title:item.名称, grade:item.品阶, subtitle:`${item.类别} · ${item.数量}${item.单位}`, description:item.描述, detail:item.耐久 ? `耐久 ${item.耐久.当前} / ${item.耐久.上限}` : '' };
   }
-  if (kind === 'entity' && (id === playerId || note)) {
+  if (kind === 'entity' && (id === playerId || note || (['人物','生物'].includes(state._实体[id]?.类别) && state._实体[id]?.位面ID===state._时空.当前地点.位面ID && state._实体[id]?.地点ID===state._时空.当前地点.地点ID))) {
     const entity = state._实体[id];
     if (entity) return { type:kind,kind:entity.类别, title:entity.名称 || (id === playerId ? state._开局.档案.姓名 : '') || '未命名实体',
       grade:entity.档案.本土境界 || '', subtitle:entity.档案.种族, description:note?.内容 || entity.档案.外貌,
-      detail:note?.来源 || '', metrics:id === playerId ? entityMetrics(entity) : undefined };
+      detail:note?.来源 || '', metrics:entityMetrics(entity) };
   }
   const info = state.叙事.见闻[id] || state._见闻档案[id] as Session['stat_data']['叙事']['见闻'][string] | undefined;
   if (kind === 'note' && info?.知情者ID[playerId]) return {type:kind,kind:info.类别, title:info.标题, grade:info.可信度, subtitle:'见闻手记', description:info.内容, detail:info.来源};

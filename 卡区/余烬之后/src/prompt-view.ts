@@ -26,7 +26,7 @@ export function projectPromptState(state: Schema, query = '') {
   const entities = Object.fromEntries([[playerId, player], ...onsite].filter(([, e]) => !!e).map(([id, e]) => [id, {
     名称: e.名称, 类别: e.类别, 档案: id === playerId ? undefined : e.档案,
     位面ID: e.位面ID, 地点ID: e.地点ID, 生命阶段: e.生命阶段, 生命: e.生命, 战斗: e.战斗,
-    资源: Object.fromEntries(entries(e.资源).filter(([key]) => key === 'energy' || picked.has(key)).slice(0, 16)),
+    资源: Object.fromEntries(entries(e.资源).filter(([key]) => key === 'energy' || picked.has(key) || (id !== playerId && abilities[key])).slice(0, 16)),
     能力ID: Object.fromEntries(entries(e.能力ID).filter(([key]) => abilities[key])),
     状态: take(e.状态, 8), 装备: take(e.装备, 12),
   }]));
@@ -41,13 +41,6 @@ export function projectPromptState(state: Schema, query = '') {
   const notes = Object.fromEntries(knowledge.filter(([id]) => noteIds.has(id)).map(([id, info]) => [id, { ...info, 内容: text(info.内容, 800) }]));
   const plane = state._时空?.位面目录?.[place?.位面ID];
   const narrative = state.叙事 || {};
-  const version = state._结算?.状态版本 || 0;
-  const dice = Array.from({length:32}, (_, index) => {
-    let hash = (version + 1) * 7919 + index * 104729;
-    for (const char of state._结算?.分支ID || '') hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
-    const roll = () => { hash = Math.imul(hash ^ (hash >>> 16), 0x45d9f3b); return Math.floor((hash >>> 0) / 4294967296 * 10000) / 10000; };
-    const first = roll(); return {序号:index, D20:Math.floor(first*20)+1, 命中骰:first, 暴击骰:roll()};
-  });
   return {
     ...(state._更新错误 ? { 上轮结算反馈: text(state._更新错误), 待修复操作: (state._待修复?.输入 as any)?.叙事?.本轮结算 } : {}),
     _开局: { 主角ID: playerId, 起源涅槃已获得: state._开局?.起源涅槃已获得, 伴生灵ID: state._开局?.伴生灵ID,
@@ -61,7 +54,6 @@ export function projectPromptState(state: Schema, query = '') {
     _物品: take(Object.fromEntries(entries(state._物品).filter(([, item]) => item.所在?.ID === playerId || item.所在?.ID === place?.地点ID)), 16),
     _结算: {...state._结算, 冷却结束:Object.fromEntries(entries(state._结算?.冷却结束).filter(([id,end]) => end > (state._时空?.起源时刻秒 || 0) && id.startsWith(playerId + ':')).slice(0,16))},
     _复苏: state._复苏, _死亡记录: take(state._死亡记录, 1),
-    本轮骰列: dice,
     最近结果: entries((state._运行账本 as any)?.events).slice(-4).map(([id,event]) => ({ID:id,结果:text(event.result,600)})),
     叙事: { 首次资料完成:narrative.首次资料完成, 天气:text(narrative.天气,120), 场景描述:text(narrative.场景描述,600), 记忆摘要:narrative.记忆摘要, 见闻:notes,
       人物档案: Object.fromEntries(entries(narrative.人物档案).filter(([id, p]) => matching(id, p.名称) || p.别名?.some((name:string) => matching(id,name)) || (p.在场 && p.位面ID === place?.位面ID)).slice(-6)),

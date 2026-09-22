@@ -23,6 +23,11 @@ export const OperationSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('release'), actorId: z.string(), targetId: z.string(), abilityId: z.string() }),
   z.strictObject({ kind: z.literal('advance'), seconds: z.number().positive().max(86400) }),
   z.strictObject({ kind: z.literal('revive') }),
+  z.strictObject({kind:z.literal('register'),entityId:z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/),name:z.string().min(1).max(80),category:z.enum(['人物','生物']).prefault('人物'),
+    life:z.number().positive().max(1e9),energy:z.number().nonnegative().max(1e9).prefault(0),attack:z.number().nonnegative().max(1e9),defense:z.number().nonnegative().max(1e9),
+    hit:z.number().min(0).max(1).prefault(.95),dodge:z.number().min(0).max(1).prefault(0),critical:z.number().min(0).max(1).prefault(.1),criticalMultiplier:z.number().min(1).max(100).prefault(1.5),
+    resistance:z.record(z.string(),z.number().min(-1).max(1)).prefault({}),currentLife:z.number().nonnegative().optional(),currentEnergy:z.number().nonnegative().optional(),
+    evidence:z.string().min(4).max(500)}),
   z.strictObject({ kind: z.literal('encounter'), name: z.string().min(1).max(80), tier: z.enum(['普通', '强敌', '致命']), mechanism: z.string().min(1).max(80) }),
   z.strictObject({ kind: z.literal('exposure'), source: z.string().min(1).max(80), mechanism: z.string().min(1).max(80), mechanismName: z.string().min(1).max(80), abilityName: z.string().trim().max(80).nullable().prefault(null), amount: z.number().positive().max(1000000), conditions: z.string().min(1).max(500) }),
   z.strictObject({ kind: z.literal('travel'), abilityId:z.string().nullable().optional(), planeId: z.string().min(1).max(80), name: z.string().min(1).max(200), description: z.string().max(3000), locationId: z.string().min(1).max(80), location: z.string().min(1).max(200), route: z.string().min(1).max(500), rate: z.number().positive().max(10000) }),
@@ -34,7 +39,7 @@ export const OperationSchema = z.discriminatedUnion('kind', [
 export type Operation = z.infer<typeof OperationSchema>;
 export const CharacterDossierSchema = z.object({
   名称: z.string().min(1).max(80), 别名: z.array(z.string().min(2).max(80)).max(6).prefault([]),
-  位面ID: z.string().max(80).prefault(''), 在场: z.boolean().prefault(false),
+  实体ID: z.string().max(80).prefault(''), 位面ID: z.string().max(80).prefault(''), 在场: z.boolean().prefault(false),
   性别:z.string().max(80).prefault(''), 年龄:z.string().max(100).prefault(''), 种族:z.string().max(100).prefault(''),
   来源世界:z.string().max(150).prefault(''), 能力与局限:z.string().max(700).prefault(''), 背景经历:z.string().max(800).prefault(''), 日常喜好:z.string().max(400).prefault(''),
   身份: z.string().max(300).prefault(''), 外貌: z.string().max(400).prefault(''),

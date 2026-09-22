@@ -115,16 +115,16 @@ test('有明确操作的旧提案允许重新确认，点击作为玩家授权�
  assert.equal(cmd.expectedVersion,later.stat_data._结算.状态版本);
  assert.match(applyCommand(later,cmd,()=>0.5).result,/D20=11/);
 });
-test('探索骰与提示词骰列一致；极值及重放不重掷',()=>{
+test('脚本独立随机；提示词不含骰列，极值及重放不重掷',()=>{
  const s=neutral({mode:'默认'},'dice'), view=projectPromptState(s.stat_data);
  const p=proposed(s.stat_data,[{kind:'advance',seconds:1},{kind:'check',actorId:'player',abilityId:null,task:'攀上湿滑石墙',difficulty:10}]);
  const after=acceptNarrativeUpdate(s.stat_data,p);
- assert.match(after._运行账本.events['story-0-1'].result,new RegExp('D20='+view.本轮骰列[1].D20));
+ assert.match(after._运行账本.events['story-0-1'].result,new RegExp('D20='+(Math.floor(storyRandom(0,1,'dice')()*20)+1)));
  const cmd={kind:'check',actorId:'player',abilityId:null,task:'查看裂缝',difficulty:30,id:'die',branchId:'dice',expectedVersion:0};
  const success=applyCommand(s,cmd,()=>0.999);assert.match(success.result,/大成功/);
  assert.equal(applyCommand(success.session,cmd,()=>{throw Error('重掷');}).replayed,true);
  assert.match(applyCommand(s,{...cmd,id:'fail',difficulty:5},()=>0).result,/失手/);
- assert.equal(Math.floor(storyRandom(0,1,'dice')()*20)+1,view.本轮骰列[1].D20);
+ assert.equal(view.本轮骰列,undefined);
  assert.notEqual(storyRandom(0,0,'save-a')(),storyRandom(0,0,'save-b')());
 });
 test('熟练度达到门槛升级；进化产生三种真实数值效果并拒绝重复领取',()=>{

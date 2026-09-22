@@ -26,7 +26,7 @@ const project = function projectPromptState(state, query = '') {
     const entities = Object.fromEntries([[playerId, player], ...onsite].filter(([, e]) => !!e).map(([id, e]) => [id, {
             名称: e.名称, 类别: e.类别, 档案: id === playerId ? undefined : e.档案,
             位面ID: e.位面ID, 地点ID: e.地点ID, 生命阶段: e.生命阶段, 生命: e.生命, 战斗: e.战斗,
-            资源: Object.fromEntries(entries(e.资源).filter(([key]) => key === 'energy' || picked.has(key)).slice(0, 16)),
+            资源: Object.fromEntries(entries(e.资源).filter(([key]) => key === 'energy' || picked.has(key) || (id !== playerId && abilities[key])).slice(0, 16)),
             能力ID: Object.fromEntries(entries(e.能力ID).filter(([key]) => abilities[key])),
             状态: take(e.状态, 8), 装备: take(e.装备, 12),
         }]));
@@ -41,15 +41,6 @@ const project = function projectPromptState(state, query = '') {
     const notes = Object.fromEntries(knowledge.filter(([id]) => noteIds.has(id)).map(([id, info]) => [id, { ...info, 内容: text(info.内容, 800) }]));
     const plane = state._时空?.位面目录?.[place?.位面ID];
     const narrative = state.叙事 || {};
-    const version = state._结算?.状态版本 || 0;
-    const dice = Array.from({ length: 32 }, (_, index) => {
-        let hash = (version + 1) * 7919 + index * 104729;
-        for (const char of state._结算?.分支ID || '')
-            hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
-        const roll = () => { hash = Math.imul(hash ^ (hash >>> 16), 0x45d9f3b); return Math.floor((hash >>> 0) / 4294967296 * 10000) / 10000; };
-        const first = roll();
-        return { 序号: index, D20: Math.floor(first * 20) + 1, 命中骰: first, 暴击骰: roll() };
-    });
     return {
         ...(state._更新错误 ? { 上轮结算反馈: text(state._更新错误), 待修复操作: state._待修复?.输入?.叙事?.本轮结算 } : {}),
         _开局: { 主角ID: playerId, 起源涅槃已获得: state._开局?.起源涅槃已获得, 伴生灵ID: state._开局?.伴生灵ID,
@@ -63,7 +54,6 @@ const project = function projectPromptState(state, query = '') {
         _物品: take(Object.fromEntries(entries(state._物品).filter(([, item]) => item.所在?.ID === playerId || item.所在?.ID === place?.地点ID)), 16),
         _结算: { ...state._结算, 冷却结束: Object.fromEntries(entries(state._结算?.冷却结束).filter(([id, end]) => end > (state._时空?.起源时刻秒 || 0) && id.startsWith(playerId + ':')).slice(0, 16)) },
         _复苏: state._复苏, _死亡记录: take(state._死亡记录, 1),
-        本轮骰列: dice,
         最近结果: entries(state._运行账本?.events).slice(-4).map(([id, event]) => ({ ID: id, 结果: text(event.result, 600) })),
         叙事: { 首次资料完成: narrative.首次资料完成, 天气: text(narrative.天气, 120), 场景描述: text(narrative.场景描述, 600), 记忆摘要: narrative.记忆摘要, 见闻: notes,
             人物档案: Object.fromEntries(entries(narrative.人物档案).filter(([id, p]) => matching(id, p.名称) || p.别名?.some((name) => matching(id, name)) || (p.在场 && p.位面ID === place?.位面ID)).slice(-6)),
@@ -139,11 +129,9 @@ const render = function formatPromptView(view) {
         最近结果: view.最近结果?.map((e) => e.结果),
     });
     const editable = clean({ ...view.叙事, 待审提案: view.待审提案 });
-    const dice = view.本轮骰列 || [];
-    const dieText = '本轮操作序号从0起；每项取同序号骰值。命中与暴击用万分值，概率乘10000后比较。\nD20: ' + dice.map((d) => d.D20).join(',') + '\n命中: ' + dice.map((d) => Math.round(d.命中骰 * 10000)).join(',') + '\n暴击: ' + dice.map((d) => Math.round(d.暴击骰 * 10000)).join(',');
-    return '<当前状态>\n' + lines(snapshot) + '\n结算版本: ' + view._结算?.状态版本 + '\n</当前状态>\n<叙事记录>\n' + lines(editable) + '\n</叙事记录>\n<本轮判定>\n' + dieText + '\n</本轮判定>' +
+    return '<当前状态>\n' + lines(snapshot) + '\n结算版本: ' + view._结算?.状态版本 + '\n</当前状态>\n<叙事记录>\n' + lines(editable) + '\n</叙事记录>' +
         (view.上轮结算反馈 ? '\n<待处理更新>\n' + view.上轮结算反馈 + '\n' + lines(clean(view.待修复操作)) + '\n</待处理更新>' : '');
 };
-const recent = typeof getChatMessages === 'function' ? (getChatMessages(2) || []).map(item => String(typeof item === 'string' ? item : item?.message ?? item?.mes ?? '').replace(/<UpdateVariable>[\s\S]*?<\/UpdateVariable>/gi, '')).join('\n') : '';
+const recent = typeof getChatMessages === 'function' ? [-2,-1].flatMap(depth => getChatMessages(depth) || []).map(item => String(typeof item === 'string' ? item : item?.message ?? item?.mes ?? '').replace(/<UpdateVariable>[\s\S]*?<\/UpdateVariable>/gi, '')).join('\n') : '';
 print(render(project(getvar('stat_data', { defaults: {} }) || {}, recent)));
 %>

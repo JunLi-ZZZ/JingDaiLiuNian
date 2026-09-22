@@ -221,7 +221,7 @@ function customize() {
         <input v-model="search" class="archive-search" placeholder="搜索标题或内容" aria-label="搜索见闻" />
         <details v-for="[id, info] in visibleKnowledge" :key="id" class="folio">
           <summary class="detail-card"><span class="item-icon">⌁</span><div><span class="label">{{ info.类别 }} · {{ info.可信度 }}</span><h4>{{ info.标题 }}</h4></div><span class="chevron">⌄</span></summary>
-          <div class="inline-detail"><p>{{ info.内容 }}</p><small>来源：{{ info.来源 }}</small><div class="ability-actions"><button :disabled="latest === false" @click="emit('edit', {kind:'focus',category:'见闻',id,enabled:!state._查阅.见闻.includes(id)})">{{ state._查阅.见闻.includes(id) ? '取消本轮查阅' : '供 AI 本轮查阅' }}</button><button @click="emit('compose', '关于' + info.标题 + '，')">就此继续</button></div></div>
+          <div class="inline-detail"><p>{{ info.内容 }}</p><small>来源：{{ info.来源 }}</small><div class="ability-actions"><button :disabled="latest === false" @click="emit('edit', {kind:'focus',category:'见闻',id,enabled:!state._查阅.见闻.includes(id)})">{{ state._查阅.见闻.includes(id) ? '取消优先查阅' : '供 AI 优先查阅' }}</button><button @click="emit('compose', '关于' + info.标题 + '，')">就此继续</button></div></div>
         </details>
         <button v-if="archivedKnowledge.length" class="archive-toggle" @click="showArchive = !showArchive">{{ showArchive ? '返回常用见闻' : '翻阅旧页 · ' + archivedKnowledge.length + ' 项' }}</button>
         <p v-if="!visibleKnowledge.length" class="empty">没有匹配的见闻。</p><small>每页显示最近60项，可搜索旧页并选入下一轮提示词。</small>

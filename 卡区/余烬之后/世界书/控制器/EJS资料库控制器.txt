@@ -3,7 +3,7 @@
 const library = getvar('stat_data._资料库', {defaults:{}}) || {};
 const place = getvar('stat_data._时空.当前地点.位面ID', {defaults:''});
 const people = getvar('stat_data.叙事.人物档案', {defaults:{}}) || {};
-const recent = (typeof getChatMessages === 'function' ? getChatMessages(2) || [] : [])
+const recent = (typeof getChatMessages === 'function' ? [-2,-1].flatMap(depth => getChatMessages(depth) || []) : [])
   .map(item => String(typeof item === 'string' ? item : item?.message ?? item?.mes ?? '')
     .replace(/<UpdateVariable>[\s\S]*?<\/UpdateVariable>/gi, '')).join('\n');
 const mentioned = x => [x.name,...(x.aliases||[])].some(n=>n.length>1 && recent.includes(n));

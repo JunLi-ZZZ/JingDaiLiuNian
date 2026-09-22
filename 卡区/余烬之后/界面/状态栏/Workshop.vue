@@ -4,6 +4,7 @@ import type { Schema, LibraryEntry } from '../../src/schema';
 import { parseLibrary, saveLibrary } from '../../src/library';
 import { characterGroups, planeGroups, workshopPrompt, exportLibrary } from '../../src/workshop-model';
 import examples from '../../assets/workshop-examples.json';
+import { workshopReferences } from '../../src/workshop-context';
 import type { ArchiveEdit } from '../../src/settlement';
 const props=defineProps<{state:Schema;latest?:boolean;preview?:boolean;chatId?:string;messageId?:number;selection?:string;persist?:(edit:ArchiveEdit)=>Promise<boolean|undefined>;seed?:LibraryEntry;standalone?:boolean}>();
 const kind=ref<'character'|'plane'>(props.seed?.kind || 'character'), name=ref(''), concept=ref('');
@@ -55,8 +56,13 @@ async function generate(){
   if(props.preview){
     draft.value=JSON.stringify(examples[kind.value],null,2);remember(parseLibrary(draft.value));notice.value='示例草稿 · 正式卡会调用酒馆当前模型';return;
   }
-  const response=await generateRaw({generation_id:id,should_silence:true,
-   ordered_prompts:workshopPrompt(kind.value,name.value,concept.value,active.value,include.value && !props.standalone ? props.state : undefined)});
+  const contextState=include.value && !props.standalone ? props.state : undefined;
+  const query=[name.value,concept.value,...Object.values(active.value)].join(' ');
+  const references=await workshopReferences({bindings:()=>getCharWorldbookNames('current'),read:getWorldbook},kind.value,query,contextState);
+  if(generationId!==id)return;check();
+  const response=await generateRaw({generation_id:id,should_silence:true,max_chat_history:0,
+   overrides:{world_info_before:'',world_info_after:'',persona_description:'',chat_history:{with_depth_entries:false,prompts:[],author_note:''}},
+   ordered_prompts:workshopPrompt(kind.value,name.value,concept.value,active.value,contextState,references)});
   if(generationId!==id)return;check();
   if(typeof response!=='string')throw Error('AI没有返回文字草稿');
   draft.value=response;
@@ -96,7 +102,7 @@ onBeforeUnmount(cancel);
   <div class="choices"><button aria-label="生成角色" :aria-pressed="kind==='character'" @click="kind='character'"><b>01</b> 生成角色 <small>身世 · 性情 · 牵挂</small></button><button aria-label="生成位面" :aria-pressed="kind==='plane'" @click="kind='plane'"><b>02</b> 生成位面 <small>地理 · 文明 · 法则</small></button></div>
   <label class="idea">一个念头就够了 <textarea v-model="concept" maxlength="8000" :placeholder="kind==='character'?'例如：替亡者送信的邮差，怕水，却住在一座永远下雨的城。也可以留空，让潮镜自由构想。':'例如：巨鲸背上的城市群，鲸群迁徙就是四季。留空也能直接生成完整世界。'" /></label>
   <div class="quick"><label>想用的名字<input v-model="name" maxlength="80" placeholder="留空，由 AI 拟名" /></label><div class="generate"><button v-if="!working" :aria-label="preview?'载入示例草稿':'生成草稿'" class="primary" :disabled="saving" @click="generate">{{preview?'载入示例草稿':selectedCount || concept || name?'按构想生成':'随机生成完整档案'}} <span aria-hidden="true">↗</span></button><button v-else @click="cancel">停止生成</button><small>{{selectedCount?selectedCount+' 项偏好已指定':'全部属性可由 AI 协调生成'}}</small></div></div>
-  <label v-if="!standalone" class="check"><input v-model="include" type="checkbox" />参考当前世界与人物</label>
+  <label v-if="!standalone" class="check"><input v-model="include" type="checkbox" />参考当前世界设定</label>
   <details class="preferences"><summary><span>想得更具体？展开自定义</span><small>{{selectedCount}} 项已选</small></summary>
    <p class="hint">每项都可留空，也可以选择建议或直接写自己的设定。</p>
    <details v-for="group in groups" :key="group.name" class="option-group"><summary>{{group.name}}</summary><div class="field-grid">

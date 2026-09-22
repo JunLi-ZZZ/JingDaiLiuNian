@@ -312,7 +312,7 @@ export function applyCommand(
   random: () => number = Math.random,
 ): { session: Session; result: string; replayed: boolean } {
   validateSession(input);
-  if(command.kind==='acquire')command={...command,...OperationSchema.parse(_.omit(command,['id','branchId','expectedVersion']))} as Command;
+  if(command.kind==='acquire'||command.kind==='register')command={...command,...OperationSchema.parse(_.omit(command,['id','branchId','expectedVersion']))} as Command;
   identifier(command.id);
   requireValue(command.branchId === input.stat_data._结算.分支ID, '分支不匹配');
   const events = input.death_adaptation_runtime.events;
@@ -478,6 +478,35 @@ export function applyCommand(
       const output = Math.floor(command.amount * Number(state._能力[command.abilityId].效果.release.参数.multiplier || 1));
       practice(state, state._开局.主角ID, command.abilityId);
       result = `${state._能力[command.abilityId].名称}消耗${command.amount}点储能，输出${output}点作用：${command.purpose}`;
+      break;
+    }
+    case 'register': {
+      identifier(command.entityId);
+      requireValue(command.entityId !== state._开局.主角ID, '主角已有开局数值');
+      const existing = state._实体[command.entityId];
+      if (existing) {
+        requireValue(existing.名称 === command.name, '实体ID已属于另一对象');
+        result = existing.名称 + '沿用已有数值档案';
+        break;
+      }
+      const hp = command.currentLife ?? command.life;
+      const energy = command.currentEnergy ?? command.energy;
+      requireValue(hp <= command.life && energy <= command.energy, '当前资源超过上限');
+      const skillId = 'attack-' + command.entityId;
+      requireValue(!own(state._能力, skillId), '基础攻击ID已占用');
+      const dossier = state.叙事.人物档案[command.entityId];
+      state._能力[skillId] = basicStrike();
+      state._实体[command.entityId] = Schema.shape._实体.unwrap().valueType.parse({
+        名称: command.name, 类别: command.category,
+        位面ID: state._时空.当前地点.位面ID, 地点ID: state._时空.当前地点.地点ID,
+        生命阶段: hp === 0 ? '死亡' : '存活', 生命: { 当前: hp, 上限: command.life },
+        资源: { energy: {名称:'能量',当前:energy,上限:command.energy,单位:'点'} },
+        战斗: {攻击:command.attack,防御:command.defense,命中率:command.hit,闪避率:command.dodge,暴击率:command.critical,暴击倍率:command.criticalMultiplier,抗性:command.resistance},
+        档案: {种族:dossier?.种族,外貌:dossier?.外貌,身份:dossier?.身份,背景补充:command.evidence},
+        能力ID: {[skillId]:true}, 数值规则版本:session.death_adaptation_runtime.rules.id,
+      });
+      if(dossier)dossier.实体ID=command.entityId;
+      result = command.name + '数值档案已建立';
       break;
     }
     case 'encounter': {

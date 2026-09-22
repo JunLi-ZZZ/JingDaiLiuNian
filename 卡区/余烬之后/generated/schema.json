@@ -1579,6 +1579,11 @@
                   "$ref": "#/$defs/__schema4"
                 }
               },
+              "实体ID": {
+                "default": "",
+                "type": "string",
+                "maxLength": 80
+              },
               "位面ID": {
                 "default": "",
                 "type": "string",
@@ -2226,6 +2231,112 @@
           },
           "required": [
             "kind"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "register"
+            },
+            "entityId": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "category": {
+              "default": "人物",
+              "type": "string",
+              "enum": [
+                "人物",
+                "生物"
+              ]
+            },
+            "life": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1000000000
+            },
+            "energy": {
+              "default": 0,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000000
+            },
+            "attack": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000000
+            },
+            "defense": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000000
+            },
+            "hit": {
+              "default": 0.95,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "dodge": {
+              "default": 0,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "critical": {
+              "default": 0.1,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "criticalMultiplier": {
+              "default": 1.5,
+              "type": "number",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "resistance": {
+              "default": {},
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "type": "number",
+                "minimum": -1,
+                "maximum": 1
+              }
+            },
+            "currentLife": {
+              "type": "number",
+              "minimum": 0
+            },
+            "currentEnergy": {
+              "type": "number",
+              "minimum": 0
+            },
+            "evidence": {
+              "type": "string",
+              "minLength": 4,
+              "maxLength": 500
+            }
+          },
+          "required": [
+            "kind",
+            "entityId",
+            "name",
+            "life",
+            "attack",
+            "defense",
+            "evidence"
           ],
           "additionalProperties": false
         },

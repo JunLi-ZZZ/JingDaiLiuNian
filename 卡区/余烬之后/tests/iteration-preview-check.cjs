@@ -64,7 +64,8 @@ const entry = { id: 'glass', kind: 'plane', name: '琉潮群岛', aliases: ['玻
    window.generateRaw=async options=>{window.lastRequest=options;if(window.fail)throw Error('模拟连接失败');if(window.pending)await new Promise(resolve=>window.resolveGenerate=resolve);return JSON.stringify(options.generation_id.startsWith('embers-repair')?patch:options.generation_id.startsWith('embers-evolution')?[{direction:'折射成像',design:{name:'潮纹折光',principle:'读取水面纹路并形成定向反射',evidence:'旅途中反复观察水流和光线',description:'借水面反射辨认远方轮廓',trigger:'存在可观察的水面',limitations:'需要稳定水面，强风会扰乱成像',cost:2,utility:{bonus:2}}}]:entry);};
    window.stopGenerationById=id=>window.stopped=id;
    window.getOrCreateChatWorldbook=async()=> '聊天档案';
-   window.getWorldbook=async()=>clone(window.worldEntries);
+   window.getCharWorldbookNames=()=>({primary:'本卡世界书',additional:[]});
+   window.getWorldbook=async book=>book==='本卡世界书'?[{name:'多元位面-体系概述',content:'测试虚海基础设定',enabled:true}]:clone(window.worldEntries);
    window.updateWorldbookWith=async(book,fn)=>{window.worldEntries=fn(clone(window.worldEntries));return clone(window.worldEntries);};
    window.createWorldbookEntries=async(book,entries)=>{window.worldEntries.push(...entries.map((e,i)=>({...clone(e),uid:window.worldEntries.length+i+1})));return {worldbook:clone(window.worldEntries),new_entries:entries};};
   },{s,patch,entry});

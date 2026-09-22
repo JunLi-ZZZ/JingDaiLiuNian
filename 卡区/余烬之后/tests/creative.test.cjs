@@ -12,7 +12,7 @@ test('随机与选项生成提供完整常规档案结构，选择性发送用�
  const input=JSON.parse(given[1].content);assert.equal(input.已选属性.性别,'非二元');assert.equal(input.已选属性.种族,'自定义种族');assert.equal(input.名称,'自定名');
  assert.equal(JSON.parse(empty[1].content).参考情境,undefined);
  for(const field of ['基本信息','外貌特征','经历与动机','能力与局限','语言与互动','关系与认知','日常与爱好'])assert(empty[0].content.includes(field));
- for(const field of ['地理与生态','历史脉络','文明与日常','力量体系','势力与人物','落脚与探索'])assert(workshopPrompt('plane','','',{})[0].content.includes(field));
+ for(const field of ['地理与生态','历史脉络','文明与日常','力量体系','势力与人物','地点与互动空间'])assert(workshopPrompt('plane','','',{})[0].content.includes(field));
  assert(characterGroups.flatMap(g=>g.fields).length>=20);assert(planeGroups.flatMap(g=>g.fields).length>=15);
  for(const group of [characterGroups,planeGroups])assert.equal(new Set(group.flatMap(g=>g.fields.map(f=>f.key))).size,group.flatMap(g=>g.fields).length);
 });

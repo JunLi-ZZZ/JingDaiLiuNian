@@ -23,6 +23,9 @@ const root=path.resolve(__dirname,'..'),version=require('../package.json').versi
    if(tab==='品阶'){
      assert(await page.locator('.grade-showcase .dossier h3').evaluateAll(nodes=>nodes.every(n=>getComputedStyle(n).color==='rgba(0, 0, 0, 0)')));
      assert.equal(new Set(await page.locator('.grade-showcase .grade-badge').evaluateAll(nodes=>nodes.map(n=>getComputedStyle(n).backgroundImage))).size,7);
+     assert(await page.locator('.grade-showcase>section').evaluateAll(nodes=>nodes.every(n=>n.querySelector('.inheritance .metrics strong').textContent===n.querySelector('.inheritance').dataset.grade)));
+     assert.equal(new Set(await page.locator('.grade-showcase .inheritance').evaluateAll(nodes=>nodes.map(n=>getComputedStyle(n).backgroundImage))).size,7);
+     assert.equal(new Set(await page.locator('.grade-showcase .relic').evaluateAll(nodes=>nodes.map(n=>getComputedStyle(n).backgroundImage))).size,7);
      await page.emulateMedia({reducedMotion:'reduce'});assert(await page.locator('.grade-badge').evaluateAll(nodes=>nodes.every(n=>getComputedStyle(n).animationName==='none')));await page.emulateMedia({reducedMotion:'no-preference'});
     }
     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'overflow '+tab+' '+width);
