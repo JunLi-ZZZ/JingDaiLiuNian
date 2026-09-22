@@ -1,0 +1,10 @@
+@@preprocessing
+<%
+const state=getvar('stat_data',{defaults:{}})||{};
+const recent=typeof getChatMessages==='function'?(getChatMessages(3)||[]).map(m=>String(typeof m==='string'?m:m.message??m.mes??'').replace(/<UpdateVariable>[\s\S]*?<\/UpdateVariable>/g,'')).join('\n'):'';
+const actor=state._实体?.[state._开局?.主角ID||'player'];
+const abilities=Object.entries(state._能力||{}).filter(([id])=>actor?.能力ID?.[id]).map(([,a])=>a);
+const active=state._结算?.遭遇ID || /训练|练习|修习|研习|掌握|熟练|施展|运用|使用|检定|进化|突破|精通/.test(recent);
+if(active)print(await getwi('熟练度与等级'));
+if(/进化|突破|精通/.test(recent) || abilities.some(a=>a.进化次数<3 && a.等级>=(a.进化次数+1)*5))print(await getwi('能力进化'));
+%>

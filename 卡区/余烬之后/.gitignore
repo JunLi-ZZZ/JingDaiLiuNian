@@ -1,0 +1,4 @@
+/build/
+/release/*
+!/release/0.5.2/
+/tests/logs/

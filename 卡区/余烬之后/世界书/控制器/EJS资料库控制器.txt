@@ -1,0 +1,20 @@
+@@preprocessing
+<%
+const library = getvar('stat_data._资料库', {defaults:{}}) || {};
+const place = getvar('stat_data._时空.当前地点.位面ID', {defaults:''});
+const people = getvar('stat_data.叙事.人物档案', {defaults:{}}) || {};
+const recent = (typeof getChatMessages === 'function' ? getChatMessages(2) || [] : [])
+  .map(item => String(typeof item === 'string' ? item : item?.message ?? item?.mes ?? '')
+    .replace(/<UpdateVariable>[\s\S]*?<\/UpdateVariable>/gi, '')).join('\n');
+const mentioned = x => [x.name,...(x.aliases||[])].some(n=>n.length>1 && recent.includes(n));
+const fetchEntry = getwi;
+const selected = Object.values(library).filter(x =>
+  x.kind === 'plane' ? x.id === place || mentioned(x) :
+  (people[x.id]?.在场 && people[x.id]?.位面ID === place) || mentioned(x));
+const planes = selected.filter(x=>x.kind === 'plane').sort((a,b)=>Number(b.id===place)-Number(a.id===place)).slice(0,2);
+const cast = selected.filter(x=>x.kind === 'character').slice(-3);
+for (const item of [...planes,...cast]) {
+  try { print(await fetchEntry(item.book,item.entry)); }
+  catch (_) { print(item.name+'：'+item.summary); }
+}
+%>

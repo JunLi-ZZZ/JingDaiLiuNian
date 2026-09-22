@@ -1,0 +1,30 @@
+<script setup lang="ts">
+import GradeBadge from './GradeBadge.vue';
+import type {SceneCard} from '../../src/output-cards';
+defineProps<{card:SceneCard}>();
+</script>
+<template>
+ <article class="scene-card" :class="card.type" :aria-label="card.kicker+'卡片'">
+  <header><span>{{card.kicker}}</span><small>{{card.type==='check'?'CHANCE':card.type==='death'?'THE RETURN':card.type==='travel'?'CROSSING':card.type==='quest'?'A PROMISE':'FIELD RECORD'}}</small></header>
+  <div class="main">
+   <div v-if="card.type==='check'" class="dice" aria-hidden="true"><svg viewBox="0 0 100 110"><path d="M50 3L96 30V80L50 107L4 80V30Z M4 30L50 23L96 30L76 79L50 107L24 79L4 30 M50 3V23L24 79H76L50 23"/></svg><b>{{card.die ?? '·'}}</b></div>
+   <div v-else-if="card.type==='death'" class="return-seal" aria-hidden="true"><span>归</span></div>
+   <div v-else-if="card.type==='travel'" class="crossing-seal" aria-hidden="true"><span>◌</span><i>⟶</i><span>◈</span></div>
+   <div v-else-if="card.type==='growth'" class="level"><small>LV.</small><b>{{card.seal}}</b></div>
+   <div class="heading"><h3>{{card.title}}</h3><strong v-if="card.type==='check'" class="outcome">{{card.seal}}</strong><p v-if="card.type==='travel'">通路已接续，新的世界正在此端展开。</p></div>
+  </div>
+  <div v-if="card.type==='check' && card.die !== undefined" class="equation"><span>{{card.die}} <small>骰面</small></span><i>+</i><span>{{card.bonus}} <small>加值</small></span><i>→</i><span>{{(card.die||0)+(card.bonus||0)}} <small>总值</small></span><em>难度 {{card.difficulty}}</em></div>
+  <p class="body">{{card.body}}</p>
+  <dl v-if="card.type!=='check'"><template v-for="(row,index) in card.rows" :key="index"><dt>{{row.label}}</dt><dd><GradeBadge v-if="row.label==='当前品阶'" :grade="row.value" /><template v-else>{{row.value||'—'}}</template></dd></template></dl>
+  <footer v-if="card.type==='death'">此后，世界记得你的缺席。<span>✦</span></footer>
+  <footer v-else-if="card.type==='quest'"><span>依约而行 · {{card.seal}}</span><span class="wax">约</span></footer>
+  <footer v-else-if="card.type==='travel'">虚海潮镜 <span>下一程已抵达</span></footer>
+ </article>
+</template>
+<style scoped>
+.scene-card{box-sizing:border-box;max-width:720px;margin:20px auto;border:1px solid #b7b99f;background:#f0f2e8;color:#354a43;padding:19px 24px;font:12px/1.9 'Microsoft YaHei',sans-serif;overflow-wrap:anywhere}header{display:flex;justify-content:space-between;align-items:center;font-size:10px;letter-spacing:3px;color:#8a7a54;border-bottom:1px solid #b9b79c66;padding-bottom:12px}header small{font:8px sans-serif;letter-spacing:2px;opacity:.7}.main{display:flex;align-items:center;gap:22px;padding:18px 0 4px}h3{font:500 24px/1.6 'SimSun',serif;margin:0}.heading{flex:1}.heading p{font-size:11px;color:#788c79;margin:5px 0}.body{white-space:pre-wrap;line-height:2;margin:15px 0}.outcome{display:inline-block;color:#658259;font-size:10px;border:1px solid #93ab80;padding:0 10px;letter-spacing:3px;margin-top:8px}dl{display:grid;grid-template-columns:minmax(60px,auto) minmax(0,1fr);gap:8px 20px;border-top:1px solid #b9b79c66;padding-top:15px}dt{font-size:10px;color:#8b9079}dd{margin:0;text-align:right}footer{display:flex;align-items:center;justify-content:space-between;border-top:1px solid #b9b79c66;padding-top:12px;font-size:9px;letter-spacing:2px;color:#93967d}
+.check{background:#eef0e6;border-top:3px solid #7f967c}.dice{position:relative;width:82px;flex-shrink:0;aspect-ratio:100/110}.dice svg{width:100%;height:100%;fill:#dee7d3;stroke:#829779;stroke-width:1}.dice b{position:absolute;inset:0;display:grid;place-content:center;font:italic 37px Georgia,serif;color:#415b46;padding-top:4px}.equation{display:flex;align-items:center;gap:15px;border-block:1px solid #b9b79c66;padding:12px 0;margin:12px 0}.equation>span{font:22px Georgia,serif}.equation small{display:block;font:9px/2 sans-serif;color:#8b947d}.equation i{font-style:normal;color:#8d9c80}.equation em{margin-left:auto;font:11px sans-serif;border:1px dashed #a3ad94;padding:7px}
+.death{background:radial-gradient(ellipse at 50% 0,#37505070,transparent 65%),#17292e;color:#d1e2da;border-color:#7b918c}.death .main{flex-direction:column;text-align:center;gap:18px;padding:25px 0 8px}.death h3{font-size:25px;color:#ddd2b7}.return-seal{width:85px;height:85px;border:1px solid #b7be9b88;border-radius:50%;box-shadow:0 0 0 10px #aec49f07,0 0 0 11px #aec49f22,0 0 0 22px #aec49f05;display:grid;place-content:center;margin:15px;font:38px serif;color:#b9c3a6}.death .body{text-align:center;color:#97aca2;font-size:11px}.death dt{color:#8ba093}.death dd{color:#c3d2be}.death footer{color:#80998a}.death header{color:#b8b898}
+.travel{background:#e8ede6;border:1px solid #92a695;border-top:3px double #7d977f}.travel .main{align-items:flex-start}.crossing-seal{display:flex;align-items:center;gap:8px;color:#7b956d;font:30px serif;padding-top:8px}.crossing-seal i{font:24px serif;color:#a69268}.travel footer{color:#6b836b}.travel dd{font-family:serif}.growth{border:1px solid #baa878;background:linear-gradient(110deg,#e8e0c550,#f6f2e7)}.level{border-right:1px solid #b9a16d60;padding:3px 22px 3px 0;color:#92723f}.level small{display:block;font-size:9px;letter-spacing:3px}.level b{font:italic 47px Georgia,serif}.quest{background:repeating-linear-gradient(0deg,transparent,transparent 28px,#a5977310 28px,#a5977310 29px),#f3ead7;box-shadow:3px 4px 0 #dcd3bd;border:1px solid #c3b18e}.quest header{color:#927249}.wax{border-radius:50%;border:3px double #ad7854;background:#845445;color:#f0d6a7;width:35px;height:35px;display:grid;place-content:center;font:16px serif;transform:rotate(-12deg)}.snapshot{background:#25363b;color:#d0ded6;border-color:#6a807c}.snapshot dt{color:#99b19b}.snapshot header{color:#abc0a5}.snapshot .body{font-size:11px;color:#a9bcb1}
+@media(max-width:400px){.scene-card{padding:15px 17px}.main{gap:13px}h3{font-size:21px}.dice{width:64px}.dice b{font-size:30px}.equation{gap:10px}.equation>span{font-size:20px}.equation em{padding:5px;font-size:10px}.travel .main{flex-direction:column;gap:4px}header{letter-spacing:2px}dl{gap:8px 14px}}
+</style>

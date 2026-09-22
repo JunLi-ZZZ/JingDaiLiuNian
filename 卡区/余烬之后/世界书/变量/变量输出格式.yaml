@@ -1,0 +1,31 @@
+变量输出格式:
+  位置: 正文后输出UpdateVariable块，内部使用XML标签包裹Analysis和JSONPatch，随后输出<EmbersPanel/>。
+
+  完整结构骨架:
+    "<UpdateVariable>
+    <Analysis>简述本轮实际耗时、动作和资料变化，一至三句。</Analysis>
+    <JSONPatch>
+    [
+      { \"op\": \"replace\", \"path\": \"/叙事/本轮时间\", \"value\": 实际秒数 },
+      { \"op\": \"replace\", \"path\": \"/叙事/本轮结算\", \"value\": [...] }
+    ]
+    </JSONPatch>
+    </UpdateVariable>
+
+    <EmbersPanel/>"
+
+  说明:
+    - UpdateVariable、Analysis、JSONPatch都是XML标签，必须用尖括号和闭合标签。
+    - Analysis标签内是自然语言文本。
+    - JSONPatch标签内是合法JSON数组，每项包含op、path；写入值时包含value。
+    - 操作类型：replace修改现有路径，insert新增项，remove删除项。
+    - 路径从stat_data内部开始，使用/叙事、/待审提案等一级字段。
+
+  关键字段:
+    - /叙事/本轮时间：value为当地额外经过秒数（number类型）。
+    - /叙事/本轮结算：value为操作对象数组或null；每个操作是带kind和参数的JSON对象，字段见操作字段契约。
+    - /叙事/首次资料完成：首次初始化完成后设为true。
+
+  首次与日常:
+    - 首次需完整建立叙事档案与待审提案，最后replace /叙事/首次资料完成为true。
+    - 日常只更新本轮实际变化的路径，时间和结算每轮必填。

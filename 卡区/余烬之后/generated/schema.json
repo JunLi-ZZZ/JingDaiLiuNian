@@ -1,0 +1,2651 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "_资料库": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "character",
+              "plane"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 80
+          },
+          "aliases": {
+            "default": [],
+            "maxItems": 6,
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/__schema0"
+            }
+          },
+          "planeId": {
+            "default": "",
+            "type": "string",
+            "maxLength": 80
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "book": {
+            "type": "string"
+          },
+          "entry": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "summary",
+          "book",
+          "entry"
+        ]
+      }
+    },
+    "_叙事回执": {
+      "default": "",
+      "type": "string"
+    },
+    "_修复记录": {
+      "default": null,
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "原文": {
+              "type": "string"
+            },
+            "补丁": {}
+          },
+          "required": [
+            "原文",
+            "补丁"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "_运行账本": {
+      "default": null,
+      "anyOf": [
+        {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {}
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "_卡标识": {
+      "default": "death-adaptation",
+      "type": "string",
+      "const": "death-adaptation"
+    },
+    "_更新错误": {
+      "default": "",
+      "type": "string"
+    },
+    "_待修复": {
+      "default": null,
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "版本": {
+              "type": "number"
+            },
+            "骰源版本": {
+              "type": "number"
+            },
+            "输入": {},
+            "原因": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "版本",
+            "输入",
+            "原因"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "_查阅": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "能力": {
+          "default": [],
+          "maxItems": 8,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/__schema1"
+          }
+        },
+        "见闻": {
+          "default": [],
+          "maxItems": 6,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/__schema2"
+          }
+        }
+      }
+    },
+    "_结构版本": {
+      "default": 1,
+      "type": "number",
+      "const": 1
+    },
+    "_初始化完成": {
+      "default": false,
+      "type": "boolean"
+    },
+    "_见闻档案": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {}
+    },
+    "_开局": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "模式": {
+          "default": "待选择",
+          "type": "string",
+          "enum": [
+            "待选择",
+            "默认",
+            "自定义"
+          ]
+        },
+        "主角ID": {
+          "default": "player",
+          "type": "string"
+        },
+        "场景设定": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "模式": {
+              "default": "默认",
+              "type": "string",
+              "enum": [
+                "默认",
+                "自定义"
+              ]
+            },
+            "位面ID": {
+              "default": "main",
+              "type": "string"
+            },
+            "世界名称": {
+              "default": "",
+              "type": "string",
+              "maxLength": 200
+            },
+            "世界设定": {
+              "default": "",
+              "type": "string",
+              "maxLength": 12000
+            },
+            "城市": {
+              "default": "星见市",
+              "type": "string",
+              "maxLength": 200
+            },
+            "场景": {
+              "default": "归泊庭 · 初次归来",
+              "type": "string",
+              "maxLength": 300
+            },
+            "起始时间": {
+              "default": "17:50",
+              "type": "string",
+              "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+            },
+            "机缘": {
+              "default": "在主世界遭遇失控卡车，第一次死亡唤醒起源涅槃。初微的衍生之力与末墟的终末之力在种核内交融，归泊庭接住了尚待重构的自我；为避开同类碰撞，种核衍生出越界能力。",
+              "type": "string",
+              "maxLength": 4000
+            },
+            "基调": {
+              "default": "异界探索、真实危险与死而复生",
+              "type": "string",
+              "maxLength": 300
+            },
+            "出场人物": {
+              "default": "伴生之灵艾斯特瑞亚；前来迎接第一次归来的末墟",
+              "type": "string",
+              "maxLength": 4000
+            },
+            "构想": {
+              "default": "从归泊庭苏醒写起，以卡车撞击的最后客观片段交代死亡。末墟等在浅水石阶旁，艾斯特瑞亚解释身体尚需十分钟重构、起源涅槃与新生的越界。庭中潮镜映出不同世界的片段，给出两三个有具体人物与事件的去处，同时接受任意目的世界。停在等待我询问或选择去向的时刻。",
+              "type": "string",
+              "maxLength": 12000
+            },
+            "大纲": {
+              "default": "",
+              "type": "string",
+              "maxLength": 12000
+            },
+            "边界": {
+              "default": "",
+              "type": "string",
+              "maxLength": 4000
+            }
+          }
+        },
+        "档案": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "姓名": {
+              "default": "",
+              "type": "string"
+            },
+            "性别": {
+              "default": "",
+              "type": "string"
+            },
+            "叙事代词": {
+              "default": "",
+              "type": "string"
+            },
+            "年龄描述": {
+              "default": "",
+              "type": "string"
+            },
+            "种族": {
+              "default": "",
+              "type": "string"
+            },
+            "外貌": {
+              "default": "",
+              "type": "string"
+            },
+            "原世界": {
+              "default": "",
+              "type": "string"
+            },
+            "身份": {
+              "default": "",
+              "type": "string"
+            },
+            "经历": {
+              "default": "",
+              "type": "string"
+            },
+            "持有者补充": {
+              "type": "string"
+            },
+            "玩家补充": {
+              "type": "string"
+            },
+            "称呼": {
+              "default": "",
+              "type": "string"
+            },
+            "体貌": {
+              "default": "",
+              "type": "string"
+            },
+            "发色发型": {
+              "default": "",
+              "type": "string"
+            },
+            "瞳色特征": {
+              "default": "",
+              "type": "string"
+            },
+            "衣着": {
+              "default": "",
+              "type": "string"
+            },
+            "性格标签": {
+              "default": "",
+              "type": "string"
+            },
+            "行事边界": {
+              "default": "",
+              "type": "string"
+            },
+            "擅长": {
+              "default": "",
+              "type": "string"
+            },
+            "局限": {
+              "default": "",
+              "type": "string"
+            },
+            "力量体系": {
+              "default": "",
+              "type": "string"
+            },
+            "原有能力": {
+              "default": "",
+              "type": "string"
+            },
+            "随身物品": {
+              "default": "",
+              "type": "string"
+            },
+            "关系牵挂": {
+              "default": "",
+              "type": "string"
+            },
+            "旅途意向": {
+              "default": "",
+              "type": "string"
+            }
+          }
+        },
+        "机缘记录": {
+          "default": "",
+          "type": "string"
+        },
+        "起源涅槃已获得": {
+          "default": false,
+          "type": "boolean"
+        },
+        "伴生灵ID": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "_时空": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "起源时刻秒": {
+          "default": 0,
+          "type": "number"
+        },
+        "当前地点": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "位面ID": {
+              "default": "",
+              "type": "string"
+            },
+            "地点ID": {
+              "default": "",
+              "type": "string"
+            },
+            "大陆": {
+              "default": "",
+              "type": "string"
+            },
+            "城市": {
+              "default": "",
+              "type": "string"
+            },
+            "区域": {
+              "default": "",
+              "type": "string"
+            },
+            "场景": {
+              "default": "",
+              "type": "string"
+            },
+            "具体位置": {
+              "default": "",
+              "type": "string"
+            }
+          }
+        },
+        "位面目录": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "description": "位面ID"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "名称": {
+                "default": "",
+                "type": "string"
+              },
+              "来源": {
+                "default": "生成",
+                "type": "string",
+                "enum": [
+                  "预设",
+                  "生成"
+                ]
+              },
+              "世界书条目": {
+                "default": "",
+                "type": "string"
+              },
+              "简介": {
+                "default": "",
+                "type": "string",
+                "maxLength": 3000
+              },
+              "已发现": {
+                "default": false,
+                "type": "boolean"
+              },
+              "时钟": {
+                "default": {},
+                "type": "object",
+                "properties": {
+                  "起源基准秒": {
+                    "default": 0,
+                    "type": "number"
+                  },
+                  "本地基准秒": {
+                    "default": 0,
+                    "type": "number"
+                  },
+                  "本地每起源秒": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "历法说明": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "历法": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "名称": {
+                            "type": "string"
+                          },
+                          "元年": {
+                            "type": "number"
+                          },
+                          "每月天数": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            }
+                          },
+                          "每天小时": {
+                            "type": "number"
+                          },
+                          "每小时分钟": {
+                            "type": "number"
+                          },
+                          "每分钟秒": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "名称",
+                          "元年",
+                          "每月天数",
+                          "每天小时",
+                          "每小时分钟",
+                          "每分钟秒"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "_实体": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "description": "人物、生物或危险源ID"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "名称": {
+            "default": "",
+            "type": "string"
+          },
+          "类别": {
+            "default": "人物",
+            "type": "string",
+            "enum": [
+              "主角",
+              "人物",
+              "生物",
+              "危险源"
+            ]
+          },
+          "档案": {
+            "default": {},
+            "type": "object",
+            "properties": {
+              "种族": {
+                "default": "",
+                "type": "string"
+              },
+              "外貌": {
+                "default": "",
+                "type": "string"
+              },
+              "身份": {
+                "default": "",
+                "type": "string"
+              },
+              "本土境界": {
+                "default": "",
+                "type": "string"
+              },
+              "力量体系说明": {
+                "default": "",
+                "type": "string"
+              },
+              "世界书条目": {
+                "default": "",
+                "type": "string"
+              },
+              "背景补充": {
+                "default": "",
+                "type": "string"
+              }
+            }
+          },
+          "位面ID": {
+            "default": "",
+            "type": "string"
+          },
+          "地点ID": {
+            "default": "",
+            "type": "string"
+          },
+          "种族ID": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "当前形态ID": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "形态": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "description": "形态ID"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "名称": {
+                  "default": "",
+                  "type": "string"
+                },
+                "描述": {
+                  "default": "",
+                  "type": "string"
+                },
+                "图片": {
+                  "default": "",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "生命阶段": {
+            "default": "存活",
+            "type": "string",
+            "enum": [
+              "存活",
+              "死亡",
+              "重构中",
+              "无生命"
+            ]
+          },
+          "生命": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "当前": {
+                    "type": "number"
+                  },
+                  "上限": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "当前",
+                  "上限"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "资源": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "description": "资源ID"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "名称": {
+                  "default": "",
+                  "type": "string"
+                },
+                "当前": {
+                  "type": "number"
+                },
+                "上限": {
+                  "default": null,
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "单位": {
+                  "default": "点",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "当前"
+              ]
+            }
+          },
+          "属性": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "description": "已登记属性ID"
+            },
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "战斗": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "攻击": {
+                    "type": "number"
+                  },
+                  "防御": {
+                    "type": "number"
+                  },
+                  "命中率": {
+                    "type": "number"
+                  },
+                  "闪避率": {
+                    "type": "number"
+                  },
+                  "暴击率": {
+                    "type": "number"
+                  },
+                  "暴击倍率": {
+                    "type": "number"
+                  },
+                  "抗性": {
+                    "default": {},
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "description": "机制ID"
+                    },
+                    "additionalProperties": {
+                      "type": "number"
+                    }
+                  }
+                },
+                "required": [
+                  "攻击",
+                  "防御",
+                  "命中率",
+                  "闪避率",
+                  "暴击率",
+                  "暴击倍率"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "能力ID": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "description": "能力ID"
+            },
+            "additionalProperties": {
+              "type": "boolean"
+            }
+          },
+          "状态": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "description": "状态实例ID"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "规则ID": {
+                  "default": "",
+                  "type": "string"
+                },
+                "来源事件ID": {
+                  "default": "",
+                  "type": "string"
+                },
+                "层数": {
+                  "default": 1,
+                  "type": "number"
+                },
+                "结束起源秒": {
+                  "default": null,
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "参数": {
+                  "default": {},
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "boolean"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "装备": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "description": "自定义装备位置"
+            },
+            "additionalProperties": {
+              "type": "string",
+              "description": "物品实例ID"
+            }
+          },
+          "数值规则版本": {
+            "default": "",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "_能力": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "description": "能力ID"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "名称": {
+            "default": "",
+            "type": "string"
+          },
+          "品阶": {
+            "default": "凡常",
+            "$ref": "#/$defs/__schema3"
+          },
+          "等级": {
+            "default": 1,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "熟练度": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "进化次数": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "进化方向": {
+            "default": "",
+            "type": "string"
+          },
+          "描述": {
+            "default": "",
+            "type": "string"
+          },
+          "来源": {
+            "default": {},
+            "type": "object",
+            "properties": {
+              "类型": {
+                "default": "其他",
+                "type": "string",
+                "enum": [
+                  "初始",
+                  "死亡",
+                  "学习",
+                  "训练",
+                  "天赋",
+                  "传承",
+                  "契约",
+                  "改造",
+                  "其他"
+                ]
+              },
+              "死亡事件ID": {
+                "default": null,
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "来源实体ID": {
+                "default": null,
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "说明": {
+                "default": "",
+                "type": "string"
+              }
+            }
+          },
+          "机制ID": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "description": "机制ID"
+            },
+            "additionalProperties": {
+              "type": "boolean"
+            }
+          },
+          "用法": {
+            "default": "主动",
+            "type": "string",
+            "enum": [
+              "主动",
+              "被动",
+              "复合"
+            ]
+          },
+          "规则状态": {
+            "default": "待定标",
+            "type": "string",
+            "enum": [
+              "待定标",
+              "可结算"
+            ]
+          },
+          "触发条件": {
+            "default": "",
+            "type": "string"
+          },
+          "效果": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "description": "效果ID"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "规则ID": {
+                  "default": "",
+                  "type": "string"
+                },
+                "参数": {
+                  "default": {},
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "boolean"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "消耗": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "description": "资源ID"
+            },
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "冷却本地秒": {
+            "default": 0,
+            "type": "number"
+          },
+          "限制": {
+            "default": "",
+            "type": "string"
+          },
+          "成长记录": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "description": "成长事件ID"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "_物品": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "description": "物品实例ID"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "名称": {
+            "default": "",
+            "type": "string"
+          },
+          "品阶": {
+            "default": "凡常",
+            "$ref": "#/$defs/__schema3"
+          },
+          "类别": {
+            "default": "其他",
+            "type": "string",
+            "enum": [
+              "装备",
+              "消耗品",
+              "材料",
+              "货币",
+              "其他"
+            ]
+          },
+          "描述": {
+            "default": "",
+            "type": "string"
+          },
+          "数量": {
+            "default": 1,
+            "type": "number"
+          },
+          "单位": {
+            "default": "件",
+            "type": "string"
+          },
+          "所在": {
+            "default": {},
+            "type": "object",
+            "properties": {
+              "类型": {
+                "default": "地点",
+                "type": "string",
+                "enum": [
+                  "实体",
+                  "地点",
+                  "容器"
+                ]
+              },
+              "ID": {
+                "default": "",
+                "type": "string"
+              }
+            }
+          },
+          "复苏绑定实体ID": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "能力ID": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "description": "能力ID"
+            },
+            "additionalProperties": {
+              "type": "boolean"
+            }
+          },
+          "耐久": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "当前": {
+                    "type": "number"
+                  },
+                  "上限": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "当前",
+                  "上限"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "_锚点": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "description": "锚点ID"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "名称": {
+            "default": "",
+            "type": "string"
+          },
+          "位面ID": {
+            "default": "",
+            "type": "string"
+          },
+          "地点ID": {
+            "default": "",
+            "type": "string"
+          },
+          "状态": {
+            "default": "未确认",
+            "type": "string",
+            "enum": [
+              "可用",
+              "失效",
+              "未确认"
+            ]
+          },
+          "建立事件ID": {
+            "default": "",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "_死亡记录": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "description": "死亡事件ID"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "实体ID": {
+            "default": "player",
+            "type": "string"
+          },
+          "起源时刻秒": {
+            "default": 0,
+            "type": "number"
+          },
+          "位面ID": {
+            "default": "",
+            "type": "string"
+          },
+          "地点ID": {
+            "default": "",
+            "type": "string"
+          },
+          "结算事件ID": {
+            "default": "",
+            "type": "string"
+          },
+          "因果链": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "description": "有序原因ID"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "顺序": {
+                  "default": 0,
+                  "type": "number"
+                },
+                "来源实体ID": {
+                  "default": null,
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "机制ID": {
+                  "default": "",
+                  "type": "string"
+                },
+                "作用条件": {
+                  "default": "",
+                  "type": "string"
+                },
+                "实际伤害": {
+                  "default": null,
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "直接致死": {
+                  "default": false,
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "已参与防护": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "description": "能力ID"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "授予能力ID": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "description": "能力ID"
+            },
+            "additionalProperties": {
+              "type": "boolean"
+            }
+          },
+          "能力授予状态": {
+            "default": "待解析",
+            "type": "string",
+            "enum": [
+              "待解析",
+              "已完成"
+            ]
+          },
+          "复苏完成起源秒": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "_复苏": {
+      "default": null,
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "死亡事件ID": {
+              "type": "string"
+            },
+            "锚点ID": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "开始起源秒": {
+              "type": "number"
+            },
+            "完成起源秒": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "规则ID": {
+              "type": "string"
+            },
+            "阶段": {
+              "type": "string",
+              "enum": [
+                "待确定",
+                "重构中",
+                "可复苏"
+              ]
+            }
+          },
+          "required": [
+            "死亡事件ID",
+            "锚点ID",
+            "开始起源秒",
+            "完成起源秒",
+            "规则ID",
+            "阶段"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "_任务": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "description": "任务ID"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "名称": {
+            "default": "",
+            "type": "string"
+          },
+          "来源实体ID": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "描述": {
+            "default": "",
+            "type": "string"
+          },
+          "目标": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "description": "目标ID"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "描述": {
+                  "default": "",
+                  "type": "string"
+                },
+                "当前": {
+                  "default": 0,
+                  "type": "number"
+                },
+                "所需": {
+                  "default": 1,
+                  "type": "number"
+                },
+                "单位": {
+                  "default": "次",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "截止起源秒": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "状态": {
+            "default": "可接受",
+            "type": "string",
+            "enum": [
+              "可接受",
+              "进行中",
+              "待结算",
+              "已完成",
+              "已失效",
+              "已放弃"
+            ]
+          },
+          "奖励说明": {
+            "default": "",
+            "type": "string"
+          },
+          "后果说明": {
+            "default": "",
+            "type": "string"
+          },
+          "结算事件ID": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "_结算": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "分支ID": {
+          "default": "",
+          "type": "string"
+        },
+        "状态版本": {
+          "default": 0,
+          "type": "number"
+        },
+        "最近事件ID": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "遭遇ID": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "冷却结束": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "description": "实体ID与能力ID组成的冷却键"
+          },
+          "additionalProperties": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "叙事": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "首次资料完成": {
+          "default": false,
+          "type": "boolean"
+        },
+        "人物档案": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "名称": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "别名": {
+                "default": [],
+                "maxItems": 6,
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/__schema4"
+                }
+              },
+              "位面ID": {
+                "default": "",
+                "type": "string",
+                "maxLength": 80
+              },
+              "在场": {
+                "default": false,
+                "type": "boolean"
+              },
+              "性别": {
+                "default": "",
+                "type": "string",
+                "maxLength": 80
+              },
+              "年龄": {
+                "default": "",
+                "type": "string",
+                "maxLength": 100
+              },
+              "种族": {
+                "default": "",
+                "type": "string",
+                "maxLength": 100
+              },
+              "来源世界": {
+                "default": "",
+                "type": "string",
+                "maxLength": 150
+              },
+              "能力与局限": {
+                "default": "",
+                "type": "string",
+                "maxLength": 700
+              },
+              "背景经历": {
+                "default": "",
+                "type": "string",
+                "maxLength": 800
+              },
+              "日常喜好": {
+                "default": "",
+                "type": "string",
+                "maxLength": 400
+              },
+              "身份": {
+                "default": "",
+                "type": "string",
+                "maxLength": 300
+              },
+              "外貌": {
+                "default": "",
+                "type": "string",
+                "maxLength": 400
+              },
+              "性格": {
+                "default": "",
+                "type": "string",
+                "maxLength": 500
+              },
+              "动机": {
+                "default": "",
+                "type": "string",
+                "maxLength": 500
+              },
+              "说话方式": {
+                "default": "",
+                "type": "string",
+                "maxLength": 300
+              },
+              "已知信息": {
+                "default": "",
+                "type": "string",
+                "maxLength": 800
+              },
+              "关系经历": {
+                "default": "",
+                "type": "string",
+                "maxLength": 800
+              },
+              "近况": {
+                "default": "",
+                "type": "string",
+                "maxLength": 500
+              }
+            },
+            "required": [
+              "名称"
+            ]
+          }
+        },
+        "记忆摘要": {
+          "default": "",
+          "type": "string",
+          "maxLength": 1200
+        },
+        "本轮结算": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "起算状态版本": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "操作": {
+                  "maxItems": 32,
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/__schema5"
+                  }
+                }
+              },
+              "required": [
+                "起算状态版本",
+                "操作"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "本轮时间": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "起算起源秒": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "经过本地秒": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 86400
+                }
+              },
+              "required": [
+                "起算起源秒",
+                "经过本地秒"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "天气": {
+          "default": "",
+          "type": "string"
+        },
+        "场景描述": {
+          "default": "",
+          "type": "string"
+        },
+        "见闻": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "description": "见闻ID"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "类别": {
+                "default": "事件",
+                "type": "string",
+                "enum": [
+                  "人物",
+                  "生物",
+                  "地点",
+                  "位面",
+                  "能力",
+                  "物品",
+                  "事件"
+                ]
+              },
+              "对象ID": {
+                "default": "",
+                "type": "string"
+              },
+              "标题": {
+                "default": "",
+                "type": "string"
+              },
+              "内容": {
+                "default": "",
+                "type": "string"
+              },
+              "可信度": {
+                "default": "观察",
+                "type": "string",
+                "enum": [
+                  "观察",
+                  "转述",
+                  "推测"
+                ]
+              },
+              "来源": {
+                "default": "",
+                "type": "string"
+              },
+              "知情者ID": {
+                "default": {},
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "description": "实体ID"
+                },
+                "additionalProperties": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "关系": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "description": "关系ID"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "主体ID": {
+                "default": "",
+                "type": "string"
+              },
+              "对象ID": {
+                "default": "",
+                "type": "string"
+              },
+              "已发生互动": {
+                "default": "",
+                "type": "string"
+              },
+              "已表达态度": {
+                "default": "",
+                "type": "string"
+              },
+              "已有约定": {
+                "default": "",
+                "type": "string"
+              }
+            }
+          }
+        },
+        "外界事件": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "description": "事件ID"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "位面ID": {
+                "default": "",
+                "type": "string"
+              },
+              "地点ID": {
+                "default": "",
+                "type": "string"
+              },
+              "进展": {
+                "default": "",
+                "type": "string"
+              },
+              "因果依据": {
+                "default": "",
+                "type": "string"
+              },
+              "状态": {
+                "default": "进行中",
+                "type": "string",
+                "enum": [
+                  "进行中",
+                  "已结束",
+                  "未知"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "待审提案": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "description": "提案ID"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "类型": {
+            "default": "行动",
+            "type": "string",
+            "enum": [
+              "行动",
+              "时间推进",
+              "移动",
+              "能力定义",
+              "实体定义",
+              "物品变化",
+              "位面定义",
+              "任务变化"
+            ]
+          },
+          "主体ID": {
+            "default": "",
+            "type": "string"
+          },
+          "目标ID": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "boolean"
+            }
+          },
+          "能力ID": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "原文引用": {
+            "type": "string"
+          },
+          "玩家原文引用": {
+            "type": "string"
+          },
+          "内容": {
+            "default": "",
+            "type": "string"
+          },
+          "操作": {
+            "default": null,
+            "anyOf": [
+              {
+                "$ref": "#/$defs/__schema5"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "预期状态版本": {
+            "default": 0,
+            "type": "number"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "__schema0": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 80
+    },
+    "__schema1": {
+      "type": "string"
+    },
+    "__schema2": {
+      "type": "string"
+    },
+    "__schema3": {
+      "type": "string",
+      "enum": [
+        "凡常",
+        "精良",
+        "稀有",
+        "史诗",
+        "传说",
+        "神话",
+        "本源"
+      ]
+    },
+    "__schema4": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 80
+    },
+    "__schema5": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "acquire"
+            },
+            "actorId": {
+              "type": "string"
+            },
+            "abilityId": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "grade": {
+              "$ref": "#/$defs/__schema3"
+            },
+            "source": {
+              "type": "string",
+              "enum": [
+                "学习",
+                "训练",
+                "天赋",
+                "传承",
+                "契约",
+                "改造",
+                "其他"
+              ]
+            },
+            "evidence": {
+              "type": "string",
+              "minLength": 4,
+              "maxLength": 500
+            },
+            "description": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 800
+            },
+            "trigger": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            },
+            "limitations": {
+              "type": "string",
+              "maxLength": 500
+            },
+            "profile": {
+              "type": "string",
+              "enum": [
+                "技艺",
+                "攻击",
+                "转化"
+              ]
+            },
+            "mechanism": {
+              "default": "impact",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "cost": {
+              "default": 0,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000
+            },
+            "cooldown": {
+              "default": 0,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 86400
+            },
+            "power": {
+              "default": 1,
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 100
+            },
+            "capacity": {
+              "default": 10,
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1000000
+            }
+          },
+          "required": [
+            "kind",
+            "actorId",
+            "abilityId",
+            "name",
+            "grade",
+            "source",
+            "evidence",
+            "description",
+            "trigger",
+            "limitations",
+            "profile"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "train"
+            },
+            "actorId": {
+              "type": "string"
+            },
+            "abilityId": {
+              "type": "string"
+            },
+            "seconds": {
+              "type": "number",
+              "minimum": 600,
+              "maximum": 86400
+            },
+            "focus": {
+              "type": "string",
+              "minLength": 4,
+              "maxLength": 400
+            }
+          },
+          "required": [
+            "kind",
+            "actorId",
+            "abilityId",
+            "seconds",
+            "focus"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "use"
+            },
+            "actorId": {
+              "type": "string"
+            },
+            "abilityId": {
+              "type": "string"
+            },
+            "purpose": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            }
+          },
+          "required": [
+            "kind",
+            "actorId",
+            "abilityId",
+            "purpose"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "strike"
+            },
+            "actorId": {
+              "type": "string"
+            },
+            "targetId": {
+              "type": "string"
+            },
+            "abilityId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "actorId",
+            "targetId",
+            "abilityId"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "release"
+            },
+            "actorId": {
+              "type": "string"
+            },
+            "targetId": {
+              "type": "string"
+            },
+            "abilityId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "actorId",
+            "targetId",
+            "abilityId"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "advance"
+            },
+            "seconds": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 86400
+            }
+          },
+          "required": [
+            "kind",
+            "seconds"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "revive"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "encounter"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "tier": {
+              "type": "string",
+              "enum": [
+                "普通",
+                "强敌",
+                "致命"
+              ]
+            },
+            "mechanism": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            }
+          },
+          "required": [
+            "kind",
+            "name",
+            "tier",
+            "mechanism"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "exposure"
+            },
+            "source": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "mechanism": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "mechanismName": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "abilityName": {
+              "default": null,
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "amount": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1000000
+            },
+            "conditions": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            }
+          },
+          "required": [
+            "kind",
+            "source",
+            "mechanism",
+            "mechanismName",
+            "amount",
+            "conditions"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "travel"
+            },
+            "abilityId": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "planeId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "description": {
+              "type": "string",
+              "maxLength": 3000
+            },
+            "locationId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "location": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "route": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "rate": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 10000
+            }
+          },
+          "required": [
+            "kind",
+            "planeId",
+            "name",
+            "description",
+            "locationId",
+            "location",
+            "route",
+            "rate"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "channel"
+            },
+            "abilityId": {
+              "type": "string"
+            },
+            "amount": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "purpose": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            }
+          },
+          "required": [
+            "kind",
+            "abilityId",
+            "amount",
+            "purpose"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "reconcile"
+            },
+            "actorId": {
+              "type": "string"
+            },
+            "resourceId": {
+              "type": "string"
+            },
+            "before": {
+              "type": "number",
+              "minimum": 0
+            },
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "evidence": {
+              "type": "string",
+              "minLength": 4,
+              "maxLength": 500
+            }
+          },
+          "required": [
+            "kind",
+            "actorId",
+            "resourceId",
+            "before",
+            "value",
+            "evidence"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "evolve"
+            },
+            "abilityId": {
+              "type": "string"
+            },
+            "direction": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "actorId": {
+              "type": "string"
+            },
+            "design": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "principle": {
+                  "type": "string",
+                  "minLength": 4,
+                  "maxLength": 600
+                },
+                "evidence": {
+                  "type": "string",
+                  "minLength": 4,
+                  "maxLength": 500
+                },
+                "description": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 800
+                },
+                "trigger": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "limitations": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 500
+                },
+                "cost": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100000
+                },
+                "cooldown": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 86400
+                },
+                "utility": {
+                  "type": "object",
+                  "properties": {
+                    "bonus": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 8
+                    }
+                  },
+                  "required": [
+                    "bonus"
+                  ],
+                  "additionalProperties": false
+                },
+                "strike": {
+                  "type": "object",
+                  "properties": {
+                    "mechanism": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "power": {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "maximum": 100
+                    },
+                    "fixed": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100000
+                    },
+                    "seconds": {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "maximum": 86400
+                    }
+                  },
+                  "required": [
+                    "mechanism",
+                    "power",
+                    "fixed",
+                    "seconds"
+                  ],
+                  "additionalProperties": false
+                },
+                "conversion": {
+                  "type": "object",
+                  "properties": {
+                    "mechanism": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "capacity": {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "maximum": 1000000
+                    },
+                    "storage": {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "maximum": 1000000
+                    },
+                    "multiplier": {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "maximum": 100
+                    }
+                  },
+                  "required": [
+                    "mechanism",
+                    "capacity",
+                    "storage",
+                    "multiplier"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "principle",
+                "evidence",
+                "description",
+                "trigger",
+                "limitations"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "kind",
+            "abilityId",
+            "direction"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "check"
+            },
+            "actorId": {
+              "type": "string"
+            },
+            "abilityId": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "task": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            },
+            "difficulty": {
+              "type": "integer",
+              "minimum": 5,
+              "maximum": 30
+            }
+          },
+          "required": [
+            "kind",
+            "actorId",
+            "abilityId",
+            "task",
+            "difficulty"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "after-the-embers-card",
+  "version": "0.5.2",
+  "private": true,
+  "scripts": {
+    "generate": "node tools/generate.cjs",
+    "test": "node --test tests/verify.test.cjs tests/engine.test.cjs tests/time.test.cjs tests/combat.test.cjs tests/opening.test.cjs tests/png.test.cjs tests/settlement.test.cjs tests/narrative.test.cjs tests/release.test.cjs tests/story.test.cjs tests/experience.test.cjs tests/iteration.test.cjs tests/creative.test.cjs tests/feedback.test.cjs tests/systems.test.cjs tests/integration-handoff.test.cjs",
+    "typecheck": "node tools/check-types.cjs",
+    "lint": "node ../../node_modules/eslint/bin/eslint.js src/**/*.ts 脚本/**/*.ts 界面/**/*.ts 界面/**/*.vue",
+    "build": "node tools/generate.cjs && node tools/check-types.cjs && npm test && node tools/build.cjs",
+    "preview": "node tools/serve.cjs",
+    "pack": "npm run build && node tools/pack.cjs",
+    "demo": "node tools/demo.cjs",
+    "bump": "node tools/bump.cjs",
+    "test:ui": "node tests/creative-preview-check.cjs && node tests/iteration-preview-check.cjs && node tests/opening-preview-check.cjs"
+  }
+}
