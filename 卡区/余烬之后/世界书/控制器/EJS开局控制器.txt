@@ -1,7 +1,7 @@
 @@preprocessing
-<%
+<% {
 const state=getvar('stat_data',{defaults:{}})||{};
 const actor=state._实体?.[state._开局?.主角ID||'player'];
 if(state._死亡记录?.['first-return'] && !state.叙事?.首次资料完成)print(await getwi('开局_初次归泊'));
 if(actor?.能力ID?.['world-crossing'])print(await getwi('能力_越界'));
-%>
+} %>

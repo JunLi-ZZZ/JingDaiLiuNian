@@ -1,5 +1,5 @@
 @@preprocessing
-<%
+<% {
 const library = getvar('stat_data._资料库', {defaults:{}}) || {};
 const place = getvar('stat_data._时空.当前地点.位面ID', {defaults:''});
 const people = getvar('stat_data.叙事.人物档案', {defaults:{}}) || {};
@@ -17,4 +17,4 @@ for (const item of [...planes,...cast]) {
   try { print(await fetchEntry(item.book,item.entry)); }
   catch (_) { print(item.name+'：'+item.summary); }
 }
-%>
+} %>

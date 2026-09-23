@@ -1,6 +1,6 @@
 @@preprocessing
 本局 {{user}} 就是下列档案中的角色，姓名与性别采用该档案。
-<%
+<% {
 const project = function projectPromptState(state, query = '') {
     const entries = (value) => Object.entries(value || {});
     const take = (value, count) => Object.fromEntries(entries(value).slice(-count));
@@ -134,4 +134,4 @@ const render = function formatPromptView(view) {
 };
 const recent = typeof getChatMessages === 'function' ? [-2,-1].flatMap(depth => getChatMessages(depth) || []).map(item => String(typeof item === 'string' ? item : item?.message ?? item?.mes ?? '').replace(/<UpdateVariable>[\s\S]*?<\/UpdateVariable>/gi, '')).join('\n') : '';
 print(render(project(getvar('stat_data', { defaults: {} }) || {}, recent)));
-%>
+} %>

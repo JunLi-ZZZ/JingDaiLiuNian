@@ -5,6 +5,7 @@ const crypto = require('node:crypto');
 const YAML = require('yaml');
 const { readChunks, embedCard, extractCards, isCardChunk } = require('./png.cjs');
 const config = require('../card.config.cjs');
+const { verifyEjsEntries } = require('./ejs-check.cjs');
 const { frontendLoader } = require('./loader.cjs');
 const cardDir = path.resolve(__dirname, '..');
 const { version, releaseName, worldbookName, artifactStem } = require('./release-info.cjs');
@@ -47,6 +48,7 @@ const entries = manifest.条目.map((entry, id) => {
     },
   };
 });
+verifyEjsEntries(entries);
 const html = source(`build/${version}/界面/状态栏/index.html`).toString('utf8');
 const coverHtml = source(`build/${version}/界面/封面/index.html`).toString('utf8');
 const coverLoader = frontendLoader(coverHtml, '封面');

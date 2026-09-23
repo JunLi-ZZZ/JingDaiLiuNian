@@ -1,5 +1,5 @@
 @@preprocessing
-<%
+<% {
 const id = getvar('stat_data._时空.当前地点.位面ID', { defaults: '' });
 const names = { main: '主世界', cangming: '苍溟界', mangcang: '莽苍太古界', yanyun: '晏云界', xiguang: '曦光穹界', yunmiao: '云渺万灵界' };
 const library = getvar('stat_data._资料库', { defaults: {} });
@@ -12,4 +12,4 @@ if (library[id]?.kind === 'plane') {
   const plane = Object.prototype.hasOwnProperty.call(planes, id) ? planes[id] : null;
   if (plane && plane.简介) print('当前世界：' + plane.名称 + '\n' + plane.简介);
 }
-%>
+} %>

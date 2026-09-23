@@ -20,12 +20,12 @@ const json = JSON.stringify(z.toJSONSchema(Schema, { io: 'input', reused: 'ref' 
 write(path.join(card, 'generated/schema.json'), json);
 write(path.join(card, '世界书/变量/变量列表.txt'), `@@preprocessing
 本局 {{user}} 就是下列档案中的角色，姓名与性别采用该档案。
-<%
+<% {
 const project = ${projectPromptState.toString()};
 const render = ${formatPromptView.toString()};
 const recent = typeof getChatMessages === 'function' ? [-2,-1].flatMap(depth => getChatMessages(depth) || []).map(item => String(typeof item === 'string' ? item : item?.message ?? item?.mes ?? '').replace(/<UpdateVariable>[\\s\\S]*?<\\/UpdateVariable>/gi, '')).join('\\n') : '';
 print(render(project(getvar('stat_data', { defaults: {} }) || {}, recent)));
-%>\n`);
+} %>\n`);
 write(
   path.join(card, '世界书/变量/initvar.yaml'),
   '# yaml-language-server: $schema=../../generated/schema.json\n' + YAML.stringify(createUninitializedState()),

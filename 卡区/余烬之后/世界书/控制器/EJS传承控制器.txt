@@ -1,5 +1,5 @@
 @@preprocessing
-<%
+<% {
 const acquired = getvar('stat_data._开局.起源涅槃已获得', { defaults: false });
 if (acquired) {
   print(await getwi('起源种核-传承'));
@@ -11,4 +11,4 @@ const harbor = getvar('stat_data._时空.当前地点.位面ID', { defaults: '' 
 if (harbor || matchChatMessages(['归泊庭', '潮镜', '潮碑'])) print(await getwi('归泊庭'));
 if (matchChatMessages(['初微', '起源之母'])) print(await getwi('初微'));
 if (harbor || matchChatMessages(['末墟', '终焉之母'])) print(await getwi('末墟'));
-%>
+} %>
