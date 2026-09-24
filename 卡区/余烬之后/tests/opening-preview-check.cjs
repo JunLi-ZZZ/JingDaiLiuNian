@@ -38,6 +38,7 @@ const config = require('../card.config.cjs');
     browser = await chromium.launch({ channel: 'msedge', headless: true });
     const base = `http://127.0.0.1:${server.address().port}`;
     const errors = [];
+    fs.mkdirSync(path.join(root,'build/verification',version),{recursive:true});
     const page = await browser.newPage();
     page.on('pageerror', error => errors.push(error.message));
     for (const width of [1280, 390, 320]) {
@@ -48,6 +49,27 @@ const config = require('../card.config.cjs');
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
       await page.screenshot({ path: path.join(root, 'build/verification', `cover-ready-${width}.png`), fullPage: true });
       await page.getByRole('button', { name: '开始旅途', exact: true }).click();
+      await page.getByRole('button', { name: '合成进化', exact: true }).click();
+      assert.equal(await page.getByLabel('能力名称',{exact:true}).inputValue(),'合成进化');
+      await page.getByRole('button', { name: '自定义能力', exact: true }).click();
+      await page.getByLabel('能力名称',{exact:true}).fill('闻潮');
+      await page.getByLabel('作用',{exact:true}).fill('从海潮的节律辨认远方航路');
+      await page.getByRole('button', { name: '吞噬进化', exact: true }).click();
+      assert.equal(await page.getByLabel('能力名称',{exact:true}).inputValue(),'吞噬进化');
+      await page.getByRole('button', { name: '自定义能力', exact: true }).click();
+      assert.equal(await page.getByLabel('能力名称',{exact:true}).inputValue(),'闻潮');
+      await page.getByRole('button', { name: '预览开局要求', exact: true }).click();
+      const customRequest=await page.getByLabel('开局要求',{exact:true}).inputValue();
+      assert.match(customRequest,/闻潮/);assert.doesNotMatch(customRequest,/起源涅槃|终焉眷引|卡车/);
+      assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+      await page.locator('.initial-ability').screenshot({path:path.join(root,'build/verification',version,`open-ability-${width}.png`)});
+      await page.getByRole('button', { name: '随机灵感', exact: true }).click();
+      await page.getByRole('button', { name: '演示构思能力', exact: true }).click();
+      await page.waitForFunction(()=>document.querySelector('.initial-ability input').value==='织潮');
+      await page.getByRole('button', { name: '暂不选择', exact: true }).click();
+      await page.getByRole('button', { name: '预览开局要求', exact: true }).click();
+      assert.doesNotMatch(await page.getByLabel('开局要求',{exact:true}).inputValue(),/织潮|起源涅槃|卡车/);
+      await page.getByRole('button', { name: '起源涅槃', exact: true }).click();
       await page.getByLabel('自定义角色', { exact: true }).check();
       await page.getByLabel('姓名', { exact: true }).fill('潮生');
       await page.getByLabel('种族', { exact: true }).fill('元素生命');
@@ -131,6 +153,7 @@ const config = require('../card.config.cjs');
             await new Promise(resolve => {
               window.resolveGeneration = resolve;
             });
+          if(options.generation_id?.startsWith('embers-ability-'))return JSON.stringify({name:'潮声缝合',grade:'凝华',usage:'主动',description:'沿潮声连接近处的结构',trigger:'能够听到潮声',limitations:'需要可触及的结构',principle:'以声音节律重建连接',travel:true});
           return options.ordered_prompts[1].content.includes('大纲')
             ? '旧书馆的守门人保管着一封待认领的信。是否追查由玩家决定。'
             : JSON.stringify(draft);
@@ -194,6 +217,30 @@ const config = require('../card.config.cjs');
       assert.equal(await hosted.locator('.book-cover').count(), 0);
       assert.equal((await saved()).stat_data._开局.档案.叙事代词, pronoun);
     }
+    // 真正封面入口请求与返回协议的模拟回放；取消后的迟到结果不覆盖草稿。
+    await reset();await openEditor();
+    await hosted.getByRole('button',{name:'自定义能力',exact:true}).click();
+    await hosted.getByLabel('能力构想',{exact:true}).fill('用潮声连接东西');
+    await hosted.evaluate(()=>sessionStorage.setItem('generationFail','1'));
+    await hosted.getByRole('button',{name:'AI 构思 / 重拟能力',exact:true}).click();
+    await hosted.getByText('模拟连接失败',{exact:true}).waitFor();
+    await hosted.evaluate(()=>sessionStorage.removeItem('generationFail'));
+    await hosted.getByRole('button',{name:'AI 构思 / 重拟能力',exact:true}).click();
+    await hosted.waitForFunction(()=>document.querySelector('.initial-ability input').value==='潮声缝合');
+    assert.equal(await hosted.evaluate(()=>JSON.parse(sessionStorage.getItem('lastRequest')).max_chat_history),0);
+    await hosted.getByLabel('能力名称',{exact:true}).fill('保留草稿');
+    await hosted.evaluate(()=>sessionStorage.setItem('generationPending','1'));
+    await hosted.getByRole('button',{name:'AI 构思 / 重拟能力',exact:true}).click();
+    await hosted.getByRole('button',{name:'取消',exact:true}).click();
+    await hosted.evaluate(()=>{sessionStorage.removeItem('generationPending');window.resolveGeneration();});
+    assert.equal(await hosted.getByLabel('能力名称',{exact:true}).inputValue(),'保留草稿');
+    await defaultPreview();
+    await hosted.getByRole('button',{name:'发送开局并生成',exact:true}).click();
+    await hosted.waitForFunction(()=>JSON.parse(sessionStorage.getItem('messages')||'[]').length===3);
+    const openState=(await saved()).stat_data;
+    assert.equal(openState._开局.起源涅槃已获得,false);
+    assert.equal(openState._能力['initial-ability'].名称,'保留草稿');
+    assert.equal(openState._实体.player.生命阶段,'存活');
     // 生成错误保留输入，不创建消息；所选世界显式进入生成上下文。
     await reset();
     await openEditor();

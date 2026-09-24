@@ -1,9 +1,12 @@
+import { AbilityDesignSchema } from './ability-design';
 import { OperationSchema } from './schema';
 import { grades } from './grades';
 /** 由运行时schema派生字段契约；规则与校验共享数据来源。 */
 export function operationGuide(kinds:string[]=[]):string {
-  const describe=(s:any):string=>{
-    if(s.type==='object' && s.properties)return '{'+Object.entries(s.properties).map(([key,value])=>key+(s.required?.includes(key)?'':'?')+':'+describe(value)).join(', ')+'}';
+  const describe=(s:any,key=''):string=>{
+    if(key==='design' && s.properties?.grade)return '能力定义';
+    if(s.type==='object' && s.properties)return '{'+Object.entries(s.properties).map(([key,value])=>key+(s.required?.includes(key)?'':'?')+':'+describe(value,key)).join(', ')+'}';
+    if(s.type==='object' && typeof s.additionalProperties==='object')return '{[ID]:'+describe(s.additionalProperties)+'}';
     if(s.type==='array')return '['+describe(s.items)+']';
     let result=s.const!==undefined?JSON.stringify(s.const):s.enum?s.enum.join('|'):s.anyOf?s.anyOf.map(describe).join('|'):s.type||'值';
     if(s.minimum!==undefined)result+=' ≥'+s.minimum;
@@ -13,8 +16,10 @@ export function operationGuide(kinds:string[]=[]):string {
     if(s.default!==undefined)result+=' 默认'+JSON.stringify(s.default);
     return result;
   };
-  return OperationSchema.options.filter(s=>!kinds.length || kinds.includes(s.shape.kind.value)).map(s=>{
+  const selected=OperationSchema.options.filter(s=>!kinds.length || kinds.includes(s.shape.kind.value));
+  const lines=selected.map(s=>{
     const json:any=z.toJSONSchema(s,{io:'input'});
-    return s.shape.kind.value+': '+Object.entries(json.properties).map(([key,value])=>key+(json.required?.includes(key)?'':'?')+'='+(key==='grade'?grades.join('|'):describe(value))).join('；');
+    return s.shape.kind.value+': '+Object.entries(json.properties).map(([key,value])=>key+(json.required?.includes(key)?'':'?')+'='+(key==='grade'?grades.join('|'):describe(value,key))).join('；');
   }).join('\n');
+  return lines+(selected.some(s=>['define','compose'].includes(s.shape.kind.value))?'\n能力定义='+describe(z.toJSONSchema(AbilityDesignSchema,{io:'input'})):'');
 }

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { Schema, OpeningScenarioSchema } from '../../src/schema';
+import InitialAbilityEditor from './InitialAbilityEditor.vue';
+import type { InitialAbilityChoice, AbilityDesign } from '../../src/ability-design';
+import { openScenario } from '../../src/open-start';
 import CharacterEditor from './CharacterEditor.vue';
 import type { OpeningChoice } from '../../src/opening';
 import { createOpening } from '../../src/opening';
@@ -22,12 +25,23 @@ const props = defineProps<{
   readPersonaName?: () => string;
   requestDraft?: (task: OpeningTask, choice: OpeningChoice) => Promise<string | OpeningDraft>;
   cancelGeneration?: () => void;
+  requestAbility?: (wish:string,profile:unknown,scenario:unknown)=>Promise<AbilityDesign>;
 }>();
 const emit = defineEmits<{ start: [choice: OpeningChoice, request: string]; retry: []; generate: [] }>();
 const mode = ref<'默认' | '自定义'>('默认');
 const choosing = ref(false);
 const profile = ref(Schema.shape._开局.unwrap().shape.档案.parse({}));
 const scenario = ref(OpeningScenarioSchema.parse({}));
+const ability=ref<InitialAbilityChoice>({mode:'origin'});
+const abilityBusy=ref(false);
+watch(()=>ability.value.mode==='origin',origin=>{
+  if(scenario.value.模式==='默认')scenario.value=origin?OpeningScenarioSchema.parse({}):openScenario();
+  else if(!origin){
+    const defaults=OpeningScenarioSchema.parse({});
+    if([defaults.机缘,'偶然接触漂来的起源种核，起源涅槃由此苏醒。','偶然接触漂来的起源种核，起源涅槃与终焉眷引由此苏醒。'].includes(scenario.value.机缘))scenario.value.机缘='';
+    if([defaults.出场人物,'伴生之灵艾斯特瑞亚'].includes(scenario.value.出场人物))scenario.value.出场人物='';
+  }
+});
 const draft = ref<string | null>(null);
 const draftKey = ref('');
 const generating = ref(false);
@@ -40,6 +54,7 @@ const defaultName = ref(resolvedPersonaName());
 let requestVersion = 0;
 const choice = computed<OpeningChoice>(() => ({
   mode: mode.value,
+  ability: ability.value,
   profile: mode.value === '自定义' ? { ...profile.value } : { 姓名: defaultName.value },
   scenario: { ...scenario.value },
 }));
@@ -50,6 +65,7 @@ watch(fingerprint, () => {
 });
 function previewDefault() {
   try {
+    if(abilityBusy.value)throw Error('能力仍在构思中');
     createOpening(choice.value, 'preview-check');
     draft.value = openingRequest(choice.value);
     draftKey.value = fingerprint.value;
@@ -62,6 +78,7 @@ async function generateDraft(task: OpeningTask) {
   localError.value = '';
   const token = ++requestVersion;
   try {
+    if(abilityBusy.value)throw Error('能力仍在构思中');
     createOpening(choice.value, 'preview-check');
     if (!props.requestDraft) throw Error('当前环境无法生成，请在酒馆中使用此功能');
     generating.value = true;
@@ -95,6 +112,7 @@ function cancel() {
 function submit() {
   try {
     if (!draft.value || stale.value) throw Error('请先按当前设定预览开局要求');
+    if(abilityBusy.value)throw Error('能力仍在构思中');
     createOpening(choice.value, 'preview-check');
     emit('start', choice.value, validateOpeningRequest(draft.value));
   } catch (error) {
@@ -150,11 +168,12 @@ function beginSelection() {
           <p>性别未指定，穿着日常便装。性格、关系与接下来的决定留待旅途中展开。</p>
         </div>
         <CharacterEditor v-else v-model="profile" :read-persona-name="readPersonaName" />
-        <OpeningScenarioEditor v-model="scenario" />
+        <InitialAbilityEditor v-model="ability" :profile="choice.profile" :scenario="scenario" :preview="preview" :ready="ready" :request-ability="requestAbility" :cancel-generation="cancelGeneration" @busy="abilityBusy=$event" />
+        <OpeningScenarioEditor v-model="scenario" :origin="ability.mode==='origin'" />
         <div class="draft-actions">
-          <button type="button" @click="previewDefault">预览开局要求</button>
+          <button type="button" :disabled="abilityBusy" @click="previewDefault">预览开局要求</button>
           <template v-if="scenario.模式 === '自定义'">
-            <button type="button" :disabled="!preview && !ready" @click="generateDraft('大纲')">
+            <button type="button" :disabled="abilityBusy || (!preview && !ready)" @click="generateDraft('大纲')">
               {{ preview ? '演示整理开局大纲' : 'AI 整理开局大纲' }}
             </button>
           </template>
@@ -167,12 +186,12 @@ function beginSelection() {
         </section>
         <details>
           <summary>初始状态与玩法</summary>
-          <p>起源涅槃刚刚苏醒，旅途从首次获得传承开始。</p>
-          <p>开发版基础数值：生命 100，能量 50，攻击 30，防御 20。自定义档案保留角色背景，战斗属性采用上述起始数值。</p>
+          <p>初始能力采用上方确认的档案，故事从所选现场开始。</p>
+          <p>初始基础数值：生命 100，能量 50，攻击 30，防御 20。自定义档案保留角色背景，战斗属性采用上述起始数值。</p>
         </details>
         <p v-if="preview" class="hint">本地演示使用示例文本，不调用 AI、不写入酒馆，刷新即可重新选择。</p>
         <p v-if="!preview && !ready" class="hint">启程组件仍在准备，可返回封面查看进度。</p>
-        <button type="submit" :disabled="!draft || stale || (!preview && !ready)">
+        <button type="submit" :disabled="abilityBusy || !draft || stale || (!preview && !ready)">
           {{ busy ? '正在发送…' : '发送开局并生成' }}
         </button>
       </fieldset>

@@ -1,10 +1,12 @@
-import { createOpening, openingScenario } from './opening';
+import { createOpening, openingScenario, usesOriginOpening } from './opening';
 import type { OpeningChoice, OpeningPort } from './opening';
 import { presetPlanes } from './presets';
 
 export function openingRequest(choice: OpeningChoice): string {
   const state = createOpening(choice, 'request-preview').stat_data;
   const scenario = openingScenario(choice);
+  const originStart=usesOriginOpening(choice)&&scenario.模式==='默认';
+  const abilities=Object.entries(state._能力).filter(([id])=>id!=='basic-attack'&&state._实体.player.能力ID[id]).map(([,a])=>`${a.名称}（${a.品阶}）：${a.描述}\n触发：${a.触发条件}\n代价与局限：${a.限制}`).join('\n\n')||'当前从日常生活中的技能与经历开始。';
   const world =
     scenario.位面ID === 'opening-world'
       ? scenario.世界名称
@@ -19,11 +21,14 @@ export function openingRequest(choice: OpeningChoice): string {
 我在本局扮演${state._开局.档案.姓名}，以下是我的角色档案。
 ${profile}
 
+【初始能力】
+${abilities}
+
 【故事起点】
-世界：${scenario.模式 === '默认' ? '虚海 · 归泊庭（主世界事故之后）' : world}
-地点：${scenario.模式 === '默认' ? '归泊庭 · 浅水石阶' : [scenario.城市, scenario.场景].filter(Boolean).join(' · ')}
+世界：${originStart ? '虚海 · 归泊庭（主世界事故之后）' : world}
+地点：${originStart ? '归泊庭 · 浅水石阶' : [scenario.城市, scenario.场景].filter(Boolean).join(' · ')}
 游戏时间：${scenario.起始时间}
-获得传承的机缘：${scenario.机缘}
+经历与机缘：${scenario.机缘}
 故事基调：${scenario.基调}
 ${scenario.世界设定 ? `世界设定：${scenario.世界设定}\n` : ''}${scenario.出场人物 ? `出场人物：${scenario.出场人物}\n` : ''}${scenario.构想 ? `开局构想：${scenario.构想}\n` : ''}${scenario.大纲 ? `参考大纲：\n${scenario.大纲}\n` : ''}${scenario.边界 ? `内容边界：${scenario.边界}\n` : ''}
 请从这个时间与地点展开第一幕，描写周围环境和出场人物，让出场人物直接与我发生联系，留下可以询问、应对或探索的具体事情；结尾停在我能回应的时刻。`;

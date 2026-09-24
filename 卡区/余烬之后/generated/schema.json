@@ -2010,6 +2010,97 @@
           "properties": {
             "kind": {
               "type": "string",
+              "const": "define"
+            },
+            "actorId": {
+              "type": "string"
+            },
+            "abilityId": {
+              "type": "string"
+            },
+            "design": {
+              "$ref": "#/$defs/__schema7"
+            },
+            "evidence": {
+              "type": "string",
+              "minLength": 4,
+              "maxLength": 1000
+            }
+          },
+          "required": [
+            "kind",
+            "actorId",
+            "abilityId",
+            "design",
+            "evidence"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "compose"
+            },
+            "actorId": {
+              "type": "string"
+            },
+            "abilityId": {
+              "type": "string"
+            },
+            "evidence": {
+              "type": "string",
+              "minLength": 4,
+              "maxLength": 1000
+            },
+            "consumedAbilities": {
+              "default": [],
+              "maxItems": 32,
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/__schema10"
+              }
+            },
+            "materials": {
+              "default": {},
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            },
+            "results": {
+              "maxItems": 16,
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/__schema11"
+              }
+            },
+            "seconds": {
+              "default": 0,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 86400
+            }
+          },
+          "required": [
+            "kind",
+            "actorId",
+            "abilityId",
+            "evidence",
+            "results"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
               "const": "acquire"
             },
             "actorId": {
@@ -2026,16 +2117,7 @@
             "grade": {
               "anyOf": [
                 {
-                  "type": "string",
-                  "enum": [
-                    "凡尘",
-                    "凝华",
-                    "罕世",
-                    "史铭",
-                    "传遗",
-                    "神御",
-                    "本源"
-                  ]
+                  "$ref": "#/$defs/__schema8"
                 },
                 {
                   "$ref": "#/$defs/__schema4"
@@ -2615,6 +2697,20 @@
             "design": {
               "type": "object",
               "properties": {
+                "travel": {
+                  "type": "boolean"
+                },
+                "transformation": {
+                  "type": "boolean"
+                },
+                "usage": {
+                  "type": "string",
+                  "enum": [
+                    "主动",
+                    "被动",
+                    "复合"
+                  ]
+                },
                 "name": {
                   "type": "string",
                   "minLength": 1,
@@ -2792,6 +2888,183 @@
           "additionalProperties": false
         }
       ]
+    },
+    "__schema7": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "grade": {
+          "$ref": "#/$defs/__schema8"
+        },
+        "usage": {
+          "type": "string",
+          "enum": [
+            "主动",
+            "被动",
+            "复合"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "trigger": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 600
+        },
+        "limitations": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "principle": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 1000
+        },
+        "cost": {
+          "default": 0,
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100000
+        },
+        "cooldown": {
+          "default": 0,
+          "type": "number",
+          "minimum": 0,
+          "maximum": 86400
+        },
+        "travel": {
+          "type": "boolean"
+        },
+        "transformation": {
+          "type": "boolean"
+        },
+        "utility": {
+          "type": "object",
+          "properties": {
+            "bonus": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 8
+            }
+          },
+          "required": [
+            "bonus"
+          ],
+          "additionalProperties": false
+        },
+        "strike": {
+          "type": "object",
+          "properties": {
+            "mechanism": {
+              "$ref": "#/$defs/__schema9"
+            },
+            "power": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 100
+            },
+            "fixed": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000
+            },
+            "seconds": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 86400
+            }
+          },
+          "required": [
+            "mechanism",
+            "power",
+            "fixed",
+            "seconds"
+          ],
+          "additionalProperties": false
+        },
+        "conversion": {
+          "type": "object",
+          "properties": {
+            "mechanism": {
+              "$ref": "#/$defs/__schema9"
+            },
+            "capacity": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1000000
+            },
+            "storage": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1000000
+            },
+            "multiplier": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 100
+            }
+          },
+          "required": [
+            "mechanism",
+            "capacity",
+            "storage",
+            "multiplier"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "name",
+        "grade",
+        "usage",
+        "description",
+        "trigger",
+        "limitations",
+        "principle"
+      ],
+      "additionalProperties": false
+    },
+    "__schema8": {
+      "type": "string",
+      "enum": [
+        "凡尘",
+        "凝华",
+        "罕世",
+        "史铭",
+        "传遗",
+        "神御",
+        "本源"
+      ]
+    },
+    "__schema9": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]{1,80}$"
+    },
+    "__schema10": {
+      "type": "string"
+    },
+    "__schema11": {
+      "type": "object",
+      "properties": {
+        "abilityId": {
+          "type": "string"
+        },
+        "design": {
+          "$ref": "#/$defs/__schema7"
+        }
+      },
+      "required": [
+        "abilityId",
+        "design"
+      ],
+      "additionalProperties": false
     }
   }
 }

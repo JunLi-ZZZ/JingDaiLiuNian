@@ -20,8 +20,8 @@ export function projectPromptState(state: Schema, query = '') {
   const abilities = Object.fromEntries(entries(state._能力).filter(([id]) => picked.has(id) || onsite.some(([, e]) => e.能力ID[id])).slice(0, 20).map(([id, a]) => [id, {
     名称: a.名称, 品阶: a.品阶, 等级: a.等级, 熟练度: a.熟练度, 进化次数: a.进化次数, 进化方向: a.进化方向,
     来源: { ...a.来源, 说明: text(a.来源?.说明, 300) }, 最近成长: take(a.成长记录, 2),
-    用法: a.用法, 规则状态: a.规则状态, 描述: text(a.描述), 触发条件: text(a.触发条件, 200), 效果: a.效果,
-    消耗: a.消耗, 冷却本地秒: a.冷却本地秒, 限制: text(a.限制, 300),
+    用法: a.用法, 规则状态: a.规则状态, 描述: a.描述, 触发条件: a.触发条件, 效果: a.效果,
+    消耗: a.消耗, 冷却本地秒: a.冷却本地秒, 限制: a.限制,
   }]));
   const entities = Object.fromEntries([[playerId, player], ...onsite].filter(([, e]) => !!e).map(([id, e]) => [id, {
     名称: e.名称, 类别: e.类别, 档案: id === playerId ? undefined : e.档案,

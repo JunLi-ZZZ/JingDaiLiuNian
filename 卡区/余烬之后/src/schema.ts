@@ -1,9 +1,11 @@
+import { AbilityDesignSchema } from './ability-design';
 import { StoredGradeSchema, AcquiredGradeSchema, MAX_TURN_OPERATIONS } from './grades';
 // stat_data 的唯一结构定义。下划线根字段由脚本维护，叙事字段允许 MVU 更新。
-import { OpeningScenarioSchema } from './玩法/起源涅槃/schema';
+import { OpeningScenarioSchema } from './opening-scenario';
 export { OpeningScenarioSchema };
-export type { OpeningScenario } from './玩法/起源涅槃/schema';
+export type { OpeningScenario } from './opening-scenario';
 export const EvolutionDesignSchema=z.strictObject({
+  travel:z.boolean().optional(), transformation:z.boolean().optional(),usage:z.enum(['主动','被动','复合']).optional(),
   name:z.string().min(1).max(80).optional(),
   principle:z.string().min(4).max(600),evidence:z.string().min(4).max(500),
   description:z.string().min(1).max(800),trigger:z.string().min(1).max(300),limitations:z.string().min(1).max(500),
@@ -15,6 +17,10 @@ export const EvolutionDesignSchema=z.strictObject({
 export type EvolutionDesign=z.infer<typeof EvolutionDesignSchema>;
 /** 模型提供场景与行动参数；数值变更由同一结算内核执行。 */
 export const OperationSchema = z.discriminatedUnion('kind', [
+  z.strictObject({kind:z.literal('define'),actorId:z.string(),abilityId:z.string(),design:AbilityDesignSchema,evidence:z.string().min(4).max(1000)}),
+  z.strictObject({kind:z.literal('compose'),actorId:z.string(),abilityId:z.string(),evidence:z.string().min(4).max(1000),
+    consumedAbilities:z.array(z.string()).max(32).prefault([]),materials:z.record(z.string(),z.number().positive()).prefault({}),
+    results:z.array(z.strictObject({abilityId:z.string(),design:AbilityDesignSchema})).max(16),seconds:z.number().nonnegative().max(86400).prefault(0)}),
   z.strictObject({kind:z.literal('acquire'),actorId:z.string(),abilityId:z.string(),name:z.string().min(1).max(80),grade:AcquiredGradeSchema,source:z.enum(['学习','训练','天赋','传承','契约','改造','其他']),evidence:z.string().min(4).max(500),description:z.string().min(1).max(800),trigger:z.string().min(1).max(300),limitations:z.string().max(500),profile:z.enum(['技艺','攻击','转化']),mechanism:z.string().min(1).max(80).prefault('impact'),cost:z.number().min(0).max(100000).prefault(0),cooldown:z.number().min(0).max(86400).prefault(0),power:z.number().positive().max(100).prefault(1),capacity:z.number().positive().max(1000000).prefault(10)}),
   z.strictObject({kind:z.literal('train'),actorId:z.string(),abilityId:z.string(),seconds:z.number().min(600).max(86400),focus:z.string().min(4).max(400)}),
   z.strictObject({kind:z.literal('use'),actorId:z.string(),abilityId:z.string(),purpose:z.string().min(1).max(500)}),

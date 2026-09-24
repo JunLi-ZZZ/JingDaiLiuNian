@@ -1,6 +1,7 @@
 import { finishLoading } from '../loaded';
 import { createApp, h, ref } from 'vue';
 import $ from 'jquery';
+import { abilityDesignPrompt, parseAbilityDesign } from '../../src/ability-design';
 import Opening from '../状态栏/Opening.vue';
 import { openingPrompt, parseOpeningDraft } from '../../src/opening-story';
 import type { OpeningDraft, OpeningTask } from '../../src/opening-story';
@@ -110,6 +111,18 @@ $(async () => {
         if (generationId === id) generationId = null;
       }
     };
+    const requestAbility=async(wish:string,profile:unknown,scenario:unknown)=>{
+      check();if(!ready.value)throw Error('请先完成封面的环境检测');
+      const id=`embers-ability-${crypto.randomUUID()}`;generationId=id;
+      try{
+        const result=await generateRaw({generation_id:id,should_stream:false,should_silence:true,max_chat_history:0,
+          overrides:{world_info_before:'',world_info_after:'',persona_description:'',chat_history:{with_depth_entries:false,prompts:[],author_note:''}},
+          ordered_prompts:abilityDesignPrompt(wish,profile,scenario)});
+        check();if(generationId!==id)throw Error('本次构思已取消');
+        if(typeof result!=='string')throw Error('能力构思未返回文本，请重试');
+        return parseAbilityDesign(result);
+      }finally{if(generationId===id)generationId=null;}
+    };
     const generate = async () => {
       if (busy.value) return;
       busy.value = true;
@@ -175,6 +188,7 @@ $(async () => {
           environment: environment.value,
           ready: ready.value,
           requestDraft,
+          requestAbility,
           cancelGeneration: cancel,
           readPersonaName: () => substitudeMacros(['{{', 'user', '}}'].join('')),
         }),

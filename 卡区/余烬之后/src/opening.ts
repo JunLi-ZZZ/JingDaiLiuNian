@@ -1,8 +1,11 @@
 import { Schema } from './schema';
-import { createOpening } from './玩法/起源涅槃/开局';
-import type { OpeningChoice } from './玩法/起源涅槃/开局';
-export { createOpening, openingScenario } from './玩法/起源涅槃/开局';
-export type { OpeningChoice } from './玩法/起源涅槃/开局';
+import { createOpening as createOriginOpening, openingScenario as originScenario } from './玩法/起源涅槃/开局';
+import { createOpenStart, resolveOpenScenario } from './open-start';
+import type { OpeningChoice } from './open-start';
+export type { OpeningChoice } from './open-start';
+export function usesOriginOpening(choice:OpeningChoice):boolean { return !choice.ability || choice.ability.mode==='origin'; }
+export function openingScenario(choice:OpeningChoice) { return usesOriginOpening(choice)?originScenario(choice):resolveOpenScenario(choice); }
+export function createOpening(choice:OpeningChoice,branchId:string) { return usesOriginOpening(choice)?createOriginOpening(choice,branchId):createOpenStart(choice,branchId); }
 
 export interface OpeningPort {
   exclusive<T>(key: string, action: () => Promise<T>): Promise<T>;

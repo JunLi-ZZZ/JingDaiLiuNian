@@ -1,5 +1,7 @@
 <操作字段契约>
 每行定义一种动作对象。?表示可省略字段；其余字段必填。按本轮实际动作取相应字段，参数类型和范围如下。
+define: kind="define"；actorId=string；abilityId=string；design=能力定义；evidence=string 长度≥4
+compose: kind="compose"；actorId=string；abilityId=string；evidence=string 长度≥4；consumedAbilities?=[string]；materials?={[ID]:number >0}；results=[{abilityId:string, design:能力定义}]；seconds?=number ≥0 ≤86400 默认0
 acquire: kind="acquire"；actorId=string；abilityId=string；name=string 长度≥1；grade=凡尘|凝华|罕世|史铭|传遗|神御|本源；source=学习|训练|天赋|传承|契约|改造|其他；evidence=string 长度≥4；description=string 长度≥1；trigger=string 长度≥1；limitations=string；profile=技艺|攻击|转化；mechanism?=string 长度≥1 默认"impact"；cost?=number ≥0 ≤100000 默认0；cooldown?=number ≥0 ≤86400 默认0；power?=number >0 ≤100 默认1；capacity?=number >0 ≤1000000 默认10
 train: kind="train"；actorId=string；abilityId=string；seconds=number ≥600 ≤86400；focus=string 长度≥4
 use: kind="use"；actorId=string；abilityId=string；purpose=string 长度≥1
@@ -7,12 +9,13 @@ strike: kind="strike"；actorId=string；targetId=string；abilityId=string
 release: kind="release"；actorId=string；targetId=string；abilityId=string
 advance: kind="advance"；seconds=number >0 ≤86400
 revive: kind="revive"
-register: kind="register"；entityId=string；name=string 长度≥1；category?=人物|生物 默认"人物"；life=number >0 ≤1000000000；energy?=number ≥0 ≤1000000000 默认0；attack=number ≥0 ≤1000000000；defense=number ≥0 ≤1000000000；hit?=number ≥0 ≤1 默认0.95；dodge?=number ≥0 ≤1 默认0；critical?=number ≥0 ≤1 默认0.1；criticalMultiplier?=number ≥1 ≤100 默认1.5；resistance?=object 默认{}；currentLife?=number ≥0；currentEnergy?=number ≥0；evidence=string 长度≥4
+register: kind="register"；entityId=string；name=string 长度≥1；category?=人物|生物 默认"人物"；life=number >0 ≤1000000000；energy?=number ≥0 ≤1000000000 默认0；attack=number ≥0 ≤1000000000；defense=number ≥0 ≤1000000000；hit?=number ≥0 ≤1 默认0.95；dodge?=number ≥0 ≤1 默认0；critical?=number ≥0 ≤1 默认0.1；criticalMultiplier?=number ≥1 ≤100 默认1.5；resistance?={[ID]:number ≥-1 ≤1}；currentLife?=number ≥0；currentEnergy?=number ≥0；evidence=string 长度≥4
 encounter: kind="encounter"；name=string 长度≥1；tier=普通|强敌|致命；mechanism=string 长度≥1
 exposure: kind="exposure"；source=string 长度≥1；mechanism=string 长度≥1；mechanismName=string 长度≥1；abilityName?=string|null 默认null；amount=number >0 ≤1000000；conditions=string 长度≥1
 travel: kind="travel"；abilityId?=string|null；planeId=string 长度≥1；name=string 长度≥1；description=string；locationId=string 长度≥1；location=string 长度≥1；route=string 长度≥1；rate=number >0 ≤10000
 channel: kind="channel"；abilityId=string；amount=number >0；purpose=string 长度≥1
 reconcile: kind="reconcile"；actorId=string；resourceId=string；before=number ≥0；value=number ≥0 ≤1000000；evidence=string 长度≥4
-evolve: kind="evolve"；abilityId=string；direction=string 长度≥1；actorId?=string；design?={name?:string 长度≥1, principle:string 长度≥4, evidence:string 长度≥4, description:string 长度≥1, trigger:string 长度≥1, limitations:string 长度≥1, cost?:number ≥0 ≤100000, cooldown?:number ≥0 ≤86400, utility?:{bonus:integer ≥0 ≤8}, strike?:{mechanism:string 长度≥1, power:number >0 ≤100, fixed:number ≥0 ≤100000, seconds:number >0 ≤86400}, conversion?:{mechanism:string 长度≥1, capacity:number >0 ≤1000000, storage:number >0 ≤1000000, multiplier:number >0 ≤100}}
+evolve: kind="evolve"；abilityId=string；direction=string 长度≥1；actorId?=string；design?={travel?:boolean, transformation?:boolean, usage?:主动|被动|复合, name?:string 长度≥1, principle:string 长度≥4, evidence:string 长度≥4, description:string 长度≥1, trigger:string 长度≥1, limitations:string 长度≥1, cost?:number ≥0 ≤100000, cooldown?:number ≥0 ≤86400, utility?:{bonus:integer ≥0 ≤8}, strike?:{mechanism:string 长度≥1, power:number >0 ≤100, fixed:number ≥0 ≤100000, seconds:number >0 ≤86400}, conversion?:{mechanism:string 长度≥1, capacity:number >0 ≤1000000, storage:number >0 ≤1000000, multiplier:number >0 ≤100}}
 check: kind="check"；actorId=string；abilityId=string|null；task=string 长度≥1；difficulty=integer ≥5 ≤30
+能力定义={name:string 长度≥1, grade:凡尘|凝华|罕世|史铭|传遗|神御|本源, usage:主动|被动|复合, description:string 长度≥1, trigger:string 长度≥1, limitations:string, principle:string 长度≥4, cost?:number ≥0 ≤100000 默认0, cooldown?:number ≥0 ≤86400 默认0, travel?:boolean, transformation?:boolean, utility?:{bonus:integer ≥0 ≤8}, strike?:{mechanism:string, power:number >0 ≤100, fixed:number ≥0 ≤100000, seconds:number >0 ≤86400}, conversion?:{mechanism:string, capacity:number >0 ≤1000000, storage:number >0 ≤1000000, multiplier:number >0 ≤100}}
 </操作字段契约>

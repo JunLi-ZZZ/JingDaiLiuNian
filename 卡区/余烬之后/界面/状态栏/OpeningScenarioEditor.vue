@@ -1,17 +1,19 @@
 <script setup lang="ts">
+import { openScenario } from '../../src/open-start';
 import { OpeningScenarioSchema } from '../../src/schema';
 import type { OpeningScenario } from '../../src/schema';
 import { presetPlanes } from '../../src/presets';
+const props=withDefaults(defineProps<{origin?:boolean}>(),{origin:true});
 const scenario = defineModel<OpeningScenario>({ required: true });
 function selectWorld(event: Event) {
   const id = (event.target as HTMLSelectElement).value;
-  scenario.value = { ...scenario.value, 位面ID: id, 城市: id === 'main' ? '星见市' : '', 场景: '', 大纲: '', 构想: '', 出场人物: '伴生之灵艾斯特瑞亚', 机缘: '偶然接触漂来的起源种核，起源涅槃由此苏醒。' };
+  scenario.value = { ...scenario.value, 位面ID: id, 城市: id === 'main' ? '星见市' : '', 场景: '', 大纲: '', 构想: '', 出场人物: props.origin?'伴生之灵艾斯特瑞亚':'', 机缘: props.origin?'偶然接触漂来的起源种核，起源涅槃由此苏醒。':'' };
 }
 function selectMode(event: Event) {
   const mode = (event.target as HTMLInputElement).value as OpeningScenario['模式'];
-  scenario.value = mode === '默认' ? OpeningScenarioSchema.parse({}) : { ...scenario.value, 模式: mode,
-    场景: '', 机缘: '偶然接触漂来的起源种核，起源涅槃与终焉眷引由此苏醒。',
-    出场人物: '伴生之灵艾斯特瑞亚', 构想: '', 大纲: '' };
+  scenario.value = mode === '默认' ? (props.origin?OpeningScenarioSchema.parse({}):openScenario()) : { ...scenario.value, 模式: mode,
+    场景: '', 机缘: props.origin?'偶然接触漂来的起源种核，起源涅槃与终焉眷引由此苏醒。':'',
+    出场人物: props.origin?'伴生之灵艾斯特瑞亚':'', 构想: '', 大纲: '' };
 }
 </script>
 <template>
@@ -39,9 +41,10 @@ function selectMode(event: Event) {
         自定义开局</label
       >
     </div>
-    <p v-if="scenario.模式 === '默认'">
+    <p v-if="scenario.模式 === '默认' && origin">
       主世界的卡车事故结束了第一段生命。归泊庭的潮声中，末墟与艾斯特瑞亚等着你；起源涅槃正在重构身体，新能力「越界」将带你前往自行选择的世界。
     </p>
+    <p v-else-if="scenario.模式 === '默认'">旧港候船厅里，下一程尚未启航。带着所选能力与自身经历，回应眼前的人与事。</p>
     <div v-else class="scenario-fields">
       <p class="wide">写下一点构想就能开始。可直接填写自己的大纲，也可让 AI 整理，再预览要发送的开局要求。</p>
       <label
@@ -72,12 +75,12 @@ function selectMode(event: Event) {
         >开局地点<input v-model="scenario.场景" maxlength="300" required placeholder="例如雨夜驿站、古代遗迹入口"
       /></label>
       <label class="wide"
-        >获得能力的机缘<textarea
+        >经历与机缘<textarea
           v-model="scenario.机缘"
           rows="3"
           maxlength="4000"
-          required
-          placeholder="如何偶然接触起源种核。开场时刚获得起源涅槃，尚未死亡。"
+          :required="origin"
+          placeholder="开场前发生过什么，以及目前为何来到这里。"
         />
       </label>
       <label

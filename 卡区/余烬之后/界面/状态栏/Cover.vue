@@ -14,7 +14,7 @@ const panel = ref<'setting' | 'guide' | null>(null);
       <img class="cover-art" :src="portrait" alt="银金色长发与微光交织的封面插画" />
       <div class="cover-shade"></div>
       <div class="cover-content">
-        <div class="cover-top"><span>起源传承 · 多元世界</span><span>卷一 / 初醒</span></div>
+        <div class="cover-top"><span>虚海 · 多元世界</span><span>卷一 / 初醒</span></div>
         <div class="title-block">
           <span class="english">AFTER THE EMBERS</span>
           <h1 aria-label="余烬之后">余烬<span>之后</span></h1>
@@ -22,7 +22,7 @@ const panel = ref<'setting' | 'guide' | null>(null);
           <p class="tagline">世界仍在前行。<br />而你的故事，尚未终结。</p>
         </div>
         <div class="cover-bottom">
-          <p class="invitation">一次偶然的相遇，一份来自虚海的传承。<br />死亡会留下什么，唯有归来之后才知晓。</p>
+          <p class="invitation">一次相遇，一份尚待命名的力量。<br />在无垠虚海中，写下属于你的旅途。</p>
           <button class="begin" @click="$emit('start')"><span>开始旅途</span><span aria-hidden="true">→</span></button>
           <div class="links">
             <button @click="$emit('workshop')">设定工坊</button>
@@ -46,15 +46,15 @@ const panel = ref<'setting' | 'guide' | null>(null);
     </div>
     <section v-if="panel" id="cover-reading" class="reading">
       <template v-if="panel === 'setting'">
-        <span class="chapter">WORLD / 起源与归来</span>
-        <h2>死亡不是旅途的终点</h2>
+        <span class="chapter">WORLD / 虚海与万界</span>
+        <h2>万千世界，起于虚海</h2>
         <p>
-          虚海容纳着世界诞生的可能，初微赋予新生，末墟接纳终末。两份力量交融的种核将死亡化为下一程的起点，伴生之灵与你一同辨认未知。
+          虚海孕育万千位面。起源之神初微与终末之神末墟从中诞生；世界的生灭、尚未偿清的约定与旅人的相遇，在不同的潮路上继续。
         </p>
         <p>
-          起源涅槃使死亡留下新的能力。所得力量源于真正的致死事物与作用方式，它可以成为庇护，也可以化作攻击、感知或行走世界的新方法。
+          选择起源涅槃、吞噬或合成作为起点，也可以构思自己的力量。人物的相处、未知世界的探索与能力的成长，共同构成旅途。
         </p>
-        <p>复苏之后，时间不会倒流。未赴的约定、旁人的记忆与世界的变化仍然存在。</p>
+        <p>世界随故事推进。未赴的约定、旁人的记忆与远方的变化，会在重逢时留下回响。</p>
         <p>你可以是平凡的归来者，也可以带着自己的身份启程。身世与来历，由你书写。</p>
       </template>
       <template v-else>

@@ -52,6 +52,11 @@ export function evolve(state: Schema, abilityId: string, direction:string, actor
     if(design.cost && !actor.资源.energy)throw Error('进化所需能量资源尚未登记');
     if(design.conversion && (actor.资源[abilityId]?.当前||0)>design.conversion.storage)throw Error('新储能上限低于当前储量，请先释放多余储能');
     if(design.name)ability.名称=design.name;
+    ability.效果.narrative={规则ID:'story-effect',参数:{原理:design.principle}};
+    if(design.travel===true)ability.效果.travel={规则ID:'general-travel',参数:{}};
+    if(design.travel===false)delete ability.效果.travel;
+    if(design.transformation===true)ability.效果.transformation={规则ID:'general-compose',参数:{}};
+    if(design.transformation===false)delete ability.效果.transformation;
     ability.描述=design.description;ability.触发条件=design.trigger;ability.限制=design.limitations;
     if(design.cost!==undefined)ability.消耗.energy=design.cost;
     if(design.cooldown!==undefined)ability.冷却本地秒=design.cooldown;
@@ -66,6 +71,7 @@ export function evolve(state: Schema, abilityId: string, direction:string, actor
     }
     if(ability.效果.guard && (ability.效果.utility||ability.效果.strike||ability.效果.release))ability.用法='复合';
     else if(ability.效果.utility||ability.效果.strike)ability.用法='主动';
+    if(design.usage)ability.用法=design.usage;
   }else{
   const resource=actor.资源[abilityId];
   if(direction==='容纳')resource.上限=Math.ceil(resource.上限!*1.5);

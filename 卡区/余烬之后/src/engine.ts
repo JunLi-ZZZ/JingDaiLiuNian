@@ -1,3 +1,4 @@
+import { registerDesignedAbility } from './ability-runtime';
 import { grantOriginInheritance, settleOriginDeath, reviveOrigin } from './玩法/起源涅槃/结算';
 import { Schema, OperationSchema } from './schema';
 import type { Operation } from './schema';
@@ -41,6 +42,7 @@ export type StartOptions = {
   rules: Rules;
   opportunity: string;
   initialPlane?: { id: string; name: string };
+  originInheritance?: boolean;
 };
 
 const own = (object: object, key: string) => Object.prototype.hasOwnProperty.call(object, key);
@@ -107,7 +109,7 @@ export function startSession(options: StartOptions): Session {
     模式: options.mode,
     档案: profile,
     机缘记录: options.opportunity,
-    起源涅槃已获得: true,
+    起源涅槃已获得: options.originInheritance !== false,
   });
   state._时空.当前地点 = copy(options.location);
   const plane = state._时空.位面目录[options.location.位面ID];
@@ -122,8 +124,8 @@ export function startSession(options: StartOptions): Session {
     生命: { 当前: options.life, 上限: options.life },
     数值规则版本: options.rules.id,
   });
-  grantOriginInheritance(state, options.opportunity);
-  state._锚点.start = Schema.shape._锚点.unwrap().valueType.parse({
+  if(options.originInheritance !== false) grantOriginInheritance(state, options.opportunity);
+  if(options.originInheritance !== false) state._锚点.start = Schema.shape._锚点.unwrap().valueType.parse({
     名称: '初始复苏锚点',
     位面ID: options.location.位面ID,
     地点ID: options.location.地点ID,
@@ -232,6 +234,7 @@ function damage(session: Session, targetId: string, causes: Cause[], eventId: st
     if (!enabled) continue;
     const ability = state._能力[id];
     if (ability.用法 !== '主动') {
+      if (ability.效果.narrative?.规则ID === 'story-effect' && !ability.效果.guard) continue;
       if (id === 'origin-rebirth' && ability.效果.rebirth?.规则ID === 'origin-rebirth') continue;
       if (id === 'terminal-affinity' && ability.效果.terminal?.规则ID === 'terminal-affinity') continue;
       requireValue(
@@ -312,7 +315,7 @@ export function applyCommand(
   random: () => number = Math.random,
 ): { session: Session; result: string; replayed: boolean } {
   validateSession(input);
-  if(command.kind==='acquire'||command.kind==='register')command={...command,...OperationSchema.parse(_.omit(command,['id','branchId','expectedVersion']))} as Command;
+  if(['acquire','register','define','compose'].includes(command.kind))command={...command,...OperationSchema.parse(_.omit(command,['id','branchId','expectedVersion']))} as Command;
   identifier(command.id);
   requireValue(command.branchId === input.stat_data._结算.分支ID, '分支不匹配');
   const events = input.death_adaptation_runtime.events;
@@ -329,6 +332,42 @@ export function applyCommand(
   let checkReport: {die:number;bonus:number;difficulty:number;success:boolean;task:string} | undefined;
   let battle: BattleReport | undefined;
   switch (command.kind) {
+    case 'define': {
+      registerDesignedAbility(session,command.actorId,command.abilityId,command.design,command.evidence);
+      result=state._实体[command.actorId].名称+'获得'+command.design.name+'；'+command.evidence;
+      break;
+    }
+    case 'compose': {
+      const actor=state._实体[command.actorId],operator=state._能力[command.abilityId];
+      requireValue(actor?.生命阶段==='存活'&&actor.能力ID[command.abilityId]&&operator,'作用能力尚未掌握或持有者无法行动');
+      requireValue(operator.效果.transformation?.规则ID==='general-compose','该能力的素材转化作用尚未登记');
+      requireValue(command.results.length||command.consumedAbilities.length||Object.keys(command.materials).length,'素材转化需要实际处理结果');
+      requireValue(new Set(command.consumedAbilities).size===command.consumedAbilities.length,'素材能力重复');
+      for(const id of command.consumedAbilities){
+        requireValue(actor.能力ID[id] && state._能力[id],'素材能力须由本次操作者掌握');
+        requireValue(!actor.资源[id]?.当前,'素材能力仍有储能，请先处理储量');
+      }
+      for(const [id,quantity] of Object.entries(command.materials)){
+        const item=state._物品[id];
+        requireValue(item?.所在.类型==='实体'&&item.所在.ID===command.actorId&&item.数量>=quantity,'素材数量不足或不属于操作者');
+        requireValue(!Object.values(actor.装备).includes(id),'素材仍在装备中，请先卸下');
+        requireValue(item.复苏绑定实体ID===null,'绑定物品需先处理绑定');
+      }
+      // 登记先验证所有结果；任一失败由外层事务丢弃整份副本。
+      for(const output of command.results)registerDesignedAbility(session,command.actorId,output.abilityId,output.design,command.evidence);
+      spendAbility(state,command.actorId,command.abilityId);
+      for(const id of command.consumedAbilities){
+        actor.能力ID[id]=false;delete actor.资源[id];
+        if(id==='origin-rebirth' && command.actorId===state._开局.主角ID)state._开局.起源涅槃已获得=false;
+      }
+      for(const [id,quantity] of Object.entries(command.materials)){state._物品[id].数量-=quantity;if(state._物品[id].数量===0)delete state._物品[id];}
+      const rate=state._时空.位面目录[actor.位面ID]?.时钟.本地每起源秒;
+      requireValue(rate&&rate>0,'能力所在位面时间倍率尚未确定');
+      if(command.seconds)advanceTime(state,command.seconds/rate);
+      practice(state,command.actorId,command.abilityId);
+      result=operator.名称+'：'+command.evidence+'；结果：'+(command.results.map(r=>r.design.name).join('、')||'本次未形成新能力');
+      break;
+    }
     case 'acquire': {
       OperationSchema.parse(_.omit(command,['id','branchId','expectedVersion']));
       identifier(command.actorId);identifier(command.abilityId);identifier(command.mechanism);
@@ -370,7 +409,7 @@ export function applyCommand(
     case 'use': {
       OperationSchema.parse(_.omit(command,['id','branchId','expectedVersion']));
       const actor=state._实体[command.actorId],ability=state._能力[command.abilityId];
-      requireValue(actor?.生命阶段==='存活' && actor.能力ID[command.abilityId] && ability?.效果.utility?.规则ID==='general-utility','此操作用于已掌握的技艺能力');
+      requireValue(actor?.生命阶段==='存活' && actor.能力ID[command.abilityId] && (ability?.效果.utility?.规则ID==='general-utility'||ability?.效果.narrative?.规则ID==='story-effect'),'此操作用于已掌握并登记作用的能力');
       spendAbility(state,command.actorId,command.abilityId);
       practice(state,command.actorId,command.abilityId);
       result=actor.名称+'运用'+ability.名称+'：'+command.purpose;
@@ -440,11 +479,7 @@ export function applyCommand(
       if (travelId && planeId !== player.位面ID) {
         const ability=state._能力[travelId];
         requireValue(player.能力ID[travelId] && ability?.效果.travel,'尚未掌握此旅行能力');
-        const key = `${state._开局.主角ID}:${travelId}`;
-        requireValue((state._结算.冷却结束[key] || 0) <= state._时空.起源时刻秒, '越界仍在冷却');
-        for(const [id,cost] of Object.entries(ability.消耗))requireValue(player.资源[id]?.当前>=cost,'旅行能力资源不足');
-        for(const [id,cost] of Object.entries(ability.消耗))player.资源[id].当前-=cost;
-        state._结算.冷却结束[key] = state._时空.起源时刻秒 + ability.冷却本地秒;
+        spendAbility(state,state._开局.主角ID,travelId);
         practice(state, state._开局.主角ID, travelId);
       }
       let plane = state._时空.位面目录[planeId];

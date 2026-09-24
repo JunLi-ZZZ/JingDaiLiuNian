@@ -1,5 +1,6 @@
 import { createApp, h, shallowRef, ref } from 'vue';
 import $ from 'jquery';
+import { abilityPresets } from '../../src/ability-presets';
 import Opening from './Opening.vue';
 import App from './App.vue';
 import { createOpening, openingScenario } from '../../src/opening';
@@ -34,7 +35,7 @@ $(function () {
   const app = createApp({
     render: () =>
       h('div', [
-        h(Opening, { preview: true, error: error.value, completed: !!session.value, onStart: start, requestDraft }),
+        h(Opening, { preview: true, error: error.value, completed: !!session.value, onStart: start, requestDraft, requestAbility:async()=>({...abilityPresets.synthesis,name:'织潮',description:'【本地演示】将已理解的素材联系重组成新的作用。'}) }),
         session.value
           ? h('section', { class: 'story-preview' }, [
               h('small', '开局要求 · 本地展示'),
