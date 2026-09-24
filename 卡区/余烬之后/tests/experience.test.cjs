@@ -136,7 +136,7 @@ test('熟练度达到门槛升级；进化产生三种真实数值效果并拒�
   const s=clone(base);s.stat_data._能力['adapt-player-electric'].等级=5;
   const next=run(s,{kind:'evolve',abilityId:'adapt-player-electric',direction});
   const ability=next.stat_data._能力['adapt-player-electric'];
-  assert.equal(ability.品阶,'史诗');assert.equal(ability.进化次数,1);
+  assert.equal(ability.品阶,'史铭');assert.equal(ability.进化次数,1);
   if(direction==='容纳')assert.equal(next.stat_data._实体.player.资源['adapt-player-electric'].上限,189);
   if(direction==='转化')assert.equal(ability.效果.guard.参数.capacity,158);
   if(direction==='释放')assert.equal(ability.效果.release.参数.multiplier,1.25);
@@ -149,7 +149,7 @@ test('正文卡片读同楼可见档案，隐藏人物资料保持不可见',()=
  assert.equal(player.title,s._开局.档案.姓名);
  assert.deepEqual(Array.from(player.metrics,metric=>metric.label),['生命','能量','攻击','防御']);
  assert.equal(player.metrics[0].value,`${s._实体.player.生命.当前} / ${s._实体.player.生命.上限}`);
- assert.equal(resolveDossierCard(s,'ability','adapt-player-electric').grade,'稀有');
+ assert.equal(resolveDossierCard(s,'ability','adapt-player-electric').grade,'罕世');
  assert.throws(()=>resolveDossierCard(s,'entity','hazard-test-0'),/尚未/);
  assert.throws(()=>resolveDossierCard(s,'ability','unknown'),/尚未/);
 });

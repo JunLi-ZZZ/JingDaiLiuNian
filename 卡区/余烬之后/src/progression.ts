@@ -1,7 +1,7 @@
 import { EvolutionDesignSchema } from './schema';
 import type { Schema, EvolutionDesign } from './schema';
 
-import { grades } from './grades';
+import { nextGrade } from './grades';
 import type { EvolutionDirection } from './grades';
 export { grades } from './grades';
 export function proficiencyNeeded(level: number): number { return level * 5; }
@@ -78,7 +78,7 @@ export function evolve(state: Schema, abilityId: string, direction:string, actor
   }
   ability.进化次数++;
   ability.进化方向=[ability.进化方向,direction].filter(Boolean).join(' → ');
-  ability.品阶=grades[Math.min(grades.length-1,grades.indexOf(ability.品阶)+1)];
+  ability.品阶=nextGrade(ability.品阶);
   ability.成长记录['evolve-'+ability.进化次数]=direction+'进化，'+ability.品阶+(design?'；'+design.principle+'；依据：'+design.evidence:'');
   return ability.名称+'进化为'+ability.品阶+'，选择'+direction;
 }

@@ -91,7 +91,7 @@ export function createOpening(choice: OpeningChoice, branchId: string): Session 
     delete current._实体.player.能力ID['adapt-player-impact'];
     delete current._实体.player.资源['adapt-player-impact'];
     current._能力['world-crossing'] = Schema.shape._能力.unwrap().valueType.parse({
-      名称: '越界', 品阶: '史诗', 用法: '主动', 规则状态: '可结算',
+      名称: '越界', 品阶: '史铭', 用法: '主动', 规则状态: '可结算',
       来源: { 类型: '死亡', 死亡事件ID: 'first-return', 说明: '以离开碰撞所在空间回应第一次死亡' },
       描述: '从归泊庭的潮镜选择世界，沿坐标或世界意象抵达能够容纳自身的落点。',
       触发条件: '完成重构并选择目的地', 效果: { travel: { 规则ID: 'world-crossing', 参数: {} } },

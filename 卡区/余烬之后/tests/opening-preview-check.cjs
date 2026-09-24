@@ -401,7 +401,7 @@ const config = require('../card.config.cjs');
     await runLoader(dossierReplacement);
     await hosted.locator('.dossier summary').click();
     assert.match(await hosted.locator('.dossier').innerText(),/电荷转移/);
-    assert.match(await hosted.locator('.dossier').innerText(),/稀有/);
+    assert.match(await hosted.locator('.dossier').innerText(),/罕世/);
     await hosted.screenshot({path:path.join(root,'build/verification/body-ability-320.png'),fullPage:true});
     const gainToken='<EmbersCard type="gain" id="adapt-player-electric"/>';
     const gainReplacement=gainToken.replace(new RegExp(dossierRegex.findRegex.slice(1,-2),'g'),dossierRegex.replaceString);

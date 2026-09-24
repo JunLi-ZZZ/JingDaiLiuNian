@@ -8,7 +8,7 @@ const {normalizeOperations}=load('operation-input'),{bindWorldbook}=require('../
 const clone=x=>JSON.parse(JSON.stringify(x));
 const start=()=>createOpening({mode:'默认'},'systems');
 const run=(s,op,id='step-'+s.stat_data._结算.状态版本)=>applyCommand(s,{...op,id,branchId:'systems',expectedVersion:s.stat_data._结算.状态版本},()=>.5).session;
-const acquire=(profile='技艺',actorId='player',id='learned')=>({kind:'acquire',actorId,abilityId:id,name:'潮汐研习',grade:'精良',source:'学习',evidence:'完成导师布置的练习并展示成果',description:'辨认潮路与水流变化',trigger:'观察水流',limitations:'需要接触现场',profile,mechanism:'cold',power:1,capacity:20,cost:2,cooldown:5});
+const acquire=(profile='技艺',actorId='player',id='learned')=>({kind:'acquire',actorId,abilityId:id,name:'潮汐研习',grade:'凝华',source:'学习',evidence:'完成导师布置的练习并展示成果',description:'辨认潮路与水流变化',trigger:'观察水流',limitations:'需要接触现场',profile,mechanism:'cold',power:1,capacity:20,cost:2,cooldown:5});
 test('开放进化由实际能力生成方案，可组合新结构并实际使用，确认后才改变快照',()=>{
  const {evolutionPrompt,parseEvolution}=load('evolution-generation'),{editSession}=load('settlement');
  let s=run(start(),acquire());s.stat_data._能力.learned.等级=5;
@@ -19,7 +19,7 @@ test('开放进化由实际能力生成方案，可组合新结构并实际使�
  const evolved=editSession(s,op);
  assert.equal(s.stat_data._能力.learned.名称,'潮汐研习');
  assert.equal(evolved.stat_data._能力.learned.名称,'潮纹折光');
- assert.equal(evolved.stat_data._能力.learned.品阶,'稀有');
+ assert.equal(evolved.stat_data._能力.learned.品阶,'罕世');
  assert.equal(evolved.stat_data._能力.learned.等级,5);
  assert(evolved.stat_data._能力.learned.成长记录['evolve-1'].includes('折射'));
  const encounter=run(evolved,{kind:'encounter',name:'对手',tier:'普通',mechanism:'cold'});
@@ -76,7 +76,7 @@ test('学习获得技艺可运用、训练、进化，时间资源与重放一�
  s=run(s,{kind:'train',actorId:'player',abilityId:'learned',seconds:600,focus:'完成最后一组观察记录'});
  const a=s.stat_data._能力.learned;assert.equal(a.等级,5);assert.equal(a.熟练度,0);
  assert(evolutionOptions(s.stat_data,'player','learned').some(o=>o.direction==='精通'));
- s=run(s,{kind:'evolve',abilityId:'learned',direction:'精通'});assert.equal(s.stat_data._能力.learned.品阶,'稀有');
+ s=run(s,{kind:'evolve',abilityId:'learned',direction:'精通'});assert.equal(s.stat_data._能力.learned.品阶,'罕世');
  assert.equal(s.stat_data._能力.learned.效果.utility.参数.检定加值,1);
  const event=Object.values(s.death_adaptation_runtime.events).at(-1);
  assert.equal(applyCommand(s,event.command,()=>{throw Error('重复随机');}).replayed,true);

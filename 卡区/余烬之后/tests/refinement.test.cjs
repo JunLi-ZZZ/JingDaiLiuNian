@@ -30,7 +30,7 @@ test('人物和生物按稳定ID定标，受伤/消耗保留，同轮可攻防�
 
 test('注册后能力使用、资源与场景投影共用内核',()=>{
  let s=run(createOpening({mode:'默认'},'actor'),register,'create');
- s=run(s,{kind:'acquire',actorId:'visitor',abilityId:'visitor-skill',name:'静听',grade:'精良',source:'学习',evidence:'多年巡守练习',description:'辨识远处响动',trigger:'环境允许倾听',limitations:'噪声遮盖时受限',profile:'技艺',cost:3},'learn');
+ s=run(s,{kind:'acquire',actorId:'visitor',abilityId:'visitor-skill',name:'静听',grade:'凝华',source:'学习',evidence:'多年巡守练习',description:'辨识远处响动',trigger:'环境允许倾听',limitations:'噪声遮盖时受限',profile:'技艺',cost:3},'learn');
  s=run(s,{kind:'use',actorId:'visitor',abilityId:'visitor-skill',purpose:'听辨脚步'},'use');
  assert.equal(s.stat_data._实体.visitor.资源.energy.当前,40);
  const view=projectPromptState(s.stat_data);assert(view._实体.visitor);assert(view._能力['visitor-skill']);

@@ -5,7 +5,7 @@ import { createUninitializedState, defaultProtagonist, presetPlanes } from './pr
 import { normalizeIdentity } from './character-profile';
 import { calculateAttack, checkedNumber, validateCombatStats } from './combat';
 import type { BattleReport } from './combat';
-import { grades } from './grades';
+import { gradeBonus, normalizeGrade } from './grades';
 import { practice, evolve } from './progression';
 
 // 纯结算内核：调用者提供已校验的场景输入；不解析模型文本、不读写酒馆。
@@ -317,7 +317,9 @@ export function applyCommand(
   requireValue(command.branchId === input.stat_data._结算.分支ID, '分支不匹配');
   const events = input.death_adaptation_runtime.events;
   if (own(events, command.id)) {
-    requireValue(_.isEqual(events[command.id].command, command), '事件ID被不同请求复用');
+    const recorded = events[command.id].command;
+    const comparable = recorded.kind === 'acquire' ? {...recorded,grade:normalizeGrade(recorded.grade)} : recorded;
+    requireValue(_.isEqual(comparable, command), '事件ID被不同请求复用');
     return { session: copy(input), result: events[command.id].result, replayed: true };
   }
   requireValue(command.expectedVersion === input.stat_data._结算.状态版本, '状态版本已过期');
@@ -404,7 +406,7 @@ export function applyCommand(
       if(command.abilityId && ability?.效果.utility)spendAbility(state,command.actorId,command.abilityId);
       const sample = random(); requireValue(sample >= 0 && sample < 1, '骰子值无效');
       const die = Math.floor(sample * 20) + 1;
-      const bonus = ability ? Math.min(8, Math.floor(ability.等级 / 2) + grades.indexOf(ability.品阶)+Number(ability.效果.utility?.参数.检定加值||0)) : 0;
+      const bonus = ability ? Math.min(8, Math.floor(ability.等级 / 2) + gradeBonus(ability.品阶)+Number(ability.效果.utility?.参数.检定加值||0)) : 0;
       const success = die === 20 || (die !== 1 && die + bonus >= command.difficulty);
       checkReport={die,bonus,difficulty:command.difficulty,success,task:command.task};
       result = `${command.task}：D20=${die} + ${bonus}，难度${command.difficulty}，${success ? '成功' : '未达成'}${die === 20 ? '（大成功）' : die === 1 ? '（失手）' : ''}`;

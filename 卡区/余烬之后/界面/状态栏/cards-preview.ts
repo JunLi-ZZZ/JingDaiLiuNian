@@ -5,7 +5,7 @@ import {applyCommand} from '../../src/engine';
 import {resolveDossierCard,resolveSceneCard,resolveBattleCard,battleToken} from '../../src/output-cards';
 import {CharacterDossierSchema} from '../../src/schema';
 import type {Operation} from '../../src/schema';
-import { grades } from '../../src/grades';
+import { displayGrades } from '../../src/grades';
 import GradeBadge from './GradeBadge.vue';
 import DossierCard from './DossierCard.vue';
 import BattleCard from './BattleCard.vue';
@@ -32,7 +32,7 @@ const scene=(kind:string,id:string,source=session)=>h(SceneCard,{card:resolveSce
 const prose=(text:string)=>h('p',{class:'gallery-prose'},text);
 createApp({render:()=>h('main',{class:'card-gallery'},[
  h('header',{class:'gallery-heading'},[h('span','余 烬 之 后 / 正 文 札 记'),h('h1','故事留下的，岂止一行数值。'),h('p','点击分类查看实际卡片。每张记录均来自演示存档与结算。')]),
- h('nav',{class:'gallery-tabs','aria-label':'卡片分类'},['传承','交锋','检定','归泊','人物与物品','旅途','品阶','设定工坊'].map(name=>h('button',{'aria-pressed':tab.value===name,onClick:()=>tab.value=name},name))),
+ h('nav',{class:'gallery-tabs','aria-label':'卡片分类'},['传承','交锋','检定','归泊','人物与物品','旅途','本质序列','设定工坊'].map(name=>h('button',{'aria-pressed':tab.value===name,onClick:()=>tab.value=name},name))),
  h('section',{class:'gallery-stage'},tab.value==='传承'?[
  prose('断裂电缆的火花沉入浅水。归泊庭中的身体重新凝聚时，掌心浮起一缕安静的蓝光。'),h(DossierCard,{card:gain}),scene('growth','adapt-player-electric'),
  ]:tab.value==='交锋'?[
@@ -45,7 +45,7 @@ createApp({render:()=>h('main',{class:'card-gallery'},[
  dossier('character','player'),dossier('character','tide-ferryman'),item?dossier('item',item[0]):null,task?scene('quest',task):null,
  ]:tab.value==='旅途'?[
  prose('镜面接通的那端，一座港口正赶在海水凝固之前收回浮桥。'),scene('travel','travel'),
- ]:tab.value==='品阶'?[
- h('div',{class:'grade-showcase'},grades.map(grade=>h('section',[h(GradeBadge,{grade}),h(DossierCard,{card:{...gain,grade,metrics:gain.metrics?.map(m=>m.label==='位阶'?{...m,value:grade}:m),title:'远行者的技艺'}}),h(DossierCard,{card:{type:'item',title:'旅途的信物',kind:'物品',grade,subtitle:'藏品 · 1件',description:'随旅途留下的记忆与痕迹。',detail:''}})])))
+ ]:tab.value==='本质序列'?[
+ h('div',{class:'grade-showcase'},displayGrades.map(grade=>h('section',[grade==='原初本源'?h('p',{class:'gallery-prose'},'特殊序列 · 独立于七阶'):null,h(GradeBadge,{grade}),h(DossierCard,{card:{...gain,grade,metrics:gain.metrics?.map(m=>m.label==='本质序列'?{...m,value:grade}:m),title:grade==='原初本源'?'虚海本源':'远行者的技艺'}}),h(DossierCard,{card:{type:'item',title:grade==='原初本源'?'原初本源 · 形态展台':'旅途的信物',kind:'物品',grade,subtitle:'藏品 · 1件',description:'随旅途留下的记忆与痕迹。',detail:''}})])))
  ]:[h(Workshop,{state:session.stat_data,preview:true,standalone:true})])
 ])}).mount('#app');

@@ -2,12 +2,12 @@
 import GradeBadge from './GradeBadge.vue';
 import {computed} from 'vue';
 import type { DossierCard } from '../../src/output-cards';
-import { GradeSchema } from '../../src/grades';
+import { displayGrade } from '../../src/grades';
 const props=defineProps<{card:DossierCard}>();
 const gain=computed(()=>props.card.type==='gain'||props.card.kind.startsWith('能力获得'));
 const person=computed(()=>props.card.type==='character'||props.card.type==='entity');
 const item=computed(()=>props.card.type==='item');
-const grade=computed(()=>GradeSchema.safeParse(props.card.grade).success?props.card.grade:undefined);
+const grade=computed(()=>displayGrade(props.card.grade));
 </script>
 <template>
  <details class="dossier" :class="{inheritance:gain,portrait:person,relic:item,fieldnote:!gain&&!person&&!item}" :data-grade="grade" :open="gain">

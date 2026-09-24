@@ -25,7 +25,7 @@ export function formatPromptView(view:any):string {
       if(e.规则ID==='general-utility')return '技艺运用；专项检定加值'+(p.检定加值||0);
       return lines(p);
     }).filter(Boolean).join('；');
-    return [id,{名称:a.名称,品阶:a.品阶,掌握:'Lv.'+a.等级+'，熟练'+a.熟练度+'/'+a.等级*5,进化:a.进化方向,来源:a.来源?.类型,来历:a.来源?.说明,用法:a.用法,描述:a.描述,触发:a.触发条件,作用:effect,消耗:a.消耗,冷却:a.冷却本地秒?(a.冷却本地秒+(a.效果?.travel?'虚海秒':'当地秒')):undefined,条件:a.限制}];
+    return [id,{名称:a.名称,本质序列:a.品阶,掌握:'Lv.'+a.等级+'，熟练'+a.熟练度+'/'+a.等级*5,进化:a.进化方向,来源:a.来源?.类型,来历:a.来源?.说明,用法:a.用法,描述:a.描述,触发:a.触发条件,作用:effect,消耗:a.消耗,冷却:a.冷却本地秒?(a.冷却本地秒+(a.效果?.travel?'虚海秒':'当地秒')):undefined,条件:a.限制}];
   }));
   const actors=Object.fromEntries(entries(view._实体).map(([id,a])=>[id,{名称:a.名称,档案:a.档案,状态:a.生命阶段,生命:a.生命?a.生命.当前+'/'+a.生命.上限:undefined,战斗:a.战斗,资源:Object.fromEntries(entries(a.资源).map(([key,r])=>[key,r.名称+' '+r.当前+'/'+(r.上限??'∞')+' '+r.单位])),状态效果:a.状态,装备:a.装备}]));
   const cooldown=entries(view._结算?.冷却结束).map(([id,end])=>id+' 剩余'+Math.max(0,end-view._时空.起源时刻秒)+'虚海秒');

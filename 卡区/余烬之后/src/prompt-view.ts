@@ -14,7 +14,7 @@ export function projectPromptState(state: Schema, query = '') {
   const picked = new Set([
     ...owned.filter(([id, a]) => matching(id, a.名称)).slice(-6).map(([id]) => id),
     ...(state._查阅?.能力 || []),
-    ...owned.filter(([, a]) => a.品阶 === '本源').map(([id]) => id),
+    ...owned.filter(([, a]) => a.品阶 === '本源' || a.品阶 === '原初本源').map(([id]) => id),
     ...owned.slice(-4).map(([id]) => id),
   ].slice(0, 14));
   const abilities = Object.fromEntries(entries(state._能力).filter(([id]) => picked.has(id) || onsite.some(([, e]) => e.能力ID[id])).slice(0, 20).map(([id, a]) => [id, {

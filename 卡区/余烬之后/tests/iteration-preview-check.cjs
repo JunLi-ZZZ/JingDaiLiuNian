@@ -8,7 +8,7 @@ const { createOpening } = require('./numerical-fixture.cjs');
 const root = path.resolve(__dirname, '..'), version = require('../package.json').version;
 const out = path.join(root, 'build/verification', version);
 const s = createOpening({ mode: '默认' }, 'ui-iteration');
-s.stat_data._能力.learned=loadTs(path.join(root,'src/schema.ts')).Schema.shape._能力.unwrap().valueType.parse({名称:'潮汐研习',品阶:'精良',等级:5,用法:'主动',规则状态:'可结算',来源:{类型:'学习',说明:'观察潮路并练习'},描述:'辨认水流',效果:{utility:{规则ID:'general-utility',参数:{检定加值:0}}}});
+s.stat_data._能力.learned=loadTs(path.join(root,'src/schema.ts')).Schema.shape._能力.unwrap().valueType.parse({名称:'潮汐研习',品阶:'凝华',等级:5,用法:'主动',规则状态:'可结算',来源:{类型:'学习',说明:'观察潮路并练习'},描述:'辨认水流',效果:{utility:{规则ID:'general-utility',参数:{检定加值:0}}}});
 s.stat_data._实体.player.能力ID.learned=true;
 s.stat_data._时空.起源时刻秒 = 435;
 s.stat_data._更新错误 = '本轮时间的起算值与当前存档不一致';

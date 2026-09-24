@@ -1,4 +1,5 @@
 import { OperationSchema } from './schema';
+import { grades } from './grades';
 /** 由运行时schema派生字段契约；规则与校验共享数据来源。 */
 export function operationGuide(kinds:string[]=[]):string {
   const describe=(s:any):string=>{
@@ -14,6 +15,6 @@ export function operationGuide(kinds:string[]=[]):string {
   };
   return OperationSchema.options.filter(s=>!kinds.length || kinds.includes(s.shape.kind.value)).map(s=>{
     const json:any=z.toJSONSchema(s,{io:'input'});
-    return s.shape.kind.value+': '+Object.entries(json.properties).map(([key,value])=>key+(json.required?.includes(key)?'':'?')+'='+describe(value)).join('；');
+    return s.shape.kind.value+': '+Object.entries(json.properties).map(([key,value])=>key+(json.required?.includes(key)?'':'?')+'='+(key==='grade'?grades.join('|'):describe(value))).join('；');
   }).join('\n');
 }

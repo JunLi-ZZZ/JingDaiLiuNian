@@ -5,6 +5,7 @@ const z = require('zod');
 const { loadTs } = require('./runtime.cjs');
 const card = path.resolve(__dirname, '..');
 const source = card;
+const { legacyGrades, normalizeGradeRecords } = loadTs(path.join(source, 'src/grades.ts'));
 const { Schema } = loadTs(path.join(source, 'src/schema.ts'));
 const { createUninitializedState, presetPlanes } = loadTs(path.join(source, 'src/presets.ts'));
 const { worldbookOrder: order } = loadTs(path.join(source,'src/worldbook-order.ts'));
@@ -23,8 +24,10 @@ write(path.join(card, '世界书/变量/变量列表.txt'), `@@preprocessing
 <% {
 const project = ${projectPromptState.toString()};
 const render = ${formatPromptView.toString()};
+const aliases = ${JSON.stringify(legacyGrades)};
+const migrateGrades = ${normalizeGradeRecords.toString()};
 const recent = typeof getChatMessages === 'function' ? [-2,-1].flatMap(depth => getChatMessages(depth) || []).map(item => String(typeof item === 'string' ? item : item?.message ?? item?.mes ?? '').replace(/<UpdateVariable>[\\s\\S]*?<\\/UpdateVariable>/gi, '')).join('\\n') : '';
-print(render(project(getvar('stat_data', { defaults: {} }) || {}, recent)));
+print(render(project(migrateGrades(getvar('stat_data', { defaults: {} }) || {}, aliases), recent)));
 } %>\n`);
 write(
   path.join(card, '世界书/变量/initvar.yaml'),
@@ -80,6 +83,12 @@ const entries = [
   entry('开局_初次归泊','世界书/玩法/起源涅槃/开局-初次归泊',false,order.开局资料),
   entry('能力_越界','世界书/玩法/起源涅槃/能力-越界',false,order.能力资料),
   ...Object.values(presetPlanes).map((name,i)=>entry('余烬之后_位面_'+name,'世界书/位面/'+name,false,order.位面资料+i*100)),
+  // Claude回交的扩展源稿先随卡归档，路由与执行器接入后按需启用。
+  entry('虚海-原初冲突','世界书/背景/虚海-原初冲突',false,order.背景史料),
+  ...['原初神器-体系','原初神器-断界','原初神器-织序','原初神器-轮回','原初神器-永誓','原初神器-溯念','原初神器-归一','原初本源']
+    .map((name,i)=>entry(name,'世界书/神器/'+name,false,order.神器资料+i*100)),
+  entry('吞噬进化-核心机制','世界书/玩法/吞噬进化/核心机制',false,order.扩展玩法),
+  entry('合成进化-核心机制','世界书/玩法/合成进化/核心机制',false,order.扩展玩法+100),
   entry('[initvar]变量初始化勿开','世界书/变量/initvar',false,order.初始化),
 ];
 // 本卡独立打包器读取的世界书清单。

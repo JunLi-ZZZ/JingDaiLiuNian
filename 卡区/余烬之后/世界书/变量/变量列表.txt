@@ -14,7 +14,7 @@ const project = function projectPromptState(state, query = '') {
     const picked = new Set([
         ...owned.filter(([id, a]) => matching(id, a.名称)).slice(-6).map(([id]) => id),
         ...(state._查阅?.能力 || []),
-        ...owned.filter(([, a]) => a.品阶 === '本源').map(([id]) => id),
+        ...owned.filter(([, a]) => a.品阶 === '本源' || a.品阶 === '原初本源').map(([id]) => id),
         ...owned.slice(-4).map(([id]) => id),
     ].slice(0, 14));
     const abilities = Object.fromEntries(entries(state._能力).filter(([id]) => picked.has(id) || onsite.some(([, e]) => e.能力ID[id])).slice(0, 20).map(([id, a]) => [id, {
@@ -98,7 +98,7 @@ const render = function formatPromptView(view) {
                 return '技艺运用；专项检定加值' + (p.检定加值 || 0);
             return lines(p);
         }).filter(Boolean).join('；');
-        return [id, { 名称: a.名称, 品阶: a.品阶, 掌握: 'Lv.' + a.等级 + '，熟练' + a.熟练度 + '/' + a.等级 * 5, 进化: a.进化方向, 来源: a.来源?.类型, 来历: a.来源?.说明, 用法: a.用法, 描述: a.描述, 触发: a.触发条件, 作用: effect, 消耗: a.消耗, 冷却: a.冷却本地秒 ? (a.冷却本地秒 + (a.效果?.travel ? '虚海秒' : '当地秒')) : undefined, 条件: a.限制 }];
+        return [id, { 名称: a.名称, 本质序列: a.品阶, 掌握: 'Lv.' + a.等级 + '，熟练' + a.熟练度 + '/' + a.等级 * 5, 进化: a.进化方向, 来源: a.来源?.类型, 来历: a.来源?.说明, 用法: a.用法, 描述: a.描述, 触发: a.触发条件, 作用: effect, 消耗: a.消耗, 冷却: a.冷却本地秒 ? (a.冷却本地秒 + (a.效果?.travel ? '虚海秒' : '当地秒')) : undefined, 条件: a.限制 }];
     }));
     const actors = Object.fromEntries(entries(view._实体).map(([id, a]) => [id, { 名称: a.名称, 档案: a.档案, 状态: a.生命阶段, 生命: a.生命 ? a.生命.当前 + '/' + a.生命.上限 : undefined, 战斗: a.战斗, 资源: Object.fromEntries(entries(a.资源).map(([key, r]) => [key, r.名称 + ' ' + r.当前 + '/' + (r.上限 ?? '∞') + ' ' + r.单位])), 状态效果: a.状态, 装备: a.装备 }]));
     const cooldown = entries(view._结算?.冷却结束).map(([id, end]) => id + ' 剩余' + Math.max(0, end - view._时空.起源时刻秒) + '虚海秒');
@@ -132,6 +132,11 @@ const render = function formatPromptView(view) {
     return '<当前状态>\n' + lines(snapshot) + '\n结算版本: ' + view._结算?.状态版本 + '\n</当前状态>\n<叙事记录>\n' + lines(editable) + '\n</叙事记录>' +
         (view.上轮结算反馈 ? '\n<待处理更新>\n' + view.上轮结算反馈 + '\n' + lines(clean(view.待修复操作)) + '\n</待处理更新>' : '');
 };
+const aliases = {"凡常":"凡尘","精良":"凝华","稀有":"罕世","史诗":"史铭","传说":"传遗","神话":"神御"};
+const migrateGrades = function normalizeGradeRecords(state, aliases) {
+    const records = (source) => Object.fromEntries(Object.entries(source || {}).map(([id, record]) => [id, { ...record, 品阶: typeof record.品阶 === 'string' && Object.hasOwn(aliases, record.品阶) ? aliases[record.品阶] : record.品阶 }]));
+    return { ...state, _能力: records(state._能力), _物品: records(state._物品) };
+};
 const recent = typeof getChatMessages === 'function' ? [-2,-1].flatMap(depth => getChatMessages(depth) || []).map(item => String(typeof item === 'string' ? item : item?.message ?? item?.mes ?? '').replace(/<UpdateVariable>[\s\S]*?<\/UpdateVariable>/gi, '')).join('\n') : '';
-print(render(project(getvar('stat_data', { defaults: {} }) || {}, recent)));
+print(render(project(migrateGrades(getvar('stat_data', { defaults: {} }) || {}, aliases), recent)));
 } %>

@@ -891,7 +891,7 @@
             "type": "string"
           },
           "品阶": {
-            "default": "凡常",
+            "default": "凡尘",
             "$ref": "#/$defs/__schema3"
           },
           "等级": {
@@ -1084,7 +1084,7 @@
             "type": "string"
           },
           "品阶": {
-            "default": "凡常",
+            "default": "凡尘",
             "$ref": "#/$defs/__schema3"
           },
           "类别": {
@@ -1576,7 +1576,7 @@
                 "maxItems": 6,
                 "type": "array",
                 "items": {
-                  "$ref": "#/$defs/__schema4"
+                  "$ref": "#/$defs/__schema5"
                 }
               },
               "实体ID": {
@@ -1694,7 +1694,7 @@
                   "maxItems": 32,
                   "type": "array",
                   "items": {
-                    "$ref": "#/$defs/__schema5"
+                    "$ref": "#/$defs/__schema6"
                   }
                 }
               },
@@ -1940,7 +1940,7 @@
             "default": null,
             "anyOf": [
               {
-                "$ref": "#/$defs/__schema5"
+                "$ref": "#/$defs/__schema6"
               },
               {
                 "type": "null"
@@ -1968,6 +1968,26 @@
       "type": "string"
     },
     "__schema3": {
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": [
+            "凡尘",
+            "凝华",
+            "罕世",
+            "史铭",
+            "传遗",
+            "神御",
+            "本源",
+            "原初本源"
+          ]
+        },
+        {
+          "$ref": "#/$defs/__schema4"
+        }
+      ]
+    },
+    "__schema4": {
       "type": "string",
       "enum": [
         "凡常",
@@ -1975,16 +1995,15 @@
         "稀有",
         "史诗",
         "传说",
-        "神话",
-        "本源"
+        "神话"
       ]
     },
-    "__schema4": {
+    "__schema5": {
       "type": "string",
       "minLength": 2,
       "maxLength": 80
     },
-    "__schema5": {
+    "__schema6": {
       "oneOf": [
         {
           "type": "object",
@@ -2005,7 +2024,23 @@
               "maxLength": 80
             },
             "grade": {
-              "$ref": "#/$defs/__schema3"
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "凡尘",
+                    "凝华",
+                    "罕世",
+                    "史铭",
+                    "传遗",
+                    "神御",
+                    "本源"
+                  ]
+                },
+                {
+                  "$ref": "#/$defs/__schema4"
+                }
+              ]
             },
             "source": {
               "type": "string",

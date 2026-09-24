@@ -290,7 +290,7 @@ function customize() {
 <style scoped>
 .folio{margin:10px 0;border:1px solid var(--line);border-left:3px solid #829686;border-radius:6px;overflow:hidden;background:#f4f7f2}
 .repair-link{border:0;background:transparent;color:inherit;text-decoration:underline;cursor:pointer;padding:8px;font:inherit}
-.folio[data-grade="史诗"]{border-left-color:#9076a0}.folio[data-grade="稀有"]{border-left-color:#5d8c9e}.folio[data-grade="传说"],.folio[data-grade="本源"]{border-left-color:#b89556}
+.folio[data-grade="史铭"]{border-left-color:#9076a0}.folio[data-grade="罕世"]{border-left-color:#5d8c9e}.folio[data-grade="传遗"],.folio[data-grade="本源"]{border-left-color:#b89556}
 .folio .detail-card{margin:0;border:0;border-radius:0;background:transparent;list-style:none;cursor:pointer}.folio summary::-webkit-details-marker{display:none}.folio[open]>.detail-card{background:#e9efe7}.folio[open] .chevron{transform:rotate(180deg)}
 .inline-detail{padding:14px 20px 18px;border-top:1px solid var(--line);font-size:12px;line-height:1.9}.inline-detail p{white-space:pre-wrap;margin:6px 0 12px}.inline-detail small{color:var(--muted)}
 .inline-detail button,.destination button{border:1px solid #bbcbbf;padding:8px 12px;border-radius:4px;background:#eef3eb;color:#304841;cursor:pointer;font-size:12px}.inline-detail button:disabled{opacity:.5}

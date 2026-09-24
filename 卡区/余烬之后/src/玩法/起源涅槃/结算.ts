@@ -25,7 +25,7 @@ export function settleOriginDeath(session: Session, targetId: string, lethal: {s
     existing ??
     Schema.shape._能力.unwrap().valueType.parse({
       名称: abilityName,
-      品阶: '稀有',
+      品阶: '罕世',
       来源: { 类型: '死亡', 死亡事件ID: deathId, 来源实体ID: lethal.sourceId },
       机制ID: { [lethal.mechanismId]: true },
       用法: '复合',

@@ -73,7 +73,7 @@ export function resolveDossierCard(state: Session['stat_data'], kind: string, id
     const source=a.来源.说明 || Object.values(state._死亡记录[a.来源.死亡事件ID || '']?.因果链 || {}).map(c=>c.作用条件).join('；') || '传承种核';
     const mechanism=String(a.效果.guard?.参数.mechanism || '');
     return { type:kind,emblem:a.效果.guard?(mechanism==='electric'?'transfer':mechanism==='heat'?'flame':mechanism==='cold'?'frost':'shield'):id==='world-crossing'?'gate':'star',source,
-      metrics:[{label:'位阶',value:a.品阶},{label:'掌握',value:'Lv.'+a.等级},{label:'冷却',value:a.冷却本地秒+'秒'},...(r?[{label:'储能',value:r.当前+' / '+r.上限}]:[])],
+      metrics:[{label:'本质序列',value:a.品阶},{label:'掌握',value:'Lv.'+a.等级},{label:'冷却',value:a.冷却本地秒+'秒'},...(r?[{label:'储能',value:r.当前+' / '+r.上限}]:[])],
       kind: kind === 'gain' ? '能力获得 · '+a.来源.类型 : '能力', title: a.名称, grade: a.品阶, subtitle: `${a.用法} · Lv.${a.等级}`, description: a.描述,
       detail: [kind === 'gain' ? '来源：'+a.来源.类型+' · '+source : '', a.触发条件, a.限制, r ? `储能 ${r.当前} / ${r.上限}` : '', a.进化方向 ? `进化：${a.进化方向}` : ''].filter(Boolean).join('\n') };
   }
@@ -123,7 +123,7 @@ export function resolveSceneCard(session:Session,kind:string,id:string):SceneCar
  if(kind==='travel' && event?.command.kind==='travel')return {...card,title:event.command.name,kicker:'越界 · 抵达',seal:'渡',body:event.command.description,rows:[{label:'通路',value:event.command.route},{label:'落脚点',value:event.command.location},{label:'当地流速',value:event.command.rate+' : 1'}]};
  if(kind==='growth'){
   const a=s._能力[id];if(!a || !player.能力ID[id])throw Error('未掌握该能力');
-  return {...card,title:a.名称,kicker:'能力成长',seal:String(a.等级),body:Object.values(a.成长记录).slice(-1)[0]||'本次运用留下了新的体会。',rows:[{label:'当前品阶',value:a.品阶},{label:'熟练度',value:a.熟练度+' / '+a.等级*5},{label:'进化方向',value:a.进化方向||'尚未选择'}]};
+  return {...card,title:a.名称,kicker:'能力成长',seal:String(a.等级),body:Object.values(a.成长记录).slice(-1)[0]||'本次运用留下了新的体会。',rows:[{label:'当前序列',value:a.品阶},{label:'熟练度',value:a.熟练度+' / '+a.等级*5},{label:'进化方向',value:a.进化方向||'尚未选择'}]};
  }
  if(kind==='quest'){
   const task=s._任务[id];if(!task)throw Error('尚无对应事项');

@@ -15,7 +15,7 @@ defineProps<{card:SceneCard}>();
   </div>
   <div v-if="card.type==='check' && card.die !== undefined" class="equation"><span>{{card.die}} <small>骰面</small></span><i>+</i><span>{{card.bonus}} <small>加值</small></span><i>→</i><span>{{(card.die||0)+(card.bonus||0)}} <small>总值</small></span><em>难度 {{card.difficulty}}</em></div>
   <p class="body">{{card.body}}</p>
-  <dl v-if="card.type!=='check'"><template v-for="(row,index) in card.rows" :key="index"><dt>{{row.label}}</dt><dd><GradeBadge v-if="row.label==='当前品阶'" :grade="row.value" /><template v-else>{{row.value||'—'}}</template></dd></template></dl>
+  <dl v-if="card.type!=='check'"><template v-for="(row,index) in card.rows" :key="index"><dt>{{row.label}}</dt><dd><GradeBadge v-if="row.label==='当前序列'" :grade="row.value" /><template v-else>{{row.value||'—'}}</template></dd></template></dl>
   <footer v-if="card.type==='death'">此后，世界记得你的缺席。<span>✦</span></footer>
   <footer v-else-if="card.type==='quest'"><span>依约而行 · {{card.seal}}</span><span class="wax">约</span></footer>
   <footer v-else-if="card.type==='travel'">虚海潮镜 <span>下一程已抵达</span></footer>

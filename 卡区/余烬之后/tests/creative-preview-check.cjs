@@ -10,7 +10,7 @@ const root=path.resolve(__dirname,'..'),version=require('../package.json').versi
   browser=await chromium.launch({channel:'msedge',headless:true});const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
   for(const width of [1280,390,320]){
    await page.setViewportSize({width,height:1000});await page.goto(base+'/cards');await page.locator('.inheritance').waitFor();
-   for(const [tab,selector,file] of [['传承','.inheritance','inheritance'],['交锋','.battle-card','combat'],['检定','.scene-card.check','check'],['归泊','.scene-card.death','return'],['人物与物品','.portrait','dossiers'],['旅途','.scene-card.travel','travel'],['品阶','.grade-showcase','grades']]){
+   for(const [tab,selector,file] of [['传承','.inheritance','inheritance'],['交锋','.battle-card','combat'],['检定','.scene-card.check','check'],['归泊','.scene-card.death','return'],['人物与物品','.portrait','dossiers'],['旅途','.scene-card.travel','travel'],['本质序列','.grade-showcase','grades']]){
    await page.getByRole('button',{name:tab,exact:true}).click();await page.locator(selector).first().waitFor();
    if(tab==='人物与物品'){
     const player=page.getByRole('heading',{name:'归来者',exact:true});await player.waitFor();
@@ -20,12 +20,12 @@ const root=path.resolve(__dirname,'..'),version=require('../package.json').versi
     const card=await player.locator('xpath=ancestor::details').innerText();
     for(const label of ['生命','能量','攻击','防御'])assert.match(card,new RegExp(label));
    }
-   if(tab==='品阶'){
+   if(tab==='本质序列'){
      assert(await page.locator('.grade-showcase .dossier h3').evaluateAll(nodes=>nodes.every(n=>getComputedStyle(n).color==='rgba(0, 0, 0, 0)')));
-     assert.equal(new Set(await page.locator('.grade-showcase .grade-badge').evaluateAll(nodes=>nodes.map(n=>getComputedStyle(n).backgroundImage))).size,7);
+     assert.equal(new Set(await page.locator('.grade-showcase .grade-badge').evaluateAll(nodes=>nodes.map(n=>getComputedStyle(n).backgroundImage))).size,8);
      assert(await page.locator('.grade-showcase>section').evaluateAll(nodes=>nodes.every(n=>n.querySelector('.inheritance .metrics strong').textContent===n.querySelector('.inheritance').dataset.grade)));
-     assert.equal(new Set(await page.locator('.grade-showcase .inheritance').evaluateAll(nodes=>nodes.map(n=>getComputedStyle(n).backgroundImage))).size,7);
-     assert.equal(new Set(await page.locator('.grade-showcase .relic').evaluateAll(nodes=>nodes.map(n=>getComputedStyle(n).backgroundImage))).size,7);
+     assert.equal(new Set(await page.locator('.grade-showcase .inheritance').evaluateAll(nodes=>nodes.map(n=>getComputedStyle(n).backgroundImage))).size,8);
+     assert.equal(new Set(await page.locator('.grade-showcase .relic').evaluateAll(nodes=>nodes.map(n=>getComputedStyle(n).backgroundImage))).size,8);
      await page.emulateMedia({reducedMotion:'reduce'});assert(await page.locator('.grade-badge').evaluateAll(nodes=>nodes.every(n=>getComputedStyle(n).animationName==='none')));await page.emulateMedia({reducedMotion:'no-preference'});
     }
     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'overflow '+tab+' '+width);

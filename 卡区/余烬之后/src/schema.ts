@@ -1,4 +1,4 @@
-import { GradeSchema, MAX_TURN_OPERATIONS } from './grades';
+import { StoredGradeSchema, AcquiredGradeSchema, MAX_TURN_OPERATIONS } from './grades';
 // stat_data 的唯一结构定义。下划线根字段由脚本维护，叙事字段允许 MVU 更新。
 import { OpeningScenarioSchema } from './玩法/起源涅槃/schema';
 export { OpeningScenarioSchema };
@@ -15,7 +15,7 @@ export const EvolutionDesignSchema=z.strictObject({
 export type EvolutionDesign=z.infer<typeof EvolutionDesignSchema>;
 /** 模型提供场景与行动参数；数值变更由同一结算内核执行。 */
 export const OperationSchema = z.discriminatedUnion('kind', [
-  z.strictObject({kind:z.literal('acquire'),actorId:z.string(),abilityId:z.string(),name:z.string().min(1).max(80),grade:GradeSchema,source:z.enum(['学习','训练','天赋','传承','契约','改造','其他']),evidence:z.string().min(4).max(500),description:z.string().min(1).max(800),trigger:z.string().min(1).max(300),limitations:z.string().max(500),profile:z.enum(['技艺','攻击','转化']),mechanism:z.string().min(1).max(80).prefault('impact'),cost:z.number().min(0).max(100000).prefault(0),cooldown:z.number().min(0).max(86400).prefault(0),power:z.number().positive().max(100).prefault(1),capacity:z.number().positive().max(1000000).prefault(10)}),
+  z.strictObject({kind:z.literal('acquire'),actorId:z.string(),abilityId:z.string(),name:z.string().min(1).max(80),grade:AcquiredGradeSchema,source:z.enum(['学习','训练','天赋','传承','契约','改造','其他']),evidence:z.string().min(4).max(500),description:z.string().min(1).max(800),trigger:z.string().min(1).max(300),limitations:z.string().max(500),profile:z.enum(['技艺','攻击','转化']),mechanism:z.string().min(1).max(80).prefault('impact'),cost:z.number().min(0).max(100000).prefault(0),cooldown:z.number().min(0).max(86400).prefault(0),power:z.number().positive().max(100).prefault(1),capacity:z.number().positive().max(1000000).prefault(10)}),
   z.strictObject({kind:z.literal('train'),actorId:z.string(),abilityId:z.string(),seconds:z.number().min(600).max(86400),focus:z.string().min(4).max(400)}),
   z.strictObject({kind:z.literal('use'),actorId:z.string(),abilityId:z.string(),purpose:z.string().min(1).max(500)}),
 
@@ -235,7 +235,7 @@ export const Schema = z.object({
       z.string().describe('能力ID'),
       z.object({
         名称: z.string().prefault(''),
-        品阶: GradeSchema.prefault('凡常'),
+        品阶: StoredGradeSchema.prefault('凡尘'),
         等级: z.number().int().min(1).max(20).prefault(1),
         熟练度: z.number().int().min(0).prefault(0),
         进化次数: z.number().int().min(0).max(3).prefault(0),
@@ -274,7 +274,7 @@ export const Schema = z.object({
       z.string().describe('物品实例ID'),
       z.object({
         名称: z.string().prefault(''),
-        品阶: GradeSchema.prefault('凡常'),
+        品阶: StoredGradeSchema.prefault('凡尘'),
         类别: z.enum(['装备', '消耗品', '材料', '货币', '其他']).prefault('其他'),
         描述: z.string().prefault(''),
         数量: z.coerce.number().prefault(1),
