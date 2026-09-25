@@ -1,3 +1,5 @@
+import { saveLocalArchive } from '../../src/local-archive';
+import MissingArchives from './MissingArchives.vue';
 import { turnReceipt } from '../../src/turn-receipt';
 import { updateReceiptStatus } from '../../src/update-protocol';
 import { repairReplayPatch } from '../../src/variable-repair';
@@ -129,9 +131,17 @@ $(async () => {
               const message=/<UpdateVariable>[\s\S]*?<\/UpdateVariable>/.test(original.message) ? original.message.replace(/<UpdateVariable>[\s\S]*?<\/UpdateVariable>/g,()=>block) : original.message+'\n'+block;
               const swipe=getChatMessages(messageId,{include_swipes:true})[0]?.swipe_id ?? 0;
               data.stat_data._叙事回执=turnReceipt(messageId,swipe,message);
+              if(original.data?.embers_local_archive?.receipt===turnReceipt(messageId,swipe,original.message))
+                data.embers_local_archive={...original.data.embers_local_archive,receipt:data.stat_data._叙事回执};
               // 同一次接口写入正文中的补丁与楼层变量，避免日后重解析再取到旧命令。
               await setChatMessages([{message_id:messageId,message,data:{...original.data,...data}}],{refresh:'none'});
               renderedSelection=selection();
+            } else if (['supplement','remove','restore','classify','character'].includes(request.kind)) {
+              const original=getChatMessages(messageId)[0];
+              const swipe=getChatMessages(messageId,{include_swipes:true})[0]?.swipe_id ?? 0;
+              const receipt=turnReceipt(messageId,swipe,original.message);
+              const local=saveLocalArchive(state.value,Schema.parse(data.stat_data),original.data?.embers_local_archive,receipt);
+              await setChatMessages([{message_id:messageId,data:{...original.data,...data,embers_local_archive:local}}],{refresh:'none'});
             } else await Mvu.replaceMvuData(data,{type:'message',message_id:messageId});
           },
         }, { chatId, messageId, selection: renderedSelection }, state.value, request);
@@ -156,7 +166,7 @@ $(async () => {
               },
               {
                 default: () => h(App, {
-                  state: state.value, latest: latest.value, onEdit: edit,
+                  state: state.value, latest: latest.value, onEdit: edit, story:getChatMessages(messageId)[0]?.message || '',
                   changes: stateChanges(baseline.value, state.value),
                   updateBlock: updateBlock.value,
                   updateError: updateError.value,
@@ -169,6 +179,7 @@ $(async () => {
                   },
                 }, {
                   correction: () => [
+                    h(MissingArchives,{state:state.value,latest:latest.value,busy:busy.value,story:getChatMessages(messageId)[0]?.message || '',onEdit:edit}),
                     h(Regenerate,{state:state.value,latest:latest.value,busy:busy.value,story:getChatMessages(messageId)[0]?.message || '',onEdit:edit}),
                     h(Correction, { state: state.value, latest: latest.value, busy: busy.value, onEdit: edit }),
                   ],

@@ -44,7 +44,7 @@ $(async () => {
     };
     read();
     const app=createApp({render:()=>scene.value?h(Scene,{card:scene.value}):dossier.value?h(Dossier,{card:dossier.value}):battle.value?h(BattleCard,{card:battle.value}):h('details',{class:'card-pending'},[
-      h('summary','档案待同步'),h('p','本楼资料就绪后会自动显示；若变量更新失败，可在状态栏修复。'),h('small',waiting.value),
+      h('summary',waiting.value.includes('移除')?'资料已移除':'档案待同步'),h('p',waiting.value.includes('移除')?'可在状态栏「整理」页恢复。':'本楼资料就绪后会自动显示，可在状态栏「行动」页补全档案或修复失败变量。'),h('small',waiting.value),
     ])});
     app.mount('#app');finishLoading();
     // 变量重生或补记可能晚于正文卡载入；同楼更新后就地显示，无需重新生成正文。

@@ -61,6 +61,8 @@ export const LibraryEntrySchema = z.object({
 });
 export type LibraryEntry = z.infer<typeof LibraryEntrySchema>;
 export const Schema = z.object({
+  _档案整理: z.record(z.string(), z.boolean()).prefault({}),
+  _档案引用: z.record(z.string(), z.string()).prefault({}),
   _资料库: z.record(z.string(), LibraryEntrySchema.omit({content:true}).extend({book:z.string(),entry:z.string()})).prefault({}),
   _叙事回执: z.string().prefault(''),
   _修复记录: z.object({原文:z.string(),补丁:z.unknown()}).nullable().prefault(null),

@@ -1,13 +1,15 @@
+import { replayLocalArchive } from '../../src/local-archive';
 import { turnReceipt } from '../../src/turn-receipt';
 import { registerMvuSchema } from 'https://testingcf.jsdelivr.net/gh/StageDog/tavern_resource/dist/util/mvu_zod.js';
 import { acceptNarrativeUpdate, formatUpdateError } from '../../src/mvu-policy';
-import { MvuInputSchema } from '../../src/schema';
+import { MvuInputSchema, Schema } from '../../src/schema';
 import { readRuntime } from '../../src/runtime-store';
 import { bridgeUpdateCommands } from '../../src/update-protocol';
 
 $(async () => {
   await waitGlobalInitialized('Mvu');
   registerMvuSchema(MvuInputSchema);
+  const localArchives = new WeakMap<object,unknown>();
   const receipts = new WeakMap<object,string>();
   const protocolErrors = new WeakMap<object,string>();
   const parsed = eventOn(Mvu.events.COMMAND_PARSED, (variables, commands, content) => {
@@ -19,6 +21,7 @@ $(async () => {
     const messages=getChatMessages(Math.max(0,last-2)+'-'+last,{include_swipes:true});
     const message=messages.reverse().find(m=>m.swipes[m.swipe_id]===content);
     if(message) {
+      localArchives.set(variables,getChatMessages(message.message_id)[0]?.data?.embers_local_archive);
       receipts.set(variables,turnReceipt(message.message_id,message.swipe_id,content));
     }
   });
@@ -37,6 +40,7 @@ $(async () => {
     try {
       delete next.embers_update_error;
       next.stat_data = acceptNarrativeUpdate(previous.stat_data, next.stat_data, readRuntime(previous), undefined, receipts.get(next));
+      next.stat_data = replayLocalArchive(Schema.parse(next.stat_data),localArchives.get(next),receipts.get(next));
       if (next.stat_data._运行账本) next.death_adaptation_runtime = _.cloneDeep(next.stat_data._运行账本);
     } catch (error) {
       const failed = _.cloneDeep(next.stat_data);

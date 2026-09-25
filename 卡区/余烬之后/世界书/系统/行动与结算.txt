@@ -7,9 +7,8 @@
 执行顺序：本轮额外时间先推进，再顺序执行动作；攻击和train自带耗时，额外时间记录其外的部分。前一个动作产生的资源、目标和能力可供后一个动作使用。
 
 操作含义:
-  register: 按稳定entityId建立人物或生物的数值档案。life为生命上限，energy为能量上限，attack/defense为攻防；currentLife/currentEnergy记录已有伤势或消耗，省略时取上限。其他概率按字段契约填写，evidence说明种族、本土层次、训练或经历的定标依据。角色初次参与场景时完成登记，基础攻击为attack-实体ID，其他能力用acquire。重复登记沿用已有数值。
+  register: 按稳定entityId建立人物或生物的数值档案。life为生命上限，energy为能量上限，attack/defense为攻防；currentLife/currentEnergy记录已有伤势或消耗，省略时取上限。其他概率按字段契约填写，evidence说明种族、本土层次、训练或经历的定标依据。登记对象是实际参与行动的个体，name填写个体姓名或稳定称呼，category按人物或生物填写。具有持续身份与社会关系的角色归人物，其他动物与怪物归生物，依据个体角色而非物种判断。数值交互首次发生时完成登记，基础攻击为attack-实体ID，其他能力用acquire。重复登记沿用已有数值。攻击由strike引用施动者与目标的实体ID，环境危险由exposure记录作用来源。
 
-  encounter: 登记新遭遇，普通/强敌/致命的生命、攻击、防御分别为60/18/10、140/60/25、240/144/40。实体ID为enc-story-起算版本-操作序号，基础攻击为attack-实体ID。重构期间不能建立当前遭遇。
 
   strike: 使用攻击能力；release消耗全部储能攻击；channel按指定消耗作用于环境；check裁决不确定性。
 

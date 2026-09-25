@@ -1,5 +1,6 @@
 import type { Session } from './engine';
 import { characterEntity } from './character-dossier';
+import { removed } from './archive-tools';
 
 const Reference = z.strictObject({ 分支ID: z.string(), 事件ID: z.string() });
 export function eventReference(state:Session['stat_data'], id:string) {
@@ -65,6 +66,10 @@ export function entityMetrics(entity: Session['stat_data']['_实体'][string]) {
   ];
 }
 export function resolveDossierCard(state: Session['stat_data'], kind: string, id: string):DossierCard {
+  const category=kind==='gain'?'ability':kind;
+  if(removed(state,category,id))throw Error('该资料已从当前档案移除，可在档案整理中恢复');
+  id=state._档案引用?.[category+':'+id] || id;
+  if(removed(state,category,id))throw Error('该资料已从当前档案移除，可在档案整理中恢复');
   const playerId = state._开局.主角ID;
   const player = state._实体[playerId];
   const note = Object.values({ ...state._见闻档案, ...state.叙事.见闻 }).find((value: any) => value.对象ID === id && value.知情者ID?.[playerId]) as Session['stat_data']['叙事']['见闻'][string] | undefined;
@@ -105,6 +110,7 @@ export function resolveDossierCard(state: Session['stat_data'], kind: string, id
 export type SceneCard={type:string;title:string;kicker:string;body:string;seal:string;rows:{label:string;value:string}[];die?:number;bonus?:number;difficulty?:number;success?:boolean};
 export function resolveSceneCard(session:Session,kind:string,id:string):SceneCard {
  const s=session.stat_data, player=s._实体[s._开局.主角ID];
+ if((kind==='growth' && removed(s,'ability',id)) || (kind==='quest' && removed(s,'quest',id)))throw Error('该资料已从当前档案移除，可在档案整理中恢复');
  if(['check','death','travel'].includes(kind))id=eventReference(s,id);
  const event=session.death_adaptation_runtime.events[id];
  const card:SceneCard={type:kind,title:'',kicker:'',body:'',seal:'',rows:[]};

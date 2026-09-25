@@ -4,6 +4,10 @@ import type { Schema, LibraryEntry } from '../../src/schema';
 import type { StateChange } from '../../src/state-changes';
 import { formatGameTime, revivalRemaining } from '../../src/game-time';
 import Characters from './Characters.vue';
+import ArchiveManager from './ArchiveManager.vue';
+import ArchiveRemove from './ArchiveRemove.vue';
+import {removed} from '../../src/archive-tools';
+import {missingCards} from '../../src/card-recovery';
 import BattleCard from './BattleCard.vue';
 import type { PublicBattleCard } from '../../src/output-cards';
 import GradeBadge from './GradeBadge.vue';
@@ -14,6 +18,7 @@ import { profileSummary } from '../../src/character-profile';
 
 const props = defineProps<{
   state: Schema;
+  story?: string;
   latest?: boolean;
   preview?: boolean;
   notice?: string;
@@ -24,6 +29,7 @@ const props = defineProps<{
   updateError?: string;
 }>();
 const emit = defineEmits<{ action: [name: string]; compose: [text: string]; edit: [edit: ArchiveEdit]; customize: [profile: Partial<Schema['_开局']['档案']>] }>();
+const missing=computed(()=>missingCards(props.state,props.story||''));
 const showArchive = ref(false);
 const libraryDraft = ref<LibraryEntry>();
 const search = ref('');
@@ -46,9 +52,9 @@ const life = computed(() => player.value?.生命);
 const percent = computed(() =>
   life.value ? Math.max(0, Math.min(100, (life.value.当前 / life.value.上限) * 100)) : 0,
 );
-const abilities = computed(() => Object.entries(props.state._能力).filter(([id]) => player.value?.能力ID[id]));
+const abilities = computed(() => Object.entries(props.state._能力).filter(([id]) => player.value?.能力ID[id] && !removed(props.state,'ability',id)));
 const items = computed(() =>
-  Object.entries(props.state._物品).filter(
+  Object.entries(props.state._物品).filter(([id])=>!removed(props.state,'item',id)).filter(
     ([id, item]) =>
       (item.所在.类型 === '实体' && item.所在.ID === props.state._开局.主角ID) ||
       Object.values(props.state.叙事.见闻).some(
@@ -58,7 +64,7 @@ const items = computed(() =>
   ),
 );
 const knowledge = computed(() => Object.entries(props.state.叙事.见闻).filter(([, info]) => info.知情者ID[props.state._开局.主角ID]));
-const visibleKnowledge = computed(() => (showArchive.value ? archivedKnowledge.value : knowledge.value).filter(([, info]) => info.知情者ID[props.state._开局.主角ID] && (!search.value || (info.标题 + info.内容).includes(search.value))).slice(-60));
+const visibleKnowledge = computed(() => (showArchive.value ? archivedKnowledge.value : knowledge.value).filter(([id, info]) => !removed(props.state,'note',id) && info.知情者ID[props.state._开局.主角ID] && (!search.value || (info.标题 + info.内容).includes(search.value))).slice(-60));
 const deaths = computed(() => Object.values(props.state._死亡记录).filter(d => d.实体ID === props.state._开局.主角ID));
 const ready = computed(() => props.state._复苏?.阶段 === '可复苏');
 const charge = computed(() => player.value?.资源['adapt-player-electric']?.当前 ?? 0);
@@ -121,7 +127,7 @@ function customize() {
         <span>{{ label }}</span
         ><strong>{{ value }}</strong>
       </div>
-      <div v-for="[id, resource] in Object.entries(player.资源).filter(([id]) => id === 'energy' || state._查阅.能力.includes(id)).slice(0, 9)" :key="id" class="resource">
+      <div v-for="[id, resource] in Object.entries(player.资源).filter(([id]) => id === 'energy' || (state._查阅.能力.includes(id) && !removed(state,'ability',id))).slice(0, 9)" :key="id" class="resource">
         <span>{{ resource.名称 }}</span
         ><strong>{{ resource.当前 }} / {{ resource.上限 ?? '不限' }}</strong>
       </div>
@@ -132,9 +138,10 @@ function customize() {
       <p>外界仍在前行。重构期间的经历与约定会被保留。</p>
     </aside>
     <aside v-if="updateError" class="revival" role="alert">本轮更新未保存：{{ updateError }} <button class="repair-link" @click="tab = '行动'">前往补记与校正</button></aside>
+    <aside v-if="missing.length" class="revival">正文有 {{missing.length}} 项档案待补全。<button class="repair-link" @click="tab='行动'">前往补全档案</button></aside>
     <nav aria-label="档案分页">
       <button
-        v-for="name in ['概览', '能力', '行囊', '人物', '见闻', '归来', '潮镜', '行动', '变化']"
+        v-for="name in ['概览', '能力', '行囊', '人物', '生物', '见闻', '归来', '潮镜', '行动', '整理', '变化']"
         :key="name"
         :aria-pressed="tab === name"
         @click="tab = name"
@@ -143,7 +150,8 @@ function customize() {
       </button>
     </nav>
     <section class="tab-content">
-      <Characters v-if="tab === '人物'" :state="state" :latest="latest" @edit="emit('edit',$event)" @archive="libraryDraft=$event;tab='潮镜'" />
+      <ArchiveManager v-if="tab==='整理'" :state="state" :latest="latest" @edit="emit('edit',$event)" />
+      <Characters v-if="tab === '人物' || tab==='生物'" :key="tab" :category="tab" :state="state" :latest="latest" @edit="emit('edit',$event)" @archive="libraryDraft=$event;tab='潮镜'" />
       <template v-if="tab === '潮镜'"><slot name="workshop" :seed="libraryDraft" /></template>
       <template v-if="tab === '概览'">
         <div class="section-heading">
@@ -162,7 +170,7 @@ function customize() {
             ><span>已获能力</span>
           </div>
           <div>
-            <strong>{{ Object.keys(state._任务).length.toString().padStart(2, '0') }}</strong
+            <strong>{{ Object.keys(state._任务).filter(id=>!removed(state,'quest',id)).length.toString().padStart(2, '0') }}</strong
             ><span>旅途事项</span>
           </div>
         </div>
@@ -178,7 +186,7 @@ function customize() {
           <p>{{ task.描述 }}</p>
           <small>{{ task.后果说明 }}</small>
         </article>
-        <p v-if="!Object.keys(state._任务).length" class="empty">没有等待处理的事项。</p>
+        <p v-if="!Object.keys(state._任务).filter(id=>!removed(state,'quest',id)).length" class="empty">没有等待处理的事项。</p>
       </template>
       <template v-if="tab === '能力'">
         <div class="section-heading">
@@ -221,7 +229,7 @@ function customize() {
         <input v-model="search" class="archive-search" placeholder="搜索标题或内容" aria-label="搜索见闻" />
         <details v-for="[id, info] in visibleKnowledge" :key="id" class="folio">
           <summary class="detail-card"><span class="item-icon">⌁</span><div><span class="label">{{ info.类别 }} · {{ info.可信度 }}</span><h4>{{ info.标题 }}</h4></div><span class="chevron">⌄</span></summary>
-          <div class="inline-detail"><p>{{ info.内容 }}</p><small>来源：{{ info.来源 }}</small><div class="ability-actions"><button :disabled="latest === false" @click="emit('edit', {kind:'focus',category:'见闻',id,enabled:!state._查阅.见闻.includes(id)})">{{ state._查阅.见闻.includes(id) ? '取消优先查阅' : '供 AI 优先查阅' }}</button><button @click="emit('compose', '关于' + info.标题 + '，')">就此继续</button></div></div>
+          <div class="inline-detail"><p>{{ info.内容 }}</p><small>来源：{{ info.来源 }}</small><ArchiveRemove :id="id" :state="state" :latest="latest" category="note" @edit="emit('edit',$event)" /><div class="ability-actions"><button :disabled="latest === false" @click="emit('edit', {kind:'focus',category:'见闻',id,enabled:!state._查阅.见闻.includes(id)})">{{ state._查阅.见闻.includes(id) ? '取消优先查阅' : '供 AI 优先查阅' }}</button><button @click="emit('compose', '关于' + info.标题 + '，')">就此继续</button></div></div>
         </details>
         <button v-if="archivedKnowledge.length" class="archive-toggle" @click="showArchive = !showArchive">{{ showArchive ? '返回常用见闻' : '翻阅旧页 · ' + archivedKnowledge.length + ' 项' }}</button>
         <p v-if="!visibleKnowledge.length" class="empty">没有匹配的见闻。</p><small>每页显示最近60项，可搜索旧页并选入下一轮提示词。</small>

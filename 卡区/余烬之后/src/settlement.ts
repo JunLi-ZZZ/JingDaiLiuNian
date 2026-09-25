@@ -8,6 +8,10 @@ import { acceptNarrativeUpdate } from './mvu-policy';
 import { applyRepairPatch } from './variable-repair';
 import type { EvolutionDirection } from './grades';
 import { storyRandom } from './progression';
+import { applyCardRecovery } from './card-recovery';
+import type { MissingCard } from './card-recovery';
+import { archiveEntries } from './archive-tools';
+import type { ArchiveCategory } from './archive-tools';
 
 export type Proposal = Schema['待审提案'][string];
 export type SettlementPort = OpeningPort & { selection(): string };
@@ -22,6 +26,9 @@ export function proposalCommand(session: Session, id: string, proposal: Proposal
 }
 
 export type ArchiveEdit =
+  | {kind:'supplement'; target:MissingCard; candidate:unknown; base:Schema}
+  | {kind:'remove'|'restore'; category:ArchiveCategory; id:string; base:Schema}
+  | {kind:'classify'; id:string; name:string; category:'人物'|'生物'; dossierId:string; base:Schema}
   | { kind: 'repair'; operation: Extract<Operation, { kind: 'reconcile' }>; retry: boolean }
   | { kind: 'retry' }
   | { kind: 'regenerate'; patch: unknown; base: Schema }
@@ -35,6 +42,26 @@ export function editSession(input: Session, edit: ArchiveEdit): Session {
   let session = _.cloneDeep(input);
   const version = input.stat_data._结算.状态版本;
   const pending = session.stat_data._待修复;
+  if(edit.kind==='supplement' || edit.kind==='remove' || edit.kind==='restore' || edit.kind==='classify'){
+    if(!_.isEqual(input.stat_data,edit.base))throw Error('存档已变化，请重新核对');
+    if(edit.kind==='supplement')session.stat_data=applyCardRecovery(session.stat_data,edit.target,edit.candidate);
+    else if(edit.kind==='classify'){
+      const e=session.stat_data._实体[edit.id];
+      if(!e || edit.id===session.stat_data._开局.主角ID || !['人物','生物'].includes(edit.category) || !edit.name.trim())throw Error('请选择有效实体、名称与分类');
+      e.名称=edit.name.trim();e.类别=edit.category;
+      if(edit.dossierId){
+        const p=session.stat_data.叙事.人物档案[edit.dossierId];
+        if(!p)throw Error('所选人物档案不存在');
+        if(Object.entries(session.stat_data.叙事.人物档案).some(([id,other])=>id!==edit.dossierId && (other.实体ID||id)===edit.id))throw Error('此实体已关联其他人物档案');
+        p.实体ID=edit.id;
+      }
+    }else{
+      if(!archiveEntries(session.stat_data).some(e=>e.id===edit.id && e.category===edit.category))throw Error('资料不存在或属于主角');
+      session.stat_data._档案整理[edit.category+':'+edit.id]=edit.kind==='remove';
+    }
+    session.stat_data=Schema.parse(session.stat_data);
+    return session;
+  }
   if(edit.kind==='evolution'){
     if(!_.isEqual(input.stat_data,edit.base))throw Error('存档已变化，请重新推演进化');
     return applyCommand(session,{kind:'evolve',abilityId:edit.abilityId,direction:edit.direction,design:edit.design,id:'evolution-'+version,branchId:input.stat_data._结算.分支ID,expectedVersion:version}).session;

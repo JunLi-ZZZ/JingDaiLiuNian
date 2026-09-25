@@ -16,7 +16,7 @@ export function operationGuide(kinds:string[]=[]):string {
     if(s.default!==undefined)result+=' 默认'+JSON.stringify(s.default);
     return result;
   };
-  const selected=OperationSchema.options.filter(s=>!kinds.length || kinds.includes(s.shape.kind.value));
+  const selected=OperationSchema.options.filter(s=>kinds.length ? kinds.includes(s.shape.kind.value) : s.shape.kind.value!=='encounter');
   const lines=selected.map(s=>{
     const json:any=z.toJSONSchema(s,{io:'input'});
     return s.shape.kind.value+': '+Object.entries(json.properties).map(([key,value])=>key+(json.required?.includes(key)?'':'?')+'='+(key==='grade'?grades.join('|'):describe(value,key))).join('；');
