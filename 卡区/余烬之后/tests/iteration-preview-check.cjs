@@ -86,7 +86,7 @@ const entry = { id: 'glass', kind: 'plane', name: '琉潮群岛', aliases: ['玻
   await hosted.locator('.correction summary').click();
   assert(await button('保存校正').isEnabled());
   assert(!await hosted.locator('.regenerate').isVisible());
-  await button('人物').click();await hosted.locator('.characters summary').first().click();
+  await button('同伴').click();await hosted.locator('.characters summary').first().click();
   assert.match(await hosted.locator('.characters').innerText(),/说话方式/);
   await button('整理为世界书档案').click();assert.match(await hosted.locator('.draft').innerText(),/闻潮/);
   await button('保存到世界书').click();await hosted.getByText(/已保存到 聊天档案/).waitFor();

@@ -66,14 +66,14 @@ export function createOpening(choice: OpeningChoice, branchId: string): Session 
   state._实体.player.资源.energy = { 名称: '能量', 当前: 50, 上限: 50, 单位: '点' };
   state._能力['basic-attack'] = basicStrike();
   state._实体.player.能力ID['basic-attack'] = true;
-  state.叙事.天气 = scenario.模式 === '默认' ? '潮声轻缓' : '';
+  state.叙事.天气 = scenario.模式 === '默认' ? '界膜外微光缓缓变化' : '';
   state.叙事.场景描述 =
     scenario.模式 === '默认'
-      ? '归泊庭的浅水漫过石阶。末墟在岸边等候，艾斯特瑞亚守着尚未重构的身体；潮镜映着未曾抵达的世界。'
+      ? '归泊庭的白石阶悬在微光中，界膜外浮着遥远的位面气泡。末墟在长廊等候，艾斯特瑞亚守着尚未重构的身体；潮镜映着未曾抵达的世界。'
       : scenario.场景;
   state._时空.位面目录.harbor = Schema.shape._时空.unwrap().shape.位面目录.unwrap().valueType.parse({
-    名称: '归泊庭', 来源: '生成', 简介: '虚海中承接死亡与复苏的庭院，潮镜通向多元位面。', 已发现: scenario.模式 === '默认',
-    时钟: { ...plane.时钟, 历法说明: '庭中潮时与虚海基准一致', 本地每起源秒: 1 },
+    名称: '归泊庭', 来源: '生成', 简介: '悬于虚空的独立庭院界域，承接死亡与复苏，潮镜通向多元位面。', 已发现: scenario.模式 === '默认',
+    时钟: { ...plane.时钟, 历法说明: '庭中计时与虚海基准一致', 本地每起源秒: 1 },
   });
   state._锚点.harbor = { 名称: '归泊庭', 位面ID: 'harbor', 地点ID: 'return-court', 状态: '可用', 建立事件ID: 'start' };
   state._能力['terminal-affinity'] = Schema.shape._能力.unwrap().valueType.parse({

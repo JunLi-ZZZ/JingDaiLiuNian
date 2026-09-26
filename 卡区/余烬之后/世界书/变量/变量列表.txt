@@ -19,7 +19,28 @@ const project = function projectPromptState(state, query = '') {
     const playerId = state._开局?.主角ID || 'player';
     const player = state._实体?.[playerId];
     const matching = (id, name) => query.includes(id) || (name?.length > 1 && query.includes(name));
-    const onsite = entries(state._实体).filter(([id, e]) => id !== playerId && !hidden('entity', id) && e.类别 !== '危险源' && e.生命阶段 === '存活' && e.位面ID === place?.位面ID && e.地点ID === place?.地点ID).slice(-7);
+    const dossiers = entries(state.叙事?.人物档案).filter(([id]) => !hidden('character', id));
+    const group = (id, p) => state._人物分组?.[p?.实体ID || id] || state._人物分组?.[id] || p?.分组 || '同伴';
+    const present = (p) => p.在场 && p.位面ID === place?.位面ID && (!p.地点ID || p.地点ID === place?.地点ID);
+    const linked = (id) => dossiers.find(([key, p]) => (p.实体ID || key) === id);
+    const active = (id, e) => {
+        const pair = linked(id);
+        return pair ? present(pair[1]) : e.位面ID === place?.位面ID && e.地点ID === place?.地点ID;
+    };
+    const companions = dossiers.filter(([id, p]) => group(id, p) === '同伴');
+    const companionEntities = entries(state._实体).filter(([id]) => id !== playerId && !hidden('entity', id) && state._人物分组?.[id] === '同伴');
+    const selectedDossiers = [...dossiers.filter(([id, p]) => present(p) || (group(id, p) === '同伴' && (matching(id, p.名称) || p.别名?.some((n) => matching(id, n))))), ...companions].filter((entry, index, all) => all.findIndex(([id]) => id === entry[0]) === index).slice(0, 8);
+    const onsite = entries(state._实体).filter(([id, e]) => id !== playerId && !hidden('entity', id) && e.类别 !== '危险源' &&
+        (active(id, e) || selectedDossiers.some(([key, p]) => (p.实体ID || key) === id) || companionEntities.some(([key]) => key === id))).slice(0, 16);
+    const relevant = (id) => {
+        if (id === playerId)
+            return true;
+        const p = dossiers.find(([key, p]) => key === id || (p.实体ID || key) === id);
+        if (p)
+            return group(p[0], p[1]) === '同伴' || present(p[1]);
+        const e = state._实体?.[id];
+        return !e || state._人物分组?.[id] === '同伴' || active(id, e);
+    };
     const owned = entries(state._能力).filter(([id]) => player?.能力ID[id] && !hidden('ability', id));
     const picked = new Set([
         ...owned.filter(([id, a]) => matching(id, a.名称)).slice(-6).map(([id]) => id),
@@ -41,7 +62,7 @@ const project = function projectPromptState(state, query = '') {
             状态: take(e.状态, 8), 装备: take(e.装备, 12),
         }]));
     const allKnowledge = { ...state._见闻档案, ...state.叙事?.见闻 };
-    const knowledge = entries(allKnowledge).filter(([id, info]) => !hidden('note', id) && !hidden('entity', info.对象ID) && !hidden('character', info.对象ID) && !hidden('ability', info.对象ID) && !hidden('item', info.对象ID) && info.知情者ID?.[playerId]);
+    const knowledge = entries(allKnowledge).filter(([id, info]) => !hidden('note', id) && !hidden('entity', info.对象ID) && !hidden('character', info.对象ID) && !hidden('ability', info.对象ID) && !hidden('item', info.对象ID) && info.知情者ID?.[playerId] && relevant(info.对象ID));
     const noteIds = new Set([
         ...(state._查阅?.见闻 || []).filter(id => knowledge.some(([key]) => key === id)),
         ...knowledge.filter(([id, info]) => matching(id, info.标题)).slice(-4).map(([id]) => id),
@@ -60,14 +81,15 @@ const project = function projectPromptState(state, query = '') {
         _实体: entities, _能力: abilities,
         _任务: take(Object.fromEntries(entries(state._任务).filter(([id]) => !hidden('quest', id)).filter(([id, t]) => ['进行中', '待结算'].includes(t.状态) || matching(id, t.名称))), 8),
         能力索引: owned.filter(([id]) => !picked.has(id)).slice(-24).map(([ID, a]) => ({ ID, 名称: a.名称, 品阶: a.品阶, 等级: a.等级 })),
-        档案概况: { 能力总数: owned.length, 见闻总数: knowledge.length, 检索: '行动中提及能力名、见闻标题或ID可调入详情。完整内容留在档案。' },
+        档案概况: { 能力总数: owned.length, 见闻总数: knowledge.length, 同伴总数: companions.length + companionEntities.filter(([id]) => !linked(id)).length, 检索: '行动中提及名称或ID可调入详情。完整内容留在档案。' },
         _物品: take(Object.fromEntries(entries(state._物品).filter(([id]) => !hidden('item', id)).filter(([, item]) => item.所在?.ID === playerId || item.所在?.ID === place?.地点ID)), 16),
         _结算: { ...state._结算, 遭遇ID: state._结算?.遭遇ID && !hidden('entity', state._结算.遭遇ID) ? state._结算.遭遇ID : null, 冷却结束: Object.fromEntries(entries(state._结算?.冷却结束).filter(([id, end]) => end > (state._时空?.起源时刻秒 || 0) && id.startsWith(playerId + ':')).slice(0, 16)) },
         _复苏: state._复苏, _死亡记录: take(state._死亡记录, 1),
         最近结果: entries(state._运行账本?.events).slice(-4).map(([id, event]) => ({ ID: id, 结果: text(event.result, 600) })),
         叙事: { 首次资料完成: narrative.首次资料完成, 天气: text(narrative.天气, 120), 场景描述: text(narrative.场景描述, 600), 记忆摘要: narrative.记忆摘要, 见闻: notes,
-            人物档案: Object.fromEntries(entries(narrative.人物档案).filter(([id]) => !hidden('character', id)).filter(([id, p]) => matching(id, p.名称) || p.别名?.some((name) => matching(id, name)) || (p.在场 && p.位面ID === place?.位面ID)).slice(-6)),
-            关系: take(Object.fromEntries(entries(narrative.关系).filter(([, r]) => !hidden('entity', r.对象ID) && !hidden('entity', r.主体ID) && !hidden('character', r.对象ID) && !hidden('character', r.主体ID)).filter(([, r]) => entities[r.对象ID] || entities[r.主体ID])), 8),
+            同伴索引: [...companions.map(([id, p]) => ({ ID: id, 名称: p.名称, 在场: present(p) })), ...companionEntities.filter(([id]) => !linked(id)).map(([id, e]) => ({ ID: id, 名称: e.名称, 在场: active(id, e) }))].slice(-48),
+            人物档案: Object.fromEntries(selectedDossiers.map(([id, p]) => [id, { ...p, 分组: group(id, p), 属性: undefined }])),
+            关系: take(Object.fromEntries(entries(narrative.关系).filter(([, r]) => !hidden('entity', r.对象ID) && !hidden('entity', r.主体ID) && !hidden('character', r.对象ID) && !hidden('character', r.主体ID)).filter(([, r]) => relevant(r.对象ID) && relevant(r.主体ID) && (entities[r.对象ID] || entities[r.主体ID]))), 8),
             外界事件: take(Object.fromEntries(entries(narrative.外界事件).filter(([, e]) => e.位面ID === place?.位面ID)), 6) },
         待审提案: take(state.待审提案, 4),
     };

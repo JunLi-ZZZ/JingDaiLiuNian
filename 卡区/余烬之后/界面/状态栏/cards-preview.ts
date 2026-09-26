@@ -40,7 +40,7 @@ createApp({render:()=>h('main',{class:'card-gallery'},[
  ]:tab.value==='检定'?[
  prose('残镜里的光一明一暗。艾斯特瑞亚辨认出了一段可供接入的电流，是否能找到断路，仍需一次尝试。'),scene('check','check'),
  ]:tab.value==='归泊'?[
- prose('喧嚣在一瞬间远去。浅水阶上，一枚尚未熄灭的余烬被潮声托住。'),scene('death','example-hit',dead),dossier('gain','origin-rebirth',origin),
+ prose('喧嚣在一瞬间远去。悬空石阶上，一枚尚未熄灭的余烬在界膜的微光中重聚。'),scene('death','example-hit',dead),dossier('gain','origin-rebirth',origin),
  ]:tab.value==='人物与物品'?[
  dossier('character','player'),dossier('character','tide-ferryman'),item?dossier('item',item[0]):null,task?scene('quest',task):null,
  ]:tab.value==='旅途'?[

@@ -1,5 +1,5 @@
 import type { Session } from './engine';
-import { characterEntity } from './character-dossier';
+import { characterEntity, characterAttributes } from './character-dossier';
 import { removed } from './archive-tools';
 
 const Reference = z.strictObject({ 分支ID: z.string(), 事件ID: z.string() });
@@ -54,15 +54,14 @@ export type DossierCard = {
  kind:string;title:string;grade:string;subtitle:string;description:string;detail:string;
  type?:string; emblem?:string; source?:string; metrics?:{label:string;value:string}[];
 };
-export function entityMetrics(entity: Session['stat_data']['_实体'][string]) {
-  const energy = entity.资源.energy;
+export function entityMetrics(entity?: Session['stat_data']['_实体'][string], attributes?:ReturnType<typeof characterAttributes>) {
+  const hp=entity?.生命||attributes?.生命, energy=entity?.资源.energy||attributes?.能量,combat=entity?.战斗||attributes;
   return [
-    ...(entity.生命 ? [{ label: '生命', value: `${entity.生命.当前} / ${entity.生命.上限}` }] : []),
-    ...(energy ? [{ label: energy.名称 || '能量', value: `${energy.当前} / ${energy.上限 ?? '∞'}` }] : []),
-    ...(entity.战斗 ? [
-      { label: '攻击', value: String(entity.战斗.攻击) },
-      { label: '防御', value: String(entity.战斗.防御) },
-    ] : []),
+    {label:'生命',value:hp?hp.当前+' / '+hp.上限:'待补全'},
+    {label:'能量',value:energy?energy.当前+' / '+(energy.上限??'∞'):'待补全'},
+    {label:'攻击',value:combat?String(combat.攻击):'待补全'},
+    {label:'防御',value:combat?String(combat.防御):'待补全'},
+    ...(combat?[{label:'命中',value:Math.round(combat.命中率*100)+'%'},{label:'闪避',value:Math.round(combat.闪避率*100)+'%'},{label:'暴击',value:Math.round(combat.暴击率*100)+'%'},{label:'暴击倍率',value:combat.暴击倍率+'×'}]:[]),
   ];
 }
 export function resolveDossierCard(state: Session['stat_data'], kind: string, id: string):DossierCard {
@@ -89,7 +88,7 @@ export function resolveDossierCard(state: Session['stat_data'], kind: string, id
   }
   if (kind === 'character') {
     const p=state.叙事.人物档案[id];
-    if(p) return {type:kind,kind:'人物档案',title:p.名称,grade:'旅途相逢',subtitle:p.身份,description:p.外貌,detail:[p.近况,p.关系经历].filter(Boolean).join('\n'),metrics:characterEntity(state,id)?entityMetrics(characterEntity(state,id)!):undefined};
+    if(p) return {type:kind,kind:'人物档案',title:p.名称,grade:'旅途相逢',subtitle:p.身份,description:p.外貌,detail:[p.近况,p.关系经历].filter(Boolean).join('\n'),metrics:entityMetrics(characterEntity(state,id),characterAttributes(state,id))};
   }
   if (kind === 'item') {
     const item = state._物品[id];

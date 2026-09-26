@@ -91,7 +91,7 @@ export function workshopPrompt(kind:'character'|'plane', name:string, concept:st
  const groups=kind==='character'?characterGroups:planeGroups;
  const choices=Object.fromEntries(groups.flatMap(g=>g.fields).filter(f=>values[f.key]?.trim()).map(f=>[f.label,values[f.key].trim()]));
  return [
-  {role:'system' as const,content:`创作可长期放入世界书的${kind==='character'?'人物':'位面'}档案。未选择的属性由你按整体设定协调创作。选定的属性与补充内容优先。以具体事实、因果与可表现的细节建立辨识度。人物拥有独立生活，基础档案描述其自身。背景是虚海多元世界，初微掌起源，末墟掌终焉；本土人物按其所在文化与认知生活。
+  {role:'system' as const,content:`创作可长期放入世界书的${kind==='character'?'人物':'位面'}档案。未选择的属性由你按整体设定协调创作。选定的属性与补充内容优先。以具体事实、因果与可表现的细节建立辨识度。人物拥有独立生活，基础档案描述其自身。背景是虚海多元世界：无垠虚空中悬浮着拥有独立时空与法则的位面气泡，初微掌起源，末墟掌终焉；本土人物按其所在文化与认知生活。
 输出一个JSON对象：{id:英文短ID,kind:"${kind}",name:名称,aliases:别名数组,planeId:所属位面ID,summary:150字内概括,content:完整档案字符串}。位面planeId与id一致。人物所属世界从已知对应ID取值；尚未建立的世界给出稳定英文ID并在正文写明名称。
 档案章节用“# 章节名”单独成行，字段用“名称：内容”的纯文字形式，段落自然换行。
 content按以下章节组织，正文约${kind==='character'?'1200—2200':'1800—3000'}字，重点充分，避免重复。参考资料中的已确定事实准确延续，缺少的基础字段按来源世界、种族、经历和身份协调创作。没有别名或特殊物件时如实写无；其余字段写具体完整的设定。外貌写稳定生理特征，衣着写风格习惯；关系写人物自身的社会关系，动机写长期追求；活动写规律与条件。每段信息在时间推进和不同开局中均能成立。本局地点、动作进度和玩家关系由游玩档案记录。命名贴合本土文化；性格包含相互牵制的欲望与软肋，经历说明成因，语言体现个人习惯。章节及字段保持纯文字，例句直接写对白。输出内容用于作者审核和长期参考。

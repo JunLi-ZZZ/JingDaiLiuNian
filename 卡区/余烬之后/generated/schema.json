@@ -2,6 +2,20 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
+    "_人物分组": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "enum": [
+          "同伴",
+          "附近的人"
+        ]
+      }
+    },
     "_档案整理": {
       "default": {},
       "type": "object",
@@ -271,7 +285,7 @@
               "maxLength": 4000
             },
             "构想": {
-              "default": "从归泊庭苏醒写起，以卡车撞击的最后客观片段交代死亡。末墟等在浅水石阶旁，艾斯特瑞亚解释身体尚需十分钟重构、起源涅槃与新生的越界。庭中潮镜映出不同世界的片段，给出两三个有具体人物与事件的去处，同时接受任意目的世界。停在等待我询问或选择去向的时刻。",
+              "default": "从归泊庭苏醒写起，以卡车撞击的最后客观片段交代死亡。末墟等在中庭石阶旁，艾斯特瑞亚解释身体尚需十分钟重构、起源涅槃与新生的越界。庭中潮镜映出不同世界的片段，给出两三个有具体人物与事件的去处，同时接受任意目的世界。停在等待我询问或选择去向的时刻。",
               "type": "string",
               "maxLength": 12000
             },
@@ -1613,6 +1627,65 @@
                 "default": false,
                 "type": "boolean"
               },
+              "地点ID": {
+                "default": "",
+                "type": "string",
+                "maxLength": 80
+              },
+              "分组": {
+                "default": "同伴",
+                "type": "string",
+                "enum": [
+                  "同伴",
+                  "附近的人"
+                ]
+              },
+              "属性": {
+                "default": null,
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "生命": {
+                        "$ref": "#/$defs/__schema6"
+                      },
+                      "能量": {
+                        "$ref": "#/$defs/__schema7"
+                      },
+                      "攻击": {
+                        "$ref": "#/$defs/__schema8"
+                      },
+                      "防御": {
+                        "$ref": "#/$defs/__schema9"
+                      },
+                      "命中率": {
+                        "$ref": "#/$defs/__schema10"
+                      },
+                      "闪避率": {
+                        "$ref": "#/$defs/__schema11"
+                      },
+                      "暴击率": {
+                        "$ref": "#/$defs/__schema12"
+                      },
+                      "暴击倍率": {
+                        "$ref": "#/$defs/__schema13"
+                      },
+                      "抗性": {
+                        "$ref": "#/$defs/__schema14"
+                      }
+                    },
+                    "required": [
+                      "生命",
+                      "能量",
+                      "攻击",
+                      "防御"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
               "性别": {
                 "default": "",
                 "type": "string",
@@ -1714,7 +1787,7 @@
                   "maxItems": 32,
                   "type": "array",
                   "items": {
-                    "$ref": "#/$defs/__schema6"
+                    "$ref": "#/$defs/__schema15"
                   }
                 }
               },
@@ -1960,7 +2033,7 @@
             "default": null,
             "anyOf": [
               {
-                "$ref": "#/$defs/__schema6"
+                "$ref": "#/$defs/__schema15"
               },
               {
                 "type": "null"
@@ -2024,6 +2097,83 @@
       "maxLength": 80
     },
     "__schema6": {
+      "type": "object",
+      "properties": {
+        "当前": {
+          "type": "number",
+          "minimum": 0
+        },
+        "上限": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "当前",
+        "上限"
+      ]
+    },
+    "__schema7": {
+      "type": "object",
+      "properties": {
+        "当前": {
+          "type": "number",
+          "minimum": 0
+        },
+        "上限": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "当前",
+        "上限"
+      ]
+    },
+    "__schema8": {
+      "type": "number",
+      "minimum": 0
+    },
+    "__schema9": {
+      "type": "number",
+      "minimum": 0
+    },
+    "__schema10": {
+      "default": 0.95,
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "__schema11": {
+      "default": 0,
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "__schema12": {
+      "default": 0.1,
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "__schema13": {
+      "default": 1.5,
+      "type": "number",
+      "minimum": 1
+    },
+    "__schema14": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "number",
+        "minimum": -1,
+        "maximum": 1
+      }
+    },
+    "__schema15": {
       "oneOf": [
         {
           "type": "object",
@@ -2039,7 +2189,7 @@
               "type": "string"
             },
             "design": {
-              "$ref": "#/$defs/__schema7"
+              "$ref": "#/$defs/__schema16"
             },
             "evidence": {
               "type": "string",
@@ -2079,7 +2229,7 @@
               "maxItems": 32,
               "type": "array",
               "items": {
-                "$ref": "#/$defs/__schema10"
+                "$ref": "#/$defs/__schema19"
               }
             },
             "materials": {
@@ -2097,7 +2247,7 @@
               "maxItems": 16,
               "type": "array",
               "items": {
-                "$ref": "#/$defs/__schema11"
+                "$ref": "#/$defs/__schema20"
               }
             },
             "seconds": {
@@ -2137,7 +2287,7 @@
             "grade": {
               "anyOf": [
                 {
-                  "$ref": "#/$defs/__schema8"
+                  "$ref": "#/$defs/__schema17"
                 },
                 {
                   "$ref": "#/$defs/__schema4"
@@ -2909,7 +3059,7 @@
         }
       ]
     },
-    "__schema7": {
+    "__schema16": {
       "type": "object",
       "properties": {
         "name": {
@@ -2918,7 +3068,7 @@
           "maxLength": 80
         },
         "grade": {
-          "$ref": "#/$defs/__schema8"
+          "$ref": "#/$defs/__schema17"
         },
         "usage": {
           "type": "string",
@@ -2983,7 +3133,7 @@
           "type": "object",
           "properties": {
             "mechanism": {
-              "$ref": "#/$defs/__schema9"
+              "$ref": "#/$defs/__schema18"
             },
             "power": {
               "type": "number",
@@ -3013,7 +3163,7 @@
           "type": "object",
           "properties": {
             "mechanism": {
-              "$ref": "#/$defs/__schema9"
+              "$ref": "#/$defs/__schema18"
             },
             "capacity": {
               "type": "number",
@@ -3051,7 +3201,7 @@
       ],
       "additionalProperties": false
     },
-    "__schema8": {
+    "__schema17": {
       "type": "string",
       "enum": [
         "凡尘",
@@ -3063,21 +3213,21 @@
         "本源"
       ]
     },
-    "__schema9": {
+    "__schema18": {
       "type": "string",
       "pattern": "^[a-zA-Z0-9_-]{1,80}$"
     },
-    "__schema10": {
+    "__schema19": {
       "type": "string"
     },
-    "__schema11": {
+    "__schema20": {
       "type": "object",
       "properties": {
         "abilityId": {
           "type": "string"
         },
         "design": {
-          "$ref": "#/$defs/__schema7"
+          "$ref": "#/$defs/__schema16"
         }
       },
       "required": [

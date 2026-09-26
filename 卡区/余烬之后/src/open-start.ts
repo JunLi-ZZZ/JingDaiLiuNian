@@ -6,8 +6,8 @@ import type { Session } from './engine';
 import { registerDesignedAbility } from './ability-runtime';
 import { AbilityDesignSchema, type InitialAbilityChoice } from './ability-design';
 export type OpeningChoice={mode:'默认'|'自定义';profile?:Partial<Schema['_开局']['档案']>;scenario?:Partial<OpeningScenario>;ability?:InitialAbilityChoice};
-export const openScenario=()=>OpeningScenarioSchema.parse({模式:'默认',位面ID:'main',城市:'星见市',场景:'旧港候船厅',
-  机缘:'旅途即将开始，人物来历与所持能力采用本局档案。',基调:'异界探索、人物相遇与真实冒险',出场人物:'',
+export const openScenario=()=>OpeningScenarioSchema.parse({模式:'默认',位面ID:'main',城市:'星见市',场景:'星见市 · 中央车站',
+  机缘:'一次异常的空间重叠让陌生世界的街景出现在车站尽头，旅途即将开始，人物来历与所持能力采用本局档案。',基调:'异界探索、人物相遇与真实冒险',出场人物:'',
   构想:'从启程前的现场写起。让一位有自身诉求的人物与我发生联系，留下可以交谈、调查或启程的机会。',大纲:''});
 export function resolveOpenScenario(choice:OpeningChoice):OpeningScenario {
   const scenario=OpeningScenarioSchema.parse(choice.scenario?.模式==='自定义'?{...openScenario(),...choice.scenario}:openScenario());

@@ -11,6 +11,7 @@ import {missingCards} from '../../src/card-recovery';
 import BattleCard from './BattleCard.vue';
 import type { PublicBattleCard } from '../../src/output-cards';
 import GradeBadge from './GradeBadge.vue';
+import HoloSurface from '../shared/HoloSurface.vue';
 import { proficiencyNeeded } from '../../src/progression';
 import Evolution from './Evolution.vue';
 import type { ArchiveEdit } from '../../src/settlement';
@@ -141,7 +142,7 @@ function customize() {
     <aside v-if="missing.length" class="revival">正文有 {{missing.length}} 项档案待补全。<button class="repair-link" @click="tab='行动'">前往补全档案</button></aside>
     <nav aria-label="档案分页">
       <button
-        v-for="name in ['概览', '能力', '行囊', '人物', '生物', '见闻', '归来', '潮镜', '行动', '整理', '变化']"
+        v-for="name in ['概览', '能力', '行囊', '同伴', '附近的人', '见闻', '归来', '潮镜', '行动', '整理', '变化']"
         :key="name"
         :aria-pressed="tab === name"
         @click="tab = name"
@@ -151,7 +152,7 @@ function customize() {
     </nav>
     <section class="tab-content">
       <ArchiveManager v-if="tab==='整理'" :state="state" :latest="latest" @edit="emit('edit',$event)" />
-      <Characters v-if="tab === '人物' || tab==='生物'" :key="tab" :category="tab" :state="state" :latest="latest" @edit="emit('edit',$event)" @archive="libraryDraft=$event;tab='潮镜'" />
+      <Characters v-if="tab === '同伴' || tab==='附近的人'" :key="tab" :category="tab" :state="state" :latest="latest" @edit="emit('edit',$event)" @archive="libraryDraft=$event;tab='潮镜'" />
       <template v-if="tab === '潮镜'"><slot name="workshop" :seed="libraryDraft" /></template>
       <template v-if="tab === '概览'">
         <div class="section-heading">
@@ -195,7 +196,7 @@ function customize() {
         </div>
         <p v-if="!abilities.length" class="empty">已掌握的技艺、天赋与超凡能力会记在这里。</p>
 
-        <details v-for="([id, ability], i) in abilities" :key="id" class="folio" :data-grade="ability.品阶">
+        <HoloSurface v-for="([id, ability], i) in abilities" :key="id" :grade="ability.品阶" compact><details class="folio" :data-grade="ability.品阶">
           <summary class="detail-card ability"><span class="card-index">{{ String(i + 1).padStart(2, '0') }}</span>
             <div><span class="label"><GradeBadge :grade="ability.品阶" /> · {{ ability.用法 }} · Lv.{{ ability.等级 }}</span><h4>{{ ability.名称 }}</h4><small v-if="player?.资源[id]">储能 {{ player.资源[id].当前 }} / {{ player.资源[id].上限 }}</small></div><span class="chevron">⌄</span>
           </summary>
@@ -214,14 +215,14 @@ function customize() {
             <Evolution v-if="ability.等级 >= (ability.进化次数 + 1) * 5 && ability.进化次数 < 3" :state="state" :ability-id="id" :latest="latest" :preview="preview" @edit="emit('edit',$event)" />
             <details v-if="Object.keys(ability.成长记录).length" class="growth"><summary>成长沿革</summary><p v-for="(record, eventId) in ability.成长记录" :key="eventId">{{ record }}</p></details>
           </div>
-        </details>
+        </details></HoloSurface>
       </template>
       <template v-if="tab === '行囊'">
         <div class="section-heading"><h3>随身与遗留</h3><span>BELONGINGS</span></div>
-        <details v-for="[id, item] in items" :key="id" class="folio" :data-grade="item.品阶">
+        <HoloSurface v-for="[id, item] in items" :key="id" :grade="item.品阶" compact><details class="folio" :data-grade="item.品阶">
           <summary class="detail-card"><span class="item-icon">◇</span><div><span class="label"><GradeBadge :grade="item.品阶" /> · {{ item.所在.类型 === '实体' ? '随身' : '遗留在现场' }}{{ item.复苏绑定实体ID ? ' · 复苏绑定' : '' }}</span><h4>{{ item.名称 }}</h4></div><span>×{{ item.数量 }}</span></summary>
           <div class="inline-detail"><p>{{ item.描述 }}</p><p v-if="item.耐久">耐久 {{ item.耐久.当前 }} / {{ item.耐久.上限 }}</p><button @click="emit('compose', '我查看' + item.名称 + '，')">查看 · 填入行动</button></div>
-        </details>
+        </details></HoloSurface>
         <p v-if="!items.length" class="empty">尚未记录物品。</p>
       </template>
       <template v-if="tab === '见闻'">

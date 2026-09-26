@@ -1,6 +1,8 @@
 import { Schema, CharacterDossierSchema } from './schema';
 import { resolveDossierCard } from './output-cards';
 import { removed } from './archive-tools';
+import { readRuntime } from './runtime-store';
+import { registerDossierEntities } from './dossier-runtime';
 export type MissingCard = {kind: 'note' | 'character'; id: string};
 const safeId = (id:string) => /^[a-zA-Z0-9_-]{1,80}$/.test(id) && !['constructor','prototype','__proto__'].includes(id);
 const noteSchema = Schema.shape.叙事.unwrap().shape.见闻.unwrap().valueType;
@@ -37,7 +39,9 @@ export function applyCardRecovery(state:Schema, target:MissingCard, raw:unknown)
     if(state.叙事.人物档案[target.id] || target.id===state._开局.主角ID)throw Error('该人物已存在');
     next.叙事.人物档案[target.id]=CharacterDossierSchema.parse(choice.record);
   }
-  return Schema.parse(next);
+  const parsed=Schema.parse(next),runtime=readRuntime({stat_data:parsed});
+  return target.kind==='character' && runtime && parsed._初始化完成
+    ? registerDossierEntities({stat_data:parsed,death_adaptation_runtime:runtime}).stat_data : parsed;
 }
 export function cardRecoveryPrompt(state:Schema,target:MissingCard,story:string,hint:string) {
   const all=target.kind==='note'?{...state._见闻档案,...state.叙事.见闻}:state.叙事.人物档案;

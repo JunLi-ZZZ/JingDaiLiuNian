@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import GradeBadge from './GradeBadge.vue';
+import HoloSurface from '../shared/HoloSurface.vue';
 import {computed} from 'vue';
 import type { DossierCard } from '../../src/output-cards';
 import { displayGrade } from '../../src/grades';
@@ -10,7 +11,7 @@ const item=computed(()=>props.card.type==='item');
 const grade=computed(()=>displayGrade(props.card.grade));
 </script>
 <template>
- <details class="dossier" :class="{inheritance:gain,portrait:person,relic:item,fieldnote:!gain&&!person&&!item}" :data-grade="grade" :open="gain">
+ <HoloSurface :grade="card.grade"><details class="dossier" :class="{inheritance:gain,portrait:person,relic:item,fieldnote:!gain&&!person&&!item}" :data-grade="grade" :open="gain">
   <summary>
    <template v-if="gain">
     <div class="inheritance-top"><span>ABILITY / 获 得</span><GradeBadge :grade="card.grade" /></div>
@@ -30,7 +31,7 @@ const grade=computed(()=>displayGrade(props.card.grade));
    <p v-if="card.detail" class="detail">{{card.detail}}</p>
    <div v-if="gain" class="inheritance-footer"><span>{{card.source || '旅途所得，历练成形'}}</span><span>✦</span></div>
   </div>
- </details>
+ </details></HoloSurface>
 </template>
 <style scoped>
 .dossier{--accent:#aa8750;box-sizing:border-box;max-width:720px;margin:20px auto;color:#293e3b;font:13px/1.9 'Microsoft YaHei',sans-serif;overflow-wrap:anywhere}

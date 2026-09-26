@@ -4,6 +4,7 @@ import { applyCommand } from './engine';
 import type { Session } from './engine';
 import { readRuntime } from './runtime-store';
 import { seededRandom } from './progression';
+import { dossierRegistrations, syncDossierLocations } from './character-dossier';
 
 export function formatUpdateError(error: unknown): string {
   if (error instanceof z.ZodError)
@@ -23,6 +24,10 @@ export function acceptNarrativeUpdate(
   if (receipt && before._叙事回执 === receipt) return before;
   const normalized = _.cloneDeep(proposed) as { 叙事?: Record<string, unknown> };
   if(normalized.叙事)normalized.叙事.本轮结算=normalizeOperations(normalized.叙事.本轮结算);
+  for(const [id,record] of Object.entries(normalized.叙事?.人物档案 || {})){
+    if(record && typeof record==='object' && !Array.isArray(record) && !Object.hasOwn(record,'分组'))
+      Object.assign(record,{分组:before.叙事.人物档案[id]?.分组 || '附近的人'});
+  }
   // 模型只提交经过秒数与操作数组；权威快照提供起算坐标。
   if (typeof normalized.叙事?.本轮时间 === 'number')
     normalized.叙事.本轮时间 = { 起算起源秒: before._时空.起源时刻秒, 经过本地秒: normalized.叙事.本轮时间 };
@@ -64,13 +69,17 @@ export function acceptNarrativeUpdate(
     session = applyCommand(session, operation, seededRandom(seed, before._结算.分支ID)).session;
   };
   const elapsed = next.叙事.本轮时间;
+  for(const [index,operation] of dossierRegistrations(next).entries()){
+    run({...operation,id:`dossier-${version}-${index}`,branchId:before._结算.分支ID,expectedVersion:session.stat_data._结算.状态版本},version+index);
+  }
+  syncDossierLocations(session.stat_data);
   if (elapsed && !_.isEqual(elapsed, before.叙事.本轮时间)) {
     if (elapsed.起算起源秒 !== before._时空.起源时刻秒) throw Error('本轮时间的起算值与当前存档不一致');
     if (elapsed.经过本地秒 > 0) {
       const rate = before._时空.位面目录[before._时空.当前地点.位面ID]?.时钟.本地每起源秒;
       if (!rate || !Number.isFinite(rate) || rate <= 0) throw Error('当前位面缺少有效时钟倍率');
       run({ kind: 'advance', seconds: elapsed.经过本地秒 / rate,
-        id: `narrative-time-${version}`, branchId: before._结算.分支ID, expectedVersion: version }, version + 1);
+        id: `narrative-time-${version}`, branchId: before._结算.分支ID, expectedVersion: session.stat_data._结算.状态版本 }, version + 1);
     }
   }
   const batch = next.叙事.本轮结算;
@@ -84,6 +93,11 @@ export function acceptNarrativeUpdate(
     }
   }
   const result = session.stat_data;
+  for(const [id,p] of Object.entries(result.叙事.人物档案)){
+    if(p.在场 && (p.位面ID!==result._时空.当前地点.位面ID || (p.地点ID && p.地点ID!==result._时空.当前地点.地点ID)))p.在场=false;
+    const e=result._实体[p.实体ID||id];
+    if(e?.生命 && e.战斗 && e.资源.energy)p.属性={生命:_.cloneDeep(e.生命),能量:{当前:e.资源.energy.当前,上限:e.资源.energy.上限 ?? e.资源.energy.当前},..._.cloneDeep(e.战斗)};
+  }
   if (receipt) result._叙事回执 = receipt;
   // 本轮新提案随同一事务的时间和动作更新版本，旧提案保留原版本。
   for (const [id, proposal] of Object.entries(result.待审提案)) {

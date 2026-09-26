@@ -2,6 +2,8 @@
 <% {
 const library = getvar('stat_data._资料库', {defaults:{}}) || {};
 const place = getvar('stat_data._时空.当前地点.位面ID', {defaults:''});
+const groups = getvar('stat_data._人物分组', {defaults:{}}) || {};
+const location = getvar('stat_data._时空.当前地点.地点ID', {defaults:''});
 const people = getvar('stat_data.叙事.人物档案', {defaults:{}}) || {};
 const recent = (typeof getChatMessages === 'function' ? [-2,-1].flatMap(depth => getChatMessages(depth) || []) : [])
   .map(item => String(typeof item === 'string' ? item : item?.message ?? item?.mes ?? '')
@@ -10,7 +12,7 @@ const mentioned = x => [x.name,...(x.aliases||[])].some(n=>n.length>1 && recent.
 const fetchEntry = getwi;
 const selected = Object.values(library).filter(x =>
   x.kind === 'plane' ? x.id === place || mentioned(x) :
-  (people[x.id]?.在场 && people[x.id]?.位面ID === place) || mentioned(x));
+  (people[x.id]?.在场 && people[x.id]?.位面ID === place && (!people[x.id]?.地点ID || people[x.id]?.地点ID === location)) || ((!people[x.id] || (groups[people[x.id]?.实体ID || x.id] || groups[x.id] || people[x.id]?.分组 || '同伴') === '同伴') && mentioned(x)));
 const planes = selected.filter(x=>x.kind === 'plane').sort((a,b)=>Number(b.id===place)-Number(a.id===place)).slice(0,2);
 const cast = selected.filter(x=>x.kind === 'character').slice(-3);
 for (const item of [...planes,...cast]) {

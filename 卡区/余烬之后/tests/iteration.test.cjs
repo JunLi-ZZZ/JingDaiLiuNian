@@ -114,10 +114,10 @@ test('EJS按当前位面/提及人物跨书读取关闭条目，发布绑定不�
     () => [{ mes: '我要问闻潮一件事<UpdateVariable>陌生世界</UpdateVariable>', data: { hidden: '陌生世界' } }], async (...args) => { calls.push(args); return args.join(':'); }, x => output.push(x));
   assert.deepEqual(calls, [['聊天档案','玻璃条目'],['另一书','闻潮档案']]);
 });
-test('千人资料保留本地，提示词仅发当前相关最多6份，角色卡只展示公开经历', () => {
+test('千人资料保留本地，提示词仅发当前相关最多8份与有界索引，角色卡只展示公开经历', () => {
   const s = start().stat_data;
   for(let i=0;i<1000;i++) s.叙事.人物档案['person-'+i]=CharacterDossierSchema.parse({名称:'过客'+i,位面ID:'main',在场:i<8,身份:'旅人',性格:'私密背景'});
-  const view=projectPromptState(s,'');assert.equal(Object.keys(view.叙事.人物档案).length,6);
+  const view=projectPromptState(s,'');assert.equal(Object.keys(view.叙事.人物档案).length,8);assert(view.叙事.同伴索引.length<=48);
   assert.equal(Object.keys(Schema.parse(s).叙事.人物档案).length,1000);
   const card=resolveDossierCard(s,'character','person-0');assert(!JSON.stringify(card).includes('私密背景'));
   const gain=resolveDossierCard(s,'gain','origin-rebirth');assert(gain.kind.startsWith('能力获得'));assert(gain.detail.includes('来源'));

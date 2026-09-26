@@ -1,7 +1,7 @@
 import { readRuntime } from './runtime-store';
 import { applyCommand, validateSession } from './engine';
 import type { Command, Session } from './engine';
-import { Schema } from './schema';
+import { Schema, CharacterAttributesSchema } from './schema';
 import type { OpeningPort } from './opening';
 import type { Operation, EvolutionDesign } from './schema';
 import { acceptNarrativeUpdate } from './mvu-policy';
@@ -10,6 +10,8 @@ import type { EvolutionDirection } from './grades';
 import { storyRandom } from './progression';
 import { applyCardRecovery } from './card-recovery';
 import type { MissingCard } from './card-recovery';
+import { characterAttributes } from './character-dossier';
+import { registerDossierEntities } from './dossier-runtime';
 import { archiveEntries } from './archive-tools';
 import type { ArchiveCategory } from './archive-tools';
 
@@ -26,6 +28,8 @@ export function proposalCommand(session: Session, id: string, proposal: Proposal
 }
 
 export type ArchiveEdit =
+  | {kind:'character-stats';id:string;attributes:unknown;base:Schema}
+  | {kind:'roster'; id:string; group:'同伴'|'附近的人'; base:Schema}
   | {kind:'supplement'; target:MissingCard; candidate:unknown; base:Schema}
   | {kind:'remove'|'restore'; category:ArchiveCategory; id:string; base:Schema}
   | {kind:'classify'; id:string; name:string; category:'人物'|'生物'; dossierId:string; base:Schema}
@@ -42,9 +46,28 @@ export function editSession(input: Session, edit: ArchiveEdit): Session {
   let session = _.cloneDeep(input);
   const version = input.stat_data._结算.状态版本;
   const pending = session.stat_data._待修复;
+  if(edit.kind==='character-stats'){
+    if(!_.isEqual(input.stat_data,edit.base))throw Error('存档已变化，请重新补全属性');
+    const p=session.stat_data.叙事.人物档案[edit.id];
+    if(!p)throw Error('人物档案不存在');
+    if(characterAttributes(session.stat_data,edit.id))throw Error('该角色已有属性，可在数值校正中核对实时资源');
+    p.属性=CharacterAttributesSchema.parse(edit.attributes);
+    return registerDossierEntities(session);
+  }
+  if(edit.kind==='roster'){
+    if(!_.isEqual(input.stat_data,edit.base))throw Error('存档已变化，请重新核对');
+    const p=session.stat_data.叙事.人物档案[edit.id],key=p?.实体ID||edit.id;
+    if(key===session.stat_data._开局.主角ID || (!p && !session.stat_data._实体[key]))throw Error('请选择有效角色');
+    if(!['同伴','附近的人'].includes(edit.group))throw Error('分组无效');
+    session.stat_data._人物分组[key]=edit.group;
+    return session;
+  }
   if(edit.kind==='supplement' || edit.kind==='remove' || edit.kind==='restore' || edit.kind==='classify'){
     if(!_.isEqual(input.stat_data,edit.base))throw Error('存档已变化，请重新核对');
-    if(edit.kind==='supplement')session.stat_data=applyCardRecovery(session.stat_data,edit.target,edit.candidate);
+    if(edit.kind==='supplement'){
+      session.stat_data=applyCardRecovery(session.stat_data,edit.target,edit.candidate);
+      session.death_adaptation_runtime=readRuntime({stat_data:session.stat_data})!;
+    }
     else if(edit.kind==='classify'){
       const e=session.stat_data._实体[edit.id];
       if(!e || edit.id===session.stat_data._开局.主角ID || !['人物','生物'].includes(edit.category) || !edit.name.trim())throw Error('请选择有效实体、名称与分类');
@@ -78,9 +101,11 @@ export function editSession(input: Session, edit: ArchiveEdit): Session {
   }
   if (edit.kind === 'character') {
     if (!/^[a-zA-Z0-9_-]{1,80}$/.test(edit.id) || ['constructor','prototype','__proto__'].includes(edit.id)) throw Error('人物ID无效');
+    const live=characterAttributes(session.stat_data,edit.id);
+    if(live && !_.isEqual(live,edit.dossier.属性))throw Error('已登记的属性由数值结算维护；实时资源可在数值校正中修改');
     session.stat_data.叙事.人物档案[edit.id] = edit.dossier;
     session.stat_data = Schema.parse(session.stat_data);
-    return session;
+    return registerDossierEntities(session);
   }
   if (edit.kind === 'focus') {
     const state = session.stat_data;

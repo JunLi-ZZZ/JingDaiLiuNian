@@ -24,8 +24,13 @@ const root=path.resolve(__dirname,'..'),version=require('../package.json').versi
      assert(await page.locator('.grade-showcase .dossier h3').evaluateAll(nodes=>nodes.every(n=>getComputedStyle(n).color==='rgba(0, 0, 0, 0)')));
      assert.equal(new Set(await page.locator('.grade-showcase .grade-badge').evaluateAll(nodes=>nodes.map(n=>getComputedStyle(n).backgroundImage))).size,8);
      assert(await page.locator('.grade-showcase>section').evaluateAll(nodes=>nodes.every(n=>n.querySelector('.inheritance .metrics strong').textContent===n.querySelector('.inheritance').dataset.grade)));
-     assert.equal(new Set(await page.locator('.grade-showcase .inheritance').evaluateAll(nodes=>nodes.map(n=>getComputedStyle(n).backgroundImage))).size,8);
-     assert.equal(new Set(await page.locator('.grade-showcase .relic').evaluateAll(nodes=>nodes.map(n=>getComputedStyle(n).backgroundImage))).size,8);
+     assert.equal(new Set(await page.locator('.grade-showcase .holo-surface').evaluateAll(nodes=>nodes.map(n=>n.dataset.theme))).size,8);
+     assert.equal(new Set(await page.locator('.grade-showcase .holo-ground').evaluateAll(nodes=>nodes.map(n=>getComputedStyle(n).backgroundImage))).size,8);
+     const surface=page.locator('.grade-showcase .holo-surface').first();
+     await surface.getByRole('button',{name:'转动卡面',exact:true}).click();assert.match(await surface.getAttribute('style'),/--holo-x: 21.5%/);
+     await surface.getByRole('button',{name:'暂停光效',exact:true}).click();assert.equal(await surface.getByRole('button',{name:'开启光效',exact:true}).getAttribute('aria-pressed'),'true');
+     assert.equal(await surface.locator('.grade-label').evaluate(n=>getComputedStyle(n).animationPlayState),'paused');
+     await page.emulateMedia({reducedMotion:'reduce'});await page.waitForFunction(()=>[...document.querySelectorAll('.holo-controls button')].filter(n=>n.textContent==='转动卡面').every(n=>n.disabled));await page.emulateMedia({reducedMotion:'no-preference'});
      await page.emulateMedia({reducedMotion:'reduce'});assert(await page.locator('.grade-label,.grade-showcase .dossier h3').evaluateAll(nodes=>nodes.every(n=>getComputedStyle(n).animationName==='none')));await page.emulateMedia({reducedMotion:'no-preference'});
     }
     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'overflow '+tab+' '+width);

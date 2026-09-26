@@ -26,7 +26,7 @@ ${abilities}
 
 【故事起点】
 世界：${originStart ? '虚海 · 归泊庭（主世界事故之后）' : world}
-地点：${originStart ? '归泊庭 · 浅水石阶' : [scenario.城市, scenario.场景].filter(Boolean).join(' · ')}
+地点：${originStart ? '归泊庭 · 中庭石阶' : [scenario.城市, scenario.场景].filter(Boolean).join(' · ')}
 游戏时间：${scenario.起始时间}
 经历与机缘：${scenario.机缘}
 故事基调：${scenario.基调}

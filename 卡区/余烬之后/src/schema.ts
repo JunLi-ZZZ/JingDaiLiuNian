@@ -43,9 +43,19 @@ export const OperationSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('check'), actorId: z.string(), abilityId: z.string().nullable(), task: z.string().min(1).max(300), difficulty: z.number().int().min(5).max(30) }),
 ]);
 export type Operation = z.infer<typeof OperationSchema>;
+export const CharacterAttributesSchema = z.object({
+  生命:z.object({当前:z.coerce.number().nonnegative(),上限:z.coerce.number().positive()}),
+  能量:z.object({当前:z.coerce.number().nonnegative(),上限:z.coerce.number().nonnegative()}),
+  攻击:z.coerce.number().nonnegative(),防御:z.coerce.number().nonnegative(),
+  命中率:z.coerce.number().min(0).max(1).prefault(.95),闪避率:z.coerce.number().min(0).max(1).prefault(0),
+  暴击率:z.coerce.number().min(0).max(1).prefault(.1),暴击倍率:z.coerce.number().min(1).prefault(1.5),
+  抗性:z.record(z.string(),z.coerce.number().min(-1).max(1)).prefault({}),
+}).refine(a=>a.生命.当前<=a.生命.上限 && a.能量.当前<=a.能量.上限,{message:'当前生命与能量应在各自上限内'});
 export const CharacterDossierSchema = z.object({
   名称: z.string().min(1).max(80), 别名: z.array(z.string().min(2).max(80)).max(6).prefault([]),
   实体ID: z.string().max(80).prefault(''), 位面ID: z.string().max(80).prefault(''), 在场: z.boolean().prefault(false),
+  地点ID:z.string().max(80).prefault(''), 分组:z.enum(['同伴','附近的人']).prefault('同伴'),
+  属性:CharacterAttributesSchema.nullable().prefault(null),
   性别:z.string().max(80).prefault(''), 年龄:z.string().max(100).prefault(''), 种族:z.string().max(100).prefault(''),
   来源世界:z.string().max(150).prefault(''), 能力与局限:z.string().max(700).prefault(''), 背景经历:z.string().max(800).prefault(''), 日常喜好:z.string().max(400).prefault(''),
   身份: z.string().max(300).prefault(''), 外貌: z.string().max(400).prefault(''),
@@ -61,6 +71,7 @@ export const LibraryEntrySchema = z.object({
 });
 export type LibraryEntry = z.infer<typeof LibraryEntrySchema>;
 export const Schema = z.object({
+  _人物分组:z.record(z.string(),z.enum(['同伴','附近的人'])).prefault({}),
   _档案整理: z.record(z.string(), z.boolean()).prefault({}),
   _档案引用: z.record(z.string(), z.string()).prefault({}),
   _资料库: z.record(z.string(), LibraryEntrySchema.omit({content:true}).extend({book:z.string(),entry:z.string()})).prefault({}),

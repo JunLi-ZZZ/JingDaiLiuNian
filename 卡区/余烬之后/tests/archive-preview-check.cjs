@@ -23,7 +23,7 @@ const record={类别:'地点',对象ID:'harbor',标题:'潮镜',内容:'庭中�
    window.getVariables=opts=>clone(window.messages[opts?.message_id??1].data);
    window.Mvu={getMvuData:window.getVariables,replaceMvuData:async(data,opts)=>{window.messages[opts.message_id].data=clone(data);window.writes++;}};
    window.setChatMessages=async changes=>{for(const c of changes)Object.assign(window.messages[c.message_id],clone(c));window.writes++;};
-   window.generateRaw=async opts=>{window.request=opts;if(window.fail)throw Error('模拟连接失败');if(window.pending)await new Promise(r=>window.resolveGenerate=r);return JSON.stringify({record});};
+   window.generateRaw=async opts=>{window.request=opts;if(window.fail)throw Error('模拟连接失败');if(window.pending)await new Promise(r=>window.resolveGenerate=r);return JSON.stringify(opts.ordered_prompts[0].content.includes('补全初始属性')?{生命:{当前:121,上限:160},能量:{当前:27,上限:70},攻击:32,防御:12}: {record});};
    window.stopGenerationById=id=>window.stopped=id;
   },{s,record});
   const base='http://127.0.0.1:'+server.address().port;
@@ -38,13 +38,22 @@ const record={类别:'地点',对象ID:'harbor',标题:'潮镜',内容:'庭中�
   await button('确认保存这项档案').click();await page.waitForFunction(()=>!!window.messages[1].data.stat_data.叙事.见闻.harbor_mirror);
   assert.equal(await page.evaluate(()=>window.messages[1].data.stat_data._时空.起源时刻秒),0);assert.equal(await page.evaluate(()=>window.writes),1);
   assert(await page.evaluate(()=>window.messages[1].data.embers_local_archive.changes.some(c=>c.path.join('/')==='叙事/见闻/harbor_mirror')));
-  await button('人物').click();assert(!await page.locator('.characters').getByText('灰狼',{exact:true}).count());assert.equal(await page.locator('.characters').getByText('过路客',{exact:true}).count(),1);
-  await page.locator('.characters summary').click();await button('移除档案').click();await button('取消').click();assert.equal(await page.evaluate(()=>window.writes),1);
+  await button('同伴').click();assert(!await page.locator('.characters').getByText('灰狼',{exact:true}).count());assert.equal(await page.locator('.characters').getByText('过路客',{exact:true}).count(),1);
+  await page.locator('.characters>details>summary').click();await button('移至附近的人').click();await page.waitForFunction(()=>window.messages[1].data.stat_data._人物分组.passerby==='附近的人');
+  await button('附近的人').click();const passerby=page.locator('.characters>details').filter({hasText:'过路客'});await passerby.locator(':scope>summary').click();
+  await passerby.locator('.stats-recovery>summary').click();await button('让 AI 补全属性').click();await page.getByLabel('候选角色属性').waitFor();assert.equal(await page.evaluate(()=>window.writes),2);
+  await button('确认保存角色属性').click();await page.waitForFunction(()=>window.messages[1].data.stat_data._实体.passerby?.生命.当前===121);
+  assert((await passerby.locator('.person-metrics').first().innerText()).includes('121 / 160'));
+  assert(await page.evaluate(()=>window.messages[1].data.embers_local_archive.changes.some(c=>c.path.join('/')==='叙事/人物档案/passerby')));
+  for(const width of [1000,390,320]){await page.setViewportSize({width,height:1000});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:path.join(out,'roster-stats-'+width+'.png'),fullPage:true});}
+  await passerby.getByRole('button',{name:'加入同伴',exact:true}).click();await page.waitForFunction(()=>window.messages[1].data.stat_data._人物分组.passerby==='同伴');
+  await button('同伴').click();await page.locator('.characters>details>summary').click();await button('移除档案').click();await button('取消').click();assert.equal(await page.evaluate(()=>window.writes),4);
   await button('移除档案').click();await button('确认移除').click();await page.waitForFunction(()=>window.messages[1].data.stat_data._档案整理['character:passerby']);
   assert.equal(await page.locator('.characters').getByText('过路客',{exact:true}).count(),0);
   await button('整理').click();await page.getByLabel('档案范围').selectOption('已移除');await page.locator('.archive-manager summary').click();await button('恢复档案').click();await button('确认恢复').click();await page.waitForFunction(()=>window.messages[1].data.stat_data._档案整理['character:passerby']===false);
-  await button('生物').click();await page.locator('.characters summary').filter({hasText:'灰狼'}).click();await button('编辑实体分类').click();await page.getByLabel('实体名称',{exact:true}).fill('林地来客');await page.getByLabel('类别',{exact:true}).selectOption('人物');await button('保存实体分类').click();await page.waitForFunction(()=>window.messages[1].data.stat_data._实体.wolf.类别==='人物');
-  await button('人物').click();assert.equal(await page.locator('.characters').getByText('林地来客',{exact:true}).count(),1);
+  await button('附近的人').click();await page.locator('.characters>details>summary').filter({hasText:'灰狼'}).click();await button('编辑名称与关联').click();await page.getByLabel('实体名称',{exact:true}).fill('林地来客');await page.getByLabel('类别',{exact:true}).selectOption('人物');await button('保存实体分类').click();await page.waitForFunction(()=>window.messages[1].data.stat_data._实体.wolf.类别==='人物');
+  assert.equal(await page.locator('.characters').getByText('林地来客',{exact:true}).count(),1);
+  await button('加入同伴').click();await page.waitForFunction(()=>window.messages[1].data.stat_data._人物分组.wolf==='同伴');await button('同伴').click();assert.equal(await page.locator('.characters').getByText('林地来客',{exact:true}).count(),1);
   // Cancel, stale preview, and a chat switch must not write.
   await open();await button('前往补全档案').click();await button('见闻 · harbor_mirror').click();await page.evaluate(()=>window.pending=true);await button('让 AI 补全这一项').click();await button('停止补全').click();await page.evaluate(()=>window.resolveGenerate());assert.equal(await page.locator('.missing-archives article').count(),0);assert.equal(await page.evaluate(()=>window.writes),0);
   await page.evaluate(()=>window.pending=false);await button('让 AI 补全这一项').click();await page.locator('.missing-archives article').waitFor();await page.evaluate(()=>window.messages[1].data.stat_data.叙事.天气='雨');await button('确认保存这项档案').click();assert.equal(await page.evaluate(()=>window.writes),0);
@@ -54,6 +63,6 @@ const record={类别:'地点',对象ID:'harbor',标题:'潮镜',内容:'庭中�
   await page.locator('.dossier').waitFor();assert.match(await page.locator('.dossier').innerText(),/潮镜/);
   await page.evaluate(()=>window.messages[1].data.stat_data._档案整理['note:harbor_mirror']=true);
   await page.locator('.card-pending').getByText('资料已移除',{exact:true}).waitFor();
-  assert.deepEqual(errors,[]);console.log('Archive UI: missing reference repair/preview/cancel/stale/chat pin, people-creature separation, remove/restore/classification, 1000/390/320 passed.');
+  assert.deepEqual(errors,[]);console.log('Archive UI: missing reference repair/preview/cancel/stale/chat pin, companion-nearby transfers, per-character stat generation/preview/save, remove/restore/classification, 1000/390/320 passed.');
  }finally{if(browser)await browser.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);process.exitCode=1;});

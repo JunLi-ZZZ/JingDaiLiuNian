@@ -136,7 +136,7 @@ $(async () => {
               // 同一次接口写入正文中的补丁与楼层变量，避免日后重解析再取到旧命令。
               await setChatMessages([{message_id:messageId,message,data:{...original.data,...data}}],{refresh:'none'});
               renderedSelection=selection();
-            } else if (['supplement','remove','restore','classify','character'].includes(request.kind)) {
+            } else if (['supplement','remove','restore','classify','character','character-stats','roster'].includes(request.kind)) {
               const original=getChatMessages(messageId)[0];
               const swipe=getChatMessages(messageId,{include_swipes:true})[0]?.swipe_id ?? 0;
               const receipt=turnReceipt(messageId,swipe,original.message);

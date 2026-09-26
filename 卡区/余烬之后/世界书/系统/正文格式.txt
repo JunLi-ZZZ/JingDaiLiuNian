@@ -24,7 +24,7 @@
 
 ID生成规则:
   - 其他能力沿用其登记时的abilityId。
-  - 数值实体沿用register的entityId，人物档案通过实体ID关联同一个体。
+  - 人物首次建档填写属性，由脚本建立同ID数值实体；实体ID可关联已登记个体。独立数值对象沿用register的entityId。
   - 人物档案ID由作者指定稳定ID，主角固定为player。
 
 主角卡片引用:

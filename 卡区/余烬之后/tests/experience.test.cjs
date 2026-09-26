@@ -147,7 +147,7 @@ test('正文卡片读同楼可见档案，隐藏人物资料保持不可见',()=
  const s=electric().stat_data;
  const player=resolveDossierCard(s,'character','player');
  assert.equal(player.title,s._开局.档案.姓名);
- assert.deepEqual(Array.from(player.metrics,metric=>metric.label),['生命','能量','攻击','防御']);
+ assert.deepEqual(Array.from(player.metrics,metric=>metric.label),['生命','能量','攻击','防御','命中','闪避','暴击','暴击倍率']);
  assert.equal(player.metrics[0].value,`${s._实体.player.生命.当前} / ${s._实体.player.生命.上限}`);
  assert.equal(resolveDossierCard(s,'ability','adapt-player-electric').grade,'罕世');
  assert.throws(()=>resolveDossierCard(s,'entity','hazard-test-0'),/尚未/);
