@@ -1048,6 +1048,9 @@ function sendCustom() {
   width: 100%;
   max-width: 360px;
   margin: 0 auto;
+  position: relative;
+  z-index: 2;
+  isolation: isolate;
 }
 .tools-tabs {
   display: flex;

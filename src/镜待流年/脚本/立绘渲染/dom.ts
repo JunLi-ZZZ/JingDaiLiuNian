@@ -9,6 +9,13 @@ function anchor(d: Document, id: string) {
 }
 
 function collectMarkers(d: Document, root: HTMLElement) {
+  // Some Tavern markdown themes wrap a standalone marker in inline code.
+  root.querySelectorAll<HTMLElement>('code').forEach(node => {
+    if (node.closest('pre') || node.children.length) return;
+    TEXT_MARKER.lastIndex = 0;
+    const match = TEXT_MARKER.exec(node.textContent?.trim() || '');
+    if (match && match[0] === node.textContent?.trim()) node.replaceWith(anchor(d, match[1] || match[2]));
+  });
   // Unknown HTML tags can contain the rest of the message. Move their children, never reparse them.
   root.querySelectorAll<HTMLElement>('portrait[id]').forEach(node => {
     if (node.closest(EXCLUDED)) return;
@@ -40,7 +47,7 @@ function validUrl(value: string): boolean {
 
 export function renderPortraits(d: Document, items: Portrait[], enabled: boolean) {
   const catalog = new Map(items.filter(item => validUrl(item.url)).map(item => [item.id, item]));
-  d.querySelectorAll<HTMLElement>('.mes_text, .jdnl-portrait-source').forEach(root => {
+  d.querySelectorAll<HTMLElement>('.mes_text, .mes-text, .jdnl-portrait-source').forEach(root => {
     collectMarkers(d, root);
     root.querySelectorAll<HTMLElement>('.jdnl-portrait-marker').forEach(marker => {
       const next = marker.nextSibling as HTMLElement | null;

@@ -13,8 +13,11 @@
           {{ r18Mode ? '🔞' : '🔒' }} R18
         </button><button class="gear-btn phone-btn" :class="{ active: phoneEnabled }" @click="togglePhone()">
           {{ phoneEnabled ? '📱 手机' : '📵 手机' }}
+        </button><button class="gear-btn" :class="{ active: portraitOpen }" @click="portraitOpen = !portraitOpen">
+          <i class="fa-solid fa-images" aria-hidden="true"></i> 立绘
         </button>
       </div>
+      <PortraitPanel v-if="portraitOpen" class="status-portrait-panel" />
       <div v-if="showThemes" class="theme-picker">
         <button
           v-for="t in themes"
@@ -418,6 +421,7 @@ import { useDataStore } from './store';
 import MirrorPanel from '../shared/MirrorPanel.vue';
 import BestiaryPanel from '../shared/BestiaryPanel.vue';
 import PhonePanel from '../shared/PhonePanel.vue';
+import PortraitPanel from '../shared/PortraitPanel.vue';
 
 const store = useDataStore();
 const data = computed(() => store.data);
@@ -430,6 +434,7 @@ const showItems = ref(false);
 const showRelations = ref(false);
 const showChars = ref(false);
 const showThemes = ref(false);
+const portraitOpen = ref(false);
 const theme = ref((typeof localStorage !== 'undefined' && localStorage.getItem('jdnl_theme')) || 'cream');
 watch(
   theme,
@@ -977,10 +982,12 @@ function getCharRelations(char: NearbyChar): [string, string][] {
 .settings-bar {
   display: flex;
   justify-content: flex-end;
+  flex-wrap: wrap;
   padding: 4px 12px;
   background: var(--t-surface);
   border-bottom: 1px solid var(--t-border);
 }
+.status-portrait-panel { position: relative; z-index: 1; margin: 8px 10px; }
 .gear-btn {
   background: none;
   border: none;

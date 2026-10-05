@@ -10,9 +10,10 @@
         </div>
         <div class="library-tabs" role="tablist" aria-label="图库来源">
           <button role="tab" :aria-selected="view === 'local'" :class="{ active: view === 'local' }" @click="view = 'local'"><i class="fa-solid fa-images" aria-hidden="true"></i> 本地图库</button>
-          <button role="tab" :aria-selected="view === 'cloud'" :class="{ active: view === 'cloud' }" @click="openWorkshop"><i class="fa-solid fa-cloud" aria-hidden="true"></i> 云端工坊</button>
+          <button role="tab" :aria-selected="view === 'cloud'" :class="{ active: view === 'cloud' }" :disabled="!ready" @click="openWorkshop"><i class="fa-solid fa-cloud" aria-hidden="true"></i> 云端工坊</button>
         </div>
-        <template v-if="view === 'local'">
+        <div v-if="!ready" class="empty-hint" role="status">{{ message || '正在读取本地图库…' }}</div>
+        <template v-else-if="view === 'local'">
         <div class="group-row">
           <label>当前组</label>
           <select v-model="activeGroupId">
@@ -86,20 +87,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { parsePortraitGroup, portraitUrl, WORKSHOP_URL, workshopRequest } from './portrait-workshop';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { parsePortraitGroup, portablePortraitGroup, portraitUrl, WORKSHOP_URL, workshopRequest } from './portrait-workshop';
 import type { PortraitGroup, WorkshopGroup } from './portrait-workshop';
+import { loadPortraitGroups, portraitSettings, savePortraitGroups, PORTRAIT_ACTIVE_GROUP, PORTRAIT_ENABLED, PORTRAIT_REVISION } from './portrait-storage';
 
-const STORAGE = 'jdnl_portrait_groups_v1';
-const LEGACY_STORAGE = 'jdnl_portrait_library_v1';
-const ENABLED = 'jdnl_portrait_enabled_v1';
 const DEFAULT_GROUP = 'default';
-const groups = ref<PortraitGroup[]>(loadGroups());
-const activeGroupId = ref(localStorage.getItem('jdnl_portrait_active_group_v1') || DEFAULT_GROUP);
+const groups = ref<PortraitGroup[]>([{ id: DEFAULT_GROUP, name: '默认组', items: [] }]);
+const activeGroupId = ref(portraitSettings().getItem(PORTRAIT_ACTIVE_GROUP) || DEFAULT_GROUP);
 const activeGroup = computed(() => groups.value.find(group => group.id === activeGroupId.value) || groups.value[0]);
 const activeItems = computed(() => activeGroup.value?.items || []);
 // 有登记图片时默认展示；用户可以关闭而不删除图库。
-const enabled = ref(localStorage.getItem(ENABLED) !== '0');
+const enabled = ref(portraitSettings().getItem(PORTRAIT_ENABLED) !== '0');
 const form = ref({ name: '', tag: '', url: '', caption: '' });
 const message = ref('');
 const enlarged = ref<string | null>(null);
@@ -112,6 +111,22 @@ const cloudLoaded = ref(false);
 const cloudError = ref('');
 const cloudOperation = ref('');
 const cloudPreview = ref<PortraitGroup | null>(null);
+const ready = ref(false);
+let busySave = false;
+async function reload() {
+  if (busySave) return;
+  try { groups.value = await loadPortraitGroups(); ready.value = true; }
+  catch (error) { ready.value = false; message.value = `读取图库失败：${failure(error)}`; }
+}
+const changed = (event: StorageEvent) => { if (event.key === PORTRAIT_REVISION) void reload(); };
+onMounted(() => { void reload(); window.addEventListener('storage', changed); window.addEventListener('focus', reload); });
+onUnmounted(() => { window.removeEventListener('storage', changed); window.removeEventListener('focus', reload); });
+async function commit(next: PortraitGroup[]) {
+  if (busySave) throw new Error('图库正在保存，请稍后重试');
+  busySave = true;
+  try { await savePortraitGroups(next); groups.value = next; }
+  finally { busySave = false; }
+}
 function failure(error: unknown) { return error instanceof Error ? error.message : '操作失败'; }
 async function openWorkshop() {
   view.value = 'cloud'; message.value = '';
@@ -149,18 +164,16 @@ async function previewCloud(group: WorkshopGroup) {
   catch (error) { cloudError.value = failure(error); }
   finally { cloudOperation.value = ''; }
 }
-function replaceGroup(targetId: string, incoming: PortraitGroup) {
+async function replaceGroup(targetId: string, incoming: PortraitGroup) {
   const next = groups.value.map(group => group.id === targetId ? { ...incoming, id: targetId } : group);
   if (!next.some(group => group.id === targetId)) throw new Error('待替换的本地组已不存在');
-  // Persist before changing the active library, so a quota error preserves the original group.
-  localStorage.setItem(STORAGE, JSON.stringify(next));
-  groups.value = next; message.value = `已整体替换当前组：${incoming.name}`;
+  await commit(next); message.value = `已整体替换当前组：${incoming.name}`;
 }
 async function useCloud(group: WorkshopGroup) {
   const target = activeGroup.value;
   if (!target || cloudOperation.value || !confirm(`用“${group.name}”整体替换本地“${target.name}”？原组内立绘将被替换。`)) return;
   cloudOperation.value = '正在替换图库…'; cloudError.value = '';
-  try { replaceGroup(target.id, await getCloud(group)); view.value = 'local'; }
+  try { await replaceGroup(target.id, await portablePortraitGroup(await getCloud(group))); view.value = 'local'; }
   catch (error) { cloudError.value = failure(error); }
   finally { cloudOperation.value = ''; }
 }
@@ -174,63 +187,73 @@ function downloadGroup(group: PortraitGroup) {
 async function downloadCloud(group: WorkshopGroup) {
   if (cloudOperation.value) return;
   cloudOperation.value = '正在下载组包…'; cloudError.value = '';
-  try { downloadGroup(await getCloud(group)); message.value = `已下载组包：${group.name}`; }
+  try { downloadGroup(await portablePortraitGroup(await getCloud(group))); message.value = `已下载组包：${group.name}`; }
   catch (error) { cloudError.value = failure(error); }
   finally { cloudOperation.value = ''; }
 }
-function loadGroups(): PortraitGroup[] {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE) || 'null');
-    if (Array.isArray(saved) && saved.every(x => x && x.id && Array.isArray(x.items))) return saved;
-    const legacy = JSON.parse(localStorage.getItem(LEGACY_STORAGE) || '[]');
-    return [{ id: DEFAULT_GROUP, name: '默认组', items: Array.isArray(legacy) ? legacy : [] }];
-  } catch { return [{ id: DEFAULT_GROUP, name: '默认组', items: [] }]; }
-}
-watch(groups, v => localStorage.setItem(STORAGE, JSON.stringify(v)), { deep: true });
-watch(activeGroupId, v => localStorage.setItem('jdnl_portrait_active_group_v1', v));
-watch(enabled, v => localStorage.setItem(ENABLED, v ? '1' : '0'));
+watch(activeGroupId, v => portraitSettings().setItem(PORTRAIT_ACTIVE_GROUP, v));
+watch(enabled, v => portraitSettings().setItem(PORTRAIT_ENABLED, v ? '1' : '0'));
 function safeId(value: string) { return value.normalize('NFKC').replace(/[^\p{L}\p{N}_-]+/gu, '-').replace(/^-+|-+$/g, '').slice(0, 80) || `portrait-${Date.now()}`; }
 function slug(name: string, tag: string) { return safeId(`${name.trim()}-${tag.trim()}`); }
-function add() {
+async function add() {
   if (!canAdd.value) return;
   try { portraitUrl(form.value.url.trim()); } catch (error) { message.value = failure(error); return; }
   const base = slug(form.value.name, form.value.tag);
   let id = base, n = 2;
   while (activeItems.value.some(x => x.id === id)) id = `${base}-${n++}`;
-  activeGroup.value.items.push({ id, ...form.value, name: form.value.name.trim(), tag: form.value.tag.trim(), url: form.value.url.trim(), caption: form.value.caption.trim(), open: true });
-  form.value = { name: '', tag: '', url: '', caption: '' }; message.value = '已加入图库';
+  const item = { id, ...form.value, name: form.value.name.trim(), tag: form.value.tag.trim(), url: form.value.url.trim(), caption: form.value.caption.trim(), open: true };
+  try {
+    await commit(groups.value.map(group => group.id === activeGroupId.value ? { ...group, items: [...group.items, item] } : group));
+    form.value = { name: '', tag: '', url: '', caption: '' }; message.value = '已加入图库';
+  } catch (error) { message.value = `保存失败：${failure(error)}`; }
 }
 function readFile(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]; if (!file) return;
   const reader = new FileReader(); reader.onload = () => { form.value.url = String(reader.result || ''); }; reader.readAsDataURL(file);
 }
-function remove(id: string) { if (activeGroup.value) activeGroup.value.items = activeGroup.value.items.filter(x => x.id !== id); }
-function clearLibrary() { if (confirm('清空当前立绘组？')) activeGroup.value.items = []; }
-function createGroup() {
+async function remove(id: string) {
+  try { await commit(groups.value.map(group => group.id === activeGroupId.value ? { ...group, items: group.items.filter(x => x.id !== id) } : group)); }
+  catch (error) { message.value = `删除失败：${failure(error)}`; }
+}
+async function clearLibrary() { if (confirm('清空当前立绘组？')) {
+  try { await commit(groups.value.map(group => group.id === activeGroupId.value ? { ...group, items: [] } : group)); }
+  catch (error) { message.value = `清空失败：${failure(error)}`; }
+} }
+async function createGroup() {
   const name = prompt('新组名称'); if (!name?.trim()) return;
-  const id = `group-${Date.now()}`; groups.value.push({ id, name: name.trim(), items: [] }); activeGroupId.value = id;
+  const id = `group-${Date.now()}`;
+  try { await commit([...groups.value, { id, name: name.trim(), items: [] }]); activeGroupId.value = id; }
+  catch (error) { message.value = `新建失败：${failure(error)}`; }
 }
-function renameGroup() {
+async function renameGroup() {
   if (!activeGroup.value || activeGroupId.value === DEFAULT_GROUP) return;
-  const name = prompt('组名称', activeGroup.value.name); if (name?.trim()) activeGroup.value.name = name.trim();
+  const name = prompt('组名称', activeGroup.value.name); if (!name?.trim()) return;
+  try { await commit(groups.value.map(group => group.id === activeGroupId.value ? { ...group, name: name.trim() } : group)); }
+  catch (error) { message.value = `改名失败：${failure(error)}`; }
 }
-function deleteGroup() {
+async function deleteGroup() {
   if (activeGroupId.value === DEFAULT_GROUP || !confirm(`删除组“${activeGroup.value?.name}”？`)) return;
-  groups.value = groups.value.filter(group => group.id !== activeGroupId.value); activeGroupId.value = DEFAULT_GROUP;
+  try { await commit(groups.value.filter(group => group.id !== activeGroupId.value)); activeGroupId.value = DEFAULT_GROUP; }
+  catch (error) { message.value = `删除失败：${failure(error)}`; }
 }
-function exportLibrary() {
+async function exportLibrary() {
   const group = activeGroup.value; if (!group) return;
-  downloadGroup(group);
+  try { downloadGroup(await portablePortraitGroup(group)); message.value = `已导出组包：${group.name}`; }
+  catch (error) { message.value = `导出失败：${failure(error)}`; }
 }
-function exportSubmission() {
+async function exportSubmission() {
   const group = activeGroup.value;
   if (!group?.items.length) return;
-  if (group.items.length > 24 || group.items.some(item => !/^data:image\/(?:jpeg|png|webp|gif|avif);base64,/.test(item.url))) {
-    message.value = '投稿需使用本地图片，每组最多 24 张；图片直链组包仍可通过本地图库导出分享';
-    return;
+  if (group.items.length > 24) { message.value = '投稿组包每组最多 24 张'; return; }
+  try {
+    const portable = await portablePortraitGroup(group);
+    const sizes = portable.items.map(item => Math.floor((item.url.split(',')[1]?.length || 0) * 3 / 4));
+    if (sizes.some(size => size > 2 * 1024 * 1024) || sizes.reduce((sum, size) => sum + size, 0) > 12 * 1024 * 1024) {
+      throw new Error('投稿限制：单张不超过 2 MB，整组图片不超过 12 MB');
+    }
+    downloadGroup(portable); message.value = `已导出投稿组包：${group.name}`;
   }
-  downloadGroup(group);
-  message.value = `已导出投稿组包：${group.name}`;
+  catch (error) { message.value = `投稿组包导出失败：${failure(error)}`; }
 }
 async function importLibrary(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]; if (!file) return;
@@ -238,15 +261,17 @@ async function importLibrary(e: Event) {
   try {
     if (!target || file.size > 18 * 1024 * 1024) throw new Error('组包过大或当前组不存在');
     const incoming = parsePortraitGroup(JSON.parse(await file.text()));
-    if (confirm(`用“${incoming.name}”整体替换“${target.name}”？`)) replaceGroup(target.id, incoming);
+    if (confirm(`用“${incoming.name}”整体替换“${target.name}”？`)) await replaceGroup(target.id, await portablePortraitGroup(incoming));
   } catch (error) { message.value = `导入失败：${failure(error)}`; }
   finally { (e.target as HTMLInputElement).value = ''; }
 }
 </script>
 
 <style scoped>
-.portrait-panel { --m-accent: var(--c-accent, #c9a96e); --m-text: #4a4035; --m-muted: #8a7e6e; margin-bottom: 10px; }
-.mirror-surface { max-height: none; overflow: visible; }
+.portrait-panel { --m-accent: var(--c-accent, #c9a96e); --m-text: #4a4035; --m-muted: #72695f; margin-bottom: 10px; color: var(--m-text); }
+.mirror-frame { border: 1px solid rgba(139,115,85,.3); border-radius: 8px; background: #f4ede1; box-shadow: 0 4px 18px rgba(70,49,27,.12); }
+.frame-ring, .frame-inset { display: none; }
+.mirror-surface { position: relative; padding: 14px 12px; max-height: none; overflow: visible; background: #f4ede1; border-radius: 8px; }
 .panel-title { background: linear-gradient(135deg, #6b4a28, #8b5a30 40%, #6b4a28 60%, #8b5a30); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 .panel-note { margin: 0 0 10px; color: var(--m-muted); font-size: 12px; line-height: 1.5; }
 .portrait-switch-row { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; color: var(--m-muted); font-size: 11px; }

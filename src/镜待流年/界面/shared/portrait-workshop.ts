@@ -37,6 +37,27 @@ export function parsePortraitGroup(payload: unknown): PortraitGroup {
   return { id: typeof incoming.id === 'string' ? incoming.id : '', name, items };
 }
 
+export async function portablePortraitGroup(group: PortraitGroup): Promise<PortraitGroup> {
+  const items: Portrait[] = [];
+  for (const item of group.items) {
+    if (item.url.startsWith('data:')) { items.push(item); continue; }
+    let response: Response;
+    try { response = await fetch(portraitUrl(item.url), { mode: 'cors', credentials: 'omit', referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(30000) }); }
+    catch { throw new Error(`“${item.name} / ${item.tag}”无法下载图片；请检查直链、网络或跨域限制`); }
+    if (!response.ok) throw new Error(`“${item.name} / ${item.tag}”的图片已失效（${response.status}）`);
+    const type = response.headers.get('content-type')?.split(';')[0]?.trim();
+    if (!type || !['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/avif'].includes(type)) throw new Error(`“${item.name} / ${item.tag}”不是受支持的图片`);
+    const blob = await response.blob();
+    if (blob.size > 8 * 1024 * 1024) throw new Error(`“${item.name} / ${item.tag}”超过单张 8 MB`);
+    const url = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader(); reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error('图片读取失败')); reader.readAsDataURL(blob);
+    });
+    items.push({ ...item, url: portraitUrl(url) });
+  }
+  return { ...group, items };
+}
+
 export async function workshopRequest(path: string): Promise<unknown> {
   const response = await fetch(WORKSHOP_URL + path, {
     signal: AbortSignal.timeout(20000), credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store',
