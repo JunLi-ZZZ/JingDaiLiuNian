@@ -127,7 +127,10 @@ async function commit(next: PortraitGroup[]) {
   try { await savePortraitGroups(next); groups.value = next; }
   finally { busySave = false; }
 }
-function failure(error: unknown) { return error instanceof Error ? error.message : '操作失败'; }
+function failure(error: unknown) {
+  const message = error && typeof error === 'object' && 'message' in error ? error.message : null;
+  return typeof message === 'string' && message ? message : '操作失败';
+}
 async function openWorkshop() {
   view.value = 'cloud'; message.value = '';
   if (!cloudLoaded.value && !cloudBusy.value) await loadWorkshop(false);

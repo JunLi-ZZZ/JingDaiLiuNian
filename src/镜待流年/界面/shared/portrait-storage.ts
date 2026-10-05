@@ -39,7 +39,10 @@ export async function savePortraitGroups(groups: PortraitGroup[]): Promise<void>
   try {
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction('library', 'readwrite');
-      tx.objectStore('library').put(groups.map(group => ({ ...group, items: group.items.map(({ open, ...item }) => item) })), 'groups');
+      tx.objectStore('library').put(Array.from(groups, group => ({
+        ...group,
+        items: Array.from(group.items, ({ open, ...item }) => item),
+      })), 'groups');
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error || new Error('保存图库失败'));
       tx.onabort = () => reject(tx.error || new Error('保存图库失败'));

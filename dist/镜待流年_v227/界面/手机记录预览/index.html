@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>镜待流年 - 手机记录预览</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: #202226; color: #f2f3f5; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; }
+    header { padding: 22px max(18px, calc((100vw - 1180px) / 2)); border-bottom: 1px solid rgba(255,255,255,.09); background: #181a1d; }
+    h1 { margin: 0; font-size: 18px; letter-spacing: 0; }
+    p { margin: 6px 0 0; color: #aeb1b8; font-size: 13px; }
+    main { width: min(1180px, 100%); margin: 0 auto; padding: 24px 18px 42px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; align-items: start; }
+    section { min-width: 0; }
+    h2 { margin: 0 0 10px; font-size: 13px; color: #c8cbd1; font-weight: 650; letter-spacing: 0; }
+    @media (max-width: 900px) { main { grid-template-columns: 1fr; max-width: 430px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>手机记录界面</h1>
+    <p>直播弹幕、通知中心与热榜三种实际渲染状态</p>
+  </header>
+  <main>
+    <section>
+      <h2>直播弹幕</h2>
+      <div class="pm-record-card" style="display:block;max-width:390px;margin:0 auto;border-radius:28px;overflow:hidden;background:#090a0d;box-shadow:0 12px 34px rgba(0,0,0,.34),0 0 0 1px rgba(255,255,255,.12);font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif"><i class="phone-record-data" style="font-size:0;line-height:0;float:left;opacity:0">抖音直播间「晚风电台」|||直播弹幕|||2026年08月19日 22:47|||- 昵称: 月亮邮差｜文本: 主播今天唱得也太温柔了
+- 昵称: 盐汽水｜文本: 刚进来，前面发生什么了？
+- 主播: 阿遥｜文本: 下一首唱给刚刚点歌的朋友</i><div class="pm-record-screen" style="min-height:220px"></div></div>
+    </section>
+    <section>
+      <h2>系统与平台通知</h2>
+      <div class="pm-record-card" style="display:block;max-width:390px;margin:0 auto;border-radius:28px;overflow:hidden;background:#090a0d;box-shadow:0 12px 34px rgba(0,0,0,.34),0 0 0 1px rgba(255,255,255,.12);font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif"><i class="phone-record-data" style="font-size:0;line-height:0;float:left;opacity:0">手机通知中心|||平台推送|||2026年08月19日 22:49|||- 应用: 抖音｜文本: 你关注的阿遥正在直播
+- 系统: 相册｜文本: 新照片已保存到“最近项目”
+- 平台: 微信｜文本: 涂山素凝发来一条新消息</i><div class="pm-record-screen" style="min-height:220px"></div></div>
+    </section>
+    <section>
+      <h2>应用热榜</h2>
+      <div class="pm-record-card" style="display:block;max-width:390px;margin:0 auto;border-radius:28px;overflow:hidden;background:#090a0d;box-shadow:0 12px 34px rgba(0,0,0,.34),0 0 0 1px rgba(255,255,255,.12);font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif"><i class="phone-record-data" style="font-size:0;line-height:0;float:left;opacity:0">抖音|||热榜|||2026年08月19日 22:51|||- 平台: 823.6万｜文本: 今夜城市上空出现罕见流星雨
+- 平台: 701.2万｜文本: 古风舞台直拍引发全网翻跳
+- 平台: 566.8万｜文本: 深夜电台里的匿名点歌</i><div class="pm-record-screen" style="min-height:220px"></div></div>
+    </section>
+  </main>
+  <script>
+    window.$ = function (arg) {
+      if (typeof arg === 'function') arg();
+      return { on: function () {} };
+    };
+    window.tavern_events = new Proxy({}, { get: function (_, key) { return String(key); } });
+    window.eventOn = function () {};
+  </script>
+  <script type="module" src="/dist/镜待流年/脚本/手机渲染/index.js"></script>
+</body>
+</html>

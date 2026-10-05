@@ -56,6 +56,17 @@ async function main() {
     assert.equal(await page.locator('.jdnl-portrait').count(), 1);
     assert.equal(await page.locator('.mes_text p').count(), 3);
     assert.equal(await page.evaluate(() => window.promptText.includes('奥罗拉-日常')), true);
+    const reactiveSaved = await page.evaluate(async () => {
+      const wrappedItems = new Proxy([{ id: 'proxy', name: '代理项', tag: '日常', url: 'https://example.com/p.png' }], {
+        get(target, key, receiver) {
+          if (key === 'map') return callback => new Proxy(Array.prototype.map.call(target, callback), {});
+          return Reflect.get(target, key, receiver);
+        },
+      });
+      await window.portraitStorage.savePortraitGroups([{ id: 'default', name: '默认组', items: wrappedItems }]);
+      return (await window.portraitStorage.loadPortraitGroups())[0].items[0].id;
+    });
+    assert.equal(reactiveSaved, 'proxy');
     assert.deepEqual(errors, []);
     console.log('PASS: 1.6 MB IndexedDB round trip; portrait marker renders at paragraph; prompt uses current catalog');
   } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
