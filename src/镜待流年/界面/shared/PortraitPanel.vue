@@ -32,12 +32,15 @@
           <button class="btn-gen" :disabled="!canAdd" @click="add">加入图库</button>
         </div>
         <div class="portrait-toolbar">
-          <span>{{ activeItems.length }} 项 · 使用整组替换</span>
+          <span>{{ activeItems.length }} 项 · {{ categoryCount }} 类</span>
           <button class="small-btn" @click="exportLibrary">导出组包</button>
-          <label class="small-btn">导入组包<input type="file" accept="application/json" @change="importLibrary" /></label>
+          <button class="small-btn" :disabled="!!cloudOperation" @click="exportOffline">离线备份</button>
+          <label class="small-btn">合并组包<input type="file" accept="application/json" @change="importLibrary($event, 'merge')" /></label>
+          <label class="small-btn">替换本组<input type="file" accept="application/json" @change="importLibrary($event, 'replace')" /></label>
           <button class="small-btn danger" @click="clearLibrary">清空本组</button>
         </div>
-        <div v-if="!activeItems.length" class="empty-hint">当前组暂无立绘。导入组包会整体替换当前组。</div>
+        <div class="empty-hint">角色名与完整标签相同的图片归为一类，正文引用时从同类中随机选择并保存；下方登记 ID 可指定某张图片。</div>
+        <div v-if="!activeItems.length" class="empty-hint">当前组暂无立绘。</div>
         <div v-for="item in activeItems" :key="item.id" class="portrait-item">
           <button class="portrait-toggle" @click="item.open = !item.open">
             <span class="portrait-thumb" :style="{ backgroundImage: `url(${item.url})` }"></span>
@@ -46,7 +49,7 @@
           </button>
           <div v-if="item.open" class="portrait-detail">
             <img :src="item.url" :alt="item.caption || item.name" loading="lazy" title="点击放大" @click="enlarged = item.url" />
-            <div class="portrait-copy"><code>&lt;portrait id="{{ item.id }}"&gt;</code><span v-if="item.caption">{{ item.caption }}</span></div>
+            <div class="portrait-copy"><code>[[portrait:{{ item.id }}]]</code><span v-if="item.caption">{{ item.caption }}</span></div>
             <button class="small-btn danger" @click="remove(item.id)">删除</button>
           </div>
         </div>
@@ -56,21 +59,31 @@
             <button class="small-btn" :disabled="!activeItems.length" @click="exportSubmission"><i class="fa-solid fa-file-export" aria-hidden="true"></i> 导出投稿组包</button>
             <a class="small-btn" :href="WORKSHOP_URL + '/submit'" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> Discord 登录 / 我的投稿</a>
           </div>
-          <div class="workshop-bar"><span>已发布立绘组</span><button class="small-btn" :disabled="cloudBusy" @click="loadWorkshop(false)"><i class="fa-solid fa-rotate" aria-hidden="true"></i> 刷新</button></div>
+          <div class="workshop-bar"><span>已发布立绘组 · {{ cloudSort === 'hot' ? '最热' : '最新' }}{{ cloudQuery ? ` · “${cloudQuery}”` : '' }}</span><button class="small-btn" :disabled="cloudBusy" @click="loadWorkshop(false)"><i class="fa-solid fa-rotate" aria-hidden="true"></i> 刷新</button></div>
+          <form class="cloud-filter" @submit.prevent="applyWorkshopFilters">
+            <input v-model="cloudQueryInput" maxlength="100" placeholder="搜索组名、作者、角色或标签" aria-label="搜索云端立绘组" />
+            <button class="small-btn" type="submit" :disabled="cloudBusy"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> 搜索</button>
+            <div class="cloud-sort" role="tablist" aria-label="云端立绘组排序">
+              <button type="button" role="tab" :aria-selected="cloudSort === 'latest'" :class="{ active: cloudSort === 'latest' }" :disabled="cloudBusy" @click="changeWorkshopSort('latest')">最新</button>
+              <button type="button" role="tab" :aria-selected="cloudSort === 'hot'" :class="{ active: cloudSort === 'hot' }" :disabled="cloudBusy" @click="changeWorkshopSort('hot')">最热</button>
+            </div>
+          </form>
           <div v-if="cloudBusy" class="empty-hint" role="status">正在载入…</div>
           <div v-else-if="!cloudGroups.length && !cloudError" class="empty-hint">暂无已发布立绘组</div>
           <div v-if="cloudError" class="panel-error" role="alert">{{ cloudError }}</div>
           <article v-for="group in cloudGroups" :key="group.id" class="cloud-group">
             <div class="cloud-heading">
               <img v-if="group.cover_url" class="cloud-cover" :src="WORKSHOP_URL + group.cover_url" :alt="group.name" loading="lazy" referrerpolicy="no-referrer" />
-              <div class="cloud-meta"><b>{{ group.name }}</b><small>{{ group.author_name || '未署名' }} · {{ group.asset_count }} 张</small><p v-if="group.description">{{ group.description }}</p></div>
+              <div class="cloud-meta"><b>{{ group.name }}</b><small>{{ group.author_name || '未署名' }} · {{ group.asset_count }} 张 · 热度 {{ group.hot_score }}</small><p v-if="group.description">{{ group.description }}</p></div>
               <button class="small-btn" :disabled="!!cloudOperation" @click="previewCloud(group)"><i class="fa-solid fa-eye" aria-hidden="true"></i> 预览</button>
             </div>
             <div v-if="cloudPreview?.id === group.id" class="cloud-detail">
               <div class="cloud-pictures"><figure v-for="item in cloudPreview.items" :key="item.id"><img :src="item.url" :alt="item.caption || item.name" loading="lazy" referrerpolicy="no-referrer" @click="enlarged = item.url" /><figcaption>{{ item.name }} · {{ item.tag }}</figcaption></figure></div>
               <div class="cloud-actions">
+                <button class="small-btn" :disabled="!!cloudOperation" @click="mergeCloud(group)"><i class="fa-solid fa-layer-group" aria-hidden="true"></i> 合并到当前组</button>
                 <button class="btn-gen" :disabled="!!cloudOperation" @click="useCloud(group)"><i class="fa-solid fa-check" aria-hidden="true"></i> 替换当前组</button>
                 <button class="small-btn" :disabled="!!cloudOperation" @click="downloadCloud(group)"><i class="fa-solid fa-download" aria-hidden="true"></i> 下载组包</button>
+                <button class="small-btn" :disabled="!!cloudOperation" @click="downloadCloud(group, true)">离线备份</button>
               </div>
             </div>
           </article>
@@ -80,16 +93,18 @@
         <div v-if="message" class="panel-status" role="status">{{ message }}</div>
       </div>
     </div>
-    <div v-if="enlarged" class="portrait-lightbox" role="dialog" aria-label="立绘大图" @click="enlarged = null">
-      <img :src="enlarged" alt="立绘大图" />
-    </div>
+    <Teleport to="body">
+      <div v-if="enlarged" class="portrait-lightbox" role="dialog" aria-modal="true" aria-label="立绘大图" @click="enlarged = null">
+        <img :src="enlarged" alt="立绘大图" />
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { parsePortraitGroup, portablePortraitGroup, portraitUrl, WORKSHOP_URL, workshopRequest } from './portrait-workshop';
-import type { PortraitGroup, WorkshopGroup } from './portrait-workshop';
+import { mergePortraitItems, parsePortraitGroup, portablePortraitGroup, portraitUrl, WORKSHOP_URL, workshopRequest } from './portrait-workshop';
+import type { PortraitGroup, WorkshopGroup, WorkshopSort } from './portrait-workshop';
 import { loadPortraitGroups, portraitSettings, savePortraitGroups, PORTRAIT_ACTIVE_GROUP, PORTRAIT_ENABLED, PORTRAIT_REVISION } from './portrait-storage';
 
 const DEFAULT_GROUP = 'default';
@@ -97,6 +112,7 @@ const groups = ref<PortraitGroup[]>([{ id: DEFAULT_GROUP, name: '默认组', ite
 const activeGroupId = ref(portraitSettings().getItem(PORTRAIT_ACTIVE_GROUP) || DEFAULT_GROUP);
 const activeGroup = computed(() => groups.value.find(group => group.id === activeGroupId.value) || groups.value[0]);
 const activeItems = computed(() => activeGroup.value?.items || []);
+const categoryCount = computed(() => new Set(activeItems.value.map(item => JSON.stringify([item.name, item.tag]))).size);
 // 有登记图片时默认展示；用户可以关闭而不删除图库。
 const enabled = ref(portraitSettings().getItem(PORTRAIT_ENABLED) !== '0');
 const form = ref({ name: '', tag: '', url: '', caption: '' });
@@ -111,6 +127,9 @@ const cloudLoaded = ref(false);
 const cloudError = ref('');
 const cloudOperation = ref('');
 const cloudPreview = ref<PortraitGroup | null>(null);
+const cloudSort = ref<WorkshopSort>('latest');
+const cloudQuery = ref('');
+const cloudQueryInput = ref('');
 const ready = ref(false);
 let busySave = false;
 async function reload() {
@@ -135,14 +154,20 @@ async function openWorkshop() {
   view.value = 'cloud'; message.value = '';
   if (!cloudLoaded.value && !cloudBusy.value) await loadWorkshop(false);
 }
+function workshopPath(more: boolean) {
+  const params = new URLSearchParams({ limit: '20', sort: cloudSort.value });
+  if (cloudQuery.value) params.set('q', cloudQuery.value);
+  if (more && cloudCursor.value) params.set('cursor', cloudCursor.value);
+  return `/groups?${params.toString()}`;
+}
 async function loadWorkshop(more: boolean) {
   if (cloudBusy.value) return;
   cloudBusy.value = true; cloudError.value = '';
   try {
-    const data = await workshopRequest(`/groups?limit=20${more && cloudCursor.value ? `&cursor=${encodeURIComponent(cloudCursor.value)}` : ''}`) as { groups: WorkshopGroup[]; next_cursor: string | null };
+    const data = await workshopRequest(workshopPath(more)) as { groups: WorkshopGroup[]; next_cursor: string | null };
     if (!Array.isArray(data.groups)) throw new Error('工坊返回的目录无效');
-    const valid = data.groups.every(group => group && /^[a-zA-Z0-9_-]{1,80}$/.test(group.id) && typeof group.name === 'string' && (!group.cover_url || /^\/assets\/[a-zA-Z0-9_-]{1,80}$/.test(group.cover_url)));
-    if (!valid || (data.next_cursor !== null && !/^[a-zA-Z0-9_-]{1,80}$/.test(data.next_cursor))) throw new Error('工坊返回的目录无效');
+    const valid = data.groups.every(group => group && /^[a-zA-Z0-9_-]{1,80}$/.test(group.id) && typeof group.name === 'string' && (!group.cover_url || /^\/assets\/[a-zA-Z0-9_-]{1,80}$/.test(group.cover_url)) && Number.isFinite(group.hot_score));
+    if (!valid || (data.next_cursor !== null && !/^[A-Za-z0-9_-]{1,240}$/.test(data.next_cursor))) throw new Error('工坊返回的目录无效');
     const incoming = more ? [...cloudGroups.value, ...data.groups] : data.groups;
     cloudGroups.value = [...new Map(incoming.map(group => [group.id, group])).values()];
     cloudCursor.value = data.next_cursor; cloudLoaded.value = true;
@@ -150,8 +175,19 @@ async function loadWorkshop(more: boolean) {
   } catch (error) { cloudError.value = `${failure(error)}。请检查网络或代理后重试`; }
   finally { cloudBusy.value = false; }
 }
-async function getCloud(group: WorkshopGroup) {
-  const parsed = parsePortraitGroup(await workshopRequest(`/groups/${encodeURIComponent(group.id)}/export`));
+function applyWorkshopFilters() {
+  cloudQuery.value = cloudQueryInput.value.trim();
+  cloudGroups.value = []; cloudCursor.value = null; cloudLoaded.value = false; cloudPreview.value = null;
+  void loadWorkshop(false);
+}
+function changeWorkshopSort(sort: WorkshopSort) {
+  if (cloudSort.value === sort) return;
+  cloudSort.value = sort;
+  cloudGroups.value = []; cloudCursor.value = null; cloudLoaded.value = false; cloudPreview.value = null;
+  void loadWorkshop(false);
+}
+async function getCloud(group: WorkshopGroup, intent: 'preview' | 'download' | 'use' = 'preview') {
+  const parsed = parsePortraitGroup(await workshopRequest(`/groups/${encodeURIComponent(group.id)}/export?intent=${intent}`));
   if (parsed.id !== group.id || !parsed.items.length) throw new Error('工坊组包无效');
   for (const item of parsed.items) {
     const url = new URL(item.url);
@@ -172,11 +208,31 @@ async function replaceGroup(targetId: string, incoming: PortraitGroup) {
   if (!next.some(group => group.id === targetId)) throw new Error('待替换的本地组已不存在');
   await commit(next); message.value = `已整体替换当前组：${incoming.name}`;
 }
+async function mergeGroup(targetId: string, incoming: PortraitGroup) {
+  const target = groups.value.find(group => group.id === targetId);
+  if (!target) throw new Error('当前组已不存在');
+  const conflicts = incoming.items.filter(item => target.items.some(existing => existing.id === item.id));
+  if (conflicts.length && !confirm(`${conflicts.length} 项登记 ID 已存在。用导入的图片替换同 ID 项，其余图片追加到当前组？`)) return false;
+  await commit(groups.value.map(group => group.id === targetId
+    ? { ...group, items: mergePortraitItems(group.items, incoming.items) } : group));
+  message.value = `已合并 ${incoming.items.length} 项到“${target.name}”`;
+  return true;
+}
+async function mergeCloud(group: WorkshopGroup) {
+  const target = activeGroup.value;
+  if (!target || cloudOperation.value) return;
+  cloudOperation.value = '正在合并图库…'; cloudError.value = '';
+  try {
+    const incoming = await getCloud(group, 'use');
+    if (await mergeGroup(target.id, incoming)) view.value = 'local';
+  } catch (error) { cloudError.value = failure(error); }
+  finally { cloudOperation.value = ''; }
+}
 async function useCloud(group: WorkshopGroup) {
   const target = activeGroup.value;
   if (!target || cloudOperation.value || !confirm(`用“${group.name}”整体替换本地“${target.name}”？原组内立绘将被替换。`)) return;
   cloudOperation.value = '正在替换图库…'; cloudError.value = '';
-  try { await replaceGroup(target.id, await portablePortraitGroup(await getCloud(group))); view.value = 'local'; }
+  try { await replaceGroup(target.id, await getCloud(group, 'use')); view.value = 'local'; }
   catch (error) { cloudError.value = failure(error); }
   finally { cloudOperation.value = ''; }
 }
@@ -187,10 +243,14 @@ function downloadGroup(group: PortraitGroup) {
   a.download = `镜待流年-${group.name.replace(/[\\/:*?"<>|]/g, '-')}.json`; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
-async function downloadCloud(group: WorkshopGroup) {
+async function downloadCloud(group: WorkshopGroup, offline = false) {
   if (cloudOperation.value) return;
-  cloudOperation.value = '正在下载组包…'; cloudError.value = '';
-  try { downloadGroup(await portablePortraitGroup(await getCloud(group))); message.value = `已下载组包：${group.name}`; }
+  cloudOperation.value = offline ? '正在制作离线备份…' : '正在下载组包…'; cloudError.value = '';
+  try {
+    const incoming = await getCloud(group, 'download');
+    downloadGroup(offline ? await portablePortraitGroup(incoming) : incoming);
+    message.value = offline ? `已下载离线备份：${group.name}` : `已下载组包：${group.name}`;
+  }
   catch (error) { cloudError.value = failure(error); }
   finally { cloudOperation.value = ''; }
 }
@@ -241,30 +301,34 @@ async function deleteGroup() {
 }
 async function exportLibrary() {
   const group = activeGroup.value; if (!group) return;
-  try { downloadGroup(await portablePortraitGroup(group)); message.value = `已导出组包：${group.name}`; }
+  try { downloadGroup(group); message.value = `已导出组包：${group.name}`; }
   catch (error) { message.value = `导出失败：${failure(error)}`; }
+}
+async function exportOffline() {
+  const group = activeGroup.value; if (!group || cloudOperation.value) return;
+  cloudOperation.value = '正在制作离线备份…';
+  try { downloadGroup(await portablePortraitGroup(group)); message.value = `已导出离线备份：${group.name}`; }
+  catch (error) { message.value = `离线备份失败：${failure(error)}`; }
+  finally { cloudOperation.value = ''; }
 }
 async function exportSubmission() {
   const group = activeGroup.value;
   if (!group?.items.length) return;
-  if (group.items.length > 24) { message.value = '投稿组包每组最多 24 张'; return; }
   try {
     const portable = await portablePortraitGroup(group);
-    const sizes = portable.items.map(item => Math.floor((item.url.split(',')[1]?.length || 0) * 3 / 4));
-    if (sizes.some(size => size > 2 * 1024 * 1024) || sizes.reduce((sum, size) => sum + size, 0) > 12 * 1024 * 1024) {
-      throw new Error('投稿限制：单张不超过 2 MB，整组图片不超过 12 MB');
-    }
     downloadGroup(portable); message.value = `已导出投稿组包：${group.name}`;
   }
   catch (error) { message.value = `投稿组包导出失败：${failure(error)}`; }
 }
-async function importLibrary(e: Event) {
+async function importLibrary(e: Event, mode: 'merge' | 'replace') {
   const file = (e.target as HTMLInputElement).files?.[0]; if (!file) return;
   const target = activeGroup.value;
   try {
-    if (!target || file.size > 18 * 1024 * 1024) throw new Error('组包过大或当前组不存在');
+    if (!target) throw new Error('当前组不存在');
     const incoming = parsePortraitGroup(JSON.parse(await file.text()));
-    if (confirm(`用“${incoming.name}”整体替换“${target.name}”？`)) await replaceGroup(target.id, await portablePortraitGroup(incoming));
+    if (mode === 'replace') {
+      if (confirm(`用“${incoming.name}”整体替换“${target.name}”？`)) await replaceGroup(target.id, incoming);
+    } else await mergeGroup(target.id, incoming);
   } catch (error) { message.value = `导入失败：${failure(error)}`; }
   finally { (e.target as HTMLInputElement).value = ''; }
 }
@@ -297,6 +361,12 @@ async function importLibrary(e: Event) {
 .library-tabs button.active { color: #765531; border-bottom-color: #765531; }
 .workshop-bar, .cloud-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .workshop-bar > span { margin-right: auto; font-size: 12px; }
+.cloud-filter { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; margin: 10px 0 2px; }
+.cloud-filter input { flex: 1 1 180px; min-width: 0; padding: 8px 9px; border: 1px solid rgba(120,90,50,.22); border-radius: 4px; background: rgba(255,255,255,.54); color: var(--m-text); }
+.cloud-sort { display: inline-flex; border: 1px solid rgba(120,90,50,.25); border-radius: 4px; overflow: hidden; }
+.cloud-sort button { padding: 6px 10px; border: 0; border-right: 1px solid rgba(120,90,50,.18); background: rgba(255,255,255,.45); color: var(--m-muted); cursor: pointer; }
+.cloud-sort button:last-child { border-right: 0; }
+.cloud-sort button.active { background: rgba(227,236,215,.72); color: #60754d; }
 .workshop-account { margin-bottom: 12px; }
 .workshop-account a { text-decoration: none; color: inherit; }
 .cloud-group { padding: 14px 0; border-bottom: 1px solid rgba(120,90,50,.16); }
@@ -331,6 +401,6 @@ async function importLibrary(e: Event) {
 .portrait-detail img { max-width: 100%; max-height: 360px; border-radius: 5px; object-fit: contain; box-shadow: 0 4px 16px rgba(80,55,30,.18); cursor: zoom-in; }
 .portrait-copy { display: flex; flex-direction: column; gap: 4px; width: 100%; color: var(--m-muted); font-size: 11px; }
 .portrait-copy code { color: #795d3b; }
-.portrait-lightbox { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 20px; box-sizing: border-box; background: rgba(20,18,16,.88); cursor: zoom-out; }
-.portrait-lightbox img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 5px; box-shadow: 0 8px 40px rgba(0,0,0,.45); }
+:global(body > .portrait-lightbox) { position: fixed; inset: 0; z-index: 2147483647; display: grid; place-items: center; padding: 20px; box-sizing: border-box; background: rgba(20,18,16,.88); cursor: zoom-out; }
+:global(body > .portrait-lightbox img) { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 5px; box-shadow: 0 8px 40px rgba(0,0,0,.45); }
 </style>

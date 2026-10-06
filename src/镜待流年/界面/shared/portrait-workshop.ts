@@ -1,6 +1,10 @@
 export type Portrait = { id: string; name: string; tag: string; url: string; caption: string; open?: boolean };
 export type PortraitGroup = { id: string; name: string; items: Portrait[] };
-export type WorkshopGroup = { id: string; name: string; description: string; author_name: string; asset_count: number; cover_url: string | null };
+export type WorkshopSort = 'latest' | 'hot';
+export type WorkshopGroup = {
+  id: string; name: string; description: string; author_name: string; asset_count: number; cover_url: string | null;
+  published_at: string | null; download_count: number; use_count: number; hot_score: number;
+};
 export const WORKSHOP_URL = 'https://jingdai-workshop-api.zhongyinglei377.workers.dev';
 
 export function portraitUrl(value: unknown): string {
@@ -24,7 +28,7 @@ export function parsePortraitGroup(payload: unknown): PortraitGroup {
     return value.trim();
   };
   const name = field(incoming.name, 100);
-  if (!Array.isArray(incoming.items) || incoming.items.length > 500) throw new Error('立绘数量无效');
+  if (!Array.isArray(incoming.items) || incoming.items.length > 2000) throw new Error('立绘数量无效');
   const used = new Set<string>();
   const items = incoming.items.map((value: unknown): Portrait => {
     if (!value || typeof value !== 'object') throw new Error('立绘字段无效');
@@ -35,6 +39,17 @@ export function parsePortraitGroup(payload: unknown): PortraitGroup {
     return { id, name: field(item.name, 80), tag: field(item.tag, 120), caption: field(item.caption, 1000, true), url: portraitUrl(item.url), open: false };
   });
   return { id: typeof incoming.id === 'string' ? incoming.id : '', name, items };
+}
+
+export function mergePortraitItems(current: Portrait[], incoming: Portrait[]): Portrait[] {
+  const merged = [...current];
+  const positions = new Map(current.map((item, index) => [item.id, index]));
+  for (const item of incoming) {
+    const index = positions.get(item.id);
+    if (index === undefined) { positions.set(item.id, merged.length); merged.push(item); }
+    else merged[index] = item;
+  }
+  return merged;
 }
 
 export async function portablePortraitGroup(group: PortraitGroup): Promise<PortraitGroup> {
@@ -48,7 +63,7 @@ export async function portablePortraitGroup(group: PortraitGroup): Promise<Portr
     const type = response.headers.get('content-type')?.split(';')[0]?.trim();
     if (!type || !['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/avif'].includes(type)) throw new Error(`“${item.name} / ${item.tag}”不是受支持的图片`);
     const blob = await response.blob();
-    if (blob.size > 8 * 1024 * 1024) throw new Error(`“${item.name} / ${item.tag}”超过单张 8 MB`);
+    if (blob.size > 20 * 1024 * 1024) throw new Error(`“${item.name} / ${item.tag}”超过单张 20 MiB`);
     const url = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader(); reader.onload = () => resolve(String(reader.result));
       reader.onerror = () => reject(new Error('图片读取失败')); reader.readAsDataURL(blob);
