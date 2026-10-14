@@ -7,7 +7,7 @@ import {
   type LenticularEntry,
 } from '../../界面/shared/lenticular-catalog';
 
-const shells = [
+const shellTypes = [
   { category: 'item', card: '.it-card', data: '.it-data', inner: '.it-inner', body: '.it-bd', name: 0, grade: 1 },
   { category: 'bio', card: '.bio-card', data: '.bio-data', inner: '.bio-inner', body: '.bio-bd', name: 0, grade: 3 },
   {
@@ -20,6 +20,15 @@ const shells = [
     grade: 3,
   },
 ] as const;
+// 酒馆在消息 HTML 中为角色卡样式名添加 custom-，独立界面保留原名。
+const dossierSelector = (selector: string) => `:is(${selector}, .custom-${selector.slice(1)})`;
+const shells = shellTypes.map(shell => ({
+  ...shell,
+  card: dossierSelector(shell.card),
+  data: dossierSelector(shell.data),
+  inner: dossierSelector(shell.inner),
+  body: dossierSelector(shell.body),
+}));
 const MESSAGE_ROOT = '.mes_text, .mes-text';
 const MOUNT = '.jdnl-lenticular-mount';
 type Mount = { host: HTMLElement; app: App; props: { entry: LenticularEntry; grade: string }; body: Element };
