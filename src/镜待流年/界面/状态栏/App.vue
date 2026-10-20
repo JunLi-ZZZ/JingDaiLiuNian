@@ -15,8 +15,9 @@
           {{ phoneEnabled ? '📱 手机' : '📵 手机' }}
         </button><button class="gear-btn" :class="{ active: portraitOpen }" @click="portraitOpen = !portraitOpen">
           <i class="fa-solid fa-images" aria-hidden="true"></i> 立绘
-        </button><button type="button" class="gear-btn" :aria-expanded="lenticularOpen" :class="{ active: lenticularOpen }" @click="lenticularOpen = !lenticularOpen">◇ 光栅卡</button>
+        </button><button type="button" class="gear-btn" :aria-expanded="lenticularOpen" :class="{ active: lenticularOpen }" @click="lenticularOpen = !lenticularOpen">◇ 光栅卡</button><button type="button" class="gear-btn" :aria-expanded="characterWorkshopOpen" @click="characterWorkshopOpen = !characterWorkshopOpen">☁ 角色工坊</button>
       </div>
+      <CharacterWorkshopPanel v-if="characterWorkshopOpen" @close="characterWorkshopOpen = false" />
       <LenticularDirectory v-if="lenticularOpen" @close="lenticularOpen = false" />
       <PortraitPanel v-if="portraitOpen" class="status-portrait-panel" />
       <div v-if="showThemes" class="theme-picker">
@@ -149,7 +150,6 @@
                   <span v-else class="item-expand">{{ expandedItems[name] ? '▾' : '▸' }}</span>
                 </div>
                 <div v-if="expandedItems[name] && (item.描述 || (item.能力 && item.能力 !== '无'))" class="item-detail"><div v-if="item.描述"><span class="item-detail-label">描述</span>{{ item.描述 }}</div><div v-if="item.能力 && item.能力 !== '无'" style="padding-top:3px;margin-top:3px;border-top:1px solid var(--t-border)"><span class="item-detail-label">能力</span>{{ item.能力 }}</div></div>
-                <MotherMirrorCard v-if="name.includes('母镜') && mirrorOpen" :name="name" :item="item" />
                 <MirrorPanel v-if="name.includes('母镜')" v-show="mirrorOpen" @close="mirrorOpen = false" />
               </div>
                 </div>
@@ -425,8 +425,9 @@ import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { receiveCardNavigation } from '../shared/cardNavigation';
 import { useDataStore } from './store';
 import MirrorPanel from '../shared/MirrorPanel.vue';
-import MotherMirrorCard from '../shared/MotherMirrorCard.vue';
 import LenticularDirectory from '../shared/LenticularDirectory.vue';
+import CharacterWorkshopPanel from '../shared/CharacterWorkshopPanel.vue';
+const characterWorkshopOpen = ref(false);
 import BestiaryPanel from '../shared/BestiaryPanel.vue';
 import PhonePanel from '../shared/PhonePanel.vue';
 import PortraitPanel from '../shared/PortraitPanel.vue';

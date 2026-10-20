@@ -5,7 +5,8 @@ export type WorkshopGroup = {
   id: string; name: string; description: string; author_name: string; asset_count: number; cover_url: string | null;
   published_at: string | null; download_count: number; use_count: number; hot_score: number;
 };
-export const WORKSHOP_URL = 'https://jingdai-workshop-api.zhongyinglei377.workers.dev';
+declare const __JDNL_WORKSHOP_URL__: string | undefined;
+export const WORKSHOP_URL = typeof __JDNL_WORKSHOP_URL__ === 'string' ? __JDNL_WORKSHOP_URL__ : 'https://jingdai-workshop-api.zhongyinglei377.workers.dev';
 
 export function portraitUrl(value: unknown): string {
   if (typeof value !== 'string') throw new Error('图片地址无效');

@@ -1,23 +1,36 @@
 <template>
   <section class="jdnl-lenticular" :aria-label="`${entry.name}光栅卡`">
     <div class="lf-stage">
-      <article
+      <div
         ref="card"
-        class="lf-card"
-        :class="{ 'is-active': active, 'is-reduced': reducedMotion }"
+        class="lf-card-shell"
+        :class="{ 'is-back': back, 'is-active': active, 'is-reduced': reducedMotion, 'is-dragging': dragging }"
         :style="cardStyle"
         tabindex="0"
-        :aria-label="`${entry.name}，${grade}，${visibleState}`"
+        :aria-label="`${entry.name}，${grade}，${back ? '卡背' : visibleState}`"
         @pointerdown="beginPointer"
         @pointermove="followPointer"
         @pointerup="endPointer"
         @pointercancel="endPointer"
+        @lostpointercapture="endPointer"
         @pointerleave="leavePointer"
-        @keydown.left.prevent="showState('a')"
-        @keydown.right.prevent="showState('b')"
+        @keydown.left.prevent="turn(-6)"
+        @keydown.right.prevent="turn(6)"
         @keydown.home.prevent="showState('a')"
+        @keydown.f.prevent="toggleBack"
       >
-        <div class="lf-face">
+        <div
+          v-for="layer in edgeLayers"
+          :key="layer"
+          class="lf-edge-layer"
+          :style="{ transform: `translateZ(${layer * thickness / 2}px)` }"
+          aria-hidden="true"
+        ></div>
+        <div v-for="side in ['top', 'bottom', 'left', 'right']" :key="side" class="lf-edge-side" :class="`lf-edge-${side}`" aria-hidden="true"></div>
+        <article
+          class="lf-card lf-face lf-face-front"
+          :aria-hidden="back"
+        >
           <div class="lf-art" role="img" :aria-label="`${entry.name}：${visibleState}`">
             <div v-if="!loadedA && !loadedB" class="lf-placeholder">
               <span class="lf-placeholder-symbol" aria-hidden="true">◇</span><span>{{ entry.name }}</span
@@ -73,17 +86,43 @@
             ><span>{{ grade === '唯一' ? '举世无双 · 无同类' : grade }}</span
             ><span>{{ visibleState }}</span>
           </footer>
-        </div>
-      </article>
+        </article>
+        <article class="lf-card lf-face lf-face-back" :aria-hidden="!back">
+          <div class="lf-back-ornament lf-back-ornament-top">◇</div>
+          <svg class="lf-back-engraving" viewBox="0 0 400 600" aria-hidden="true">
+            <defs>
+              <radialGradient :id="engravingId"><stop stop-color="#a28a5540" /><stop offset="1" stop-color="#a28a5500" /></radialGradient>
+            </defs>
+            <circle cx="200" cy="259" r="158" :fill="`url(#${engravingId})`" stroke="none" />
+            <g class="lf-back-fine-lines" transform="translate(200 259)">
+              <ellipse v-for="n in 7" :key="n" :rx="67 + n * 7" :ry="112 - n * 5" :transform="`rotate(${n * 180 / 7})`" />
+              <circle r="129" /><circle r="136" />
+              <path v-for="n in 48" :key="`tick-${n}`" :d="`M 0 ${n % 4 === 0 ? -140 : -143} L 0 -147`" :transform="`rotate(${n * 7.5})`" />
+            </g>
+            <g class="lf-back-mirror">
+              <circle cx="200" cy="248" r="43" /><circle cx="200" cy="248" r="37" />
+              <path d="M 193 291 L 191 350 Q 200 365 209 350 L 207 291 M 200 224 L 200 272 M 176 248 L 224 248 M 186 234 L 214 262 M 186 262 L 214 234" />
+              <path d="M 200 146 L 205 157 L 200 168 L 195 157 Z M 200 401 L 205 412 L 200 423 L 195 412 Z" />
+            </g>
+            <path class="lf-back-fine-lines" d="M 61 92 H 151 M 249 92 H 339 M 61 507 H 151 M 249 507 H 339" />
+          </svg>
+          <div class="lf-back-center">
+            <strong>镜待流年</strong>
+            <span>{{ entry.name }} · {{ grade }}</span>
+            <small>{{ entry.edition }}</small>
+          </div>
+          <div class="lf-back-ornament lf-back-ornament-bottom">◇</div>
+        </article>
+      </div>
     </div>
     <div class="lf-controls" role="group" :aria-label="`${entry.name}卡面控制`">
-      <button type="button" :aria-pressed="mode === 'a'" @click="showState('a')">{{ entry.states[0] }}</button>
-      <button type="button" :aria-pressed="mode === 'b'" @click="showState('b')">{{ entry.states[1] }}</button>
+      <button type="button" :aria-pressed="!back && mode === 'a'" @click="showState('a')">{{ entry.states[0] }}</button>
+      <button type="button" :aria-pressed="!back && mode === 'b'" @click="showState('b')">{{ entry.states[1] }}</button>
       <button type="button" :aria-pressed="mode === 'auto'" :disabled="reducedMotion" @click="toggleAuto">
         {{ mode === 'auto' ? '暂停转动' : '自动赏卡' }}
       </button>
+      <button type="button" :aria-pressed="back" @click="toggleBack">{{ back ? '正面' : '背面' }}</button>
     </div>
-    <p class="lf-hint">转动卡面，细看镜光流转 <span aria-hidden="true">·</span> 左右方向键可切换</p>
     <p v-if="failedA || failedB" class="lf-status" role="status">
       {{ failedA && failedB ? '插画暂未载入，原资料仍可查看。' : '一幅插画暂未载入，已载入的卡面仍可查看。'
       }}<button type="button" @click="retryImages">重试插画</button>
@@ -91,7 +130,7 @@
   </section>
 </template>
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, useId, watch } from 'vue';
 import { LENTICULAR_ACCENTS, LENTICULAR_CATEGORIES, lenticularGrade, type LenticularEntry } from './lenticular-catalog';
 const props = withDefaults(
   defineProps<{
@@ -104,7 +143,15 @@ const props = withDefaults(
   { autoStart: false, grade: undefined, image: undefined, alternateImage: undefined },
 );
 const card = ref<HTMLElement>(),
-  pose = ref({ x: 0, y: 0 });
+  rotation = ref(0),
+  verticalTilt = ref(0),
+  thickness = ref(2.3),
+  dragging = ref(false);
+const back = computed(() => Math.cos(rotation.value * Math.PI / 180) < 0);
+const engravingId = `lf-engraving-${useId()}`;
+// 薄卡体比例取自溯寂：宽 6.3、厚 0.045。边缘层全部位于正背面之间。
+const edgeLayers = [-0.9, -0.6, -0.3, 0, 0.3, 0.6, 0.9];
+const pose = computed(() => ({ x: Math.sin(rotation.value * Math.PI / 180) / Math.sin(28 * Math.PI / 180), y: verticalTilt.value / -9 }));
 const mode = ref<'a' | 'b' | 'auto' | 'pointer'>(props.autoStart ? 'auto' : 'a');
 const loadedA = ref(false),
   loadedB = ref(false),
@@ -131,8 +178,10 @@ const visibleState = computed(() => props.entry.states[phase.value > 0.5 ? 1 : 0
 const cardStyle = computed(() => ({
   '--accent': LENTICULAR_ACCENTS[grade.value],
   '--phase': phase.value,
-  '--tilt-x': `${reducedMotion.value ? 0 : -pose.value.y * 9}deg`,
-  '--tilt-y': `${reducedMotion.value ? 0 : pose.value.x * 24}deg`,
+  '--tilt-x': `${verticalTilt.value}deg`,
+  '--tilt-y': `${rotation.value}deg`,
+  '--thickness': `${thickness.value}px`,
+  '--half-depth': `${thickness.value / 2}px`,
   '--light-x': `${50 + pose.value.x * 40}%`,
   '--light-y': `${35 + pose.value.y * 30}%`,
   '--light-angle': `${115 + pose.value.x * 32}deg`,
@@ -148,52 +197,71 @@ const sparkles = [
 ];
 function showState(state: 'a' | 'b') {
   mode.value = state;
-  pose.value = { x: state === 'b' ? 0.82 : 0, y: 0 };
+  rotation.value = Math.round(rotation.value / 360) * 360 + (state === 'b' && !reducedMotion.value ? 24 : 0);
+  verticalTilt.value = 0;
+}
+
+function toggleBack() {
+  mode.value = 'pointer';
+  rotation.value = Math.round(rotation.value / 180) * 180 + 180;
+  verticalTilt.value = 0;
+}
+function turn(delta: number) {
+  mode.value = 'pointer';
+  rotation.value += delta;
 }
 function toggleAuto() {
   if (mode.value === 'auto') {
     showState(phase.value > 0.5 ? 'b' : 'a');
     return;
   }
+  if (back.value) rotation.value = 0;
   mode.value = 'auto';
 }
-let pointer: { id: number; x: number; y: number; poseX: number } | undefined;
+let pointer: { id: number; x: number; y: number; angle: number; tilt: number; width: number } | undefined;
+let hovering = false;
 function beginPointer(event: PointerEvent) {
-  if (event.pointerType === 'mouse' || reducedMotion.value) return;
-  pointer = { id: event.pointerId, x: event.clientX, y: event.clientY, poseX: pose.value.x };
+  if (event.button !== 0) return;
+  pointer = { id: event.pointerId, x: event.clientX, y: event.clientY, angle: rotation.value, tilt: verticalTilt.value, width: card.value!.clientWidth };
+  hovering = false;
   (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
 }
 function followPointer(event: PointerEvent) {
-  if (reducedMotion.value) return;
-  const bounds = card.value?.getBoundingClientRect();
+  const bounds = card.value?.parentElement?.getBoundingClientRect();
   if (!bounds?.width) return;
-  if (event.pointerType !== 'mouse') {
-    if (!pointer || pointer.id !== event.pointerId) return;
+  if (pointer?.id === event.pointerId) {
     const dx = event.clientX - pointer.x,
       dy = event.clientY - pointer.y;
-    if (Math.abs(dx) < 8 || Math.abs(dy) > Math.abs(dx)) return;
+    if (!dragging.value && (Math.abs(dx) < 8 || (event.pointerType !== 'mouse' && Math.abs(dy) > Math.abs(dx)))) return;
+    dragging.value = true;
     mode.value = 'pointer';
-    pose.value = { x: Math.max(-1, Math.min(1, pointer.poseX + (dx / bounds.width) * 2)), y: 0 };
-  } else {
+    rotation.value = pointer.angle + dx / pointer.width * 240;
+    verticalTilt.value = Math.max(-12, Math.min(12, pointer.tilt - dy / pointer.width * 18));
+  } else if (event.pointerType === 'mouse' && !reducedMotion.value) {
+    const orientation = Math.round(rotation.value / 180) * 180;
+    hovering = true;
     mode.value = 'pointer';
-    pose.value = {
-      x: Math.max(-1, Math.min(1, ((event.clientX - bounds.left) / bounds.width) * 2 - 1)),
-      y: Math.max(-1, Math.min(1, ((event.clientY - bounds.top) / bounds.height) * 2 - 1)),
-    };
+    rotation.value = orientation + Math.max(-1, Math.min(1, ((event.clientX - bounds.left) / bounds.width) * 2 - 1)) * 28;
+    verticalTilt.value = Math.max(-1, Math.min(1, ((event.clientY - bounds.top) / bounds.height) * 2 - 1)) * -9;
   }
 }
 function endPointer() {
   pointer = undefined;
+  dragging.value = false;
 }
 function leavePointer(event: PointerEvent) {
-  if (event.pointerType === 'mouse' && mode.value === 'pointer') showState('a');
+  if (event.pointerType === 'mouse' && hovering && !pointer) {
+    rotation.value = Math.round(rotation.value / 180) * 180;
+    verticalTilt.value = 0;
+    hovering = false;
+  }
 }
 function retryImages() {
   loadedA.value = loadedB.value = failedA.value = failedB.value = false;
   attempt.value++;
 }
 watch(() => [imageA.value, imageB.value], retryImages);
-let observer: IntersectionObserver | undefined, motionQuery: MediaQueryList | undefined;
+let observer: IntersectionObserver | undefined, sizeObserver: ResizeObserver | undefined, motionQuery: MediaQueryList | undefined;
 let frame = 0,
   lastTime = 0,
   elapsed = 0;
@@ -203,7 +271,8 @@ function animate(time: number) {
   frame = 0;
   if (lastTime) elapsed += Math.min(40, time - lastTime);
   lastTime = time;
-  pose.value = { x: Math.sin(elapsed / 1350) * 0.87, y: Math.sin(elapsed / 1800) * 0.2 };
+  rotation.value = Math.sin(elapsed / 1350) * 28;
+  verticalTilt.value = Math.sin(elapsed / 1800) * 1.8;
   if (mode.value === 'auto' && active.value) frame = viewWindow.requestAnimationFrame(animate);
 }
 watch([mode, active], () => {
@@ -244,10 +313,14 @@ onMounted(() => {
   );
   nextObserver.observe(card.value!);
   observer = nextObserver;
+  const Resize = (viewWindow as Window & { ResizeObserver: typeof ResizeObserver }).ResizeObserver;
+  sizeObserver = new Resize(([entry]) => { thickness.value = entry.contentRect.width * 0.045 / 6.3; });
+  sizeObserver.observe(card.value!);
 });
 onUnmounted(() => {
   viewWindow.cancelAnimationFrame(frame);
   observer?.disconnect();
+  sizeObserver?.disconnect();
   motionQuery?.removeEventListener('change', syncMotion);
   viewDocument.removeEventListener('visibilitychange', syncVisibility);
 });
@@ -266,44 +339,181 @@ onUnmounted(() => {
   padding: 22px 18px 20px;
   perspective: 1100px;
 }
-.lf-card {
+.lf-card-shell {
   position: relative;
   width: 100%;
   aspect-ratio: 2 / 3;
+  touch-action: pan-y;
+  cursor: grab;
   transform-style: preserve-3d;
   transform: rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
-  transition: transform 160ms ease-out;
-  touch-action: pan-y;
-  outline-offset: 9px;
-  border-radius: 14px;
-  background: #9f8050;
-  box-shadow: 0 16px 30px #080c1433;
+  transition: transform 220ms ease-out;
 }
-.lf-card::before {
-  content: '';
+.lf-card-shell.is-dragging {
+  cursor: grabbing;
+  transition: none;
+}
+.lf-edge-layer {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border: 1px solid #9a7a45;
+  border-radius: 14px;
+  box-sizing: border-box;
+  background: #927545;
+  box-shadow: inset 0 0 0 1px #e3c78455;
+  backface-visibility: visible;
+  pointer-events: none;
+}
+.lf-edge-layer:nth-of-type(2n) {
+  background: #6f522f;
+}
+.lf-edge-side {
+  position: absolute;
+  z-index: 1;
+  display: block;
+  box-sizing: border-box;
+  border: 1px solid #b9965b;
+  background: repeating-linear-gradient(90deg, #c1a66f 0 1px, #6a5231 1px 3px);
+  pointer-events: none;
+}
+.lf-edge-top,
+.lf-edge-bottom {
+  left: 14px;
+  width: calc(100% - 28px);
+  height: var(--thickness);
+  transform-origin: center;
+}
+.lf-edge-top {
+  top: calc(-1 * var(--half-depth));
+  transform: rotateX(90deg);
+}
+.lf-edge-bottom {
+  bottom: calc(-1 * var(--half-depth));
+  transform: rotateX(-90deg);
+}
+.lf-edge-left,
+.lf-edge-right {
+  top: 14px;
+  width: var(--thickness);
+  height: calc(100% - 28px);
+  transform-origin: center;
+}
+.lf-edge-left {
+  left: calc(-1 * var(--half-depth));
+  transform: rotateY(-90deg);
+}
+.lf-edge-right {
+  right: calc(-1 * var(--half-depth));
+  transform: rotateY(90deg);
+}
+.lf-card {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
   position: absolute;
   inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(120deg, #e8ce9a, #49351e 35%, #a28f60 55%, #655237);
-  transform: translateZ(-6px) translateX(4px) translateY(4px);
-  box-shadow:
-    0 1px 0 #ddbc7e,
-    1px 2px 0 #6e5330,
-    2px 3px 0 #bca472,
-    3px 4px 0 #59452b;
+  aspect-ratio: 2 / 3;
+  outline-offset: 9px;
+  border-radius: 14px;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
 }
 .lf-face {
-  position: relative;
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   overflow: hidden;
   isolation: isolate;
-  border-radius: inherit;
+  border-radius: 14px;
   border: 1px solid var(--accent);
   box-sizing: border-box;
   background: #10171c;
-  box-shadow: inset 0 0 0 2px #b89a6044;
+  box-shadow: inset 0 0 0 2px #b89a6044, 0 12px 24px #080c1424;
 }
+.lf-face-front {
+  transform: translateZ(var(--half-depth));
+}
+.lf-face-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transform: rotateY(180deg) translateZ(var(--half-depth));
+  background:
+    radial-gradient(circle at 50% 42%, #52636a 0 1px, transparent 2px),
+    radial-gradient(circle at 50% 42%, transparent 0 30%, #bd9b5b33 30.2% 30.6%, transparent 31%),
+    linear-gradient(135deg, #0c1a20, #17282c 48%, #091318);
+  border-color: #b9985a;
+  color: #d9bd83;
+}
+.lf-face-back::before,
+.lf-face-back::after {
+  content: '';
+  position: absolute;
+  inset: 10px;
+  border: 1px solid #bd9b5b77;
+  border-radius: 8px;
+  pointer-events: none;
+}
+.lf-face-back::after {
+  inset: 22px;
+  border-color: #bd9b5b33;
+}
+.lf-back-engraving {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.85;
+}
+.lf-back-fine-lines,
+.lf-back-mirror {
+  fill: none;
+  stroke: #bd9b5b99;
+  stroke-width: 1;
+}
+.lf-back-mirror {
+  stroke: #d4b875cc;
+  stroke-width: 1.4;
+}
+.lf-back-center {
+  display: flex;
+  position: relative;
+  z-index: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 86%;
+  letter-spacing: 0.16em;
+  text-align: center;
+  text-shadow: 0 1px 4px #000;
+}
+.lf-back-center strong {
+  font-family: 'Noto Serif SC', 'SimSun', serif;
+  font-size: clamp(22px, 5vw, 32px);
+  font-weight: 500;
+}
+.lf-back-center span,
+.lf-back-center small {
+  color: #bca477;
+  font-size: 9px;
+}
+.lf-back-center small {
+  letter-spacing: 0.08em;
+}
+.lf-back-ornament {
+  position: absolute;
+  left: 50%;
+  color: #bd9b5b;
+  font-size: 13px;
+  transform: translateX(-50%);
+}
+.lf-back-ornament-top { top: 15px; }
+.lf-back-ornament-bottom { bottom: 15px; }
 .lf-art,
 .lf-image,
 .lf-ridges,
@@ -528,10 +738,9 @@ onUnmounted(() => {
 }
 .lf-controls button:focus-visible,
 .lf-status button:focus-visible,
-.lf-card:focus-visible {
+.lf-card-shell:focus-visible {
   outline: 2px solid #b99b63;
 }
-.lf-hint,
 .lf-status {
   padding: 0 8px;
   margin: 10px 0 12px;
@@ -539,9 +748,6 @@ onUnmounted(() => {
   font-size: 10px;
   line-height: 1.7;
   overflow-wrap: anywhere;
-}
-.lf-hint span {
-  padding: 0 3px;
 }
 .lf-status button {
   margin: 5px 4px 0;
@@ -561,7 +767,7 @@ onUnmounted(() => {
   transition: none;
 }
 @media (prefers-reduced-motion: reduce) {
-  .lf-card,
+  .lf-card-shell,
   .lf-image {
     transition: none;
   }

@@ -43,7 +43,6 @@
       </button>
       <div v-if="open === entry.id" class="entry-detail">
         <LenticularCard :entry="entry" auto-start />
-        <p>{{ entry.description }}</p>
       </div>
     </div>
   </section>
@@ -188,12 +187,6 @@ const entries = computed(() => {
 }
 .entry-detail {
   padding-bottom: 6px;
-}
-.entry-detail > p {
-  margin: 8px 7px;
-  font-size: 11px;
-  line-height: 1.8;
-  color: var(--t-muted, #9d8d77);
 }
 button:focus-visible,
 input:focus-visible {

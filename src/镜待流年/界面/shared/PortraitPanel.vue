@@ -74,7 +74,7 @@
           <article v-for="group in cloudGroups" :key="group.id" class="cloud-group">
             <div class="cloud-heading">
               <img v-if="group.cover_url" class="cloud-cover" :src="WORKSHOP_URL + group.cover_url" :alt="group.name" loading="lazy" referrerpolicy="no-referrer" />
-              <div class="cloud-meta"><b>{{ group.name }}</b><small>{{ group.author_name || '未署名' }} · {{ group.asset_count }} 张 · 热度 {{ group.hot_score }}</small><p v-if="group.description">{{ group.description }}</p></div>
+              <div class="cloud-meta"><b>{{ group.name }}</b><small>{{ group.author_name || '未署名' }} · {{ group.asset_count }} 张 · 热度 {{ group.hot_score }}</small><small>立绘组 ID：<code style="user-select:all;overflow-wrap:anywhere">{{ group.id }}</code></small><p v-if="group.description">{{ group.description }}</p></div>
               <button class="small-btn" :disabled="!!cloudOperation" @click="previewCloud(group)"><i class="fa-solid fa-eye" aria-hidden="true"></i> 预览</button>
             </div>
             <div v-if="cloudPreview?.id === group.id" class="cloud-detail">
