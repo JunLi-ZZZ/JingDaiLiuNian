@@ -674,6 +674,50 @@ test('player writes require both same-origin and CSRF; logout invalidates the se
   assert.equal((await playerRequest('/submissions', env, session)).status, 401);
 });
 
+test('cleared withdrawn groups leave the active list but remain in owner-only history', async () => {
+  const env = environment(), session = playerSession(env), other = playerSession(env, '1556568349285027999');
+  const { group_id: cleared } = await (await playerRequest('/submissions', env, session, 'POST', playerPackage())).json();
+  assert.equal((await playerRequest('/groups/' + cleared, env, session, 'DELETE')).status, 200);
+  env.sqlite.exec("UPDATE player_upload_attempts SET created_at = datetime('now', '-2 minutes')");
+  const { group_id: pending } = await (await playerRequest('/submissions', env, session, 'POST', playerPackage())).json();
+  const active = await (await playerRequest('/submissions', env, session)).json();
+  assert.deepEqual(active.groups.map(group => group.id), [pending]);
+  assert.equal((await playerRequest('/groups/' + pending + '/withdraw', env, session, 'POST')).status, 200);
+  const retained = await (await playerRequest('/submissions', env, session)).json();
+  assert.equal(retained.groups[0].id, pending);
+  assert.equal(retained.groups[0].status, 'withdrawn');
+  assert.equal(retained.groups[0].asset_count, 1);
+  const history = await (await playerRequest('/submissions?view=history', env, session)).json();
+  assert.deepEqual(history.groups.map(group => group.id), [cleared]);
+  assert.equal(history.groups[0].asset_count, 0);
+  assert.equal(env.sqlite.prepare('SELECT COUNT(*) AS n FROM player_upload_attempts').get().n, 2);
+  assert.equal(env.sqlite.prepare('SELECT COUNT(*) AS n FROM portrait_submissions WHERE group_id = ?').get(cleared).n, 1);
+  assert.equal((await (await playerRequest('/submissions?view=history', env, other)).json()).groups.length, 0);
+  assert.equal((await playerRequest('/submissions?view=invalid', env, session)).status, 400);
+});
+
+test('history pagination does not crowd out active submissions or hide resumable empty drafts', async () => {
+  const env = environment(), session = playerSession(env);
+  const { group_id: pending } = await (await playerRequest('/submissions', env, session, 'POST', playerPackage())).json();
+  const owner = env.sqlite.prepare('SELECT user_id FROM portrait_group_owners WHERE group_id = ?').get(pending).user_id;
+  for (let n = 0; n < 25; n++) {
+    const id = 'archive_' + String(n).padStart(3, '0');
+    env.sqlite.prepare("INSERT INTO portrait_groups (id, name, author_name, status) VALUES (?, '旧记录', '测试作者', 'withdrawn')").run(id);
+    env.sqlite.prepare('INSERT INTO portrait_group_owners (group_id, user_id) VALUES (?, ?)').run(id, owner);
+  }
+  env.sqlite.exec("UPDATE player_upload_attempts SET created_at = datetime('now', '-2 minutes')");
+  const { group_id: draft } = await (await startDraftRequest(env, session, draftPackage(1))).json();
+  const active = await (await playerRequest('/submissions', env, session)).json();
+  assert.deepEqual(active.groups.map(group => group.id).sort(), [pending, draft].sort());
+  assert.equal(active.next_cursor, null);
+  const first = await (await playerRequest('/submissions?view=history', env, session)).json();
+  assert.equal(first.groups.length, 20); assert(first.next_cursor);
+  const second = await (await playerRequest('/submissions?view=history&cursor=' + first.next_cursor, env, session)).json();
+  assert.equal(second.groups.length, 5); assert.equal(second.next_cursor, null);
+  assert.equal(new Set([...first.groups, ...second.groups].map(group => group.id)).size, 25);
+  assert.equal((await (await playerRequest('/submissions?view=all', env, session)).json()).groups.length, 20);
+});
+
 test('player upload is attributed to the account, pending stays private and owners are isolated', async () => {
   const env = environment(), session = playerSession(env), other = playerSession(env, '1556568349285027999');
   const upload = await playerRequest('/submissions', env, session, 'POST', playerPackage());

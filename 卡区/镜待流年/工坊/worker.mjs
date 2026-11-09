@@ -1027,7 +1027,11 @@ async function playerApi(request, env, parts) {
       ? startDraft(request, env, player) : submitGroup(request, env, player);
     if (request.method === 'GET') {
       const url = new URL(request.url), cursor = url.searchParams.get('cursor') || '';
+      const view = url.searchParams.get('view') || 'active';
+      if (!['active', 'history', 'all'].includes(view)) throw new ApiError(400, 'invalid_status');
       if (cursor && !isId(cursor)) throw new ApiError(400, 'invalid_cursor');
+      const archived = "(g.status = 'withdrawn' AND NOT EXISTS (SELECT 1 FROM portrait_assets retained WHERE retained.group_id = g.id))";
+      const viewFilter = view === 'all' ? '' : view === 'history' ? ' AND ' + archived : ' AND NOT ' + archived;
       const rows = await env.DB.prepare(`SELECT g.id, g.name, g.description, g.status, g.created_at, s.note,
         (SELECT source_group_id FROM portrait_group_revisions WHERE group_id = g.id) AS source_group_id,
         (SELECT r.group_id FROM portrait_group_revisions r JOIN portrait_groups next ON next.id = r.group_id
@@ -1035,8 +1039,8 @@ async function playerApi(request, env, parts) {
         (SELECT COUNT(*) FROM portrait_assets WHERE group_id = g.id) AS asset_count
         FROM portrait_group_owners o JOIN portrait_groups g ON g.id = o.group_id
         LEFT JOIN portrait_submissions s ON s.group_id = g.id
-        WHERE o.user_id = ? AND g.id > ? ORDER BY g.id LIMIT 21`).bind(player.discord_id, cursor).all();
-      return privateJson({ groups: rows.results.slice(0, 20), next_cursor: rows.results.length > 20 ? rows.results[19].id : null });
+        WHERE o.user_id = ? AND g.id > ? ${viewFilter} ORDER BY g.id LIMIT 21`).bind(player.discord_id, cursor).all();
+      return privateJson({ view, groups: rows.results.slice(0, 20), next_cursor: rows.results.length > 20 ? rows.results[19].id : null });
     }
   }
   if (parts.length === 6 && parts[2] === 'drafts' && parts[4] === 'assets' && request.method === 'PUT') {
@@ -1695,17 +1699,20 @@ function playerClient() {
     const data = await (await api('/me')).json();
     user = data.user; csrf = data.csrf_token || '';
     byId('login').hidden = !!user; byId('work').hidden = !user;
-    if (!user) { byId('groups').replaceChildren(); clearPreview(); return; }
+    if (!user) { byId('groups').replaceChildren(); byId('history-groups').replaceChildren(); byId('history').open = false; clearPreview(); return; }
     byId('account-name').textContent = user.name;
     byId('submit').disabled = user.blocked || !data.uploads_enabled || busy;
     byId('paused').hidden = !user.blocked && data.uploads_enabled;
     byId('paused').textContent = user.blocked ? errors.player_blocked : errors.player_uploads_paused;
-    let cursor = '', count = 0;
-    const list = byId('groups'); list.replaceChildren();
-    async function loadMore() {
-      const listing = await (await api('/submissions' + (cursor ? '?cursor=' + encodeURIComponent(cursor) : ''))).json();
+    const cursors = { active: '', history: '' }, counts = { active: 0, history: 0 };
+    const lists = { active: byId('groups'), history: byId('history-groups') };
+    lists.active.replaceChildren(); lists.history.replaceChildren(); byId('history').open = false;
+    let historyLoaded = false;
+    async function loadMore(view = 'active') {
+      const list = lists[view], cursor = cursors[view];
+      const listing = await (await api('/submissions?view=' + view + (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''))).json();
       for (const group of listing.groups) {
-        count++;
+        counts[view]++;
         const row = document.createElement('article'), title = document.createElement('h3'), metadata = document.createElement('p');
         title.textContent = group.name; metadata.textContent = (labels[group.status] || group.status) + ' · ' + group.asset_count + ' 张 · 立绘组 ID：' + group.id;
         if (group.source_group_id) metadata.textContent += ' · 更新版';
@@ -1742,7 +1749,7 @@ function playerClient() {
           remove.onclick = async () => {
             if (!confirm('永久删除“' + group.name + '”的云端图片并释放容量？无法恢复，本地图库不受影响。')) return;
             remove.disabled = true;
-            try { await api('/groups/' + group.id, 'DELETE'); clearPreview(); if (updateId === group.id) resetUpdate(); await refresh(); status('云端图片已删除，容量已释放；本地图库保持不变'); }
+            try { await api('/groups/' + group.id, 'DELETE'); clearPreview(); if (updateId === group.id) resetUpdate(); await refresh(); status('云端图片已删除，容量已释放；记录已移入历史，本地图库保持不变'); }
             catch (error) { status(error.message); remove.disabled = false; }
           }; actions.append(remove);
         }
@@ -1750,12 +1757,17 @@ function playerClient() {
         if (group.note) { const note = document.createElement('p'); note.textContent = '审核意见：' + group.note; row.append(note); }
         row.append(actions); list.append(row);
       }
-      cursor = listing.next_cursor || '';
-      byId('more').hidden = !cursor;
-      if (!count) list.textContent = '暂无投稿';
+      cursors[view] = listing.next_cursor || '';
+      byId(view === 'history' ? 'history-more' : 'more').hidden = !cursors[view];
+      if (!counts[view]) list.textContent = view === 'history' ? '暂无已清空的历史记录' : '暂无当前投稿';
     }
-    byId('more').onclick = async () => {
-      byId('more').disabled = true; try { await loadMore(); } catch (error) { status(error.message); } finally { byId('more').disabled = false; }
+    for (const [id, view] of [['more', 'active'], ['history-more', 'history']]) byId(id).onclick = async () => {
+      byId(id).disabled = true; try { await loadMore(view); } catch (error) { status(error.message); } finally { byId(id).disabled = false; }
+    };
+    byId('history').ontoggle = async () => {
+      if (!byId('history').open || historyLoaded) return;
+      historyLoaded = true;
+      try { await loadMore('history'); } catch (error) { historyLoaded = false; status(error.message); }
     };
     await loadMore();
   }
@@ -1882,7 +1894,7 @@ function adminPage(player = false) {
   <label for="images">批量图片</label><input id="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" multiple><small id="image-count"></small>
   <label for="description">说明</label><textarea id="description" maxlength="1000"></textarea>
   <label class="check"><input id="rights" type="checkbox" required>我有权分享这些图片，同意审核后公开，内容符合平台及法律要求</label>
-  <button id="submit">提交审核</button></form><h2>我的投稿</h2><div id="groups"></div><button id="more" hidden>加载更多</button><div id="preview"></div></section>`;
+  <button id="submit">提交审核</button></form><h2>我的投稿</h2><div id="groups"></div><button id="more" hidden>加载更多</button><details id="history"><summary>已清空的历史记录</summary><p>已删除全部图片的撤回记录收在这里，展开后查看。</p><div id="history-groups"></div><button id="history-more" hidden>加载更多历史记录</button></details><div id="preview"></div></section>`;
   const html = `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${title}</title><style nonce="${nonce}">
   *{box-sizing:border-box}body{margin:0;color:#202830;background:#f3f5f7;font:14px/1.6 system-ui,sans-serif}
@@ -1896,6 +1908,7 @@ function adminPage(player = false) {
   #summary-filters{margin:10px 0 4px}#summary-filters button.active{background:#dcecf2;color:#1d596e;border-color:#44788c}
   #status{position:sticky;bottom:0;margin-top:20px;padding:10px;background:#e6eef2;border-left:3px solid #44788c;overflow-wrap:anywhere}
   #preview{display:flex;gap:16px;flex-wrap:wrap;margin-top:24px}#preview h2{width:100%}figure{width:220px;margin:0}figure img{width:100%;height:260px;object-fit:contain;background:#e8edf1}figcaption{overflow-wrap:anywhere}
+  #history{margin-top:18px;border-top:1px solid #d7dfe5;padding-top:12px}#history summary{cursor:pointer;color:#63717b}#history article{padding:10px 0}#history p{color:#63717b}#history h3{font-size:14px}
   [hidden]{display:none!important}@media(max-width:480px){figure{width:100%}figure img{height:320px}}
   </style><header><h1>${title}</h1><nav><a href="${player ? '/characters-submit' : '/characters-admin'}">${player ? '角色设定投稿 / 我的角色' : '角色设定审核管理'}</a></nav></header><main>${player ? playerBody : `
   <form id="login"><label for="token">管理员口令</label><input id="token" type="password" autocomplete="off" required><div class="actions"><button>登录</button><button id="setup" type="button">补全数据库结构</button></div></form>
