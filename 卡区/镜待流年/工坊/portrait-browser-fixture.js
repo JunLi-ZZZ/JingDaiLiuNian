@@ -86,7 +86,16 @@ async function run() {
     });
     await test('目录按完整角色标签分类，不发送 URL 和逐图 ID', async () => {
       const prompt = document.querySelector('#prompt').textContent;
-      check(prompt.includes(refs.rain) && prompt.includes('白裙 / 雨夜撑伞') && !prompt.includes('/asset/') && !prompt.includes('author-z-91'));
+      check(!/s_[a-f0-9]{16}/.test(prompt) && prompt.includes('白裙 / 雨夜撑伞') && !prompt.includes('/asset/') && !prompt.includes('author-z-91'));
+    });
+    await test('短编号渲染并随消息保存稳定分类，旧选图保持不变', async () => {
+      const registry = JSON.parse(localStorage.getItem(storageApi.PORTRAIT_REFERENCE_IDS));
+      const short = registry[refs.rain], original = figure(0).dataset.portraitId;
+      check(/^[1-9]\d*$/.test(short));
+      current.chat[0].mes = `雨夜正文。\n[[portrait-set:${short}]]\n正文后段继续。`;
+      mount(); await until(() => figure(0)?.querySelector('img')?.naturalWidth > 0);
+      check(figure(0).dataset.portraitId === original);
+      check(current.chat[0].extra.jdnl_portraits_v1.references[short] === refs.rain);
     });
     await test('旧精确登记 ID 引用继续渲染', async () => { await until(() => figure(1)?.querySelector('img')?.naturalWidth > 0); check(figure(1).dataset.portraitId === 'author-z-91'); });
     await test('旧版保留的立绘节点和样式在热更新后补齐', async () => {

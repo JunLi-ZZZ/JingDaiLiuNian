@@ -1,12 +1,13 @@
 <template>
   <section class="character-workshop" aria-label="角色工坊">
-    <header class="cw-heading"><h3>世界书工坊</h3><button type="button" aria-label="关闭角色工坊" @click="$emit('close')">×</button></header>
+    <header v-if="!embedded" class="cw-heading"><h3>世界书工坊</h3><button type="button" aria-label="关闭角色工坊" @click="$emit('close')">×</button></header>
     <nav class="cw-actions" aria-label="角色工坊功能">
       <button type="button" :aria-pressed="view === 'cloud'" :disabled="!!busy" @click="view = 'cloud'; loadList()">云端资料</button>
       <button type="button" :aria-pressed="view === 'local'" :disabled="!!busy" @click="view = 'local'">制作 / 导入设定包</button>
-      <a :href="WORKSHOP_URL + '/characters-submit'" target="_blank" rel="noopener noreferrer">Discord 投稿 / 我的角色</a>
+      <a :href="WORKSHOP_URL + '/characters-submit'" target="_blank" rel="noopener noreferrer">上传设定 / 我的投稿</a>
     </nav>
     <p class="cw-muted">按角色、位面、其他自动归档并分配顺序；关键词留空时使用资料名称。每条配置可单独调整。</p>
+    <p class="cw-muted">公开分享：先在此制作并导出设定包，再点“上传设定 / 我的投稿”，用 Discord 登录后导入组包或直接填写，提交审核。</p>
     <template v-if="view === 'cloud'">
       <form class="cw-actions" @submit.prevent="loadList(true)">
         <input v-model="query" maxlength="100" aria-label="搜索云端角色" placeholder="搜索角色、作者或简介" />
@@ -62,6 +63,7 @@ import { WORKSHOP_URL } from './portrait-workshop';
 import { loadPortraitGroups, portraitSettings, savePortraitGroups, PORTRAIT_ACTIVE_GROUP, PORTRAIT_ENABLED } from './portrait-storage';
 import { characterHash, characterRequest, importCharacterWorldbook, loadCharacterPortraits, parseCharacterPackage, planCharacterImport, type CharacterDetail, type CharacterListing } from './character-workshop';
 defineEmits<{ close: [] }>();
+defineProps<{ embedded?: boolean }>();
 const newEntry = (): { id: string; name: string; keys: string; content: string; settings: LoreSettings } => ({ id: crypto.randomUUID(), name: '角色档案', keys: '', content: '', settings: defaultLoreSettings() });
 const draft = ref({ name: '', description: '', category: 'character' as LoreCategory, portrait_group_id: '', entries: [newEntry()] });
 const view = ref<'cloud' | 'local'>('cloud'), query = ref(''), sort = ref('latest'), busy = ref(''), message = ref('');

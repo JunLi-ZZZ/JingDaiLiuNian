@@ -2,7 +2,7 @@
 import { renderPortraits } from './dom';
 import { buildPortraitIndex, emptyPortraitIndex, portraitCatalogPrompt } from '../../界面/shared/portrait-catalog';
 import { createPortraitRenderer, type PortraitChatContext } from './runtime';
-import { loadPortraitGroups, portraitSettings, PORTRAIT_ACTIVE_GROUP, PORTRAIT_ENABLED, PORTRAIT_REVISION } from '../../界面/shared/portrait-storage';
+import { loadPortraitGroups, portraitSettings, PORTRAIT_ACTIVE_GROUP, PORTRAIT_ENABLED, PORTRAIT_REVISION, PORTRAIT_REFERENCE_IDS } from '../../界面/shared/portrait-storage';
 let uninject: (() => void) | undefined;
 let index = emptyPortraitIndex();
 let selectedGroup = '';
@@ -46,7 +46,11 @@ async function refreshLibrary(force = false) {
   try {
     const groups = await loadPortraitGroups();
     const active = groups.find(x => x.id === (group || 'default')) || groups[0];
-    const next = await buildPortraitIndex(active?.items || []);
+    const previousReferences = settings.getItem(PORTRAIT_REFERENCE_IDS) || '{}';
+    const references = JSON.parse(previousReferences) as Record<string, string>;
+    const next = await buildPortraitIndex(active?.items || [], references);
+    const savedReferences = JSON.stringify(references);
+    if (savedReferences !== previousReferences) settings.setItem(PORTRAIT_REFERENCE_IDS, savedReferences);
     index = next; selectedGroup = active?.id || '';
     lastRevision = revision;
     lastGroup = group; lastEnabled = enabled;

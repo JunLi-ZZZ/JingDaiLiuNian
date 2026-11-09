@@ -1,6 +1,6 @@
 export type Portrait = { id: string; name: string; tag: string; url: string; caption?: string };
 export type PortraitSet = { id: string; name: string; tag: string; items: Portrait[] };
-export type PortraitIndex = { items: Map<string, Portrait>; sets: Map<string, PortraitSet> };
+export type PortraitIndex = { items: Map<string, Portrait>; sets: Map<string, PortraitSet>; aliases: Map<string, string> };
 export type PortraitReference = { kind: 'item' | 'set'; id: string };
 
 export function portraitImageUrl(value: string): boolean {
@@ -11,7 +11,11 @@ export function portraitImageUrl(value: string): boolean {
   } catch { return false; }
 }
 
-export function emptyPortraitIndex(): PortraitIndex { return { items: new Map(), sets: new Map() }; }
+export function emptyPortraitIndex(): PortraitIndex { return { items: new Map(), sets: new Map(), aliases: new Map() }; }
+
+export function getPortraitSet(index: PortraitIndex, id: string): PortraitSet | undefined {
+  return index.sets.get(id) || index.sets.get(index.aliases.get(id) || '');
+}
 
 export async function portraitSetId(name: string, tag: string): Promise<string> {
   const bytes = new TextEncoder().encode(JSON.stringify([name, tag]));
@@ -20,7 +24,7 @@ export async function portraitSetId(name: string, tag: string): Promise<string> 
 }
 
 /** 分类只合并完全相同的角色名和完整标签；登记 ID、URL 仍指向原图。 */
-export async function buildPortraitIndex(items: Portrait[]): Promise<PortraitIndex> {
+export async function buildPortraitIndex(items: Portrait[], registry: Record<string, string> = {}): Promise<PortraitIndex> {
   const index = emptyPortraitIndex();
   const registered = new Set<string>();
   const pairs = new Map<string, Portrait[]>();
@@ -37,9 +41,18 @@ export async function buildPortraitIndex(items: Portrait[]): Promise<PortraitInd
     id: await portraitSetId(candidates[0].name, candidates[0].tag),
     name: candidates[0].name, tag: candidates[0].tag, items: candidates,
   })));
+  if (!registry || typeof registry !== 'object' || Array.isArray(registry)) throw new Error('立绘短编号记录无效');
+  const reserved = new Set<string>();
+  let next = 1;
+  for (const value of Object.values(registry)) {
+    if (!/^[1-9]\d{0,8}$/.test(value) || reserved.has(value)) throw new Error('立绘短编号记录无效或重复');
+    reserved.add(value); next = Math.max(next, Number(value) + 1);
+  }
   for (const set of sets) {
     if (index.sets.has(set.id)) throw new Error('立绘分类 ID 冲突');
     index.sets.set(set.id, set);
+    if (!Object.hasOwn(registry, set.id)) registry[set.id] = String(next++);
+    index.aliases.set(registry[set.id], set.id);
   }
   return index;
 }
@@ -47,10 +60,11 @@ export async function buildPortraitIndex(items: Portrait[]): Promise<PortraitInd
 export function portraitCatalogPrompt(index: PortraitIndex): string {
   if (!index.sets.size) return '';
   const actors = new Map<string, string[]>();
+  const references = new Map(Array.from(index.aliases, ([short, id]) => [id, short]));
   for (const set of index.sets.values()) {
     if (!actors.has(set.name)) actors.set(set.name, []);
-    actors.get(set.name)!.push(`${set.id}=${JSON.stringify(set.tag)}`);
+    actors.get(set.name)!.push(`${references.get(set.id) || set.id}=${JSON.stringify(set.tag)}`);
   }
   const lines = Array.from(actors, ([name, sets]) => `- ${JSON.stringify(name)}：${sets.join('；')}`).join('\n');
-  return `\n[立绘引用目录]\n正文呈现目录中的角色，且画面与某项完整标签贴合时，在对应段落之后单独输出 [[portrait-set:分类id]]，把“分类id”换成下列目录中的准确 id。每个画面只选最贴合的一类；没有贴合项时继续正文，不输出标记。立绘不替代正文叙事，不编造目录外的 id。同类中的具体图片由图库选择。\n可用立绘分类（按角色列出，标签保留完整原文）：\n${lines}`;
+  return `\n[立绘引用目录]\n角色与完整标签符合当前画面时，在对应段落后单独输出 [[portrait-set:分类id]]，将“分类id”替换为下列短编号，如 [[portrait-set:1]]。每个画面最多一类，无匹配不输出；不编造编号，不替代正文。同类具体图片由图库随机选择。\n角色：短编号=完整标签\n${lines}`;
 }

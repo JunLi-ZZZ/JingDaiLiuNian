@@ -32,6 +32,34 @@ const state = () => ({ version: 1, id: crypto.randomUUID(), slot: 0, choices: {}
 const setRef = async () => ({ kind: 'set', id: await catalog.portraitSetId(items[0].name, items[0].tag) });
 const resolve = (picker, index, saved, reference, occurrence = 0, group = 'default', scope = 'chat-1', change = () => {}) => picker.resolve(index, saved, scope, group, reference, occurrence, change);
 
+test('模型目录使用持久短编号，排序、追加与删除不会重用旧编号', async () => {
+  const registry = {};
+  const index = await catalog.buildPortraitIndex(items, registry);
+  assert.deepEqual([...index.aliases.keys()], ['1', '2', '3']);
+  const prompt = catalog.portraitCatalogPrompt(index);
+  assert(!/s_[a-f0-9]{16}/.test(prompt));
+  assert(prompt.includes('1=') && prompt.includes('白裙 / 雨夜撑伞'));
+  const reordered = await catalog.buildPortraitIndex([...items].reverse(), registry);
+  assert.deepEqual([...reordered.aliases].sort(), [...index.aliases].sort());
+  const next = await catalog.buildPortraitIndex([{ id: 'added', name: '新增角色', tag: '出场', url: 'https://example.com/new.png' }], registry);
+  assert.deepEqual([...next.aliases.keys()], ['4']);
+  const restored = await catalog.buildPortraitIndex(items, JSON.parse(JSON.stringify(registry)));
+  assert.deepEqual([...restored.aliases], [...index.aliases]);
+});
+
+test('短编号与旧哈希使用同一选图记录，旧聊天仍可显示', async () => {
+  const index = await catalog.buildPortraitIndex(items), picker = new PortraitPicker(() => 1), saved = state();
+  const old = resolve(picker, index, saved, await setRef());
+  const short = resolve(new PortraitPicker(() => 0), index, saved, { kind: 'set', id: '1' });
+  assert.equal(short.item.id, old.item.id);
+  assert.equal(Object.keys(saved.choices).length, 1);
+  const otherDevice = await catalog.buildPortraitIndex([...items].reverse());
+  assert.notEqual(otherDevice.aliases.get('1'), index.aliases.get('1'));
+  assert.equal(resolve(new PortraitPicker(() => 0), otherDevice, JSON.parse(JSON.stringify(saved)), { kind: 'set', id: '1' }).item.id, old.item.id);
+  const unrelated = await catalog.buildPortraitIndex([{ id: 'unrelated', name: '另一角色', tag: '出场', url: 'https://example.com/another.png' }]);
+  assert.equal(resolve(picker, unrelated, saved, { kind: 'set', id: '1' }), undefined);
+});
+
 test('生产分类 ID 与研究 SHA-256 一致，标签完整匹配，排除无效地址', async () => {
   const index = await catalog.buildPortraitIndex([...items, { ...items[0], id: 'unsafe', url: 'javascript:alert(1)' }]);
   const expected = 's_' + createHash('sha256').update(JSON.stringify([items[0].name, items[0].tag])).digest('hex').slice(0, 16);

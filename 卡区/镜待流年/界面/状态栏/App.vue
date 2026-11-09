@@ -13,9 +13,9 @@
           {{ r18Mode ? '🔞' : '🔒' }} R18
         </button><button class="gear-btn phone-btn" :class="{ active: phoneEnabled }" @click="togglePhone()">
           {{ phoneEnabled ? '📱 手机' : '📵 手机' }}
-        </button><button type="button" class="gear-btn" :aria-expanded="lenticularOpen" :class="{ active: lenticularOpen }" @click="lenticularOpen = !lenticularOpen">◇ 光栅卡</button><button type="button" class="gear-btn" :aria-expanded="characterWorkshopOpen" @click="characterWorkshopOpen = !characterWorkshopOpen">☁ 角色工坊</button>
+        </button><button type="button" class="gear-btn" :aria-expanded="lenticularOpen" :class="{ active: lenticularOpen }" @click="lenticularOpen = !lenticularOpen">◇ 光栅卡</button><button type="button" class="gear-btn" :aria-expanded="workshopOpen" :class="{ active: workshopOpen }" @click="workshopOpen = !workshopOpen">☁ 创意工坊</button>
       </div>
-      <CharacterWorkshopPanel v-if="characterWorkshopOpen" @close="characterWorkshopOpen = false" />
+      <CreativeWorkshopPanel v-if="workshopOpen" @close="workshopOpen = false" />
       <LenticularDirectory v-if="lenticularOpen" @close="lenticularOpen = false" />
       <div v-if="showThemes" class="theme-picker">
         <button
@@ -423,8 +423,8 @@ import { receiveCardNavigation } from '../shared/cardNavigation';
 import { useDataStore } from './store';
 import MirrorPanel from '../shared/MirrorPanel.vue';
 import LenticularDirectory from '../shared/LenticularDirectory.vue';
-import CharacterWorkshopPanel from '../shared/CharacterWorkshopPanel.vue';
-const characterWorkshopOpen = ref(false);
+import CreativeWorkshopPanel from '../shared/CreativeWorkshopPanel.vue';
+const workshopOpen = ref(false);
 import BestiaryPanel from '../shared/BestiaryPanel.vue';
 import PhonePanel from '../shared/PhonePanel.vue';
 

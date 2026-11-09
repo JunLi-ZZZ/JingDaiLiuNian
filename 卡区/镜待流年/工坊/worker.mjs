@@ -1642,8 +1642,12 @@ function playerClient() {
     service_unavailable: '服务暂时不可用，请稍后重试',
   };
   const status = message => { byId('status').textContent = message; };
+  async function networkRequest(url, options) {
+    try { return await fetch(url, options); }
+    catch (error) { error.uploadNetworkError = true; throw error; }
+  }
   async function api(path, method = 'GET', body, requestId) {
-    const response = await fetch('/account/api' + path, {
+    const response = await networkRequest('/account/api' + path, {
       method, credentials: 'same-origin', signal: AbortSignal.timeout(method === 'POST' ? 90000 : 20000),
       headers: { ...(method !== 'GET' ? { 'x-csrf-token': csrf } : {}), ...(body ? { 'content-type': 'application/json' } : {}),
         ...(body?.format === 'jdnl-portrait-manifest' ? { 'x-upload-format': 'manifest' } : {}),
@@ -1658,7 +1662,7 @@ function playerClient() {
     return response;
   }
   async function putImage(groupId, item, blob) {
-    const response = await fetch('/account/api/drafts/' + groupId + '/assets/' + encodeURIComponent(item.id), {
+    const response = await networkRequest('/account/api/drafts/' + groupId + '/assets/' + encodeURIComponent(item.id), {
       method: 'PUT', credentials: 'same-origin', signal: AbortSignal.timeout(90000),
       headers: { 'x-csrf-token': csrf, 'content-type': item.content_type }, body: blob,
     });
@@ -1787,7 +1791,12 @@ function playerClient() {
       });
       return { name: parsed.group.name, items,
         signature: file.name + ':' + file.size + ':' + file.lastModified,
-        image: async item => (await fetch(item.url)).blob() };
+        image: async item => {
+          const binary = atob(item.url.slice(item.url.indexOf(',') + 1));
+          const bytes = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+          return new Blob([bytes], { type: item.content_type });
+        } };
     }
     const name = byId('group-name').value.trim();
     if (!name) throw new Error('批量图片需要填写组名');
@@ -1846,7 +1855,7 @@ function playerClient() {
         ? '新增图片已提交审核；通过后追加到原组，本地图库保持不变' : '上传成功，等待审核；本地图库保持不变');
     } catch (error) {
       if (keyName && ['upload_failed', 'previous_upload_failed', 'draft_unavailable'].includes(error.code)) sessionStorage.removeItem(keyName);
-      status(error.name === 'TimeoutError' || error.name === 'TypeError' ? '连接中断；重新选择相同文件可续传，或在“我的投稿”删除草稿' : error.message);
+      status(error.uploadNetworkError || error.name === 'TimeoutError' ? '连接中断；重新选择相同文件可续传，或在“我的投稿”删除草稿' : error.message || '上传失败，请重试');
     } finally {
       busy = false;
       if (user) {

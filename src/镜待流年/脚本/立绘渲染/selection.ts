@@ -1,7 +1,8 @@
 import type { Portrait, PortraitIndex, PortraitReference } from '../../界面/shared/portrait-catalog';
+import { getPortraitSet } from '../../界面/shared/portrait-catalog';
 
 export const PORTRAIT_MESSAGE_STATE = 'jdnl_portraits_v1';
-export type PortraitLedger = { version: 1; id: string; slot: number; choices: Record<string, string> };
+export type PortraitLedger = { version: 1; id: string; slot: number; choices: Record<string, string>; references?: Record<string, string> };
 export type PortraitMessage = {
   mes: string;
   extra?: Record<string, unknown>;
@@ -81,10 +82,15 @@ export class PortraitPicker {
   constructor(private choose: (length: number) => number = randomIndex) {}
 
   resolve(index: PortraitIndex, state: PortraitLedger, scope: string, group: string, reference: PortraitReference, occurrence: number, changed: () => void): PortraitResolution | undefined {
-    const set = reference.kind === 'set' ? index.sets.get(reference.id) : undefined;
+    const savedReference = state.references?.[reference.id];
+    const set = reference.kind === 'set' ? getPortraitSet(index, savedReference || reference.id) : undefined;
     const exact = reference.kind === 'item' ? index.items.get(reference.id) : undefined;
     if (!set && !exact) return undefined;
-    const cacheKey = JSON.stringify([group, reference.kind, reference.id, occurrence]);
+    if (set && /^[1-9]\d*$/.test(reference.id) && !savedReference) {
+      state.references ||= {}; state.references[reference.id] = set.id; changed();
+    }
+    const canonicalReference = set ? { ...reference, id: set.id } : reference;
+    const cacheKey = JSON.stringify([group, reference.kind, canonicalReference.id, occurrence]);
     const key = JSON.stringify([scope, state.id, cacheKey]);
     const candidates = set?.items || [exact!];
     const failed = this.failures.get(key);
@@ -96,7 +102,7 @@ export class PortraitPicker {
       state.choices[cacheKey] = item.id;
       changed();
     }
-    return { key, reference, label: `${set?.name || exact!.name} · ${set?.tag || exact!.tag}`, item, exhausted: !available.length };
+    return { key, reference: canonicalReference, label: `${set?.name || exact!.name} · ${set?.tag || exact!.tag}`, item, exhausted: !available.length };
   }
 
   fail(selection: PortraitResolution): void {

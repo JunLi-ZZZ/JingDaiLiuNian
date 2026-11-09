@@ -1,4 +1,5 @@
 import type { PortraitIndex } from '../../界面/shared/portrait-catalog';
+import { getPortraitSet } from '../../界面/shared/portrait-catalog';
 import type { PortraitRenderer } from './dom';
 import { messagePortraitLedger, PortraitPicker, syncPortraitLedger, type PortraitMessage } from './selection';
 
@@ -63,8 +64,8 @@ export function createPortraitRenderer(
       if (!message) return undefined;
       const displayedSwipe = messageNode?.getAttribute('swipeid');
       if (displayedSwipe !== null && displayedSwipe !== undefined && Number(displayedSwipe) !== (message.swipe_id ?? 0)) return undefined;
-      if (!library.sets.has(reference.id)) return undefined;
       const { state, changed } = messagePortraitLedger(message);
+      if (!getPortraitSet(library, state.references?.[reference.id] || reference.id)) return undefined;
       if (changed) dirty(ctx);
       return picker.resolve(library, state, scope(ctx), group(), reference, occurrence, () => {
         syncPortraitLedger(message, state); dirty(ctx);

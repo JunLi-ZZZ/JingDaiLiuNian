@@ -4,6 +4,7 @@ export const PORTRAIT_REVISION = 'jdnl_portrait_revision_v1';
 export const PORTRAIT_GROUPS = 'jdnl_portrait_groups_v1';
 export const PORTRAIT_ACTIVE_GROUP = 'jdnl_portrait_active_group_v1';
 export const PORTRAIT_ENABLED = 'jdnl_portrait_enabled_v1';
+export const PORTRAIT_REFERENCE_IDS = 'jdnl_portrait_reference_ids_v1';
 const LEGACY = 'jdnl_portrait_library_v1';
 const DATABASE = 'jdnl_portraits_v1';
 

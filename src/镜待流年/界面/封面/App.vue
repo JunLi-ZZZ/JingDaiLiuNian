@@ -89,15 +89,15 @@
       <button :class="{ active: toolsTab === 'story' }" @click="toolsTab = toolsTab === 'story' ? '' : 'story'">
         自定义开场白
       </button>
-      <button :class="{ active: toolsTab === 'portraits' }" @click="toolsTab = toolsTab === 'portraits' ? '' : 'portraits'">
-        立绘图库
+      <button :class="{ active: toolsTab === 'workshop' }" @click="toolsTab = toolsTab === 'workshop' ? '' : 'workshop'">
+        创意工坊
       </button>
     </div>
     <div class="tools-section">
       <ProtagonistPanel v-show="toolsTab === 'protag'" />
       <MirrorPanel v-show="toolsTab === 'mirror'" @close="toolsTab = 'protag'" />
       <StoryPanel v-show="toolsTab === 'story'" />
-      <PortraitPanel v-show="toolsTab === 'portraits'" />
+      <CreativeWorkshopPanel v-show="toolsTab === 'workshop'" @close="toolsTab = ''" />
     </div>
     <button class="enter-btn" @click="page = 'dlc'">
       继续
@@ -231,7 +231,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import MirrorPanel from '../shared/MirrorPanel.vue';
 import ProtagonistPanel from '../shared/ProtagonistPanel.vue';
 import StoryPanel from '../shared/StoryPanel.vue';
-import PortraitPanel from '../shared/PortraitPanel.vue';
+import CreativeWorkshopPanel from '../shared/CreativeWorkshopPanel.vue';
 
 const theme = ref((typeof localStorage !== 'undefined' && localStorage.getItem('jdnl_theme')) || 'cream');
 const toolsTab = ref('');
