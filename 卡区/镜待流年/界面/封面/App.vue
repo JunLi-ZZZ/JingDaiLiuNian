@@ -89,7 +89,12 @@
       <button :class="{ active: toolsTab === 'story' }" @click="toolsTab = toolsTab === 'story' ? '' : 'story'">
         自定义剧情
       </button>
-      <button :class="{ active: toolsTab === 'workshop' }" @click="toolsTab = toolsTab === 'workshop' ? '' : 'workshop'">创意工坊</button>
+      <button
+        :class="{ active: toolsTab === 'workshop' }"
+        @click="toolsTab = toolsTab === 'workshop' ? '' : 'workshop'"
+      >
+        创意工坊
+      </button>
     </div>
     <div class="tools-section">
       <ProtagonistPanel v-show="toolsTab === 'protag'" />
@@ -165,6 +170,14 @@
         </div>
         <span class="scene-arrow"></span>
       </button>
+      <button class="dlc-card" @click="selectDlc('jiuChen')">
+        <span class="dlc-index">✧</span>
+        <div class="dlc-body">
+          <span class="dlc-name">九宸衍天界<span class="dlc-type">[仙神]</span></span>
+          <span class="dlc-desc">一中枢统御九宸。衍天君界晨雾初散，逍遥殿中，一盏温茶静候你的回应</span>
+        </div>
+        <span class="scene-arrow"></span>
+      </button>
     </div>
     <div class="scene-card custom-card" :class="{ active: showCustom }" @click="toggleCustom">
       <span class="scene-index">✦</span>
@@ -208,6 +221,7 @@
         :key="i"
         class="scene-card"
         :class="`scene-${i}`"
+        :disabled="sceneStarting"
         @click="startScene(i)"
       >
         <span class="scene-index">{{ i + 1 }}</span>
@@ -220,6 +234,7 @@
       </button>
     </div>
 
+    <p v-if="sceneError" class="scene-error" role="alert">{{ sceneError }}</p>
     <p class="footer-note">选择一幕，开启你的镜中之旅</p>
   </div>
 </template>
@@ -230,6 +245,7 @@ import MirrorPanel from '../shared/MirrorPanel.vue';
 import ProtagonistPanel from '../shared/ProtagonistPanel.vue';
 import StoryPanel from '../shared/StoryPanel.vue';
 import CreativeWorkshopPanel from '../shared/CreativeWorkshopPanel.vue';
+import { JIUCHEN_PERSONA, jiuchenScenes, seedJiuchenLocation } from './jiuchen-opening';
 
 const theme = ref((typeof localStorage !== 'undefined' && localStorage.getItem('jdnl_theme')) || 'cream');
 const toolsTab = ref('');
@@ -325,6 +341,8 @@ const extensions = computed(() => extMeta.map(m => ({ name: m.name, hint: m.hint
 const allOk = computed(() => extensions.value.every(e => e.ok));
 
 const currentDlc = ref('main');
+const sceneStarting = ref(false);
+const sceneError = ref('');
 interface Scene {
   char?: string;
   title?: string;
@@ -551,44 +569,72 @@ const activeScenes = computed(() =>
           ? yanYunScenes
           : currentDlc.value === 'xiGuang'
             ? xiGuangScenes
-            : mainScenes,
+            : currentDlc.value === 'jiuChen'
+              ? jiuchenScenes
+              : mainScenes,
 );
 
 async function startScene(i: number) {
+  if (sceneStarting.value) return;
+  sceneError.value = '';
+  const dlc = currentDlc.value;
+  const scene = activeScenes.value[i];
+  if (!scene) return;
   const $p = (window as any).parent?.$;
   if (!$p) return;
   const TH = (window as any).parent?.TavernHelper;
-  if (TH) {
-    const wbName = TH.getCharLorebooks()?.primary;
-    if (wbName) {
-      const key = `${currentDlc.value}_${i}`;
-      const map = sceneEntryMap[key as any];
-      if (map) {
-        const entries = await TH.getLorebookEntries(wbName);
-        const hasCustomUser = entries.some(
-          (x: any) =>
-            (x.comment === 'user人设(自定义)' ||
-              x.display_name === 'user人设(自定义)' ||
-              x.name === 'user人设(自定义)') &&
-            x.enabled,
-        );
-        const ops: { uid: number; enabled: boolean }[] = [];
-        for (const name of map.enable) {
-          if (hasCustomUser && name.startsWith('user人设')) continue;
-          const e = entries.find((x: any) => x.comment === name || x.display_name === name || x.name === name);
-          if (e) ops.push({ uid: e.uid, enabled: true });
+  sceneStarting.value = true;
+  try {
+    if (dlc === 'jiuChen') {
+      if (!TH) throw new Error('酒馆助手尚未就绪，请稍后重试。');
+    }
+    if (TH) {
+      const wbName = TH.getCharLorebooks()?.primary;
+      if (dlc === 'jiuChen' && !wbName) throw new Error('未找到角色卡世界书，请先检查绑定。');
+      if (wbName) {
+        const key = `${dlc}_${i}`;
+        const map = sceneEntryMap[key] ?? dlcEntryMap[dlc];
+        if (map) {
+          const entries = await TH.getLorebookEntries(wbName);
+          if (dlc === 'jiuChen') {
+            if (!entries.some((x: any) => [x.comment, x.display_name, x.name].includes(JIUCHEN_PERSONA))) {
+              throw new Error('世界书中尚无九宸玩家人设，请先导入对应条目。');
+            }
+            await TH.updateVariablesWith(seedJiuchenLocation, { type: 'message', message_id: 'latest' });
+          }
+          const hasCustomUser = entries.some(
+            (x: any) =>
+              (x.comment === 'user人设(自定义)' ||
+                x.display_name === 'user人设(自定义)' ||
+                x.name === 'user人设(自定义)') &&
+              x.enabled,
+          );
+          const ops: { uid: number; enabled: boolean }[] = [];
+          for (const name of map.enable) {
+            if (hasCustomUser && name.startsWith('user人设')) continue;
+            const e = entries.find((x: any) => x.comment === name || x.display_name === name || x.name === name);
+            if (e) ops.push({ uid: e.uid, enabled: true });
+          }
+          const disabledNames = map.enable.includes(JIUCHEN_PERSONA)
+            ? map.disable
+            : [...new Set([...map.disable, JIUCHEN_PERSONA])];
+          for (const name of disabledNames) {
+            if (hasCustomUser && name.startsWith('user人设')) continue;
+            const e = entries.find((x: any) => x.comment === name || x.display_name === name || x.name === name);
+            if (e) ops.push({ uid: e.uid, enabled: false });
+          }
+          if (ops.length) await TH.setLorebookEntries(wbName, ops);
         }
-        for (const name of map.disable) {
-          if (hasCustomUser && name.startsWith('user人设')) continue;
-          const e = entries.find((x: any) => x.comment === name || x.display_name === name || x.name === name);
-          if (e) ops.push({ uid: e.uid, enabled: false });
-        }
-        if (ops.length) await TH.setLorebookEntries(wbName, ops);
       }
     }
+    $p('#send_textarea').val(scene.message).trigger('input');
+    await new Promise<void>(resolve => setTimeout(resolve, 50));
+    $p('#send_but').trigger('click');
+  } catch (error) {
+    sceneError.value = error instanceof Error ? error.message : '开场准备失败，请重试。';
+  } finally {
+    sceneStarting.value = false;
   }
-  $p('#send_textarea').val(activeScenes.value[i].message).trigger('input');
-  setTimeout(() => $p('#send_but').trigger('click'), 50);
 }
 
 const dlcSaving = ref(false);
@@ -601,6 +647,7 @@ const dlcResetDisable = [
   'user人设_晨星公爵之子',
   'user人设_曦光穹界',
   'user人设_苍溟界历练',
+  JIUCHEN_PERSONA,
 ];
 const dlcEntryMap: Record<string, { enable: string[]; disable: string[] }> = {
   main: { enable: ['user人设'], disable: dlcResetDisable },
@@ -608,11 +655,16 @@ const dlcEntryMap: Record<string, { enable: string[]; disable: string[] }> = {
   yunMiao: { enable: ['user人设'], disable: dlcResetDisable },
   hongHuang: { enable: ['user人设'], disable: dlcResetDisable },
   yanYun: { enable: [], disable: dlcResetDisable },
+  jiuChen: {
+    enable: [JIUCHEN_PERSONA],
+    disable: ['user人设', ...dlcResetDisable.filter(name => name !== JIUCHEN_PERSONA)],
+  },
 };
 
 const sceneEntryMap: Record<string, { enable: string[]; disable: string[] }> = {
   yunMiao_0: { enable: ['user人设'], disable: dlcResetDisable },
-  hongHuang_0: { enable: ['洪荒入侵'], disable: [] },
+  hongHuang_0: { enable: ['洪荒入侵', 'user人设'], disable: [] },
+  jiuChen_0: dlcEntryMap.jiuChen,
   xianDao_0: { enable: ['user人设'], disable: dlcResetDisable },
   yanYun_0: { enable: ['user人设_白衣卿相'], disable: ['user人设', 'user人设_静安王爷'] },
   yanYun_1: {
@@ -693,6 +745,7 @@ async function selectDlc(dlc: string) {
   dlcSaving.value = true;
   dlcSaving.value = false;
   currentDlc.value = dlc;
+  sceneError.value = '';
   page.value = 'scenes';
 }
 
@@ -709,6 +762,12 @@ function sendCustom() {
 </script>
 
 <style lang="scss" scoped>
+.scene-error {
+  margin-top: 12px;
+  color: var(--c-text);
+  font-size: 12px;
+  line-height: 1.7;
+}
 @import url('https://fontsapi.zeoseven.com/3/main/result.css');
 @import url('https://fontsapi.zeoseven.com/84/main/result.css');
 .cover {

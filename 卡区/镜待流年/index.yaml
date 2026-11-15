@@ -257,6 +257,19 @@
       不可激活其他条目: true
     文件: 世界书\位面\云渺万灵界
 
+  - 名称: 九宸衍天界
+    启用: false
+    激活策略:
+      类型: 蓝灯
+    插入位置:
+      类型: 角色定义之前
+      顺序: 224
+    激活概率: 100
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+    文件: 世界书\位面\九宸衍天界
+
   - 名称: 洪荒入侵
     启用: false
     激活策略:
@@ -852,7 +865,6 @@
       类型: 绿灯
       关键字:
         - 璃缨
-        - 小龙
         - 护国瑞兽
     插入位置:
       类型: 角色定义之前
@@ -936,6 +948,142 @@
       不可激活其他条目: true
     文件: 世界书\角色\维斯佩拉·诺克提斯
 
+  - 名称: 花雪月
+    启用: true
+    激活策略:
+      类型: 绿灯
+      关键字:
+        - 花雪月
+        - 小蛇
+        - 蛇妈妈
+    插入位置:
+      类型: 角色定义之前
+      顺序: 5250
+    激活概率: 100
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+    文件: 世界书\角色\花雪月
+  - 名称: 涂山璟芝
+    启用: true
+    激活策略:
+      类型: 绿灯
+      关键字:
+        - 涂山璟芝
+        - 璟芝
+        - 九尾紫狐
+    插入位置:
+      类型: 角色定义之前
+      顺序: 5260
+    激活概率: 100
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+    文件: 世界书\角色\涂山璟芝
+  - 名称: 白龙灵
+    启用: true
+    激活策略:
+      类型: 绿灯
+      关键字:
+        - 白龙灵
+    插入位置:
+      类型: 角色定义之前
+      顺序: 5270
+    激活概率: 100
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+    文件: 世界书\角色\白龙灵
+  - 名称: 凤倾凰
+    启用: true
+    激活策略:
+      类型: 绿灯
+      关键字:
+        - 凤倾凰
+        - 倾凰
+    插入位置:
+      类型: 角色定义之前
+      顺序: 5280
+    激活概率: 100
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+    文件: 世界书\角色\凤倾凰
+  - 名称: 月琉璃
+    启用: true
+    激活策略:
+      类型: 绿灯
+      关键字:
+        - 月琉璃
+    插入位置:
+      类型: 角色定义之前
+      顺序: 5290
+    激活概率: 100
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+    文件: 世界书\角色\月琉璃
+  - 名称: 星落砂
+    启用: true
+    激活策略:
+      类型: 绿灯
+      关键字:
+        - 星落砂
+        - 落砂
+    插入位置:
+      类型: 角色定义之前
+      顺序: 5300
+    激活概率: 100
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+    文件: 世界书\角色\星落砂
+  - 名称: 郁扶光
+    启用: true
+    激活策略:
+      类型: 绿灯
+      关键字:
+        - 郁扶光
+        - 扶光
+    插入位置:
+      类型: 角色定义之前
+      顺序: 5310
+    激活概率: 100
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+    文件: 世界书\角色\郁扶光
+  - 名称: 洛云曦
+    启用: true
+    激活策略:
+      类型: 绿灯
+      关键字:
+        - 洛云曦
+        - 云曦
+    插入位置:
+      类型: 角色定义之前
+      顺序: 5320
+    激活概率: 100
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+    文件: 世界书\角色\洛云曦
+  - 名称: 鹿绾儿
+    启用: true
+    激活策略:
+      类型: 绿灯
+      关键字:
+        - 鹿绾儿
+        - 绾儿
+    插入位置:
+      类型: 角色定义之前
+      顺序: 5330
+    激活概率: 100
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+    文件: 世界书\角色\鹿绾儿
+
   - 名称: 生成角色列表
     启用: true
     激活策略:
@@ -961,6 +1109,19 @@
       不可被其他条目激活: true
       不可激活其他条目: true
     文件: 世界书\位面\生成位面列表
+
+  - 名称: user人设_九宸衍天界
+    启用: false
+    激活策略:
+      类型: 蓝灯
+    插入位置:
+      类型: 角色定义之前
+      顺序: 4992
+    激活概率: 100
+    递归:
+      不可被其他条目激活: true
+      不可激活其他条目: true
+    文件: 世界书\玩家\user人设_九宸衍天界
 
   - 名称: user人设_曦光穹界
     启用: false
@@ -1123,7 +1284,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v232/界面/状态栏/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v233/界面/状态栏/index.html')
         </script>
         </body>
         ```
@@ -1141,7 +1302,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v232/界面/封面/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v233/界面/封面/index.html')
         </script>
         </body>
         ```
@@ -1260,27 +1421,27 @@
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v232/脚本/变量结构/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v233/脚本/变量结构/index.js';
 
       - 名称: 手机渲染
         id: a7f3c2e1-9b4d-4e6a-8c1f-2d5e7a9b3c4d
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v232/脚本/手机渲染/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v233/脚本/手机渲染/index.js';
 
       - 名称: 立绘渲染
         id: b8g4d2f0-6c5e-4a7b-9d1f-3e8a6c2b5d7f
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v232/脚本/立绘渲染/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v233/脚本/立绘渲染/index.js';
 
       - 名称: 光栅卡
         id: 7d561251-a4c9-47e5-8ce0-22b5aa17506a
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v232/脚本/光栅卡/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v233/脚本/光栅卡/index.js';
 
     变量: {}
