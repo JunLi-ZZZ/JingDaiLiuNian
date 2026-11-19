@@ -1,9 +1,9 @@
 <template>
   <section class="character-workshop" aria-label="角色工坊">
     <header v-if="!embedded" class="cw-heading"><h3>世界书工坊</h3><button type="button" aria-label="关闭角色工坊" @click="$emit('close')">×</button></header>
-    <nav class="cw-actions" aria-label="角色工坊功能">
-      <button type="button" :aria-pressed="view === 'cloud'" :disabled="!!busy" @click="view = 'cloud'; loadList()">云端资料</button>
-      <button type="button" :aria-pressed="view === 'local'" :disabled="!!busy" @click="view = 'local'">制作 / 导入设定包</button>
+    <nav v-if="!source" class="cw-actions" aria-label="角色工坊功能">
+      <button type="button" :aria-pressed="view === 'local'" :disabled="!!busy" @click="view = 'local'">本地</button>
+      <button type="button" :aria-pressed="view === 'cloud'" :disabled="!!busy" @click="view = 'cloud'; loadList()">云端</button>
       <a v-if="!embedded" :href="WORKSHOP_URL + '/characters-submit'" target="_blank" rel="noopener noreferrer">上传设定 / 我的投稿</a>
     </nav>
     <p class="cw-muted">角色、位面与自定义设定，按分类加入世界书。</p>
@@ -21,14 +21,14 @@
         <button type="button" class="cw-toggle" :aria-expanded="detail?.package.id === item.id" :disabled="!!busy" @click="preview(item)">
           <span><strong>{{ item.name }}</strong><small>{{ LORE_CATEGORIES[item.category || 'character'] }} · {{ item.author_name }} · {{ item.entry_count }} 条设定 · 下载 {{ item.download_count }}{{ item.portrait_group_id ? ' · 附立绘' : '' }}</small></span><span>{{ detail?.package.id === item.id ? '▾' : '▸' }}</span>
         </button>
-        <div class="cw-package-actions"><button type="button" :disabled="!!busy" @click="downloadCloud(item)">下载角色包</button></div>
+        <div class="cw-package-actions"><button class="cw-primary" type="button" :disabled="!!busy" @click="downloadCloud(item)">下载角色包</button></div>
         <p v-if="item.description" class="cw-muted">{{ item.description }}</p>
         <div v-if="detail?.package.id === item.id" class="cw-detail">
           <label>导入资料分类<select v-model="detail.content.character.category"><option v-for="(label, key) in LORE_CATEGORIES" :key="key" :value="key">{{ label }}</option></select></label>
           <div v-for="entry in detail.content.character.entries" :key="entry.id" class="cw-entry"><h4>{{ entry.name }}</h4><small>关键词：{{ entry.keywords.join('、') }}</small><pre>{{ entry.content }}</pre><LoreEntrySettings v-model="entry.settings" :package-category="detail.content.character.category" /></div>
           <p v-if="item.portrait_group_id" class="cw-muted">{{ detail.portrait ? `配套立绘：${detail.portrait.name}` : '配套立绘暂不可用，角色设定仍可单独使用。' }}</p>
           <label v-if="detail.portrait" class="cw-check"><input v-model="withPortraits" type="checkbox" />同时导入配套立绘并设为当前组</label>
-          <div class="cw-actions"><button type="button" :disabled="!!busy" @click="installCloud">加入世界书</button></div>
+          <div class="cw-actions"><button class="cw-primary" type="button" :disabled="!!busy" @click="installCloud">加入世界书</button></div>
         </div>
       </article>
       <button v-if="cursor" type="button" :disabled="!!busy" @click="loadList(false, true)">加载更多</button>
@@ -46,7 +46,7 @@
         <LoreEntrySettings v-model="entry.settings" :package-category="draft.category" />
         <button v-if="draft.entries.length > 1" type="button" @click="draft.entries.splice(index, 1)">移除此条目</button>
       </fieldset>
-      <div class="cw-actions"><button type="button" :disabled="draft.entries.length >= 32" @click="draft.entries.push(newEntry())">添加条目</button><button type="button" @click="downloadDraft">导出投稿角色包</button><button :disabled="!!busy">加入世界书</button></div>
+      <div class="cw-actions"><button type="button" :disabled="draft.entries.length >= 32" @click="draft.entries.push(newEntry())">添加条目</button><button type="button" @click="downloadDraft">导出投稿角色包</button><button class="cw-primary" :disabled="!!busy">加入世界书</button></div>
     </form>
     <div v-if="view === 'local' || detail" class="cw-target"><label>加入到<select v-model="target" :disabled="!!busy"><option value="">当前聊天世界书（没有则新建）</option><option v-for="name in worldbooks" :key="name" :value="name">{{ name }}</option></select></label>
       <label class="cw-check"><input v-model="overwrite" type="checkbox" :disabled="!!busy" />更新同一角色时，允许覆盖我在世界书中的本地改动</label>
@@ -64,10 +64,10 @@ import { WORKSHOP_URL } from './portrait-workshop';
 import { loadPortraitGroups, portraitSettings, savePortraitGroups, PORTRAIT_ACTIVE_GROUP, PORTRAIT_ENABLED } from './portrait-storage';
 import { characterHash, characterRequest, importCharacterWorldbook, loadCharacterPortraits, parseCharacterPackage, planCharacterImport, type CharacterDetail, type CharacterListing } from './character-workshop';
 defineEmits<{ close: [] }>();
-defineProps<{ embedded?: boolean }>();
+const props = defineProps<{ embedded?: boolean; source?: 'local' | 'cloud' }>();
 const newEntry = (): { id: string; name: string; keys: string; content: string; settings: LoreSettings } => ({ id: crypto.randomUUID(), name: '角色档案', keys: '', content: '', settings: defaultLoreSettings() });
 const draft = ref({ name: '', description: '', category: 'character' as LoreCategory, portrait_group_id: '', entries: [newEntry()] });
-const view = ref<'cloud' | 'local'>('cloud'), query = ref(''), sort = ref('latest'), busy = ref(''), message = ref('');
+const view = ref<'cloud' | 'local'>(props.source ?? 'cloud'), query = ref(''), sort = ref('latest'), busy = ref(''), message = ref('');
 const packages = ref<CharacterListing[]>([]), cursor = ref<string | null>(null), detail = ref<CharacterDetail | null>(null);
 const target = ref(''), worldbooks = ref<string[]>([]), overwrite = ref(false), withPortraits = ref(false);
 const categoryFilter = ref('all');
@@ -78,7 +78,12 @@ const errorText = (error: unknown) => error instanceof Error ? error.message : S
 onMounted(() => {
   try { const bound = getCharWorldbookNames('current'); worldbooks.value = [...new Set([bound.primary, ...bound.additional, getChatWorldbookName('current')].filter((name): name is string => !!name))]; }
   catch { message.value = '世界书列表暂不可用；可先制作并导出角色包。'; }
-  void loadList();
+  if (view.value === 'cloud') void loadList();
+});
+watch(() => props.source, source => {
+  if (!source) return;
+  view.value = source;
+  if (source === 'cloud') void loadList();
 });
 async function loadList(reset = false, more = false, refresh = false) {
   if (busy.value || (!reset && !more && loaded)) return;
@@ -206,4 +211,8 @@ input,textarea,select{width:100%;min-width:0;max-width:100%;box-sizing:border-bo
 fieldset{border:1px solid var(--cw-line,var(--t-border,#dce1e7));border-radius:12px;padding:16px;margin:18px 0;min-width:0;background:var(--cw-bg,var(--t-bg,#f7f8fa))}legend{padding:0 8px;font-size:12px;color:var(--cw-muted,var(--t-muted,#7b8490))}.cw-file{border:1px dashed var(--cw-line,var(--t-border,#dce1e7));padding:10px 12px;border-radius:9px;background:var(--cw-bg,var(--t-bg,#f7f8fa))}.cw-file input{display:block;font-size:11px;padding:4px;border:0;background:transparent}button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--cw-accent,var(--t-accent,#61728c));outline-offset:3px}.cw-draft-form>.cw-actions{margin-top:12px}
 @media(max-width:440px){.cw-actions{gap:6px}.cw-actions>input{flex-basis:100%;width:100%}.cw-actions>select{flex:1}.cw-package{padding:13px;grid-template-columns:1fr}.cw-package-actions{grid-column:1;grid-row:auto;margin-top:13px;order:2}.cw-package>.cw-muted{order:1}.cw-detail{order:3}.cw-toggle strong{font-size:14px}.cw-actions>button{padding:8px 10px;font-size:11px}fieldset{padding:12px}.cw-actions>a{margin-left:0}}
 
+.cw-primary { border-color: var(--cw-accent); background: var(--cw-accent-soft); font-weight: 650; }
+.cw-toggle { background: var(--cw-surface); }
+.cw-toggle[aria-expanded="true"], .cw-toggle:hover:not(:disabled) { background: var(--cw-accent-soft); }
+.cw-guide > summary { width: fit-content; border: 1px solid var(--cw-line); padding: 6px 10px; border-radius: 8px; background: var(--cw-surface); }
 </style>

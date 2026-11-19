@@ -1,0 +1,14 @@
+@@preprocessing
+<%
+const plane = String(getvar('stat_data.主角.当前地点.位面', { defaults: '' })).trim();
+if (plane ? plane.includes('蔚蓝潮汐界') : matchChatMessages(['蔚蓝潮汐界'])) {
+%>
+<basic_info>
+主角档案:
+    姓名: <user>
+    身份: 蔚蓝潮汐界联合舰队最高统合指挥官
+    来源世界: 蔚蓝潮汐界
+    职责: 统筹沧澜中央港区的港务、跨阵营协作与航道防卫。
+    天赋能力: 对心智魔方具有极高的亲和力与统筹共振力。
+</basic_info>
+<% } %>

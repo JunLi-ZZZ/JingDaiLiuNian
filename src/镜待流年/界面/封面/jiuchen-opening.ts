@@ -44,16 +44,18 @@ export const jiuchenScenes = [
 ];
 
 /** 首轮生成前只设置地点，不宣告其余变量已初始化。 */
-export function seedJiuchenLocation(variables: Record<string, any>): Record<string, any> {
+type OpeningLocation = Record<keyof typeof jiuchenLocation, string>;
+
+export function seedOpeningLocation(variables: Record<string, any>, location: OpeningLocation): Record<string, any> {
   const state = variables.stat_data ?? {};
-  if (state.初始化完成) throw new Error('当前聊天已开始，请新建聊天后选择九宸开场。');
+  if (state.初始化完成) throw new Error('当前聊天已开始，请新建聊天后选择开场。');
   return {
     ...variables,
     stat_data: {
       ...state,
       主角: {
         ...state.主角,
-        当前地点: { ...state.主角?.当前地点, ...jiuchenLocation },
+        当前地点: { ...state.主角?.当前地点, ...location },
       },
     },
   };

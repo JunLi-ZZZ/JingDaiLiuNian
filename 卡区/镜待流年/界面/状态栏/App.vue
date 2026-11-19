@@ -13,10 +13,8 @@
           {{ r18Mode ? '🔞' : '🔒' }} R18
         </button><button class="gear-btn phone-btn" :class="{ active: phoneEnabled }" @click="togglePhone()">
           {{ phoneEnabled ? '📱 手机' : '📵 手机' }}
-        </button><button type="button" class="gear-btn" :aria-expanded="lenticularOpen" :class="{ active: lenticularOpen }" @click="lenticularOpen = !lenticularOpen">◇ 光栅卡</button><button type="button" class="gear-btn" :aria-expanded="workshopOpen" :class="{ active: workshopOpen }" @click="workshopOpen = !workshopOpen">☁ 创意工坊</button>
+        </button><button type="button" class="gear-btn" :aria-expanded="featurePanel === 'lenticular'" :class="{ active: featurePanel === 'lenticular' }" @click="featurePanel = 'lenticular'">◇ 光栅卡</button><button type="button" class="gear-btn" :aria-expanded="featurePanel === 'workshop'" :class="{ active: featurePanel === 'workshop' }" @click="featurePanel = 'workshop'">☁ 创意工坊</button>
       </div>
-      <CreativeWorkshopPanel v-if="workshopOpen" @close="workshopOpen = false" />
-      <LenticularDirectory v-if="lenticularOpen" @close="lenticularOpen = false" />
       <div v-if="showThemes" class="theme-picker">
         <button
           v-for="t in themes"
@@ -412,6 +410,8 @@
         </div>
       </div>
     </div>
+    <CreativeWorkshopPanel v-if="featurePanel === 'workshop'" :theme="theme" @close="featurePanel = null" />
+    <LenticularDirectory v-if="featurePanel === 'lenticular'" :theme="theme" @close="featurePanel = null" />
     <BestiaryPanel v-if="bestiaryOpen" @close="bestiaryOpen = false" />
     <PhonePanel v-if="phoneOpen" :key="phoneOwner || '__me__'" :owner="phoneOwner" @close="phoneOpen = false" />
   </div>
@@ -424,7 +424,6 @@ import { useDataStore } from './store';
 import MirrorPanel from '../shared/MirrorPanel.vue';
 import LenticularDirectory from '../shared/LenticularDirectory.vue';
 import CreativeWorkshopPanel from '../shared/CreativeWorkshopPanel.vue';
-const workshopOpen = ref(false);
 import BestiaryPanel from '../shared/BestiaryPanel.vue';
 import PhonePanel from '../shared/PhonePanel.vue';
 
@@ -439,7 +438,7 @@ const showItems = ref(false);
 const showRelations = ref(false);
 const showChars = ref(false);
 const showThemes = ref(false);
-const lenticularOpen = ref(false);
+const featurePanel = ref<'workshop' | 'lenticular' | null>(null);
 const theme = ref((typeof localStorage !== 'undefined' && localStorage.getItem('jdnl_theme')) || 'cream');
 watch(
   theme,

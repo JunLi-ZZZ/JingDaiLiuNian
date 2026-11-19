@@ -1,25 +1,139 @@
 <template>
-  <section class="creative-workshop" aria-label="创意工坊">
-    <header class="workshop-heading"><div class="workshop-brand"><span class="workshop-mark" aria-hidden="true">◈</span><div><h3>创意工坊</h3><p>管理本地图库，发现云端资料</p></div></div><button class="workshop-close" type="button" aria-label="关闭创意工坊" @click="$emit('close')">×</button></header>
-    <div class="workshop-navigation"><nav class="workshop-tabs" aria-label="工坊分类"><button type="button" :aria-pressed="tab === 'portraits'" @click="tab = 'portraits'">立绘图库</button><button type="button" :aria-pressed="tab === 'lore'" @click="tab = 'lore'">角色 / 世界书</button></nav><nav class="workshop-publish" aria-label="投稿入口"><span>分享作品</span><a :href="WORKSHOP_URL + '/submit'" target="_blank" rel="noopener noreferrer">上传立绘 ↗</a><a :href="WORKSHOP_URL + '/characters-submit'" aria-label="上传设定 / 我的投稿" target="_blank" rel="noopener noreferrer">上传设定 ↗</a></nav></div>
-    <div class="workshop-body"><KeepAlive><PortraitPanel v-if="tab === 'portraits'" /><CharacterWorkshopPanel v-else embedded @close="$emit('close')" /></KeepAlive></div>
-  </section>
+  <FeatureOverlay title="创意工坊" icon="◈" :theme="theme" :components="portalComponents" @close="$emit('close')">
+    <section class="creative-workshop">
+      <div class="workshop-navigation">
+        <nav class="workshop-tabs" aria-label="工坊分类">
+          <button type="button" :aria-pressed="tab === 'portraits'" @click="tab = 'portraits'">立绘图库</button>
+          <button type="button" :aria-pressed="tab === 'lore'" @click="tab = 'lore'">角色与世界书</button>
+        </nav>
+        <a
+          class="workshop-publish"
+          :href="WORKSHOP_URL + (tab === 'portraits' ? '/submit' : '/characters-submit')"
+          target="_blank"
+          rel="noopener noreferrer"
+        >{{ tab === 'portraits' ? '上传立绘' : '上传设定' }} <span aria-hidden="true">↗</span></a>
+      </div>
+
+      <nav class="workshop-sources" aria-label="资料来源">
+        <button type="button" :aria-pressed="source === 'local'" @click="source = 'local'">本地</button>
+        <button type="button" :aria-pressed="source === 'cloud'" @click="source = 'cloud'">云端</button>
+      </nav>
+
+      <div ref="body" class="workshop-body">
+        <KeepAlive>
+          <PortraitPanel v-if="tab === 'portraits'" :source="source" />
+          <CharacterWorkshopPanel v-else embedded :source="source" />
+        </KeepAlive>
+      </div>
+    </section>
+  </FeatureOverlay>
 </template>
+
 <script setup lang="ts">
-import { ref } from 'vue';
+import { getCurrentInstance, ref, watch } from 'vue';
+import FeatureOverlay from './FeatureOverlay.vue';
 import PortraitPanel from './PortraitPanel.vue';
 import CharacterWorkshopPanel from './CharacterWorkshopPanel.vue';
+import LoreEntrySettings from './LoreEntrySettings.vue';
 import { WORKSHOP_URL } from './portrait-workshop';
-defineEmits<{ close: [] }>();
-const tab = ref<'portraits' | 'lore'>('portraits');
-</script>
-<style scoped>
-.creative-workshop{--cw-bg:var(--t-bg,var(--c-bg,#f7f8fa));--cw-surface:var(--t-surface,var(--c-card-bg,#fff));--cw-elevated:var(--t-surface-open,var(--c-card-hover,#edf0f5));--cw-text:var(--t-text,var(--c-text,#353c46));--cw-muted:var(--t-muted,var(--c-text-dim,#7b8490));--cw-accent:var(--t-accent,var(--c-gold,#61728c));--cw-accent-soft:var(--t-accent-dim,var(--c-card-hover,#e9eef5));--cw-line:var(--t-border,var(--c-border,#dce1e7));--cw-on-accent:#000;--cw-danger:#b75165;--cw-radius:var(--t-radius,15px);color-scheme:light;margin:14px 0;border:1px solid var(--cw-line);border-radius:var(--cw-radius);background:var(--cw-bg);color:var(--cw-text);font-family:inherit;font-size:13px;line-height:1.65;min-width:0;box-sizing:border-box;overflow-wrap:anywhere;box-shadow:0 6px 22px #00000005}
-.workshop-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 22px 18px}.workshop-brand{display:flex;align-items:center;gap:12px;min-width:0}.workshop-mark{display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--cw-line);border-radius:11px;color:var(--cw-accent);background:var(--cw-accent-soft);font-size:23px;flex-shrink:0}.workshop-heading h3{margin:0;font-size:19px;letter-spacing:.04em;line-height:1.4;font-weight:600;color:var(--cw-text)}.workshop-heading p{margin:5px 0 0;font-size:11px;color:var(--cw-muted)}.workshop-close{width:31px;height:31px;display:grid;place-items:center;flex-shrink:0;border:1px solid var(--cw-line);border-radius:50%;background:transparent;color:var(--cw-muted);font:inherit;font-size:20px;line-height:1;cursor:pointer}.workshop-close:hover{background:var(--cw-accent-soft);color:var(--cw-accent)}
-.workshop-navigation{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 22px 18px;flex-wrap:wrap}.workshop-tabs{margin:0;display:flex;gap:6px}.workshop-tabs button{border:1px solid transparent;background:transparent;color:var(--cw-muted);font:inherit;padding:9px 14px;border-radius:9px;cursor:pointer;white-space:nowrap;line-height:1.4}.workshop-tabs [aria-pressed=true]{background:var(--cw-accent-soft);color:var(--cw-accent);font-weight:600}.workshop-publish{margin:0;display:flex;align-items:center;gap:12px;font-size:11px;flex-wrap:wrap}.workshop-publish>span{color:var(--cw-muted);font-size:10px}.workshop-publish a{color:var(--cw-accent);text-decoration:none;padding:5px 0;border-bottom:1px solid transparent;white-space:nowrap}.workshop-publish a:hover{border-bottom-color:var(--cw-accent)}.workshop-body{padding:20px 22px 22px;border-top:1px solid var(--cw-line);background:var(--cw-surface);border-radius:0 0 var(--cw-radius) var(--cw-radius)}button:focus-visible,a:focus-visible{outline:2px solid var(--cw-accent);outline-offset:3px}
-@media(max-width:480px){.workshop-heading{padding:18px 14px 15px}.workshop-heading h3{font-size:17px}.workshop-heading p{font-size:10px}.workshop-mark{width:33px;height:33px;font-size:20px}.workshop-navigation{padding:0 14px 15px;gap:12px}.workshop-tabs{width:100%}.workshop-tabs button{flex:1;padding:9px 10px;font-size:12px}.workshop-publish{width:100%;gap:16px;padding-top:2px}.workshop-publish>span{margin-right:auto}.workshop-body{padding:16px 12px 18px}.creative-workshop{font-size:13px}}
-</style>
 
-<style>
-.theme-purple .creative-workshop,.theme-gold .creative-workshop,.theme-teal .creative-workshop,.theme-rose .creative-workshop,.theme-dark .creative-workshop{--cw-danger:#ed96a4;--cw-on-accent:var(--cw-bg);color-scheme:dark}
+withDefaults(defineProps<{ theme?: string }>(), { theme: 'cream' });
+defineEmits<{ close: [] }>();
+const portalComponents = [getCurrentInstance()!.type, PortraitPanel, CharacterWorkshopPanel, LoreEntrySettings];
+const tab = ref<'portraits' | 'lore'>('portraits');
+const source = ref<'local' | 'cloud'>('local');
+const body = ref<HTMLElement>();
+watch([tab, source], () => body.value?.scrollTo({ top: 0 }), { flush: 'post' });
+</script>
+
+<style scoped>
+.creative-workshop {
+  --cw-bg: var(--panel-bg);
+  --cw-text: var(--panel-text);
+  --cw-muted: var(--panel-muted);
+  --cw-accent: var(--panel-accent);
+  --cw-surface: color-mix(in srgb, var(--cw-accent) 5%, var(--cw-bg));
+  --cw-elevated: color-mix(in srgb, var(--cw-accent) 15%, var(--cw-bg));
+  --cw-accent-soft: color-mix(in srgb, var(--cw-accent) 19%, var(--cw-bg));
+  --cw-line: var(--panel-line);
+  --cw-on-accent: #171318;
+  --cw-danger: #a23d54;
+  --cw-radius: 12px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.is-dark .creative-workshop { --cw-danger: #ed96a4; }
+.workshop-navigation,
+.workshop-sources {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-inline: clamp(12px, 4vw, 24px);
+}
+.workshop-navigation {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding-block: 12px;
+}
+.workshop-tabs { display: flex; gap: 6px; }
+.workshop-sources {
+  background: var(--cw-surface);
+  border-block: 1px solid var(--cw-line);
+  padding-block: 7px;
+}
+.workshop-navigation button,
+.workshop-publish,
+.workshop-sources button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 5px 12px;
+  border: 1px solid var(--cw-line);
+  border-radius: 8px;
+  background: var(--cw-surface);
+  color: var(--cw-text);
+  font: inherit;
+  font-size: 13px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.workshop-navigation button:hover,
+.workshop-publish:hover,
+.workshop-sources button:hover,
+.workshop-navigation button[aria-pressed='true'],
+.workshop-sources button[aria-pressed='true'] {
+  border-color: var(--cw-accent);
+  background: var(--cw-accent-soft);
+}
+.workshop-navigation button[aria-pressed='true'],
+.workshop-sources button[aria-pressed='true'] {
+  box-shadow: inset 0 -2px var(--cw-accent);
+  font-weight: 700;
+}
+.workshop-publish { background: var(--cw-elevated); }
+.workshop-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 16px clamp(12px, 4vw, 24px) 24px;
+}
+.creative-workshop :deep(:is(button, a, input, select, textarea, summary):focus-visible) {
+  outline: 2px solid var(--cw-accent);
+  outline-offset: 2px;
+}
+.creative-workshop :deep(button:disabled) { opacity: .48; cursor: not-allowed; }
+@media (max-width: 450px) {
+  .workshop-navigation { gap: 6px; }
+  .workshop-navigation button,
+  .workshop-publish,
+  .workshop-sources button { padding-inline: 8px; font-size: 12px; }
+}
 </style>

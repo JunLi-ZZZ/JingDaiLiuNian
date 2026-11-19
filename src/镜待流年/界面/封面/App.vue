@@ -58,7 +58,8 @@
         <div class="notice-item">请勿在墙内社区、QQ群传播、讨论相关内容</div>
       </div>
     </div>
-    <button class="enter-btn" @click="enterFromIntro">
+    <p v-if="sceneError" class="scene-error" role="alert">{{ sceneError }}</p>
+    <button class="enter-btn" :disabled="sceneStarting" @click="enterFromIntro">
       进入
       <span class="enter-arrow">→</span>
     </button>
@@ -90,8 +91,9 @@
         自定义开场白
       </button>
       <button
-        :class="{ active: toolsTab === 'workshop' }"
-        @click="toolsTab = toolsTab === 'workshop' ? '' : 'workshop'"
+        :aria-expanded="workshopOpen"
+        :class="{ active: workshopOpen }"
+        @click="workshopOpen = true"
       >
         创意工坊
       </button>
@@ -100,17 +102,17 @@
       <ProtagonistPanel v-show="toolsTab === 'protag'" />
       <MirrorPanel v-show="toolsTab === 'mirror'" @close="toolsTab = 'protag'" />
       <StoryPanel v-show="toolsTab === 'story'" />
-      <CreativeWorkshopPanel v-show="toolsTab === 'workshop'" @close="toolsTab = ''" />
     </div>
+    <CreativeWorkshopPanel v-if="workshopOpen" :theme="theme" @close="workshopOpen = false" />
     <button class="enter-btn" @click="page = 'dlc'">
       继续
       <span class="enter-arrow">→</span>
     </button>
   </div>
 
-  <!-- DLC 选择页 -->
+  <!-- 位面与自由开局 -->
   <div v-if="page === 'dlc'" class="cover" :class="`theme-${theme}`">
-    <button class="back-btn" @click="page = 'tools'">←</button>
+    <button class="back-btn" aria-label="返回" :disabled="sceneStarting" @click="backFromOpeningCategory">←</button>
     <div class="title-section">
       <div class="sub-mark">✦ 浮世千面 ✦</div>
       <h1 class="title">镜 待 流 年</h1>
@@ -119,89 +121,53 @@
         <span class="divider-diamond">◇</span>
         <span class="divider-line"></span><span class="divider-dot"></span>
       </div>
-      <p class="tagline">选择你想要的旅途</p>
+      <p class="tagline">{{ openingCategory ? openingCategories[openingCategory].title : '选择你想要的旅途' }}</p>
     </div>
-    <div class="dlc-list">
-      <button class="dlc-card" @click="selectDlc('main')">
-        <span class="dlc-index">✦</span>
+
+    <div v-if="!openingCategory" class="dlc-list">
+      <button
+        v-for="(category, id) in openingCategories"
+        :key="id"
+        class="dlc-card"
+        :disabled="sceneStarting"
+        @click="selectOpeningCategory(id)"
+      >
+        <span class="dlc-index" aria-hidden="true">{{ category.icon }}</span>
         <div class="dlc-body">
-          <span class="dlc-name">原版故事</span>
-          <span class="dlc-desc">主世界 · 星见市。来自不同位面的红颜融入现代都市，在日常烟火里与你相遇</span>
+          <span class="dlc-name">{{ category.title }}</span>
+          <span class="dlc-desc">{{ category.description }}</span>
         </div>
-        <span class="scene-arrow"></span>
+        <span class="scene-arrow" aria-hidden="true">›</span>
       </button>
-      <button class="dlc-card" @click="selectDlc('xianDao')">
-        <span class="dlc-index">☯</span>
-        <div class="dlc-body">
-          <span class="dlc-name">苍溟界<span class="dlc-type">[仙道]</span></span>
-          <span class="dlc-desc">宗门林立，灵气充沛。画道峰上墨香未散，云烟阁里诗韵正浓</span>
-        </div>
-        <span class="scene-arrow"></span>
-      </button>
-      <button class="dlc-card" @click="selectDlc('yunMiao')">
-        <span class="dlc-index">❈</span>
-        <div class="dlc-body">
-          <span class="dlc-name">云渺万灵界<span class="dlc-type">[妖灵]</span></span>
-          <span class="dlc-desc">建木贯穿云海，浮岛与灵海栖居万族。涂山姐妹邀你踏入她们的故乡历练</span>
-        </div>
-        <span class="scene-arrow"></span>
-      </button>
-      <button class="dlc-card" @click="selectDlc('hongHuang')">
-        <span class="dlc-index">≋</span>
-        <div class="dlc-body">
-          <span class="dlc-name">莽苍太古界<span class="dlc-type">[洪荒]</span></span>
-          <span class="dlc-desc">万妖祖地，异兽横行。莽苍太古界与主世界意外接壤，奇珍异兽涌入现代都市</span>
-        </div>
-        <span class="scene-arrow"></span>
-      </button>
-      <button class="dlc-card" @click="selectDlc('yanYun')">
-        <span class="dlc-index">✿</span>
-        <div class="dlc-body">
-          <span class="dlc-name">晏云界<span class="dlc-type">[古风唯美]</span></span>
-          <span class="dlc-desc">东方古风画卷，皇权与龙脉交织。宫阙九重深几许，红袖簪花待君来</span>
-        </div>
-        <span class="scene-arrow"></span>
-      </button>
-      <button class="dlc-card" @click="selectDlc('xiGuang')">
-        <span class="dlc-index">⚜</span>
-        <div class="dlc-body">
-          <span class="dlc-name">曦光穹界<span class="dlc-type">[西幻]</span></span>
-          <span class="dlc-desc">剑与魔法的高塔之国，星脉流转，极光为幕。一纸婚约未及相见，佳人已循镜而至</span>
-        </div>
-        <span class="scene-arrow"></span>
-      </button>
-      <button class="dlc-card" @click="selectDlc('jiuChen')">
-        <span class="dlc-index">✧</span>
-        <div class="dlc-body">
-          <span class="dlc-name">九宸衍天界<span class="dlc-type">[仙神]</span></span>
-          <span class="dlc-desc">一中枢统御九宸。衍天君界晨雾初散，逍遥殿中，一盏温茶静候你的回应</span>
-        </div>
-        <span class="scene-arrow"></span>
-      </button>
+      <button class="custom-send" :disabled="sceneStarting" @click="resetOpeningWorldbook">恢复默认世界书</button>
+      <p v-if="resetStatus" class="worldbook-status" role="status">{{ resetStatus }}</p>
     </div>
-    <div class="scene-card custom-card" :class="{ active: showCustom }" @click="toggleCustom">
-      <span class="scene-index">✦</span>
-      <div class="scene-body">
-        <span class="scene-char">自由开局</span>
-        <span class="scene-teaser">书写属于你自己的故事开篇</span>
-      </div>
-      <span class="scene-arrow">{{ showCustom ? '▾' : '' }}</span>
-    </div>
-    <div v-if="showCustom" class="custom-area">
+    <div v-else-if="openingCategory === 'free'" class="custom-area">
       <textarea
         v-model="customMsg"
         class="custom-input"
+        aria-label="自由开局内容"
         placeholder="写下你想对 AI 说的话，作为故事的开端…"
-        rows="3"
+        rows="4"
       ></textarea>
-      <button class="custom-send" :disabled="!customMsg.trim()" @click.stop="sendCustom">发送</button>
+      <button class="custom-send" :disabled="!customMsg.trim() || sceneStarting" @click="sendCustom">发送</button>
     </div>
-    <p class="footer-note">更多故事，敬请期待</p>
+    <div v-else class="dlc-list">
+      <button v-for="plane in visiblePlanes" :key="plane.id" class="dlc-card" @click="selectDlc(plane.id)">
+        <span class="dlc-index" aria-hidden="true">{{ plane.icon }}</span>
+        <div class="dlc-body">
+          <span class="dlc-name">{{ plane.title }}<span v-if="plane.type" class="dlc-type">[{{ plane.type }}]</span></span>
+          <span class="dlc-desc">{{ plane.description }}</span>
+        </div>
+        <span class="scene-arrow" aria-hidden="true">›</span>
+      </button>
+    </div>
+    <p v-if="sceneError" class="scene-error" role="alert">{{ sceneError }}</p>
   </div>
 
   <!-- 开局选择页 -->
   <div v-if="page === 'scenes'" class="cover" :class="`theme-${theme}`">
-    <button class="back-btn" @click="page = 'dlc'">←</button>
+    <button class="back-btn" aria-label="返回位面列表" :disabled="sceneStarting" @click="backToPlanes">←</button>
     <div class="title-section">
       <div class="sub-mark">✦ 浮世千面 ✦</div>
       <h1 class="title">镜 待 流 年</h1>
@@ -245,10 +211,12 @@ import MirrorPanel from '../shared/MirrorPanel.vue';
 import ProtagonistPanel from '../shared/ProtagonistPanel.vue';
 import StoryPanel from '../shared/StoryPanel.vue';
 import CreativeWorkshopPanel from '../shared/CreativeWorkshopPanel.vue';
-import { JIUCHEN_PERSONA, jiuchenScenes, seedJiuchenLocation } from './jiuchen-opening';
+import { AZURE_PERSONA, AZURE_PLANE, AZURE_ROSTER, azureScenes } from './azure-opening';
+import { JIUCHEN_PERSONA, jiuchenLocation, jiuchenScenes, seedOpeningLocation } from './jiuchen-opening';
 
 const theme = ref((typeof localStorage !== 'undefined' && localStorage.getItem('jdnl_theme')) || 'cream');
 const toolsTab = ref('');
+const workshopOpen = ref(false);
 function onStorage(e: StorageEvent) {
   if (e.key === 'jdnl_theme' && e.newValue) theme.value = e.newValue;
 }
@@ -277,29 +245,40 @@ onUnmounted(() => {
 });
 
 const page = ref('intro');
-const showCustom = ref(false);
+const openingCategories = {
+  original: { title: '原创', icon: '✦', description: '从镜待流年原有位面与故事中选择开场' },
+  fan: { title: '同人', icon: '◇', description: '选择同人位面及其专属开场' },
+  free: { title: '自由开局', icon: '✧', description: '写下你自己的故事开篇' },
+} as const;
+type OpeningCategory = keyof typeof openingCategories;
+const openingCategory = ref<OpeningCategory | null>(null);
 const customMsg = ref('');
-async function toggleCustom() {
-  showCustom.value = !showCustom.value;
-  if (showCustom.value) {
-    const TH = (window as any).parent?.TavernHelper;
-    if (TH) {
-      const wbName = TH.getCharLorebooks()?.primary;
-      if (wbName) {
-        const entries = await TH.getLorebookEntries(wbName);
-        const ops: { uid: number; enabled: boolean }[] = [];
-        const map = dlcEntryMap[currentDlc.value];
-        if (map) {
-          for (const name of map.disable) {
-            const e = entries.find((x: any) => x.comment === name || x.display_name === name);
-            if (e && e.enabled) ops.push({ uid: e.uid, enabled: false });
-          }
-        }
-        if (ops.length) await TH.setLorebookEntries(wbName, ops);
-      }
-    }
-  }
+const resetStatus = ref('');
+
+function selectOpeningCategory(category: OpeningCategory) {
+  openingCategory.value = category;
+  sceneError.value = '';
+  resetStatus.value = '';
 }
+
+function backFromOpeningCategory() {
+  sceneError.value = '';
+  resetStatus.value = '';
+  if (openingCategory.value) openingCategory.value = null;
+  else page.value = 'tools';
+}
+
+const openingPlanes = [
+  { id: "main", category: "original", icon: "✦", title: "原版故事", type: "", description: "主世界 · 星见市。来自不同位面的红颜融入现代都市，在日常烟火里与你相遇" },
+  { id: "xianDao", category: "original", icon: "☯", title: "苍溟界", type: "仙道", description: "宗门林立，灵气充沛。画道峰上墨香未散，云烟阁里诗韵正浓" },
+  { id: "yunMiao", category: "original", icon: "❈", title: "云渺万灵界", type: "妖灵", description: "建木贯穿云海，浮岛与灵海栖居万族。涂山姐妹邀你踏入她们的故乡历练" },
+  { id: "hongHuang", category: "original", icon: "⛰︎", title: "莽苍太古界", type: "洪荒", description: "万妖祖地，异兽横行。莽苍太古界与主世界意外接壤，奇珍异兽涌入现代都市" },
+  { id: "yanYun", category: "original", icon: "✿", title: "晏云界", type: "古风唯美", description: "东方古风画卷，皇权与龙脉交织。宫阙九重深几许，红袖簪花待君来" },
+  { id: "xiGuang", category: "original", icon: "⚜", title: "曦光穹界", type: "西幻", description: "剑与魔法的高塔之国，星脉流转，极光为幕。一纸婚约未及相见，佳人已循镜而至" },
+  { id: "jiuChen", category: "original", icon: "✧", title: "九宸衍天界", type: "仙神", description: "一中枢统御九宸。衍天君界晨雾初散，逍遥殿中，一盏温茶静候你的回应" },
+  { id: "azure", category: "fan", icon: "≋", title: AZURE_PLANE, type: "碧蓝航线", description: "沧澜中央港区。选择舰船相伴的假日，或开启港区年度例检。" },
+] as const;
+const visiblePlanes = computed(() => openingPlanes.filter(plane => plane.category === openingCategory.value));
 
 function detectExt(name: string): boolean {
   try {
@@ -340,7 +319,6 @@ const extensions = computed(() => extMeta.map(m => ({ name: m.name, hint: m.hint
 
 const allOk = computed(() => extensions.value.every(e => e.ok));
 
-const currentDlc = ref('main');
 const sceneStarting = ref(false);
 const sceneError = ref('');
 interface Scene {
@@ -558,87 +536,22 @@ const xiGuangScenes: Scene[] = [
 剧情大纲：曦光穹界每隔数十年就会上演一次”勇者与魔王的宿命对决”。这一日，圣辉修道十字军与深渊魔王军在极光屏障下的中立地带严阵以待，双方隔着巨大的魔法结界，等候结界内光暗对决的结果。圣辉修道十字军中一位身材丰满的年轻修女神色焦急，她拉住游历至此的{{user}}，恳求他进入结界确认勇者的安危——结界只允许非双方阵营的人通过。{{user}}踏入结界，穿过浓雾，却看到与想象中完全不同的画面：身量娇小、身姿丰盈的勇者奥罗拉正慵懒地靠在一块巨石上打瞌睡，身材娇小的魔王维斯佩拉叉着腰站在她面前，一边嘴上凶巴巴地说”妹妹你也太懒了吧”，一边用影子魔法递零食过去。两人察觉{{user}}的出现，同时僵住——娇小的魔王瞬间炸毛般跳起来，奥罗拉慢吞吞地眨巴眼睛。`,
   },
 ];
-const activeScenes = computed(() =>
-  currentDlc.value === 'hongHuang'
-    ? hongHuangScenes
-    : currentDlc.value === 'xianDao'
-      ? xianDaoScenes
-      : currentDlc.value === 'yunMiao'
-        ? yunMiaoScenes
-        : currentDlc.value === 'yanYun'
-          ? yanYunScenes
-          : currentDlc.value === 'xiGuang'
-            ? xiGuangScenes
-            : currentDlc.value === 'jiuChen'
-              ? jiuchenScenes
-              : mainScenes,
-);
+const scenesByPlane = {
+  main: mainScenes,
+  xianDao: xianDaoScenes,
+  yunMiao: yunMiaoScenes,
+  hongHuang: hongHuangScenes,
+  yanYun: yanYunScenes,
+  xiGuang: xiGuangScenes,
+  jiuChen: jiuchenScenes,
+  azure: azureScenes,
+};
+type OpeningPlane = keyof typeof scenesByPlane;
+type OpeningScene = (typeof scenesByPlane)[OpeningPlane][number];
+const currentDlc = ref<OpeningPlane>('main');
+const activeScenes = computed<OpeningScene[]>(() => scenesByPlane[currentDlc.value]);
 
-async function startScene(i: number) {
-  if (sceneStarting.value) return;
-  sceneError.value = '';
-  const dlc = currentDlc.value;
-  const scene = activeScenes.value[i];
-  if (!scene) return;
-  const $p = (window as any).parent?.$;
-  if (!$p) return;
-  const TH = (window as any).parent?.TavernHelper;
-  sceneStarting.value = true;
-  try {
-    if (dlc === 'jiuChen') {
-      if (!TH) throw new Error('酒馆助手尚未就绪，请稍后重试。');
-    }
-    if (TH) {
-      const wbName = TH.getCharLorebooks()?.primary;
-      if (dlc === 'jiuChen' && !wbName) throw new Error('未找到角色卡世界书，请先检查绑定。');
-      if (wbName) {
-        const key = `${dlc}_${i}`;
-        const map = sceneEntryMap[key] ?? dlcEntryMap[dlc];
-        if (map) {
-          const entries = await TH.getLorebookEntries(wbName);
-          if (dlc === 'jiuChen') {
-            if (!entries.some((x: any) => [x.comment, x.display_name, x.name].includes(JIUCHEN_PERSONA))) {
-              throw new Error('世界书中尚无九宸玩家人设，请先导入对应条目。');
-            }
-            await TH.updateVariablesWith(seedJiuchenLocation, { type: 'message', message_id: 'latest' });
-          }
-          const hasCustomUser = entries.some(
-            (x: any) =>
-              (x.comment === 'user人设(自定义)' ||
-                x.display_name === 'user人设(自定义)' ||
-                x.name === 'user人设(自定义)') &&
-              x.enabled,
-          );
-          const ops: { uid: number; enabled: boolean }[] = [];
-          for (const name of map.enable) {
-            if (hasCustomUser && name.startsWith('user人设')) continue;
-            const e = entries.find((x: any) => x.comment === name || x.display_name === name || x.name === name);
-            if (e) ops.push({ uid: e.uid, enabled: true });
-          }
-          const disabledNames = map.enable.includes(JIUCHEN_PERSONA)
-            ? map.disable
-            : [...new Set([...map.disable, JIUCHEN_PERSONA])];
-          for (const name of disabledNames) {
-            if (hasCustomUser && name.startsWith('user人设')) continue;
-            const e = entries.find((x: any) => x.comment === name || x.display_name === name || x.name === name);
-            if (e) ops.push({ uid: e.uid, enabled: false });
-          }
-          if (ops.length) await TH.setLorebookEntries(wbName, ops);
-        }
-      }
-    }
-    $p('#send_textarea').val(scene.message).trigger('input');
-    await new Promise<void>(resolve => setTimeout(resolve, 50));
-    $p('#send_but').trigger('click');
-  } catch (error) {
-    sceneError.value = error instanceof Error ? error.message : '开场准备失败，请重试。';
-  } finally {
-    sceneStarting.value = false;
-  }
-}
-
-const dlcSaving = ref(false);
-const dlcResetDisable = [
+const openingOnlyEntries = [
   '洪荒入侵',
   '静安入宫',
   '女仆伊莲',
@@ -648,120 +561,168 @@ const dlcResetDisable = [
   'user人设_曦光穹界',
   'user人设_苍溟界历练',
   JIUCHEN_PERSONA,
+  AZURE_PERSONA,
 ];
-const dlcEntryMap: Record<string, { enable: string[]; disable: string[] }> = {
-  main: { enable: ['user人设'], disable: dlcResetDisable },
-  xianDao: { enable: ['user人设'], disable: dlcResetDisable },
-  yunMiao: { enable: ['user人设'], disable: dlcResetDisable },
-  hongHuang: { enable: ['user人设'], disable: dlcResetDisable },
-  yanYun: { enable: [], disable: dlcResetDisable },
-  jiuChen: {
-    enable: [JIUCHEN_PERSONA],
-    disable: ['user人设', ...dlcResetDisable.filter(name => name !== JIUCHEN_PERSONA)],
-  },
+const enabledByScene: Partial<Record<string, string[]>> = {
+  hongHuang_0: ['洪荒入侵', 'user人设'],
+  yanYun_0: ['user人设_白衣卿相'],
+  yanYun_1: ['静安入宫', 'user人设_静安王爷'],
+  yanYun_2: ['user人设_静安王爷'],
+  xiGuang_0: ['女仆伊莲', 'user人设_晨星公爵之子'],
+  xiGuang_1: ['user人设_曦光穹界'],
+  xiGuang_2: ['user人设_曦光穹界'],
+  xianDao_1: ['user人设_苍溟界历练'],
+  xianDao_2: ['user人设_苍溟界历练'],
+  xianDao_3: ['user人设_苍溟界历练'],
 };
+const defaultPersona = 'user人设';
+const planeController = '[EJS]位面控制器';
 
-const sceneEntryMap: Record<string, { enable: string[]; disable: string[] }> = {
-  yunMiao_0: { enable: ['user人设'], disable: dlcResetDisable },
-  hongHuang_0: { enable: ['洪荒入侵', 'user人设'], disable: [] },
-  jiuChen_0: dlcEntryMap.jiuChen,
-  xianDao_0: { enable: ['user人设'], disable: dlcResetDisable },
-  yanYun_0: { enable: ['user人设_白衣卿相'], disable: ['user人设', 'user人设_静安王爷'] },
-  yanYun_1: {
-    enable: ['静安入宫', 'user人设_静安王爷'],
-    disable: ['user人设', 'user人设_白衣卿相'],
-  },
-  yanYun_2: {
-    enable: ['user人设_静安王爷'],
-    disable: ['user人设', 'user人设_白衣卿相'],
-  },
-  xiGuang_0: {
-    enable: ['女仆伊莲', 'user人设_晨星公爵之子'],
-    disable: ['user人设'],
-  },
-  xiGuang_1: {
-    enable: ['user人设_曦光穹界'],
-    disable: ['user人设'],
-  },
-  xiGuang_2: {
-    enable: ['user人设_曦光穹界'],
-    disable: ['user人设'],
-  },
-  xianDao_1: {
-    enable: ['user人设_苍溟界历练'],
-    disable: ['user人设', ...dlcResetDisable.filter(name => name !== 'user人设_苍溟界历练')],
-  },
-  xianDao_2: {
-    enable: ['user人设_苍溟界历练'],
-    disable: ['user人设', ...dlcResetDisable.filter(name => name !== 'user人设_苍溟界历练')],
-  },
-  xianDao_3: {
-    enable: ['user人设_苍溟界历练'],
-    disable: ['user人设', ...dlcResetDisable.filter(name => name !== 'user人设_苍溟界历练')],
-  },
-};
+type OpeningLorebookEntry = LorebookEntry & { display_name?: string; name?: string };
 
-async function enterFromIntro() {
-  await restoreWorldbook();
-  page.value = 'tools';
+function bookEntryName(entry: OpeningLorebookEntry, name: string) {
+  return [entry.comment, entry.display_name, entry.name].includes(name);
 }
 
-async function restoreWorldbook() {
-  try {
-    const TH = (window as any).parent?.TavernHelper;
-    if (TH) {
-      const wbName = TH.getCharLorebooks()?.primary;
-      if (wbName) {
-        const entries = await TH.getLorebookEntries(wbName);
-        const hasCustomUser = entries.some(
-          (x: any) =>
-            (x.comment === 'user人设(自定义)' ||
-              x.display_name === 'user人设(自定义)' ||
-              x.name === 'user人设(自定义)') &&
-            x.enabled,
-        );
-        const ops: { uid: number; enabled: boolean }[] = [];
-        const map = dlcEntryMap.main;
-        for (const name of map.enable) {
-          if (hasCustomUser && name.startsWith('user人设')) continue;
-          const e = entries.find((x: any) => x.comment === name || x.display_name === name);
-          if (e && !e.enabled) ops.push({ uid: e.uid, enabled: true });
-        }
-        for (const name of map.disable) {
-          if (hasCustomUser && name.startsWith('user人设')) continue;
-          const e = entries.find((x: any) => x.comment === name || x.display_name === name);
-          if (e && e.enabled) ops.push({ uid: e.uid, enabled: false });
-        }
-        if (ops.length) await TH.setLorebookEntries(wbName, ops);
-      }
-    }
-  } catch {
-    /* silent */
-  }
+function openingWorldbookChanges(entries: OpeningLorebookEntry[], enabled: string[]) {
+  const hasCustomUser = entries.some(entry => entry.enabled && bookEntryName(entry, 'user人设(自定义)'));
+  const defaults = [...openingOnlyEntries, defaultPersona, AZURE_PLANE].map(name => ({
+    name,
+    enabled: enabled.includes(name) && !(hasCustomUser && name.startsWith('user人设')),
+  }));
+  defaults.push({ name: planeController, enabled: true }, { name: AZURE_ROSTER, enabled: true });
+  return defaults.flatMap(({ name, enabled }) => {
+    const entry = entries.find(item => bookEntryName(item, name));
+    return entry && entry.enabled !== enabled ? [{ uid: entry.uid, enabled }] : [];
+  });
 }
 
-async function selectDlc(dlc: string) {
-  if (dlcSaving.value) return;
-  dlcSaving.value = true;
-  dlcSaving.value = false;
+function selectDlc(dlc: OpeningPlane) {
   currentDlc.value = dlc;
   sceneError.value = '';
   page.value = 'scenes';
 }
 
-function sendCustom() {
-  const msg = customMsg.value.trim();
-  if (!msg) return;
-  const $p = (window as any).parent?.$;
-  if (!$p) return;
-  $p('#send_textarea').val(msg).trigger('input');
-  setTimeout(() => $p('#send_but').trigger('click'), 50);
-  customMsg.value = '';
-  showCustom.value = false;
+function backToPlanes() {
+  sceneError.value = '';
+  page.value = 'dlc';
+}
+
+function prepareWorldbook(required: string[]) {
+  const helper = (window as any).parent?.TavernHelper as typeof TavernHelper | undefined;
+  if (required.length && !helper) throw new Error('酒馆助手尚未就绪，请稍后重试。');
+  const name = helper?.getCharLorebooks()?.primary;
+  if (required.length && !name) throw new Error('未找到角色卡世界书，请先检查绑定。');
+  return { helper, name };
+}
+
+async function changeWorldbook(enabled: string[], required: string[] = []) {
+  const { helper, name } = prepareWorldbook(required);
+  if (!helper || !name) return false;
+  const entries = await helper.getLorebookEntries(name);
+  const missing = required.filter(label => !entries.some(entry => bookEntryName(entry, label)));
+  if (missing.length) throw new Error('世界书缺少条目：' + missing.join('、'));
+  const changes = openingWorldbookChanges(entries, enabled);
+  if (changes.length) await helper.setLorebookEntries(name, changes);
+  return true;
+}
+
+async function enterFromIntro() {
+  if (sceneStarting.value) return;
+  sceneStarting.value = true;
+  try {
+    await changeWorldbook([defaultPersona]);
+    openingCategory.value = null;
+    page.value = 'tools';
+  } catch (error) {
+    sceneError.value = error instanceof Error ? error.message : '世界书恢复失败，请重试。';
+  } finally {
+    sceneStarting.value = false;
+  }
+}
+
+async function resetOpeningWorldbook() {
+  if (sceneStarting.value) return;
+  sceneStarting.value = true;
+  sceneError.value = '';
+  resetStatus.value = '';
+  try {
+    const restored = await changeWorldbook([defaultPersona]);
+    if (!restored) throw new Error('未找到角色卡世界书，请检查酒馆助手与世界书绑定。');
+    resetStatus.value = '开局相关世界书已恢复默认。';
+  } catch (error) {
+    sceneError.value = error instanceof Error ? error.message : '世界书恢复失败，请重试。';
+  } finally {
+    sceneStarting.value = false;
+  }
+}
+
+async function sendOpeningMessage(chat: JQueryStatic, message: string) {
+  chat('#send_textarea').val(message).trigger('input');
+  await new Promise<void>(resolve => setTimeout(resolve, 50));
+  chat('#send_but').trigger('click');
+}
+
+async function startScene(i: number) {
+  if (sceneStarting.value) return;
+  const dlc = currentDlc.value;
+  const scene = activeScenes.value[i];
+  if (!scene) return;
+  const chat = (window as any).parent?.$ as JQueryStatic | undefined;
+  if (!chat) {
+    sceneError.value = '酒馆发送控件尚未就绪，请稍后重试。';
+    return;
+  }
+  sceneError.value = '';
+  sceneStarting.value = true;
+  try {
+    const required = dlc === 'azure'
+      ? [AZURE_PERSONA, AZURE_PLANE, AZURE_ROSTER, planeController]
+      : dlc === 'jiuChen' ? [JIUCHEN_PERSONA] : [];
+    const { helper } = prepareWorldbook(required);
+    const options = { type: 'message', message_id: 'latest' } as const;
+    const azureLocation = dlc === 'azure' ? azureScenes[i]?.location : undefined;
+    const location = azureLocation ?? (dlc === 'jiuChen' ? jiuchenLocation : undefined);
+    if (location && helper?.getVariables(options)?.stat_data?.初始化完成) {
+      throw new Error('当前聊天已开始，请新建聊天后选择开场。');
+    }
+    const enabled = enabledByScene[dlc + '_' + i]
+      ?? (dlc === 'azure' ? [AZURE_PERSONA] : dlc === 'jiuChen' ? [JIUCHEN_PERSONA] : [defaultPersona]);
+    await changeWorldbook(enabled, required);
+    if (location && helper) await helper.updateVariablesWith(variables => seedOpeningLocation(variables, location), options);
+    const message = scene.message.replaceAll('<user>', '{{user}}');
+    await sendOpeningMessage(chat, helper?.substitudeMacros?.(message) ?? message);
+  } catch (error) {
+    sceneError.value = error instanceof Error ? error.message : '开场准备失败，请重试。';
+  } finally {
+    sceneStarting.value = false;
+  }
+}
+
+async function sendCustom() {
+  const message = customMsg.value.trim();
+  if (!message || sceneStarting.value) return;
+  const chat = (window as any).parent?.$ as JQueryStatic | undefined;
+  if (!chat) {
+    sceneError.value = '酒馆发送控件尚未就绪，请稍后重试。';
+    return;
+  }
+  sceneStarting.value = true;
+  sceneError.value = '';
+  try {
+    await changeWorldbook([defaultPersona]);
+    await sendOpeningMessage(chat, message);
+    customMsg.value = '';
+  } catch (error) {
+    sceneError.value = error instanceof Error ? error.message : '开场准备失败，请重试。';
+  } finally {
+    sceneStarting.value = false;
+  }
 }
 </script>
 
 <style lang="scss" scoped>
+.worldbook-status,
 .scene-error {
   margin-top: 12px;
   color: var(--c-text);

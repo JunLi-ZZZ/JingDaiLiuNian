@@ -1,12 +1,6 @@
 <template>
+  <FeatureOverlay title="光栅卡目录" icon="◇" :theme="theme" :components="portalComponents" narrow @close="$emit('close')">
   <section class="lf-directory" aria-label="光栅卡目录">
-    <header class="directory-header">
-      <div>
-        <h3>光栅卡目录</h3>
-        <p>{{ LENTICULAR_CATALOG.length }} 张卡面 · 点开条目赏卡</p>
-      </div>
-      <button type="button" aria-label="关闭光栅卡目录" @click="$emit('close')">×</button>
-    </header>
     <div class="directory-search">
       <input v-model="search" type="search" placeholder="搜索名称、品阶或简介" aria-label="搜索光栅卡" />
     </div>
@@ -46,12 +40,16 @@
       </div>
     </div>
   </section>
+  </FeatureOverlay>
 </template>
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, getCurrentInstance, ref } from 'vue';
+import FeatureOverlay from './FeatureOverlay.vue';
 import LenticularCard from './LenticularCard.vue';
 import { LENTICULAR_CATALOG, LENTICULAR_CATEGORIES, type LenticularCategory } from './lenticular-catalog';
 defineEmits<{ close: [] }>();
+withDefaults(defineProps<{ theme?: string }>(), { theme: 'cream' });
+const portalComponents = [getCurrentInstance()!.type, LenticularCard];
 const search = ref(''),
   open = ref('');
 const category = ref<LenticularCategory | 'all'>('all');
@@ -68,39 +66,12 @@ const entries = computed(() => {
 </script>
 <style scoped>
 .lf-directory {
-  margin: 8px 10px;
-  padding: 13px;
-  border: 1px solid var(--t-border, #b59c7255);
-  border-radius: 9px;
-  background: var(--t-bg, #f1ebdf);
-  color: var(--t-text, #68593e);
-  box-sizing: border-box;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 16px clamp(12px, 4vw, 22px) 24px;
   text-align: left;
-}
-.directory-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: start;
-  gap: 10px;
-}
-.directory-header h3 {
-  margin: 0;
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-}
-.directory-header p {
-  margin: 5px 0 10px;
-  font-size: 10px;
-  color: var(--t-muted, #9d8d77);
-}
-.directory-header > button {
-  border: 0;
-  background: transparent;
-  padding: 0 6px;
-  color: inherit;
-  font-size: 23px;
-  cursor: pointer;
 }
 .directory-search input {
   display: block;
@@ -122,12 +93,13 @@ const entries = computed(() => {
 }
 .directory-filters button {
   border: 1px solid var(--t-border, #b59c7255);
-  padding: 5px 9px;
+  min-height: 34px;
+  padding: 5px 10px;
   border-radius: 4px;
   background: transparent;
   font: inherit;
-  font-size: 10px;
-  color: var(--t-muted, #9d8d77);
+  font-size: 12px;
+  color: inherit;
   cursor: pointer;
 }
 .directory-filters button[aria-pressed='true'] {
@@ -188,6 +160,8 @@ const entries = computed(() => {
 .entry-detail {
   padding-bottom: 6px;
 }
+.directory-filters button:hover, .entry-toggle:hover { background: var(--t-accent-dim, #b2925e22); }
+.entry-toggle { border-radius: 8px; padding-inline: 8px; }
 button:focus-visible,
 input:focus-visible {
   outline: 2px solid var(--t-accent, #b2925e);
