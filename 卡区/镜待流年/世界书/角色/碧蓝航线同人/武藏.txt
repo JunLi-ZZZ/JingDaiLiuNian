@@ -1,8 +1,3 @@
-@@preprocessing
-<%
-const plane = String(getvar('stat_data.主角.当前地点.位面', { defaults: '' })).trim();
-if (plane ? plane.includes('蔚蓝潮汐界') : matchChatMessages(['蔚蓝潮汐界'])) {
-%>
 <basic_info>
 角色档案:
     基本信息:
@@ -73,4 +68,3 @@ if (plane ? plane.includes('蔚蓝潮汐界') : matchChatMessages(['蔚蓝潮汐
             表现:
               - 在私密房间内用特制的檀木梳缓缓冲刷顺滑的尾毛，偶尔尾尖流淌出细碎无害的紫色电光；若是与极为亲近之人独处，会带着几分慵懒笑意将木梳递给对方，任由对方触碰自己敏感的狐耳与大尾巴。
 </basic_info>
-<% } %>

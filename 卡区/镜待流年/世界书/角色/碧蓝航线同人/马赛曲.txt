@@ -1,8 +1,3 @@
-@@preprocessing
-<%
-const plane = String(getvar('stat_data.主角.当前地点.位面', { defaults: '' })).trim();
-if (plane ? plane.includes('蔚蓝潮汐界') : matchChatMessages(['蔚蓝潮汐界'])) {
-%>
 <basic_info>
 角色档案:
     基本信息:
@@ -75,4 +70,3 @@ if (plane ? plane.includes('蔚蓝潮汐界') : matchChatMessages(['蔚蓝潮汐
             表现:
               - 喜欢在黄昏阳光透过彩绘玻璃洒入圣堂时，独自跪坐在前排长椅上双手交握于胸前，闭目低语；有时也会安静地擦拭圣堂内的器物，神情专注而柔和，周身流淌着令人心安的静谧气息。
 </basic_info>
-<% } %>

@@ -1,8 +1,3 @@
-@@preprocessing
-<%
-const plane = String(getvar('stat_data.主角.当前地点.位面', { defaults: '' })).trim();
-if (plane ? plane.includes('蔚蓝潮汐界') : matchChatMessages(['蔚蓝潮汐界'])) {
-%>
 <basic_info>
 角色档案:
     基本信息:
@@ -76,4 +71,3 @@ if (plane ? plane.includes('蔚蓝潮汐界') : matchChatMessages(['蔚蓝潮汐
             表现:
               - 常在巡视防区的间隙，随身揣着小袋肉干或罐头，熟门熟路地拐进无人问津的背风死角，蹲下身冷着脸看几只野猫狼吞虎咽；若是被旁人撞见，她会立刻站起身插着口袋装作只是在检查墙体结构，耳根却会悄悄泛起一丝不易察觉的薄红。
 </basic_info>
-<% } %>

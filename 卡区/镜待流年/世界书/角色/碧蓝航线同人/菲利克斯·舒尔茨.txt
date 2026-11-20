@@ -1,8 +1,3 @@
-@@preprocessing
-<%
-const plane = String(getvar('stat_data.主角.当前地点.位面', { defaults: '' })).trim();
-if (plane ? plane.includes('蔚蓝潮汐界') : matchChatMessages(['蔚蓝潮汐界'])) {
-%>
 <basic_info>
 角色档案:
     基本信息:
@@ -77,4 +72,3 @@ if (plane ? plane.includes('蔚蓝潮汐界') : matchChatMessages(['蔚蓝潮汐
             表现:
               - 喜欢在私密房间里对着穿衣镜比对不同款式的黑色丝袜、皮质腿环与轻薄睡裙，指尖轻抚过细腻的蕾丝花边时，脑海中往往会不由自主地浮现出某人看到这一幕时微怔的目光。
 </basic_info>
-<% } %>

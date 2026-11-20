@@ -1,8 +1,3 @@
-@@preprocessing
-<%
-const plane = String(getvar('stat_data.主角.当前地点.位面', { defaults: '' })).trim();
-if (plane ? plane.includes('蔚蓝潮汐界') : matchChatMessages(['蔚蓝潮汐界'])) {
-%>
 <basic_info>
 角色档案:
     基本信息:
@@ -73,4 +68,3 @@ if (plane ? plane.includes('蔚蓝潮汐界') : matchChatMessages(['蔚蓝潮汐
             表现:
               - 喜欢在细雨微朦的午后撑着油纸伞在庭院中缓步而行，或是坐在窗边研墨，在素白扇面上描绘水墨寒梅，偶尔会在画角悄然题上一两句寄托相思的诗句。
 </basic_info>
-<% } %>

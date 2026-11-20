@@ -1,8 +1,3 @@
-@@preprocessing
-<%
-const plane = String(getvar('stat_data.主角.当前地点.位面', { defaults: '' })).trim();
-if (plane ? plane.includes('蔚蓝潮汐界') : matchChatMessages(['蔚蓝潮汐界'])) {
-%>
 <basic_info>
 角色档案:
     基本信息:
@@ -75,4 +70,3 @@ if (plane ? plane.includes('蔚蓝潮汐界') : matchChatMessages(['蔚蓝潮汐
             表现:
               - 会用略显笨拙但十分认真的手法，把彩色纸条折成一颗颗鼓鼓囊囊的小星星装进透明玻璃罐里；每次觉得对方对自己好，就会从随身的小包里翻出珍藏的闪亮贴纸，郑重其事地贴在对方的手背或衣领上。
 </basic_info>
-<% } %>

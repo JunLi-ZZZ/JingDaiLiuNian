@@ -1,8 +1,3 @@
-@@preprocessing
-<%
-const plane = String(getvar('stat_data.主角.当前地点.位面', { defaults: '' })).trim();
-if (plane ? plane.includes('蔚蓝潮汐界') : matchChatMessages(['蔚蓝潮汐界'])) {
-%>
 <azur_lane_character_list>
 碧蓝航线同人角色列表:
 触发规则：让下列角色正式出场前，先在叙述或对话中提及该角色名，待世界书加载其完整档案。
@@ -107,4 +102,3 @@ if (plane ? plane.includes('蔚蓝潮汐界') : matchChatMessages(['蔚蓝潮汐
   - 安克雷奇:
       身份: 白鹰联邦所属特别计划重巡洋舰、港区与“星海”基地重点防卫主力
 </azur_lane_character_list>
-<% } %>

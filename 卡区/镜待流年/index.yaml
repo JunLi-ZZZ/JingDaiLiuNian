@@ -1159,6 +1159,8 @@
       关键字:
         - "苏维埃同盟"
         - "苏维埃萨尤斯"
+        - "苏盟"
+        - "萨尤斯"
     插入位置:
       类型: 角色定义之前
       顺序: 5343
@@ -1202,6 +1204,8 @@
       类型: 绿灯
       关键字:
         - "乌尔里希·冯·胡滕"
+        - "胡滕"
+        - "乌尔里希"
     插入位置:
       类型: 角色定义之前
       顺序: 5346
@@ -1356,6 +1360,8 @@
       类型: 绿灯
       关键字:
         - "腓特烈大帝"
+        - "帝妈"
+        - "大帝"
     插入位置:
       类型: 角色定义之前
       顺序: 5357
@@ -1370,6 +1376,7 @@
       类型: 绿灯
       关键字:
         - "伊丽莎白女王"
+        - "傻白"
     插入位置:
       类型: 角色定义之前
       顺序: 5358
@@ -1398,6 +1405,7 @@
       类型: 绿灯
       关键字:
         - "贝尔法斯特"
+        - "贝法"
     插入位置:
       类型: 角色定义之前
       顺序: 5360
@@ -1427,6 +1435,7 @@
       类型: 绿灯
       关键字:
         - "柴郡"
+        - "柴猫"
     插入位置:
       类型: 角色定义之前
       顺序: 5362
@@ -1526,6 +1535,7 @@
       类型: 绿灯
       关键字:
         - "圣路易斯"
+        - "圣姨"
     插入位置:
       类型: 角色定义之前
       顺序: 5369
@@ -1540,6 +1550,7 @@
       类型: 绿灯
       关键字:
         - "黎塞留"
+        - "黎姐"
     插入位置:
       类型: 角色定义之前
       顺序: 5370
@@ -1582,6 +1593,9 @@
       类型: 绿灯
       关键字:
         - "海伦娜·META"
+        - "海伦娜META"
+        - "海伦娜 META"
+        - "黑海妈"
     插入位置:
       类型: 角色定义之前
       顺序: 5373
@@ -1694,6 +1708,7 @@
       类型: 绿灯
       关键字:
         - "圣马丁号"
+        - "圣马丁"
     插入位置:
       类型: 角色定义之前
       顺序: 5381
@@ -1708,6 +1723,7 @@
       类型: 绿灯
       关键字:
         - "金鹿号"
+        - "金鹿"
     插入位置:
       类型: 角色定义之前
       顺序: 5382
@@ -1793,6 +1809,8 @@
       关键字:
         - "菲利克斯·舒尔茨"
         - "弗朗西斯卡·舒伯特"
+        - "菲利克斯"
+        - "舒尔茨"
     插入位置:
       类型: 角色定义之前
       顺序: 5388
@@ -1807,6 +1825,7 @@
       类型: 绿灯
       关键字:
         - "安克雷奇"
+        - "安宝"
     插入位置:
       类型: 角色定义之前
       顺序: 5389
@@ -2029,7 +2048,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v234/界面/状态栏/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v235/界面/状态栏/index.html')
         </script>
         </body>
         ```
@@ -2047,7 +2066,7 @@
         ```
         <body>
         <script>
-        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v234/界面/封面/index.html')
+        $('body').load('https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v235/界面/封面/index.html')
         </script>
         </body>
         ```
@@ -2166,27 +2185,27 @@
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v234/脚本/变量结构/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v235/脚本/变量结构/index.js';
 
       - 名称: 手机渲染
         id: a7f3c2e1-9b4d-4e6a-8c1f-2d5e7a9b3c4d
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v234/脚本/手机渲染/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v235/脚本/手机渲染/index.js';
 
       - 名称: 立绘渲染
         id: b8g4d2f0-6c5e-4a7b-9d1f-3e8a6c2b5d7f
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v234/脚本/立绘渲染/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v235/脚本/立绘渲染/index.js';
 
       - 名称: 光栅卡
         id: 7d561251-a4c9-47e5-8ce0-22b5aa17506a
         启用: true
         类型: 脚本
         内容: |-
-          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v234/脚本/光栅卡/index.js';
+          import 'https://testingcf.jsdelivr.net/gh/JunLi-ZZZ/JingDaiLiuNian/dist/镜待流年_v235/脚本/光栅卡/index.js';
 
     变量: {}

@@ -1,8 +1,3 @@
-@@preprocessing
-<%
-const plane = String(getvar('stat_data.主角.当前地点.位面', { defaults: '' })).trim();
-if (plane ? plane.includes('蔚蓝潮汐界') : matchChatMessages(['蔚蓝潮汐界'])) {
-%>
 <basic_info>
 角色档案:
     基本信息:
@@ -69,4 +64,3 @@ if (plane ? plane.includes('蔚蓝潮汐界') : matchChatMessages(['蔚蓝潮汐
             表现:
               - 对茶叶产地、水质、水温及冲泡时间有着精确到秒的讲究；闲暇时喜欢在厨房系着围裙烘焙司康饼与精致茶点，享受茶香弥漫整个房间时的宁静时光。
 </basic_info>
-<% } %>
