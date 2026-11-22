@@ -58,8 +58,7 @@
         <div class="notice-item">请勿在墙内社区、QQ群传播、讨论相关内容</div>
       </div>
     </div>
-    <p v-if="sceneError" class="scene-error" role="alert">{{ sceneError }}</p>
-    <button class="enter-btn" :disabled="sceneStarting" @click="enterFromIntro">
+    <button class="enter-btn" @click="page = 'tools'">
       进入
       <span class="enter-arrow">→</span>
     </button>
@@ -67,7 +66,7 @@
 
   <!-- 工具页：自定义主角 + 镜渡 -->
   <div v-if="page === 'tools'" class="cover" :class="`theme-${theme}`">
-    <button class="back-btn" @click="page = 'intro'">←</button>
+    <button class="back-btn" aria-label="返回首页" :disabled="sceneStarting" @click="backToIntro">←</button>
     <div class="title-section">
       <div class="sub-mark">✦ 浮世千面 ✦</div>
       <h1 class="title">镜 待 流 年</h1>
@@ -104,7 +103,14 @@
       <StoryPanel v-show="toolsTab === 'story'" />
     </div>
     <CreativeWorkshopPanel v-if="workshopOpen" :theme="theme" @close="workshopOpen = false" />
-    <button class="enter-btn" @click="page = 'dlc'">
+    <div class="worldbook-tools">
+      <button type="button" class="worldbook-reset" :disabled="sceneStarting" @click="resetOpeningWorldbook()">
+        <span aria-hidden="true">↺</span> 恢复默认世界书
+      </button>
+      <p v-if="resetStatus" class="worldbook-status" role="status">{{ resetStatus }}</p>
+      <p v-if="sceneError" class="scene-error" role="alert">{{ sceneError }}</p>
+    </div>
+    <button class="enter-btn" :disabled="sceneStarting" @click="openCategoryPicker">
       继续
       <span class="enter-arrow">→</span>
     </button>
@@ -139,8 +145,6 @@
         </div>
         <span class="scene-arrow" aria-hidden="true">›</span>
       </button>
-      <button class="custom-send" :disabled="sceneStarting" @click="resetOpeningWorldbook">恢复默认世界书</button>
-      <p v-if="resetStatus" class="worldbook-status" role="status">{{ resetStatus }}</p>
     </div>
     <div v-else-if="openingCategory === 'free'" class="custom-area">
       <textarea
@@ -255,10 +259,26 @@ const openingCategory = ref<OpeningCategory | null>(null);
 const customMsg = ref('');
 const resetStatus = ref('');
 
-function selectOpeningCategory(category: OpeningCategory) {
-  openingCategory.value = category;
+function backToIntro() {
   sceneError.value = '';
   resetStatus.value = '';
+  page.value = 'intro';
+}
+
+function openCategoryPicker() {
+  sceneError.value = '';
+  resetStatus.value = '';
+  openingCategory.value = null;
+  page.value = 'dlc';
+}
+
+function selectOpeningCategory(category: OpeningCategory) {
+  sceneError.value = '';
+  if (category === 'free') {
+    openingCategory.value = category;
+    return;
+  }
+  return resetOpeningWorldbook(category);
 }
 
 function backFromOpeningCategory() {
@@ -551,20 +571,14 @@ type OpeningScene = (typeof scenesByPlane)[OpeningPlane][number];
 const currentDlc = ref<OpeningPlane>('main');
 const activeScenes = computed<OpeningScene[]>(() => scenesByPlane[currentDlc.value]);
 
-const openingOnlyEntries = [
-  '洪荒入侵',
-  '静安入宫',
-  '女仆伊莲',
-  'user人设_白衣卿相',
-  'user人设_静安王爷',
-  'user人设_晨星公爵之子',
-  'user人设_曦光穹界',
-  'user人设_苍溟界历练',
-  JIUCHEN_PERSONA,
-  AZURE_PERSONA,
-];
+const defaultPersona = 'user人设';
+const planeController = '[EJS]位面控制器';
+const enabledByPlane: Partial<Record<OpeningPlane, string[]>> = {
+  jiuChen: [JIUCHEN_PERSONA],
+  azure: [AZURE_PERSONA],
+};
 const enabledByScene: Partial<Record<string, string[]>> = {
-  hongHuang_0: ['洪荒入侵', 'user人设'],
+  hongHuang_0: ['洪荒入侵', defaultPersona],
   yanYun_0: ['user人设_白衣卿相'],
   yanYun_1: ['静安入宫', 'user人设_静安王爷'],
   yanYun_2: ['user人设_静安王爷'],
@@ -575,8 +589,12 @@ const enabledByScene: Partial<Record<string, string[]>> = {
   xianDao_2: ['user人设_苍溟界历练'],
   xianDao_3: ['user人设_苍溟界历练'],
 };
-const defaultPersona = 'user人设';
-const planeController = '[EJS]位面控制器';
+const managedOpeningEntries = new Set([
+  defaultPersona,
+  AZURE_PLANE,
+  ...Object.values(enabledByPlane).flat(),
+  ...Object.values(enabledByScene).flat(),
+]);
 
 type OpeningLorebookEntry = LorebookEntry & { display_name?: string; name?: string };
 
@@ -586,7 +604,7 @@ function bookEntryName(entry: OpeningLorebookEntry, name: string) {
 
 function openingWorldbookChanges(entries: OpeningLorebookEntry[], enabled: string[]) {
   const hasCustomUser = entries.some(entry => entry.enabled && bookEntryName(entry, 'user人设(自定义)'));
-  const defaults = [...openingOnlyEntries, defaultPersona, AZURE_PLANE].map(name => ({
+  const defaults = Array.from(managedOpeningEntries, name => ({
     name,
     enabled: enabled.includes(name) && !(hasCustomUser && name.startsWith('user人设')),
   }));
@@ -627,21 +645,7 @@ async function changeWorldbook(enabled: string[], required: string[] = []) {
   return true;
 }
 
-async function enterFromIntro() {
-  if (sceneStarting.value) return;
-  sceneStarting.value = true;
-  try {
-    await changeWorldbook([defaultPersona]);
-    openingCategory.value = null;
-    page.value = 'tools';
-  } catch (error) {
-    sceneError.value = error instanceof Error ? error.message : '世界书恢复失败，请重试。';
-  } finally {
-    sceneStarting.value = false;
-  }
-}
-
-async function resetOpeningWorldbook() {
+async function resetOpeningWorldbook(category?: Exclude<OpeningCategory, 'free'>) {
   if (sceneStarting.value) return;
   sceneStarting.value = true;
   sceneError.value = '';
@@ -649,7 +653,8 @@ async function resetOpeningWorldbook() {
   try {
     const restored = await changeWorldbook([defaultPersona]);
     if (!restored) throw new Error('未找到角色卡世界书，请检查酒馆助手与世界书绑定。');
-    resetStatus.value = '开局相关世界书已恢复默认。';
+    if (category) openingCategory.value = category;
+    else resetStatus.value = '开局相关世界书已恢复默认。';
   } catch (error) {
     sceneError.value = error instanceof Error ? error.message : '世界书恢复失败，请重试。';
   } finally {
@@ -686,8 +691,7 @@ async function startScene(i: number) {
     if (location && helper?.getVariables(options)?.stat_data?.初始化完成) {
       throw new Error('当前聊天已开始，请新建聊天后选择开场。');
     }
-    const enabled = enabledByScene[dlc + '_' + i]
-      ?? (dlc === 'azure' ? [AZURE_PERSONA] : dlc === 'jiuChen' ? [JIUCHEN_PERSONA] : [defaultPersona]);
+    const enabled = enabledByScene[dlc + '_' + i] ?? enabledByPlane[dlc] ?? [defaultPersona];
     await changeWorldbook(enabled, required);
     if (location && helper) await helper.updateVariablesWith(variables => seedOpeningLocation(variables, location), options);
     const message = scene.message.replaceAll('<user>', '{{user}}');
@@ -710,7 +714,6 @@ async function sendCustom() {
   sceneStarting.value = true;
   sceneError.value = '';
   try {
-    await changeWorldbook([defaultPersona]);
     await sendOpeningMessage(chat, message);
     customMsg.value = '';
   } catch (error) {
@@ -722,6 +725,9 @@ async function sendCustom() {
 </script>
 
 <style lang="scss" scoped>
+@import url('https://fontsapi.zeoseven.com/3/main/result.css');
+@import url('https://fontsapi.zeoseven.com/84/main/result.css');
+
 .worldbook-status,
 .scene-error {
   margin-top: 12px;
@@ -729,8 +735,6 @@ async function sendCustom() {
   font-size: 12px;
   line-height: 1.7;
 }
-@import url('https://fontsapi.zeoseven.com/3/main/result.css');
-@import url('https://fontsapi.zeoseven.com/84/main/result.css');
 .cover {
   --c-gold: #8b7355;
   --c-text: #4a4035;
@@ -1639,6 +1643,51 @@ async function sendCustom() {
     opacity: 0.4;
     cursor: default;
   }
+}
+
+.worldbook-tools {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 360px;
+  margin: 6px auto 0;
+  text-align: center;
+}
+.worldbook-tools p {
+  margin: 6px 0 0;
+}
+.worldbook-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--c-card-border);
+  border-radius: 8px;
+  background: var(--c-card-bg);
+  color: var(--c-text);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+
+  span {
+    color: var(--c-gold);
+    font-size: 15px;
+    line-height: 1;
+  }
+  &:hover:not(:disabled) {
+    border-color: var(--c-gold);
+    background: var(--c-card-hover);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--c-gold);
+    outline-offset: 2px;
+  }
+}
+.worldbook-reset:disabled,
+.dlc-card:disabled,
+.enter-btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
 }
 
 .footer-note {

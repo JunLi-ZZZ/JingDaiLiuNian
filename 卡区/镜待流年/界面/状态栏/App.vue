@@ -107,16 +107,14 @@
             </div>
             <div v-if="showClothing" class="sub-body">
               <div class="cloth-list">
-                <div v-for="item in protagClothing" :key="item.key">
-                  <div class="cloth-row" @click="toggleClothDetail(item.key)">
-                    <span class="cloth-key">{{ item.key }}</span>
-                    <span class="cloth-val" :class="{ dim: !isSet(item.名称) }">{{
-                      isSet(item.名称) ? item.名称 : '—'
-                    }}</span>
-                    <span v-if="isSet(item.状态)" class="cloth-status">{{ item.状态 }}</span>
-                  </div>
-                  <div v-if="clothDetail.has(item.key) && isSet(item.描述)" class="cloth-detail">{{ item.描述 }}</div>
-                </div>
+                <StatusFieldRow
+                  v-for="item in protagClothing"
+                  :key="item.key"
+                  :label="item.key"
+                  :field="item"
+                  :expanded="clothDetail.has(item.key)"
+                  @toggle="toggleClothDetail(item.key)"
+                />
               </div>
             </div>
           </div>
@@ -184,15 +182,40 @@
           <span class="block-arrow">{{ showChars ? '▾' : '▸' }}</span>
         </div>
         <div v-if="showChars" class="block-body">
+          <div v-if="allChars.length" class="roster-tools">
+            <div class="roster-search">
+              <input
+                :value="rosterQuery"
+                type="text"
+                enterkeyhint="search"
+                aria-label="搜索角色名录"
+                placeholder="搜索姓名、身份或来源"
+                @input="setRosterQuery(($event.target as HTMLInputElement).value)"
+              />
+              <button v-if="rosterQuery" type="button" aria-label="清空搜索" @click="setRosterQuery('')">×</button>
+            </div>
+            <span v-if="rosterQuery.trim() && filteredChars.length" class="roster-results" role="status">
+              找到 {{ filteredChars.length }} 人
+            </span>
+          </div>
+          <nav v-if="rosterPageCount > 1" class="roster-nav" aria-label="角色名录分页">
+            <button type="button" :disabled="rosterPage === 1" @click="rosterPage--">‹ 上一页</button>
+            <span class="roster-page" role="status">{{ rosterPage }} / {{ rosterPageCount }}</span>
+            <button type="button" :disabled="rosterPage === rosterPageCount" @click="rosterPage++">下一页 ›</button>
+          </nav>
           <div v-if="allChars.length === 0" class="empty-hint">暂无角色</div>
-          <div v-for="char in allChars" :key="char._key" class="char-entry">
+          <div v-else-if="filteredChars.length === 0" class="empty-hint" role="status">没有找到匹配的角色</div>
+          <div v-for="char in visibleChars" :key="char._key" class="char-entry">
             <div
               class="char-row"
-              :class="{ 'del-selected': deleteMode && deleteSelection.has(char._key) }"
+              :class="{
+                'del-selected': deleteMode && deleteSelection.has(char._key),
+                'char-open': expandedChars.has(char._key),
+              }"
               @click="deleteMode ? toggleCharDelete(char._key) : toggleChar(char._key)"
             >
               <span v-if="deleteMode" class="del-check">{{ deleteSelection.has(char._key) ? '☑' : '☐' }}</span>
-              <span class="char-name">{{ char.name }}</span>
+              <span class="char-name" :title="char.name">{{ char.name }}</span>
               <span v-if="char.身份" class="char-identity">{{ char.身份 }}</span>
               <span class="char-hearts">{{ loveIcon(char.好感度) }}</span>
               <span class="char-presence" :class="presence(char)">{{ presenceText(char) }}</span>
@@ -272,18 +295,14 @@
                 </div>
                 <div v-if="sub(char._key + '-cloth')" class="sub-body">
                   <div class="cloth-list">
-                    <div v-for="ci in getCharClothing(char)" :key="ci.key">
-                      <div class="cloth-row" @click="toggleClothDetail(char._key + '-' + ci.key)">
-                        <span class="cloth-key">{{ ci.key }}</span>
-                        <span class="cloth-val" :class="{ dim: !isSet(ci.名称) }">{{
-                          isSet(ci.名称) ? ci.名称 : '—'
-                        }}</span>
-                        <span v-if="isSet(ci.状态)" class="cloth-status">{{ ci.状态 }}</span>
-                      </div>
-                      <div v-if="clothDetail.has(char._key + '-' + ci.key) && isSet(ci.描述)" class="cloth-detail">
-                        {{ ci.描述 }}
-                      </div>
-                    </div>
+                    <StatusFieldRow
+                      v-for="item in getCharClothing(char)"
+                      :key="item.key"
+                      :label="item.key"
+                      :field="item"
+                      :expanded="clothDetail.has(char._key + '-' + item.key)"
+                      @toggle="toggleClothDetail(char._key + '-' + item.key)"
+                    />
                   </div>
                 </div>
               </div>
@@ -359,36 +378,18 @@
                 </div>
                 <div v-if="sub(char._key + '-body')" class="sub-body">
                   <div class="cloth-list">
-                    <div class="cloth-row" @click="toggleClothDetail(char._key + '-bx')">
-                      <span class="cloth-key">胸型</span>
-                      <span class="cloth-val" :class="{ dim: !isSet(char.nsfw档案.胸型?.名称) }">{{
-                        isSet(char.nsfw档案.胸型?.名称) ? char.nsfw档案.胸型.名称 : '—'
-                      }}</span>
-                      <span v-if="isSet(char.nsfw档案.胸型?.状态)" class="cloth-status">{{
-                        char.nsfw档案.胸型.状态
-                      }}</span>
-                    </div>
-                    <div
-                      v-if="clothDetail.has(char._key + '-bx') && isSet(char.nsfw档案.胸型?.描述)"
-                      class="cloth-detail"
-                    >
-                      {{ char.nsfw档案.胸型.描述 }}
-                    </div>
-                    <div class="cloth-row" @click="toggleClothDetail(char._key + '-hx')">
-                      <span class="cloth-key">户型</span>
-                      <span class="cloth-val" :class="{ dim: !isSet(char.nsfw档案.户型?.名称) }">{{
-                        isSet(char.nsfw档案.户型?.名称) ? char.nsfw档案.户型.名称 : '—'
-                      }}</span>
-                      <span v-if="isSet(char.nsfw档案.户型?.状态)" class="cloth-status">{{
-                        char.nsfw档案.户型.状态
-                      }}</span>
-                    </div>
-                    <div
-                      v-if="clothDetail.has(char._key + '-hx') && isSet(char.nsfw档案.户型?.描述)"
-                      class="cloth-detail"
-                    >
-                      {{ char.nsfw档案.户型.描述 }}
-                    </div>
+                    <StatusFieldRow
+                      label="胸型"
+                      :field="char.nsfw档案.胸型"
+                      :expanded="clothDetail.has(char._key + '-bx')"
+                      @toggle="toggleClothDetail(char._key + '-bx')"
+                    />
+                    <StatusFieldRow
+                      label="户型"
+                      :field="char.nsfw档案.户型"
+                      :expanded="clothDetail.has(char._key + '-hx')"
+                      @toggle="toggleClothDetail(char._key + '-hx')"
+                    />
                   </div>
                 </div>
               </div>
@@ -421,6 +422,7 @@
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { receiveCardNavigation } from '../shared/cardNavigation';
 import { useDataStore } from './store';
+import StatusFieldRow from './StatusFieldRow.vue';
 import MirrorPanel from '../shared/MirrorPanel.vue';
 import LenticularDirectory from '../shared/LenticularDirectory.vue';
 import CreativeWorkshopPanel from '../shared/CreativeWorkshopPanel.vue';
@@ -784,6 +786,31 @@ const allChars = computed<NearbyChar[]>(() => {
   });
   return chars;
 });
+
+const rosterPageSize = 8;
+const rosterQuery = ref('');
+const rosterPage = ref(1);
+const filteredChars = computed(() => {
+  const query = rosterQuery.value.trim().toLowerCase();
+  return query
+    ? allChars.value.filter(char =>
+        [char.name, char.身份, char.来源世界].some(text => text?.toLowerCase().includes(query)),
+      )
+    : allChars.value;
+});
+const rosterPageCount = computed(() => Math.max(1, Math.ceil(filteredChars.value.length / rosterPageSize)));
+const visibleChars = computed(() => {
+  const first = (rosterPage.value - 1) * rosterPageSize;
+  return filteredChars.value.slice(first, first + rosterPageSize);
+});
+watch(rosterPageCount, count => {
+  rosterPage.value = Math.min(rosterPage.value, count);
+});
+
+function setRosterQuery(query: string) {
+  rosterQuery.value = query;
+  rosterPage.value = 1;
+}
 
 function normalizeLoc(s: string): string {
   const suffixes = /[上下里内外旁辺中前后处间角面边侧]$/;
@@ -1171,53 +1198,6 @@ function getCharRelations(char: NearbyChar): [string, string][] {
   flex-direction: column;
   gap: 3px;
 }
-.cloth-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 8px;
-  background: var(--t-bg);
-  box-shadow: 0 0 0 1px var(--t-border);
-  border-radius: var(--t-radius-sm);
-  cursor: pointer;
-  transition: background 0.15s;
-  &:hover {
-    background: var(--t-surface-deep);
-  }
-}
-.cloth-key {
-  font-family: '寒蝉全圆体', var(--font-main);
-  font-size: 10px;
-  color: var(--t-dim);
-  letter-spacing: 0.5px;
-  min-width: 28px;
-}
-.cloth-val {
-  font-family: 'DouyinSans', var(--font-main);
-  font-size: 11px;
-  color: var(--t-text);
-  flex: 1;
-  &.dim {
-    color: var(--t-dim);
-  }
-}
-.cloth-status {
-  font-family: '寒蝉全圆体', var(--font-main);
-  font-size: 8px;
-  color: var(--t-accent);
-  background: var(--t-accent-dim);
-  padding: 1px 8px;
-  border-radius: 9999px;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-}
-.cloth-detail {
-  font-family: 'DouyinSans', var(--font-main);
-  font-size: 10px;
-  color: var(--t-muted);
-  padding: 2px 8px 4px 36px;
-  line-height: 1.5;
-}
 
 .info-grid {
   display: flex;
@@ -1259,6 +1239,8 @@ function getCharRelations(char: NearbyChar): [string, string][] {
 @keyframes item-shimmer{0%{background-position:0% center}100%{background-position:200% center}}
 .item-shimmer{animation:item-shimmer 4s linear infinite}
 .item-desc {
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-family: 'DouyinSans', var(--font-main);
   font-size: 10px;
   color: var(--t-muted);
@@ -1282,6 +1264,7 @@ function getCharRelations(char: NearbyChar): [string, string][] {
   margin-left: auto;
 }
 .item-detail {
+  overflow-wrap: anywhere;
   font-size: 10px;
   color: var(--t-muted);
   padding: 2px 8px 4px 8px;
@@ -1296,6 +1279,83 @@ function getCharRelations(char: NearbyChar): [string, string][] {
   letter-spacing: 0.5px;
 }
 
+.roster-tools,
+.roster-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 3px 0 6px;
+}
+.roster-search {
+  display: flex;
+  flex: 1 1 180px;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+  padding: 0 5px 0 8px;
+  min-height: 34px;
+  border: 1px solid var(--t-border);
+  border-radius: var(--t-radius-sm);
+  background: var(--t-bg);
+
+  &:focus-within {
+    border-color: var(--t-accent);
+  }
+  input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: none;
+    padding: 5px 0;
+    background: transparent;
+    color: var(--t-text);
+    font: inherit;
+    font-size: 16px;
+    &::placeholder {
+      color: var(--t-muted);
+      font-size: 12px;
+    }
+  }
+}
+.roster-nav {
+  justify-content: flex-end;
+}
+.roster-search button,
+.roster-nav button {
+  min-height: 28px;
+  padding: 2px 8px;
+  border: 1px solid var(--t-border);
+  border-radius: var(--t-radius-sm);
+  background: var(--t-surface-open);
+  color: var(--t-accent);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    border-color: var(--t-accent);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--t-accent);
+    outline-offset: 1px;
+  }
+  &:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+}
+.roster-results,
+.roster-page {
+  color: var(--t-muted);
+  font-size: 11px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.roster-page {
+  text-align: center;
+  min-width: 38px;
+}
 .char-entry {
   margin-top: 4px;
 }
@@ -1313,12 +1373,20 @@ function getCharRelations(char: NearbyChar): [string, string][] {
   }
 }
 .char-name {
+  flex-shrink: 0;
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: 'DouyinSans', var(--font-main);
   font-weight: 600;
   font-size: 12px;
   color: var(--t-accent);
 }
 .char-identity {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-family: '寒蝉全圆体', var(--font-main);
   font-size: 9px;
   color: var(--t-muted);
@@ -1328,10 +1396,22 @@ function getCharRelations(char: NearbyChar): [string, string][] {
   letter-spacing: 0.5px;
   white-space: nowrap;
 }
+.char-open .char-identity {
+  border-radius: var(--t-radius-sm);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.char-row .del-check,
+.char-row .block-arrow,
+.char-hearts,
+.char-presence {
+  flex-shrink: 0;
+}
 .char-hearts {
   font-size: 12px;
 }
 .char-presence {
+  white-space: nowrap;
   font-family: '寒蝉全圆体', var(--font-main);
   font-size: 8px;
   margin-left: auto;
@@ -1424,12 +1504,14 @@ function getCharRelations(char: NearbyChar): [string, string][] {
   line-height: 1.5;
 }
 .info-label {
+  white-space: nowrap;
   font-family: '寒蝉全圆体', var(--font-main);
   color: var(--t-dim);
   font-size: 10px;
   letter-spacing: 0.5px;
 }
 .info-value {
+  overflow-wrap: anywhere;
   font-family: 'DouyinSans', var(--font-main);
   font-size: 11px;
   color: var(--t-text);
